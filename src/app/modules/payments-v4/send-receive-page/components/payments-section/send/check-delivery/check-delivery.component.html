@@ -1,0 +1,581 @@
+<div class="flex flex-col gap-3">
+  @if (showsTiles()) {
+    <div class="cdi" data-field="delivery">
+      <div class="sec-head">
+        <div class="sec-title">Choose delivery method</div>
+      </div>
+
+      <div class="cdm-grid">
+        @for (option of checkDeliveryOptions(); track option.id) {
+          <button
+            type="button"
+            class="cdm-tile"
+            [class.on]="sendStateService.checkDelivery() === option.id"
+            [disabled]="option.disabled || isApprovedPaymentReadOnly()"
+            [matTooltip]="option.disabledReason"
+            [matTooltipDisabled]="!option.disabled"
+            (click)="onCheckDeliveryChange(option)"
+          >
+            <span class="cdm-ic">
+              <lucide-icon [img]="deliveryIcon(option)" [size]="17" />
+            </span>
+            <span class="cdm-nm">{{ option.name }}</span>
+            <span class="cdm-sub">{{ option.timing }}</span>
+          </button>
+        }
+      </div>
+
+      @if (deliveryError() && !sendStateService.checkDelivery()) {
+        <p class="mt-2 text-xs text-v4-common-red-color">
+          Please select how the check is sent.
+        </p>
+      }
+      @if (noPayeeBlocked()) {
+        <p class="mt-2 text-xs text-v4-common-red-color">
+          Please select a payee before proceeding with the payment.
+        </p>
+      }
+    </div>
+  }
+
+  @if (showsAddressBlock()) {
+    <div class="dm-block" data-field="checkMailing">
+      <div class="sec-head">
+        <div class="sec-title">
+          @if (isPrintDelivery()) {
+            Check addresses
+          } @else {
+            Check mailing &amp; delivery
+          }
+        </div>
+        @if (!isPrintDelivery()) {
+          <lucide-icon
+            [img]="InfoIcon"
+            [size]="14"
+            class="dm-head-info"
+            matTooltip="Mails today if you submit before 2:00 PM ET. After that it mails the next business day."
+            matTooltipPosition="above"
+          />
+        }
+
+        <div class="dm-head-tools">
+          @if (isBankSource() && isMailDelivery()) {
+            <button
+              type="button"
+              class="dm-tool"
+              matTooltip="Set your default shipping type"
+              matTooltipPosition="above"
+              aria-label="Set your default shipping type"
+              (click)="openMailSettings()"
+            >
+              <lucide-icon [img]="SettingsIcon" [size]="15" />
+            </button>
+          }
+          @if (sendStateService.payeeId()) {
+            <button
+              type="button"
+              class="dm-tool"
+              matTooltip="Last 10 transactions with this payee"
+              matTooltipPosition="above"
+              aria-label="Last 10 transactions with this payee"
+              (click)="openLastTransactions()"
+            >
+              <lucide-icon [img]="HistoryIcon" [size]="15" />
+            </button>
+          }
+          @if (showsVerifyAddress()) {
+            <a
+              class="dm-tool dm-tool-alert"
+              [href]="verifyAddress().url"
+              target="_blank"
+              rel="noopener"
+              [matTooltip]="verifyAddress().label"
+              matTooltipPosition="above"
+              [attr.aria-label]="verifyAddress().label"
+            >
+              <lucide-icon [img]="MapPinIcon" [size]="15" />
+            </a>
+          }
+        </div>
+      </div>
+
+      <div class="crm-line dm-l-from">
+        <span class="crm-lbl">
+          @if (isPrintDelivery()) {
+            From address
+          } @else if (isBankSource()) {
+            Mail from Account / Custom address
+          } @else if (isWalletSource()) {
+            Mail from Return / Custom address
+          } @else {
+            Mail from
+          }
+        </span>
+        <div class="md2-wrap">
+          @if (isBankSource() || isWalletSource()) {
+            <app-sp-mail-dropdown
+              [loading]="mailFromLoading()"
+              [open]="openPop() === 'from'"
+              placeholder="Select a payment account, or add a custom address"
+              searchPlaceholder="Search or add address"
+              [title]="
+                useCustomFrom()
+                  ? customFromAddress()?.['name'] || 'Custom address'
+                  : mailFromDefaultName()
+              "
+              [inline]="useCustomFrom() ? customFromLine() : mailFromDefaultLine()"
+              [badge]="
+                useCustomFrom() ? 'Custom address' : mailFromDefaultBadge()
+              "
+              [badgeOk]="!useCustomFrom()"
+              [editable]="useCustomFrom()"
+              [options]="mailFromOptions()"
+              [selectedId]="useCustomFrom() ? selectedFromSavedId() : 'default'"
+              addNewLabel="Add New Custom Address"
+              addNewHint="Add a new mailing address"
+              (toggle)="togglePop('from')"
+              (edit)="openCustomMailFrom(true)"
+              (addNew)="openCustomMailFrom(false); togglePop(null)"
+              (optionSelect)="onMailFromSelect($event)"
+            />
+          } @else {
+            <app-sp-mail-dropdown
+              [readOnly]="true"
+              placeholder="Return address"
+              [title]="cardMailFrom()?.name || 'Return address'"
+              [inline]="cardMailFromLine()"
+              badge="Return address"
+              [badgeOk]="true"
+            />
+          }
+        </div>
+        @if (submitAttempted() && bankInlineErrors()["customShippingFrom"]) {
+          <p class="sp-field-err">{{ bankInlineErrors()["customShippingFrom"] }}</p>
+        }
+        @if (isMailDelivery()) {
+          @if (rejectedFrom(); as rejected) {
+            <button
+              type="button"
+              class="dm-addr-chip"
+              [matTooltip]="rejected.reason"
+              (click)="fixRejectedAddress()"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+              Invalid From Address
+              <lucide-icon [img]="PencilIcon" [size]="11" />
+            </button>
+          } @else if (noBankAccount()) {
+            <button type="button" class="dm-addr-chip" (click)="addBankAccount()">
+              <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+              Add your first bank account
+            </button>
+          } @else if (bankBlocker()) {
+            <button
+              type="button"
+              class="dm-addr-chip"
+              [matTooltip]="bankBlocker()?.data?.message || ''"
+              (click)="fixBankAddress()"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+              Invalid From Address
+            </button>
+          } @else if (returnAddressBlocker()) {
+            <button
+              type="button"
+              class="dm-addr-chip"
+              [matTooltip]="returnAddressBlocker()?.data?.message || ''"
+              (click)="openCustomMailFrom(true)"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+              Invalid From Address
+            </button>
+          } @else if (missingBankAddress()) {
+            <button
+              type="button"
+              class="dm-addr-chip"
+              matTooltip="A mailed check prints its sender's address. Add one to this bank account."
+              (click)="fixBankAddress()"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+              Missing return address — update
+            </button>
+          }
+        }
+      </div>
+
+      <div class="crm-line dm-l-to">
+        <span class="crm-lbl">
+          @if (isPrintDelivery()) {
+            To address
+          } @else if (isBankSource() || isWalletSource()) {
+            Mail to Payee / Custom address
+          } @else {
+            Mail to
+          }
+        </span>
+        <div class="md2-wrap">
+          @if (!isPrintDelivery() && (isBankSource() || isWalletSource())) {
+            <app-sp-mail-dropdown
+              [loading]="mailToLoading()"
+              [open]="openPop() === 'to'"
+              placeholder="Select a payee, or add a custom address"
+              searchPlaceholder="Search or add address"
+              [title]="
+                isCustomTo()
+                  ? customToAddress()?.['name'] || 'Custom address'
+                  : payeeName()
+              "
+              [inline]="isCustomTo() ? customToLine() : payeeAddressLine()"
+              [badge]="
+                isCustomTo() ? 'Custom address' : payeeName() ? 'Payee' : ''
+              "
+              [badgeOk]="!isCustomTo()"
+              [editable]="isCustomTo()"
+              [options]="mailToOptions()"
+              [selectedId]="isCustomTo() ? selectedToSavedId() : 'payee'"
+              addNewLabel="Add New Custom Address"
+              addNewHint="Add a new mailing address"
+              (toggle)="togglePop('to')"
+              (edit)="openCustomMailTo(true)"
+              (addNew)="openCustomMailTo(false); togglePop(null)"
+              (optionSelect)="onMailToSelect($event)"
+            />
+          } @else {
+            <app-sp-mail-dropdown
+              [readOnly]="true"
+              [loading]="mailToLoading()"
+              placeholder="Select a payee"
+              [title]="payeeName()"
+              [inline]="payeeAddressLine()"
+              badge="Payee"
+              [badgeOk]="true"
+            />
+          }
+        </div>
+        @if (submitAttempted() && bankInlineErrors()["customShippingTo"]) {
+          <p class="sp-field-err">{{ bankInlineErrors()["customShippingTo"] }}</p>
+        }
+        <!-- Nothing picked yet is an empty field, not a fault: it only speaks up
+             once a submit has been attempted. -->
+        @if (isMailDelivery() && submitAttempted() && noDestination()) {
+          <p class="sp-field-err">{{ mailAddressError() }}</p>
+        }
+        @if (rejectedTo(); as rejected) {
+          <button
+            type="button"
+            class="dm-addr-chip"
+            [matTooltip]="rejected.reason"
+            (click)="fixRejectedAddress()"
+          >
+            <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+            Invalid To Address
+            <lucide-icon [img]="PencilIcon" [size]="11" />
+          </button>
+        }
+        @if (isMailDelivery() && destinationBlocker()) {
+          <button
+            type="button"
+            class="dm-addr-chip"
+            [matTooltip]="destinationBlocker()?.data?.message || ''"
+            (click)="fixDestinationAddress()"
+          >
+            <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+            Invalid To Address
+          </button>
+        } @else if (isMailDelivery() && missingDestination()) {
+          <button
+            type="button"
+            class="dm-addr-chip"
+            [matTooltip]="mailAddressError()"
+            (click)="fixDestinationAddress()"
+          >
+            <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+            {{ isCustomTo() ? "Incomplete address — edit" : "Missing mailing address — add" }}
+          </button>
+        }
+      </div>
+
+      @if (isMailDelivery()) {
+        <div class="crm-line dm-l-method" data-field="bankMailShip">
+          <span class="crm-lbl">
+            Select carrier
+            @if (isBankSource() && firstCheckMailFree()) {
+              <span class="dm-free-badge">1st check mail free</span>
+            }
+          </span>
+          <div class="md2-wrap">
+            @if (isBankSource()) {
+              <app-sp-mail-dropdown
+                variant="carrier"
+                searchPlaceholder="Search carrier"
+                [loading]="bankMailShipLoading() && !bankMailShippingTypes().length"
+                [open]="openPop() === 'method'"
+                [title]="selectedBankMailShip()?.name || 'Select carrier'"
+                [logoUrl]="
+                  selectedBankMailShip() ? carrierLogo(selectedBankMailShip()) : ''
+                "
+                [tag]="
+                  selectedBankMailShip() &&
+                  selectedBankMailShip()?.id === cheapestShipId()
+                    ? 'Cheapest'
+                    : ''
+                "
+                [cost]="
+                  selectedBankMailShip() ? +selectedBankMailShip()!.amount : null
+                "
+                [options]="bankCarrierOptions()"
+                [selectedId]="bankSelectedCarrierId()"
+                [disabled]="deliveryBlocked()"
+                [disabledHint]="deliveryBlockedReason()"
+                (toggle)="togglePop('method')"
+                (optionSelect)="onBankCarrierSelect($event)"
+              />
+            } @else {
+              <app-sp-mail-dropdown
+                variant="carrier"
+                searchPlaceholder="Search carrier"
+                [loading]="!shippingSettled() && !cardVisibleShippingTypes().length"
+                [open]="openPop() === 'method'"
+                [title]="cardSelectedShip()?.name || 'Select carrier'"
+                [logoUrl]="cardSelectedShip()?.logoUrl || ''"
+                [tag]="
+                  cardSelectedShip() &&
+                  cardSelectedShip()?.carrier_code === cardCheapestCode()
+                    ? 'Cheapest'
+                    : ''
+                "
+                [cost]="cardSelectedShip() ? +cardSelectedShip()!.cost : null"
+                [options]="cardCarrierOptions()"
+                [selectedId]="cardSelectedShip()?.carrier_code || null"
+                (toggle)="togglePop('method')"
+                (optionSelect)="selectCardShip($event)"
+              />
+            }
+          </div>
+          @if (submitAttempted() && (bankInlineErrors()["bankMailShip"] || bankInlineErrors()["delivery"])) {
+            <p class="sp-field-err">
+              {{ bankInlineErrors()["bankMailShip"] || bankInlineErrors()["delivery"] }}
+            </p>
+          }
+          @if (fedexNeedsPhone()) {
+            <button
+              type="button"
+              class="dm-addr-chip"
+              matTooltip="FedEx needs a phone number for the recipient. Add one to the payee, or choose a USPS delivery method."
+              (click)="fixPayeePhone()"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="12" />
+              FedEx needs a payee phone — add
+            </button>
+          }
+        </div>
+      }
+
+      @if (isMailDelivery()) {
+        <div class="dm-l-attach">
+          <span class="crm-lbl" aria-hidden="true">&nbsp;</span>
+          <div class="dm-attach-inline">
+            <button
+              type="button"
+              class="dm-attach-add"
+              (click)="addMailAttachment()"
+              matTooltip="Attach a document to enclose in the mailing envelope with the check."
+            >
+              <lucide-icon [img]="PlusIcon" [size]="13" /> Attach to envelope
+            </button>
+            <span
+              class="dm-attach-info"
+              [class.on]="mailAutoAttachOn"
+              matTooltipClass="whitespace-pre-line"
+              [matTooltip]="
+                mailAutoAttachOn
+                  ? 'Auto-attach is ON — documents on this payment are automatically enclosed in the mailing envelope (Advanced Settings → Check Mailing).'
+                  : 'Auto-attach is OFF — only the documents you add here are enclosed in the mailing envelope.'
+              "
+            >
+              <lucide-icon [img]="InfoIcon" [size]="13" />
+            </span>
+            @if (mailAttachItems().length) {
+              <button
+                type="button"
+                class="dm-attach-pill"
+                [class.open]="showMailAttachPanel()"
+                (click)="toggleMailAttachPanel()"
+                matTooltip="Choose which attachments ship in the mail envelope. Unchecked stay on this payment only."
+              >
+                <lucide-icon [img]="PaperclipIcon" [size]="12" />
+                <span class="dm-attach-pill-n"
+                  >{{ mailedAttachCount() }}/{{ mailAttachItems().length }}</span
+                >
+                <lucide-icon
+                  [img]="ChevronDownIcon"
+                  [size]="13"
+                  class="dm-attach-pill-chev"
+                />
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="dm-sub">
+        @if (showMailAttachPanel() && mailAttachItems().length) {
+          <div class="dm-attach dm-attach-panel">
+            @for (a of mailAttachItems(); track a.id) {
+              <label
+                class="dm-attach-row"
+                [matTooltip]="
+                  isAttachmentMailed(a.id)
+                    ? 'Uncheck to exclude from the envelope'
+                    : 'Check to include in the envelope'
+                "
+              >
+                <input
+                  type="checkbox"
+                  [checked]="isAttachmentMailed(a.id)"
+                  (change)="toggleMailAttachment(a.id)"
+                />
+                <lucide-icon [img]="PaperclipIcon" [size]="12" />
+                <span class="dm-attach-nm">{{ a.name }}</span>
+                @if (a.pageCount) {
+                  <span class="dm-attach-pg">{{ a.pageCount }} pg</span>
+                }
+              </label>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (isEmailDelivery()) {
+    <div class="dm-block" data-field="checkEmail">
+      <div class="sec-head">
+        <div class="sec-title">Email the check</div>
+        <lucide-icon
+          [img]="InfoIcon"
+          [size]="14"
+          class="dm-head-info"
+          matTooltip="The payee gets a secure link to print or deposit the check."
+          matTooltipPosition="above"
+        />
+      </div>
+
+      <div class="crm-line dm-l-email">
+        <span class="crm-lbl">Send to</span>
+        <div class="md2-wrap">
+          @if (emailResolving()) {
+            <div class="dm-email-static">
+              <span class="dm-email-skel"></span>
+            </div>
+          } @else {
+            <input
+              class="dm-email-input"
+              type="email"
+              autocomplete="email"
+              placeholder="payee@email.com"
+              [class.dm-email-input--err]="emailTyped() && emailFormatError()"
+              [attr.aria-invalid]="!!(emailTyped() && emailFormatError())"
+              [value]="emailInput()"
+              (input)="onEmailAddressInput($any($event.target).value)"
+            />
+          }
+        </div>
+
+        <!-- <span class="dm-email-custom">
+          <input
+            type="checkbox"
+            class="v4-checkbox-sm"
+            aria-label="Send to Custom Email"
+            [checked]="emailCustom()"
+            (change)="onEmailCustomToggle($any($event.target).checked)"
+          />
+          <span>Send to Custom Email</span>
+          <lucide-icon
+            [img]="InfoIcon"
+            [size]="13"
+            matTooltip="Send this check to an address other than the one on the payee's record."
+            matTooltipPosition="above"
+          />
+        </span> -->
+
+        @if (showSaveToPayee()) {
+          <span class="dm-email-custom">
+            <input
+              type="checkbox"
+              class="v4-checkbox-sm"
+              aria-label="Save this email to the payee's record"
+              [checked]="saveToPayee()"
+              (change)="onSaveToPayeeToggle($any($event.target).checked)"
+            />
+            <span>Save this email to the payee's record</span>
+          </span>
+        }
+
+        @if (submitAttempted() && emailError()) {
+          <p class="sp-field-err">{{ emailError() }}</p>
+        } @else if (emailTyped() && emailFormatError()) {
+          <p class="sp-field-err">{{ emailFormatError() }}</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (isDirectDepositDelivery()) {
+    <div class="dm-block">
+      <div class="sec-head">
+        <div class="sec-title">Direct deposit</div>
+      </div>
+      <button
+        type="button"
+        class="dd-bypass"
+        [class.on]="walletBypassing()"
+        (click)="toggleWalletBypassing()"
+      >
+        <span class="dd-bypass-sw"><i></i></span>
+        <span class="dd-bypass-txt">
+          <b>{{
+            walletBypassing()
+              ? "Deposit to their bank account"
+              : "Keep in their ZilMoney wallet"
+          }}</b>
+          <span>{{
+            walletBypassing()
+              ? "Sent straight to their bank account — no wallet needed."
+              : "Held in their ZilMoney wallet — they withdraw it themselves."
+          }}</span>
+        </span>
+      </button>
+    </div>
+  }
+
+  @if (showsCheckPreview()) {
+    <!-- The tooltip sits on the wrapper: a disabled button is not hovered, so a
+         tooltip on it would never say why it cannot be pressed. -->
+    <span
+      class="cdi-summary-wrap"
+      [class.is-disabled]="!checkPreviewReady()"
+      [matTooltip]="checkPreviewBlockedReason()"
+      [matTooltipDisabled]="!checkPreviewBlockedReason()"
+      matTooltipPosition="above"
+    >
+    <button
+      type="button"
+      class="cdi-summary"
+      [disabled]="!checkPreviewReady()"
+      (click)="openCheckModal()"
+    >
+      <span class="cdi-ic">
+        <lucide-icon [img]="FileTextIcon" [size]="17" />
+      </span>
+      <span class="cdi-summary-txt">
+        <span class="cdi-summary-l1">Check #{{ checkNumber() || "—" }}</span>
+        <span class="cdi-summary-l2"
+          >Issued {{ issueDate() || "—" }} · tap to edit &amp; preview</span
+        >
+      </span>
+      <lucide-icon [img]="ChevronRightIcon" [size]="16" class="cdi-summary-chev" />
+    </button>
+    </span>
+  }
+</div>

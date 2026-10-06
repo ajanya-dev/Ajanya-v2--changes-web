@@ -1,0 +1,92 @@
+<div class="relative" [class.z-50]="isOpen()">
+  <!-- .sec-head / .sec-title -->
+  <span
+    class="mb-[9px] flex items-center gap-[7px] font-semibold tracking-[-0.02em] text-v4-main-text-color text-[14px]"
+  >
+    <span
+      >{{ label()
+      }}@if (required()) {<span class="text-v4-common-red-color">*</span>}</span
+    >
+    @if (tooltip()) {
+      <lucide-icon
+        [img]="InfoIcon"
+        [size]="14"
+        class="cursor-help text-v4-subtle-text-color"
+        [matTooltip]="tooltip()"
+        matTooltipClass="whitespace-pre-line"
+      />
+    }
+  </span>
+  <!-- .md2-bar (div role=button so it can host the inline search input) -->
+  <!-- The hint rides on the bar itself: it is not a button, so it is still
+       hovered while disabled and can say what it is waiting for. -->
+  <div
+    role="button"
+    [attr.tabindex]="disabled() ? -1 : 0"
+    [matTooltip]="disabled() ? disabledHint() : ''"
+    [matTooltipDisabled]="!disabled() || !disabledHint()"
+    matTooltipPosition="above"
+    class="md2-bar flex h-[42px] w-full items-center gap-2.5 rounded-[12px] border !border-v4-border-color !bg-v4-secondary-background-color px-4 text-left outline-none transition-all focus:outline-none focus-visible:outline-none"
+    [ngClass]="
+      disabled()
+        ? 'cursor-not-allowed'
+        : 'cursor-pointer hover:!border-v4-input-border-color'"
+    [class.md2-bar--open]="isOpen()"
+    [class.opacity-60]="disabled()"
+    [attr.aria-disabled]="disabled()"
+    (click)="toggle()"
+    (keydown.enter)="toggle()"
+    (keydown.space)="toggle()"
+  >
+    @if (isOpen() && searchable()) {
+      <lucide-icon
+        [img]="SearchIcon"
+        [size]="15"
+        class="shrink-0 text-v4-brand-border-color"
+      />
+      <input
+        #searchBox
+        type="text"
+        class="sp-bar-input min-w-0 flex-1 border-none bg-transparent p-0 font-bold text-v4-main-text-color outline-none placeholder:font-medium placeholder:text-v4-subtle-text-color text-[13px]"
+        [placeholder]="searchPlaceholder()"
+        [(ngModel)]="searchTerm"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+        (keydown.escape)="dismiss()"
+      />
+    } @else {
+      <span class="flex min-w-0 flex-1 items-center gap-2.5"
+        ><ng-content select="[trigger]"></ng-content
+      ></span>
+    }
+    @if (isOpen()) {
+      <button
+        type="button"
+        class="grid h-6 w-6 shrink-0 place-items-center rounded-md text-v4-tertiary-text-color transition-colors hover:bg-v4-tertiary-background-color hover:text-v4-main-text-color"
+        [attr.aria-label]="searchTerm() ? 'Clear search' : 'Clear selection'"
+        (click)="dismiss($event)"
+      >
+        <lucide-icon [img]="XIcon" [size]="15" />
+      </button>
+    }
+    <lucide-icon
+      [img]="ChevronDownIcon"
+      [size]="16"
+      class="shrink-0 text-v4-tertiary-text-color transition-transform"
+      [class.rotate-180]="isOpen()"
+    />
+  </div>
+  @if (isOpen()) {
+    <!-- .md2-pop -->
+    <div
+      class="sp-pop absolute left-0 right-0 z-30 max-h-[400px] min-w-[300px] overflow-y-auto rounded-[15px] border border-v4-border-color bg-v4-popup-background-color p-2.5 shadow-[0_10px_30px_-12px_rgba(17,24,39,0.28)]"
+      [class.top-full]="!opensUp()"
+      [class.mt-2]="!opensUp()"
+      [class.bottom-full]="opensUp()"
+      [class.mb-2]="opensUp()"
+      [class.sp-pop--up]="opensUp()"
+    >
+      <ng-content select="[panel]"></ng-content>
+    </div>
+  }
+</div>

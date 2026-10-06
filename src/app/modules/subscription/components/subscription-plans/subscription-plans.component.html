@@ -1,0 +1,353 @@
+<div class="py-20 px-4 flex-col items-center w-full flex justify-center">
+  <div class="action_area">
+    <div
+      class="absolute top-[29px] left-[42px] cursor-pointer"
+      matTooltip="Go Back"
+      (click)="goBack()"
+    >
+      <fa-icon class="text-2xl" [icon]="['fas', 'arrow-left']" />
+    </div>
+    <div class="flex items-center gap-5 absolute top-[29px] right-[42px]">
+      <app-common-help-button [helpIcon]="true" />
+      <div class="close_btn action_btn !static" matTooltip="Close">
+        <button (click)="onClose()" class="text-2xl">
+          <fa-icon [icon]="['fas', 'xmark']" />
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="text-center font-inter flex flex-col gap-6 max-w-[80%] items-center"
+  >
+    <span class="font-bold text-[35px] text-main-text-color"
+      >Choose the Best Plan for your Business</span
+    >
+    <p class="font-normal text-secondary-text-color">
+      We care about your convenience in using the application. Find the plan
+      that works best for your business. You can update the plan anytime.
+    </p>
+    <p class="font-light text-xs text-secondary-text-color max-w-[80%]">
+      OnlineCheckWriter.com - powered by Zil Money is a financial technology
+      company, not a bank or an FDIC member. OnlineCheckWriter.com offers baning
+      services through partnership with FDIC member banks Silicon Valley, Texas
+      National Bank, and East-West Bank.
+    </p>
+  </div>
+  <div class="h-20"></div>
+  <div class="flex font-inter max-xl:w-full max-xl:overflow-y-auto pb-2.5">
+    <div class="flex flex-col min-w-[256px] gap-5">
+      <div
+        [ngClass]="{ skelton: !availablePlans.length }"
+        class="bg-transparent rounded-l-[10px] relative bg-[#004a7c] p-5 flex flex-col gap-4 overflow-hidden h-[219px]"
+      >
+        @if (false) {
+          <span class="text-white font-bold text-2xl"
+            >Hey, I have a <br />tip for you.
+          </span>
+          <p class="font-light text-sm text-white">
+            Customize the pricing <br />based on your needs.
+          </p>
+          <button
+            class="bg-[#FFE604] rounded-[3px] py-2.5 px-[18px] font-roboto font-bold text-[15px] text-[#004a7c] max-w-min text-nowrap whitespace-nowrap"
+          >
+            Calculate Now
+          </button>
+          <img
+            class="absolute -right-3.5 bottom-0"
+            width="170"
+            height="128"
+            ngSrc="assets/images/subscription/calculator.svg"
+            alt=""
+          />
+        }
+      </div>
+      @for (item of planFeatures; track item.header) {
+        <div
+          [ngClass]="{ skelton: !availablePlans.length }"
+          class="rounded-l-[7px] bg-main-background-color pl-2.5 pb-6"
+        >
+          <div class="font-bold px-3 py-3 text-nowrap">
+            {{ item.header }}
+          </div>
+          <div
+            [ngStyle]="{
+              'background-color': item.bgColor,
+              'border-top': '1px solid ' + item.bgColor,
+              'border-bottom': '1px solid ' + item.bgColor
+            }"
+            class=""
+          >
+            <ul
+              class="rounded-l-[3px] divide-y overflow-hidden divide-input-border-color w-[261px]"
+            >
+              @for (feature of item.subItems; track feature) {
+                <li class="h-[52px] flex flex-col justify-center pl-4">
+                  <span
+                    class="font-semibold text-sm"
+                    [innerHTML]="feature.name"
+                  ></span>
+                  @if (feature.desc) {
+                    <span class="font-normal text-xs">{{ feature.desc }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="flex gap-1.5">
+      @if (!availablePlans.length) {
+        @for (item of [].constructor(1); track item) {
+          <div
+            class="w-full min-w-64 bg-main-background-color rounded-t-[5px] overflow-y-hidden skelton"
+          ></div>
+        }
+        <div></div>
+        <div
+          class="w-full min-w-64 bg-main-background-color rounded-t-[5px] overflow-y-hidden skelton"
+        ></div>
+      }
+      @for (item of availablePlans; track item; let i = $index) {
+        <div
+          [ngClass]="{
+            'box-border border border-[#004a7c]': item === currentPlan
+          }"
+          class="w-full min-w-64 bg-main-background-color rounded-t-[5px] overflow-y-hidden"
+        >
+          <ng-container
+            [ngTemplateOutlet]="headerTemplate"
+            [ngTemplateOutletContext]="{
+              data: {
+                amount: planData?.[item].planPrice,
+                name: planData?.[item].planName,
+                bgColor: headerColors[i],
+                current: item === currentPlan,
+                custom: planData?.[item].planCategoryType === 4,
+                plan: planData?.[item],
+                freeCredit: planData?.[item].freeCredit
+              }
+            }"
+          />
+          <div class="flex flex-col gap-5">
+            <div class="pt-12 pb-6">
+              <div
+                class="divide-y divide-input-border-color border-y border-y-input-border-color"
+              >
+                @for (data of planFeatureValues[item].fromWallet; track data) {
+                  <div
+                    [ngClass]="{ 'text-[#009B6D]': data.color }"
+                    class="h-[52px] flex justify-center items-center font-semibold text-sm"
+                  >
+                    {{ data.value }}
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="pt-12 pb-6">
+              <div
+                class="divide-y divide-input-border-color border-y border-y-input-border-color"
+              >
+                @for (data of planFeatureValues[item].fromBank; track data) {
+                  @if (data.type === "minMax") {
+                    <div
+                      class="h-[52px] flex justify-center items-center font-semibold text-sm"
+                    >
+                      <span>
+                        <span class="font-semibold text-sm text-[#009B6D]">{{
+                          data.min
+                        }}</span>
+                        <span class="font-normal text-xs"> or Max </span>
+                        <span class="font-semibold text-sm">{{
+                          data.max
+                        }}</span>
+                      </span>
+                    </div>
+                  } @else {
+                    <div
+                      [ngClass]="{ 'text-[#009B6D]': data.color }"
+                      class="h-[52px] flex justify-center items-center font-semibold text-sm"
+                    >
+                      {{ data.value }}
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+            <div class="pt-12 pb-6">
+              <div
+                class="divide-y divide-input-border-color border-y border-y-input-border-color"
+              >
+                @for (data of planFeatureValues[item].features; track data) {
+                  <div
+                    [ngClass]="{ 'text-[#009B6D]': data.color }"
+                    class="h-[52px] flex justify-center items-center font-semibold text-sm"
+                  >
+                    @if (data.type === "check") {
+                      <fa-icon
+                        size="xl"
+                        [ngClass]="{
+                          'text-[#009B6D]': data.value === true,
+                          'text-input-border-color': data.value === false
+                        }"
+                        [icon]="faCircleCheck"
+                      />
+                    } @else {
+                      {{ data.value }}
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="pt-12">
+              <div
+                class="divide-y divide-input-border-color border-y border-y-input-border-color"
+              >
+                @for (
+                  data of planFeatureValues[item].checkMailing;
+                  track data
+                ) {
+                  <div
+                    [ngClass]="{ 'text-[#009B6D]': data.color }"
+                    class="h-[52px] flex justify-center items-center font-semibold text-sm"
+                  >
+                    {{ data.value }}
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="h-10"></div>
+  <div class="flex gap-3 w-[80%] justify-between p-5 font-inter">
+    <div class="w-full flex flex-col gap-2 items-center justify-between p-5">
+      <img
+        width="56"
+        height="56"
+        ngSrc="assets/images/subscription/sixty-days.png"
+        alt=""
+      />
+      <span class="font-semibold text-sm text-center"
+        >Money Back Guarantee</span
+      >
+      <p class="font-light text-xs text-center text-secondary-text-color px-3">
+        Once You join as a paid member and find out you are not into it,
+        Zilmoney offers a 60 day money back guarantee
+      </p>
+    </div>
+    <div class="w-full flex flex-col gap-2 items-center justify-between p-5">
+      <img
+        width="302"
+        height="57"
+        ngSrc="assets/images/subscription/cards.png"
+        alt=""
+      />
+      <span class="font-semibold text-sm text-center"
+        >Accepted Payment Methods</span
+      >
+      <p class="font-light text-xs text-center text-secondary-text-color px-3">
+        We provide you the facility to pay using the most secured ways.
+      </p>
+    </div>
+    <div class="w-full flex flex-col gap-2 items-center justify-between p-5">
+      <img
+        width="51"
+        height="51"
+        ngSrc="assets/images/subscription/ssl.png"
+        alt=""
+      />
+      <span class="font-semibold text-sm text-center">SSL Secure Payments</span>
+      <p class="font-light text-xs text-center text-secondary-text-color px-3">
+        Our system uses SSL encryption technology, which is the same technology
+        banks use to protect sensitive information
+      </p>
+    </div>
+  </div>
+</div>
+
+<ng-template #headerTemplate let-data="data">
+  <div
+    class="p-5 flex flex-col gap-5 items-center justify-between h-[239px] shadow-xl shadow-common-secondary-blue-color"
+  >
+    <span class="font-inter font-bold text-lg text-nowrap">{{
+      data.name
+    }}</span>
+    <div
+      [ngStyle]="{
+        'background-color': data.bgColor
+      }"
+      class="w-full py-4 flex items-center justify-center flex-col rounded-[5px] h-20"
+    >
+      @if (!data.custom) {
+        <p class="font-inter font-bold text-lg">${{ data.amount }}</p>
+        @if (data.amount == "0.00" || data.amount === 0) {
+          <div class="flex flex-col items-center justify-center">
+            <p class="font-normal text-xs text-nowrap">Subscription Fee</p>
+            <span class="font-bold text-xs text-[#009B6D]">
+              $30.00 Initial Recharge</span
+            >
+          </div>
+        } @else {
+          <div class="flex flex-col items-center justify-center">
+            <p class="font-normal text-xs text-nowrap">Subscription Fee</p>
+            @if (data.freeCredit && data.freeCredit > 0) {
+              <span class="font-bold text-xs text-[#009B6D]"
+                >{{ data.freeCredit | currency }} Free Credit</span
+              >
+            }
+          </div>
+        }
+      } @else {
+        <p class="font-inter font-bold text-lg text-center leading-[20px]">
+          Custom <br />
+          Pricing
+        </p>
+      }
+    </div>
+    <div class="w-full relative">
+      <button
+        (click)="data.custom ? talkSalesChange() : choosePlan(data.plan)"
+        [disabled]="data.current"
+        [ngStyle]="{
+          'background-color': data.current
+            ? 'var(--main-background-color)'
+            : '#004a7c',
+          color: data.current ? '#004a7c' : 'white'
+        }"
+        class="rounded-[3px] h-[38px] w-full font-semibold text-sm"
+      >
+        {{
+          data.current
+            ? "Current Plan"
+            : data.custom
+              ? "Talk Sales"
+              : "Choose Plan"
+        }}
+      </button>
+      @if (data.custom && talkSalesOpen) {
+        <div
+          class="absolute w-full rounded-md flex flex-col gap-2.5 p-2.5 bg-main-background-color shadow-common-button justify-center z-20"
+        >
+          <span
+            class="cursor-pointer flex items-center justify-center"
+            (click)="talkSalesChange()"
+          >
+            <fa-icon [icon]="faAngleUp" />
+          </span>
+          @for (item of supportOptions; track item.id) {
+            <button
+              (click)="onSupportClick(item.id)"
+              class="h-8 bg-common-secondary-blue-color text-[#004a7c] font-semibold text-sm flex items-center justify-center gap-2 rounded-[3px]"
+            >
+              <fa-icon [icon]="item.icon" />
+              <span> {{ item.name }} </span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</ng-template>

@@ -1,0 +1,148 @@
+<!-- Selected Card View -->
+@if (selectedCard(); as card) {
+  <div class="selected-card flex items-center gap-3 rounded-lg px-4 py-3">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-common-secondary-blue-color">
+      <i-lucide [img]="CreditCardIcon" [size]="18" class="text-v4-primary-brand-bold-color"></i-lucide>
+    </div>
+    <div class="min-w-0 flex-1">
+      @if (getSubText(card)) {
+      <p class="truncate text-sm font-medium text-v4-main-text-color">
+        {{ getSubText(card) }}
+      </p>
+      }
+      @if (getDisplayName(card)) {
+        <p class="truncate text-xs text-v4-tertiary-text-color">
+          {{ getDisplayName(card) }}
+        </p>
+      }
+    </div>
+    <button
+      type="button"
+      class="shrink-0 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+      (click)="removeSelectedCard()"
+    >
+      <i-lucide [img]="XIcon" [size]="18"></i-lucide>
+    </button>
+  </div>
+} @else {
+  <!-- Search -->
+  <div class="relative mb-3">
+    <i-lucide
+      [img]="SearchIcon"
+      [size]="16"
+      class="absolute left-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color"
+    ></i-lucide>
+    <input
+      type="text"
+      class="w-full rounded-lg border border-v4-border-color bg-white py-2.5 pl-9 pr-8 text-sm text-v4-main-text-color placeholder-v4-subtle-text-color outline-none transition-colors focus:border-v4-primary-brand-color"
+      placeholder="Search cards..."
+      [(ngModel)]="searchTerm"
+    />
+    @if (searchTerm) {
+      <button
+        type="button"
+        class="absolute right-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+        (click)="clearSearch()"
+      >
+        <i-lucide [img]="XIcon" [size]="16"></i-lucide>
+      </button>
+    }
+  </div>
+
+  <!-- Add New Card -->
+   @if(paymentsService.hasPermission.card){
+     <button
+     type="button"
+     class="mb-3 flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-v4-border-success px-4 py-3 transition-colors hover:bg-v4-surface-success"
+     [disabled]="addingCard()"
+     [class.opacity-60]="addingCard()"
+     [class.cursor-not-allowed]="addingCard()"
+     (click)="addNewCard()"
+    >
+       <div
+         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-surface-success-bold"
+       >
+       @if (addingCard()) {
+         <div class="h-4 w-4 animate-spin rounded-full border-2 border-v4-text-success border-t-transparent"></div>
+       } @else {
+         <i-lucide [img]="PlusIcon" [size]="18" class="text-v4-text-success"></i-lucide>
+       }
+       </div>
+       <div class="text-left">
+         <p class="text-sm font-semibold text-v4-text-success">
+           {{ addingCard() ? 'Opening...' : 'Add New Card' }}
+         </p>
+         <p class="text-xs text-v4-text-success">
+           Connect a new credit card
+         </p>
+       </div>
+    </button>
+   }
+
+  <!-- Card List -->
+  <div class="card-list-container overflow-y-auto">
+    @if (loading()) {
+      <div class="space-y-2 py-2">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="flex animate-pulse items-center gap-3 rounded-lg px-4 py-3">
+            <div class="h-10 w-10 shrink-0 rounded-full bg-v4-input-background-color"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-3.5 w-3/4 rounded bg-v4-input-background-color"></div>
+              <div class="h-3 w-1/2 rounded bg-v4-input-background-color"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (isFilterOn) {
+      @for (card of filteredCards; track card.cardId) {
+        <div
+          role="presentation"
+          class="flex cursor-pointer items-center gap-3 rounded-lg border border-v4-border-color px-4 py-3 transition-colors hover:bg-[#004a7c0D] [&+div]:mt-2 hover:border-v4-brand-focus-color"
+          (click)="onCardClick(card)"
+        >
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-common-secondary-blue-color">
+            <i-lucide [img]="CreditCardIcon" [size]="18" class="text-v4-primary-brand-bold-color"></i-lucide>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-medium text-v4-main-text-color">
+              {{ getDisplayName(card) }}
+            </p>
+            @if (getSubText(card)) {
+              <p class="truncate text-xs text-v4-tertiary-text-color">
+                {{ getSubText(card) }}
+              </p>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="py-4 text-center text-sm text-v4-tertiary-text-color">{{ !paymentsService.hasPermission.card ? 'Permission Denied' : 'No cards found' }}</p>
+      }
+    } @else {
+      @for (card of displayedCards; track card.cardId) {
+        <div
+          role="presentation"
+          class="flex cursor-pointer items-center gap-3 rounded-lg border border-v4-border-color px-4 py-3 transition-colors hover:bg-[#004a7c0D] [&+div]:mt-2 hover:border-v4-brand-focus-color"
+          (click)="onCardClick(card)"
+        >
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-common-secondary-blue-color">
+            <i-lucide [img]="CreditCardIcon" [size]="18" class="text-v4-primary-brand-bold-color"></i-lucide>
+          </div>
+          <div class="min-w-0 flex-1">
+            @if (getSubText(card)) {
+            <p class="truncate text-sm font-medium text-v4-main-text-color">
+              {{ getSubText(card) }}
+            </p>
+            }
+            @if (getDisplayName(card)) {
+              <p class="truncate text-xs text-v4-tertiary-text-color">
+                {{ getDisplayName(card) }}
+              </p>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="py-4 text-center text-sm text-v4-tertiary-text-color">{{ !paymentsService.hasPermission.card ? 'Permission Denied' : 'No cards found' }}</p>
+      }
+    }
+  </div>
+}

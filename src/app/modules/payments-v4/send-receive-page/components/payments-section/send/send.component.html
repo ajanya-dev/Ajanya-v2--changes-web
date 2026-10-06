@@ -1,0 +1,555 @@
+  @if (loading()) {
+    <div class="flex flex-col gap-2" aria-busy="true">
+      <!-- Amount -->
+      <section
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-6 py-8 animate-pulse shadow-sm"
+      >
+        <div
+          class="mx-auto h-4 w-56 rounded bg-v4-border-color"
+        ></div>
+        <div
+          class="mx-auto mt-4 h-12 w-72 rounded-lg bg-v4-border-color"
+        ></div>
+      </section>
+
+      <!-- Pay from · account · payee · method -->
+      <section
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-3 flex flex-col gap-3 animate-pulse shadow-sm"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          @for (i of [1, 2]; track i) {
+            <div class="flex flex-col gap-1.5">
+              <div class="h-3 w-24 rounded bg-v4-border-color"></div>
+              <div
+                class="h-11 w-full rounded-lg bg-v4-border-color"
+              ></div>
+            </div>
+          }
+        </div>
+        @for (i of [1, 2]; track i) {
+          <div class="flex flex-col gap-1.5">
+            <div class="h-3 w-32 rounded bg-v4-border-color"></div>
+            <div
+              class="h-11 w-full rounded-lg bg-v4-border-color"
+            ></div>
+          </div>
+        }
+      </section>
+
+      <!-- Additional details -->
+      <section
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-3 animate-pulse shadow-sm"
+      >
+        <div class="h-4 w-40 rounded bg-v4-border-color"></div>
+        <div
+          class="mt-4 h-24 w-full rounded-lg bg-v4-border-color"
+        ></div>
+      </section>
+
+      <!-- Action bar -->
+      <section
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 animate-pulse shadow-sm"
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-[1fr_1.4fr] gap-3">
+          <div
+            class="h-11 w-full rounded-lg bg-v4-border-color"
+          ></div>
+          <div
+            class="h-11 w-full rounded-lg bg-v4-border-color"
+          ></div>
+        </div>
+      </section>
+    </div>
+  }
+  <!-- Success is a modal now, so the form stays mounted underneath it. -->
+  <!-- Nothing here submits: every action is a button with its own handler, and
+       Confirm sits outside this form. Enter in any field would otherwise ask the
+       browser to submit, which it answers by pressing the first button it can
+       take for one. -->
+  <form
+    [formGroup]="coreForm"
+    class="flex flex-col gap-3"
+    [class.hidden]="loading()"
+    (submit)="$event.preventDefault()"
+  >
+    <!-- 1 · Amount -->
+    <section
+      data-field="amount"
+      class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-5 pt-4 pb-5 shadow-sm"
+    >
+      <div
+        class="sp-amount-hero relative flex flex-col items-center justify-center gap-2.5"
+        [matTooltip]="
+          billLocked()
+            ? 'The bill decides the amount.'
+            : 'Untick Process without Amount checkbox to change amount.'"
+        [matTooltipDisabled]="
+          !coreForm.controls.amount.disabled && !billLocked()"
+      >
+        <label for="send-amount"
+          class="font-semibold text-v4-main-text-color text-[13px] tracking-[-0.01em]"
+        >
+          How much would you like to send?
+        </label>
+        <app-common-amount-input-v4
+          [customClass]="'hero-input'"
+          [isRequired]="true"
+          [maxLength]="isCard() ? 11 : 15"
+          [isDisabled]="billLocked() || coreForm.controls.amount.disabled || isApprovedPaymentReadOnly()"
+          formControlName="amount"
+          [forPayment]="true"
+        />
+        @if (blanksAmount() || billLocked() || isApprovedPaymentReadOnly()) {
+          <div class="send-blanked-overlay"></div>
+        }
+      </div>
+      <!-- The hero amount input is centred, so its message centres with it. -->
+      <div class="flex justify-center">
+        <app-control-message-v4
+          [control]="coreForm.controls.amount"
+          label="Amount"
+          [customMessages]="{
+            required: 'Please enter an amount',
+            min: minAmountMessage(),
+            maxlength: 'Please enter an amount of 9 digits or fewer'
+          }"
+        />
+      </div>
+    </section>
+
+    <!-- 2 · Pay from · account · payee · method -->
+    <section
+      class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 flex flex-col gap-3 shadow-sm"
+    >
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start"
+      >
+        <div data-field="payFrom" class="flex flex-col">
+          <app-sp-pay-from-dropdown
+            class="relative block"
+            [ngClass]="isApprovedPaymentReadOnly() ? 'disable_field pointer-events-none' : ''"
+            id="send-source"
+            formControlName="payFrom"
+            [sources]="sendReceivePageService.sources()"
+            [showDefaultStar]="true"
+            [defaultItemId]="defaultPayFromId()"
+            (changeEvent)="onSourceChange($event)"
+            (starClick)="defaultPaymentQuickSetService.setSourceAsDefault($event)"
+          />
+        </div>
+
+        <div data-field="account" class="flex flex-col">
+          @if (isBank()) {
+            <app-sp-bank-ac-dropdown
+              class="relative block"
+              [ngClass]="isApprovedPaymentReadOnly() ? 'disable_field pointer-events-none' : ''"
+              formControlName="bankAc"
+              [permissionContext]="'forPayment'"
+              (ready)="onBankDropdownReady($event)"
+              [showVerificationBadge]="true"
+              [showDefaultStar]="true"
+              [defaultItemId]="defaultBankAccountId()"
+              [selectedMethodId]="sendStateService.methodId()"
+              (starClick)="defaultPaymentQuickSetService.setAccountAsDefault($event)"
+              [zIndex]="0"
+              placeholder="Select or search bank account"
+            />
+            <app-control-message-v4
+              [control]="coreForm.controls.bankAc"
+              [isMarginTopEnabled]="false"
+              [customMessages]="{
+                required: 'Please select a bank account'
+              }"
+            />
+          } @else if (isCard()) {
+            <app-sp-cards-dropdown
+              class="relative block"
+              [ngClass]="isApprovedPaymentReadOnly() ? 'disable_field pointer-events-none' : ''"
+              formControlName="card"
+              [gatewayType]="gatewayType()"
+              [showAllCards]="true"
+              (ready)="onCardDropdownReady($event)"
+              [showDefaultStar]="true"
+              [defaultItemId]="defaultCardId()"
+              (starClick)="defaultPaymentQuickSetService.setAccountAsDefault($event)"
+              placeholder="Select or search card"
+            />
+            <app-control-message-v4
+              [control]="coreForm.controls.card"
+              [isMarginTopEnabled]="false"
+              [customMessages]="{
+                required: 'Please select a card'
+              }"
+            />
+          } @else {
+            <app-sp-wallet-dropdown
+              class="relative block"
+              [ngClass]="isApprovedPaymentReadOnly() ? 'disable_field pointer-events-none' : ''"
+              formControlName="wallet"
+              (ready)="autoPopulateWallet($event)"
+              [showDefaultStar]="true"
+              [defaultItemId]="defaultWalletId()"
+              (starClick)="defaultPaymentQuickSetService.setAccountAsDefault($event)"
+              [showLogoUpdateModal]="!isVirtualCard()"
+              placeholder="Select or search wallet"
+            />
+            <app-control-message-v4
+              [control]="coreForm.controls.wallet"
+              [isMarginTopEnabled]="false"
+              [customMessages]="{
+                required: 'Please select a wallet'
+              }"
+            />
+            @if (sendStateService.isWalletShort()) {
+              <small
+                class="mt-1 flex items-center gap-1 pl-1 font-funnel text-sm font-normal text-v4-common-red-color"
+              >
+                <fa-icon
+                  class="text-v4-common-red-color text-[12px]"
+                  [icon]="['fas', 'circle-exclamation']"
+                  animation="shake"
+                  size="lg"
+                ></fa-icon>
+                <p class="text-v4-common-red-color text-xs font-medium font-peridot">
+                  Insufficient balance on wallet.
+                </p>
+              </small>
+            }
+          }
+        </div>
+
+        <!-- Payee -->
+        <div data-field="payee" class="relative flex flex-col">
+          <div class="absolute right-0 top-0 z-10 flex items-center">
+            @if (payeeDataService.payeeDataSignal()) {
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 text-xs text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors"
+                matTooltip="View Payee Summary"
+                (click)="openPayeeSummary()"
+              >
+                <lucide-icon [img]="HistoryIcon" [size]="14"></lucide-icon>
+              </button>
+            }
+          </div>
+          <div
+            class="relative"
+            [ngClass]="isApprovedPaymentReadOnly() ? 'disable_field pointer-events-none' : ''"
+            [matTooltip]="
+              'Untick Process without ' +
+              ('Payee' | whiteLabel: 'payeeName') +
+              ' checkbox to change ' +
+              ('Payee' | whiteLabel: 'payeeName') +
+              '.'"
+            [matTooltipDisabled]="!coreForm.controls.payee.disabled"
+          >
+            <app-sp-payee-dropdown
+              #payeeDropdown
+              formControlName="payee"
+              [blockFrozenPayee]="!isBankCheck()"
+              (ready)="onPayeeReady($event)"
+              placeholder="Select or search payee"
+            />
+            @if (blanksPayee()) {
+              <div class="send-blanked-overlay"></div>
+            }
+          </div>
+          <app-control-message-v4
+            [control]="coreForm.controls.payee"
+            [isMarginTopEnabled]="false"
+            [customMessages]="{
+              required: 'Please select a payee'
+            }"
+          />
+          @if (payeeRefreshing()) {
+            <span
+              class="mt-1.5 flex animate-pulse items-center gap-1.5 self-start"
+              aria-live="polite"
+            >
+              <span class="block h-3 w-3 rounded-full bg-v4-border-color"></span>
+              <span class="block h-3 w-40 rounded bg-v4-border-color"></span>
+            </span>
+          } @else if (visibleMissingPayeeFields().length) {
+            <button
+              type="button"
+              class="mt-1.5 inline-flex items-center gap-1.5 self-start text-[12px] font-semibold text-v4-common-yellow-color hover:opacity-80 transition-opacity"
+              [spShakeOn]="missingPayeeKey()"
+              (click)="
+                openPayeeFieldEditor(visibleMissingPayeeFields()[0].modalType)
+              "
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="13" />
+              Missing {{ visibleMissingPayeeFields()[0].label | lowercase }} — add
+            </button>
+          }
+          @if (payeeDataError(); as payeeError) {
+            <button
+              type="button"
+              class="mt-1.5 inline-flex items-center gap-1.5 self-start text-[12px] font-semibold text-v4-common-yellow-color hover:opacity-80 transition-opacity"
+              (click)="openPayeeFieldEditor()"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="13" />
+              {{ payeeError }} — edit
+            </button>
+          }
+        </div>
+
+        <!-- Payment method -->
+        <div data-field="payAs" class="flex flex-col">
+          <app-sp-payment-method-dropdown
+            class="relative block"
+            [ngClass]="isApprovedPaymentReadOnly() ? 'disable_field pointer-events-none' : ''"
+            id="send-method"
+            [methods]="sendStateService.payAsItems()"
+            [placeholder]="
+              sendStateService.payAsItems().length
+                ? 'Select or search a method'
+                : 'Select a source first'"
+            formControlName="payAs"
+            [showDefaultStar]="true"
+            [defaultItemId]="defaultPayAsId()"
+            (changeEvent)="onMethodChange($event)"
+            (starClick)="defaultPaymentQuickSetService.setMethodAsDefault($event)"
+          />
+          <app-control-message-v4
+            [control]="coreForm.controls.payAs"
+            [isMarginTopEnabled]="false"
+            [customMessages]="{
+              required: 'Please select how you would like to send'
+            }"
+          />
+        </div>
+
+      </div>
+        @if (memoConfig().visible) {
+          <div
+            data-field="memo"
+            class="mt-4"
+            [formGroup]="activeDetailsForm()"
+          >
+            <label
+              class="mb-[9px] flex items-center justify-between gap-[7px] font-semibold text-v4-main-text-color text-[14px] tracking-[-0.01em]"
+              for="shared-memo"
+            >
+              <span class="flex items-center gap-[7px]">
+                Memo
+                @if (memoRequired()) {
+                  <span class="text-v4-common-red-color">*</span>
+                }
+                <lucide-icon
+                  [img]="InfoIcon"
+                  [size]="13"
+                  class="cursor-help text-v4-subtle-text-color"
+                  matTooltip="Brief note about this payment. Example: 'Office rent' or 'Supplies'."
+                />
+              </span>
+              <span class="font-normal text-v4-subtle-text-color text-[12px]">
+                {{ memoLength() }}/{{ memoConfig().maxLength }} characters
+              </span>
+            </label>
+            <textarea
+              id="shared-memo"
+              formControlName="memo"
+              rows="2"
+              [attr.maxlength]="memoConfig().maxLength"
+              placeholder="Brief note about this payment. Example: 'Office rent' or 'Supplies'"
+              class="v4-input-style w-full resize-y min-h-[45px] max-h-24 rounded-[10px] px-3 py-2.5 text-[13px] font-peridot text-v4-main-text-color placeholder-v4-subtle-text-color placeholder:font-peridot transition-colors"
+            ></textarea>
+            <app-control-message-v4
+              [control]="activeDetailsForm().controls.memo"
+              [isMarginTopEnabled]="false"
+              [customMessages]="{
+                required: 'Please enter a memo'
+              }"
+            />
+          </div>
+        }
+
+        @if (isInternational()) {
+          <app-international-payment />
+        }
+
+        <!--"Check" is a family of deliveries; the tile picks the real method. -->
+        @if (sendStateService.isCheckFlow()) {
+          <app-check-delivery
+            (deliverySelected)="onCheckDeliveryChange($event)"
+            (addBankRequested)="openAddBankAccount()"
+          />
+        }
+    </section>
+
+        <!-- Additional details — the pay-from source's own child lives here -->
+        <section
+          class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-3 shadow-sm"
+        >
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              class="flex items-center gap-2 flex-1 text-left"
+              (click)="toggleDetails()"
+            >
+              <span class="text-sm font-semibold text-v4-main-text-color"
+                >Additional details</span
+              >
+            </button>
+            <div class="flex items-center gap-2">
+              @if (
+                showsDetailTools() &&
+                !isCheckScheduled() &&
+                !isInternational() &&
+                !isApprovedPaymentReadOnly()
+              ) {
+                <button
+                  type="button"
+                  class="send-tool-chip"
+                  matTooltip="Add attachments to the payment"
+                  (click)="openAttachments()"
+                >
+                  <lucide-icon [img]="PaperclipIcon" [size]="14"></lucide-icon>
+                  Attach
+                  @if (visibleAttachmentCount()) {
+                    <span class="send-tool-badge">{{
+                      visibleAttachmentCount()
+                    }}</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="send-tool-chip"
+                  matTooltip="Add comments to the payment"
+                  (click)="openComments()"
+                >
+                  <lucide-icon
+                    [img]="MessageSquareIcon"
+                    [size]="14"
+                  ></lucide-icon>
+                  Comment
+                  @if (commentCount()) {
+                    <span class="send-tool-badge">{{ commentCount() }}</span>
+                  }
+                </button>
+                @if (!hidesRemittance()) {
+                  <button
+                    type="button"
+                    class="send-tool-chip"
+                    [class.is-off]="remittanceComingSoon()"
+                    [attr.aria-disabled]="remittanceComingSoon() || null"
+                    [matTooltip]="
+                      remittanceComingSoon()
+                        ? 'Coming soon'
+                        : 'Add remittance to the payment'"
+                    (click)="openRemittance()"
+                  >
+                    <lucide-icon
+                      [img]="ReceiptTextIcon"
+                      [size]="14"
+                    ></lucide-icon>
+                    Remittance
+                    @if (remittanceCount()) {
+                      <span
+                        class="send-tool-badge"
+                        [attr.aria-label]="
+                          remittanceCount() + ' remittance line items'"
+                      >
+                        {{ remittanceCount() }}
+                      </span>
+                    }
+                  </button>
+                }
+              }
+              <button
+                type="button"
+                class="w-8 h-8 grid place-items-center rounded-lg text-v4-tertiary-text-color"
+                (click)="toggleDetails()"
+              >
+                <lucide-icon
+                  [img]="ChevronDownIcon"
+                  [size]="18"
+                  class="transition-transform"
+                  [class.rotate-180]="detailsOpen()"
+                ></lucide-icon>
+              </button>
+            </div>
+          </div>
+
+          @if (detailsOpen()) {
+            <div class="mt-4">
+              @switch (sendStateService.sourceId()) {
+                @case ("wallet") {
+                  @if (isInternational()) {
+                    <app-international-additional-details />
+                  } @else {
+                    <app-wallet-payment
+                      (shippingTypeChange)="onShippingTypeChange()"
+                      [isApprovedReadOnly]="isApprovedPaymentReadOnly()"
+                    />
+                  }
+                }
+                @case ("card") {
+                  <app-card-payment
+                    (shippingTypeChange)="onShippingTypeChange()"
+                  />
+                }
+                @case ("bankaccount") {
+                  @if (isBankCheck()) {
+                    <app-bank-check />
+                  } @else {
+                    <app-bank-payment
+                      [isApprovedReadOnly]="isApprovedPaymentReadOnly()"
+                    />
+                  }
+                }
+                @default {
+                  <p class="text-sm text-v4-tertiary-text-color">
+                    This payment source is not available yet.
+                  </p>
+                }
+              }
+            </div>
+          }
+        </section>
+        @if (showsExportCheck()) {
+          <app-export-check-section />
+        }
+
+      <!-- 4 · Action bar -->
+      <section
+        class="sticky bottom-0 z-10 bg-v4-secondary-background-color backdrop-blur border border-v4-border-color rounded-xl p-4 flex flex-col gap-3 shadow-sm"
+      >
+        <div
+          class="grid grid-cols-1 gap-3"
+          [ngClass]="hidesSave() ? '' : 'sm:grid-cols-[1fr_1.4fr]'"
+        >
+          @if (!hidesSave()) {
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="saveLabel()"
+              [width]="'100%'"
+              [disabled]="paymentConfirmService.processing() || payeeRefreshing()"
+              [loading]="saveLoading()"
+              (clickEvent)="onSave()"
+              iconPosition="start"
+              [lucideIcon]="DollarSignIcon"
+            />
+          }
+          <!-- A scheduled check has already been handed to the queue. -->
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="confirmLabel()"
+            [width]="'100%'"
+            [disabled]="
+              paymentConfirmService.processing() ||
+              isCheckScheduled() ||
+              isLimitLocked() ||
+              isInternationalPrefilling() ||
+              payeeRefreshing()"||
+              paymentsService.isGatewayTypeLoading()
+            [loading]="confirmLoading() "
+            (clickEvent)="onConfirm()"
+            iconPosition="start"
+            [lucideIcon]="CircleCheckIcon"
+          />
+        </div>
+        <app-payment-secured-badge />
+      </section>
+  </form>

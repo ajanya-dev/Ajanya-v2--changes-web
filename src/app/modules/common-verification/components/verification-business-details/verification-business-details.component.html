@@ -1,0 +1,2437 @@
+<div class="verification_body">
+  <div class="main_section" [ngStyle]="isModal && { padding: '20px' }">
+    <div class="heading" *ngIf="currentStep !== 'businessOwnerConfirm'">
+      <h3>
+        {{
+          currentStep === "businessOwnerList"
+            ? "Business Owners"
+            : "Business Verification"
+        }}
+      </h3>
+    </div>
+
+    <!-------------------------------------------------------------------------------------
+                                     DETAILS SECTION START
+       -------------------------------------------------------------------------------------->
+    <div class="form_section" *ngIf="currentStep === 'details'">
+      <h4>Enter Your Business Details</h4>
+
+      <form [formGroup]="businessForm" autocomplete="off">
+        <div class="input_group">
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              autocomplete="new-businessName"
+              (keypress)="utils.prevantSpecialChar($event)"
+              formControlName="businessName"
+            />
+            <span class="floating_label_field"
+              >Business Legal Name <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="businessForm.controls.businessName"
+            ></app-control-message>
+          </div>
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              autocomplete="new-website"
+              formControlName="website"
+            />
+            <span class="floating_label_field">Website</span>
+            <app-control-message
+              [control]="businessForm.controls.website"
+            ></app-control-message>
+          </div>
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              autocomplete="new-businessPhoneNumber"
+              mask="(000) 000-0000"
+              (keypress)="utils.numberOnly($event, 'numeric')"
+              formControlName="businessPhoneNumber"
+            />
+            <span class="floating_label_field">Business Phone Number</span>
+            <app-control-message
+              [control]="businessForm.controls.businessPhoneNumber"
+            ></app-control-message>
+          </div>
+          <div class="single_input">
+            <input
+              type="text"
+              autocomplete="new-businessDescription"
+              class="input_style"
+              placeholder=" "
+              formControlName="businessDescription"
+            />
+            <span class="floating_label_field">Business Description</span>
+            <app-control-message
+              [control]="businessForm.controls.businessDescription"
+            ></app-control-message>
+          </div>
+          <div class="single_input">
+            <select
+              class="input_style"
+              formControlName="monthlyRevenue"
+              (change)="addActive(monthlyRevenueVariable)"
+            >
+              <option value="" selected disabled>Monthly Revenue</option>
+              <option *ngFor="let type of monthlyRevenue" [value]="type.key">
+                {{ type.value }}
+              </option>
+            </select>
+            <span class="small_floating_label" #monthlyRevenueVariable
+              >Monthly Revenue <span class="required">*</span>
+            </span>
+            <app-control-message
+              [control]="businessForm.controls.monthlyRevenue"
+            ></app-control-message>
+          </div>
+
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              autocomplete="new-businessAddress"
+              formControlName="businessAddress"
+              #businessAddress
+              (focus)="loadGoogleAddress(businessAddress)"
+            />
+            <span class="floating_label_field"
+              >Business Address <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="businessForm.controls.businessAddress"
+            ></app-control-message>
+            <div
+              class="single_input mt-3"
+              *ngIf="businessForm.controls.businessAddress.value"
+            >
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="businessAddress2"
+              />
+              <span class="floating_label_field">Address Line 2</span>
+              <app-control-message
+                [control]="businessForm.controls.businessAddress"
+              ></app-control-message>
+            </div>
+          </div>
+
+          <ng-container *ngIf="businessForm.controls.businessAddress.value">
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                autocomplete="new-businessCity"
+                placeholder=" "
+                formControlName="businessCity"
+              />
+              <span class="floating_label_field"
+                >City <span class="required">*</span></span
+              >
+              <app-control-message
+                [control]="businessForm.controls.businessCity"
+              ></app-control-message>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                autocomplete="new-businessState"
+                placeholder=" "
+                formControlName="businessState"
+              />
+              <span class="floating_label_field"
+                >State <span class="required">*</span></span
+              >
+              <app-control-message
+                [control]="businessForm.controls.businessState"
+              ></app-control-message>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                autocomplete="new-businessZip"
+                placeholder=" "
+                formControlName="businessZip"
+              />
+              <span class="floating_label_field"
+                >Zip <span class="required">*</span></span
+              >
+              <app-control-message
+                [control]="businessForm.controls.businessZip"
+              ></app-control-message>
+            </div>
+
+            <div class="single_input">
+              <small class="small_floating_label" #businessCountry
+                >Country<span class="required">*</span></small
+              >
+              <select
+                name=""
+                id=""
+                class="input_style"
+                formControlName="businessCountry"
+                (change)="selectBenfCountry(businessCountry)"
+              >
+                <option value="" disabled selected>Country</option>
+                <option
+                  [value]="item.key"
+                  *ngFor="let item of allowedcountries | keyvalue"
+                >
+                  {{ item.value }}
+                </option>
+              </select>
+              <app-control-message
+                [control]="businessForm.controls.businessCountry"
+              >
+              </app-control-message>
+            </div>
+          </ng-container>
+          <div class="single_input">
+            <select
+              class="input_style"
+              formControlName="entityType"
+              (change)="addActive(entity)"
+            >
+              <option value="" selected disabled>Entity Type</option>
+              <option *ngFor="let type of types.entity" [value]="type.key">
+                {{ type.value }}
+              </option>
+            </select>
+            <span class="small_floating_label" #entity
+              >Entity Type <span class="required">*</span>
+            </span>
+            <app-control-message
+              [control]="businessForm.controls.entityType"
+            ></app-control-message>
+          </div>
+          <div class="single_input">
+            <input
+              type="date"
+              class="input_style"
+              formControlName="formationDate"
+              placeholder=" "
+              [max]="newDate"
+            />
+            <span class="floating_label_field"
+              >Formation Date <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="businessForm.controls.formationDate"
+            ></app-control-message>
+          </div>
+
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              formControlName="businessdba"
+            />
+            <span class="floating_label_field">DBA</span>
+          </div>
+
+          <div class="single_input">
+            <select
+              class="input_style"
+              formControlName="industryType"
+              (change)="addActive(indusType)"
+            >
+              <option value="" selected disabled>Industry Type</option>
+              <option *ngFor="let type of types.industry" [value]="type.key">
+                {{ type.value }}
+              </option>
+            </select>
+            <span class="small_floating_label" #indusType>Industry Type</span>
+            <app-control-message
+              [control]="businessForm.controls.industryType"
+            ></app-control-message>
+          </div>
+
+          <div
+            class="single_input"
+            *ngIf="businessForm.controls.entityType.value !== 'soleProprietor'"
+          >
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              formControlName="ein"
+              mask="00-0000000"
+            />
+            <span class="floating_label_field"
+              >EIN <span formate>(xx-xxxxxxx)</span>
+              <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="businessForm.controls.ein"
+            ></app-control-message>
+          </div>
+
+          <div
+            class="single_input"
+            *ngIf="businessForm.controls.entityType.value === 'soleProprietor'"
+          >
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              formControlName="ein"
+              mask="000-00-0000"
+            />
+            <span class="floating_label_field"
+              >SSN<span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="businessForm.controls.ein"
+            ></app-control-message>
+          </div>
+        </div>
+      </form>
+    </div>
+    <!-------------------------------------------------------------------------------------
+                                     DETAILS SECTION END
+     ------------------------------------------------------------------------------------->
+
+    <!-------------------------------------------------------------------------------------
+                                     DOCUMENT SECTION START
+    -------------------------------------------------------------------------------------->
+    <div class="form_section" *ngIf="currentStep === 'doc'">
+      <h4>Upload Your Business Documents</h4>
+
+      <div class="upload_document">
+        <div>
+          <div
+            class="document_select"
+            (click)="
+              chooseFile(
+                formationInput,
+                isSoleProprietor ? 'bankStatement' : 'formation'
+              )
+            "
+            [matTooltip]="
+              isSoleProprietor
+                ? 'Bank statement of your business transactions.'
+                : 'The formation document outlines the foundational details of your entity, such as its structure, purpose, and key stakeholders.'
+            "
+          >
+            <ng-container
+              *ngIf="
+                !documents['formation']?.name &&
+                !documents['bankStatement']?.name
+              "
+            >
+              <fa-icon class="text-2xl" [icon]="['fas', 'plus']"></fa-icon>
+              <span class="label">{{
+                isSoleProprietor ? "Bank statement" : "Add Formation Document"
+              }}</span>
+            </ng-container>
+
+            <ng-container
+              *ngIf="
+                documents['formation']?.name || documents['bankStatement']?.name
+              "
+            >
+              <span class="label">{{
+                documents["formation"].name ?? documents["bankStatement"]?.name
+              }}</span>
+              <fa-icon
+                class="text-secondary-text-color"
+                [icon]="['fas', 'trash-can']"
+                (click)="
+                  removeFile(
+                    isSoleProprietor ? 'bankStatement' : 'formation',
+                    formationInput
+                  );
+                  $event.stopPropagation()
+                "
+              ></fa-icon>
+            </ng-container>
+
+            <input
+              type="file"
+              class="file_input"
+              #formationInput
+              (change)="
+                filePicked(
+                  $event,
+                  isSoleProprietor ? 'bankStatement' : 'formation'
+                )
+              "
+              accept=".pdf, .xls, .xlsx, .rtf, .doc, .docx, .txt, .jpg, .png"
+            />
+            <span
+              class="error_msg"
+              *ngIf="docError.formation || docError.bankStatement"
+              >This field is required</span
+            >
+          </div>
+
+          <div
+            class="document_select"
+            (click)="
+              chooseFile(ownerShip, isSoleProprietor ? 'otherDoc' : 'ownerShip')
+            "
+            [matTooltip]="
+              isSoleProprietor
+                ? ''
+                : 'The CP-575 is a notice from the Internal Revenue Service confirming that you have been granted an EIN (Employer Identification Number).'
+            "
+          >
+            <ng-container
+              *ngIf="
+                !documents['ownerShip']?.name && !documents['otherDoc']?.name
+              "
+            >
+              <fa-icon class="text-2xl" [icon]="['fas', 'plus']"></fa-icon>
+              <span class="label">{{
+                isSoleProprietor
+                  ? "Any other document"
+                  : "EIN IRS Letter / CP 575 Form Or Any other Docs"
+              }}</span>
+            </ng-container>
+
+            <ng-container
+              *ngIf="
+                documents['ownerShip']?.name || documents['otherDoc']?.name
+              "
+            >
+              <span class="label">{{
+                documents["ownerShip"].name ?? documents["otherDoc"]?.name
+              }}</span>
+              <fa-icon
+                class="text-secondary-text-color"
+                [icon]="['fas', 'trash-can']"
+                (click)="
+                  removeFile(
+                    isSoleProprietor ? 'otherDoc' : 'ownerShip',
+                    ownerShip
+                  );
+                  $event.stopPropagation()
+                "
+              ></fa-icon>
+            </ng-container>
+
+            <input
+              type="file"
+              class="file_input"
+              #ownerShip
+              (change)="
+                filePicked($event, isSoleProprietor ? 'otherDoc' : 'ownerShip')
+              "
+              accept=".pdf, .xls, .xlsx, .rtf, .doc, .docx, .txt, .jpg, .png"
+            />
+            <span
+              class="error_msg"
+              *ngIf="docError.ownerShip || docError.otherDoc"
+              >This field is required</span
+            >
+          </div>
+        </div>
+
+        <div class="supporting_doc" *ngIf="!isSoleProprietor">
+          <div (click)="addSupportingDoc = !addSupportingDoc">
+            <span>Add supporting document</span>
+
+            <div>
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 11 11"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6.16898 5.62425H5.66898V6.12425V9.86076C5.66898 9.88692 5.64498 9.92147 5.5996 9.92147C5.55354 9.92147 5.53023 9.88741 5.53023 9.86076V6.12425V5.62425H5.03023H1.23441C1.18849 5.62425 1.16504 5.58963 1.16504 5.564C1.16504 5.53824 1.18958 5.50329 1.23441 5.50329H5.03023H5.53023V5.00329V1.26679C5.53023 1.24116 5.55368 1.20654 5.5996 1.20654C5.64553 1.20654 5.66898 1.24116 5.66898 1.26679V5.00329V5.50329H6.16898H9.9648C10.0103 5.50329 10.0342 5.5377 10.0342 5.56377C10.0342 5.59083 10.0116 5.62425 9.9648 5.62425H6.16898Z"
+                  fill="#385F9B"
+                  stroke="#3378FF"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-4" *ngIf="addSupportingDoc">
+            <div class="single_input">
+              <select
+                class="input_style"
+                (change)="addActive(fileTypeSpan)"
+                [(ngModel)]="fileType"
+              >
+                <option value="" disabled>Select File Type</option>
+                <option *ngFor="let item of supportDocTypes">
+                  {{ item.value }}
+                </option>
+              </select>
+              <span class="small_floating_label" #fileTypeSpan
+                >Select File Type<span class="required">*</span>
+              </span>
+            </div>
+
+            <div
+              class="document_select"
+              (click)="chooseFile(supportingDoc, 'supportingDocument')"
+              *ngIf="fileType"
+            >
+              <ng-container *ngIf="!documents['supportingDocument']?.name">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M19.3299 10.0075C19.3299 10.5947 18.85 11.0672 18.2534 11.0672H11.0769V18.1316C11.0769 18.7166 10.5947 19.1917 10.0004 19.1917C9.40608 19.1917 8.92391 18.7188 8.92391 18.1316V11.0672H1.74738C1.15307 11.0672 0.670898 10.593 0.670898 10.0079C0.670898 9.42468 1.15307 8.94784 1.74738 8.94784H8.92391V1.88344C8.92391 1.29842 9.40608 0.824219 10.0004 0.824219C10.5947 0.824219 11.0769 1.29842 11.0769 1.88344V8.94784H18.2534C18.85 8.94784 19.3299 9.42468 19.3299 10.0075Z"
+                    fill="black"
+                  />
+                </svg>
+                <span class="label">Add Supporting Document</span>
+              </ng-container>
+
+              <ng-container *ngIf="documents['supportingDocument']?.name">
+                <span class="label">{{
+                  documents["supportingDocument"].name
+                }}</span>
+
+                <svg
+                  (click)="
+                    removeFile('supportingDocument', supportingDoc);
+                    $event.stopPropagation()
+                  "
+                  width="14"
+                  height="17"
+                  viewBox="0 0 14 17"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4.56872 0.561426C4.72542 0.220801 5.04752 0.00830078 5.39863 0.00830078H8.89238C9.2435 0.00830078 9.5656 0.220801 9.72229 0.561426L9.93122 1.0083H12.7169C13.2306 1.0083 13.6455 1.45518 13.6455 2.0083C13.6455 2.56143 13.2306 3.0083 12.7169 3.0083H1.57408C1.06046 3.0083 0.645508 2.56143 0.645508 2.0083C0.645508 1.45518 1.06046 1.0083 1.57408 1.0083H4.35979L4.56872 0.561426ZM1.57408 4.0083H12.7169V14.0083C12.7169 15.1114 11.8841 16.0083 10.8598 16.0083H3.43122C2.40689 16.0083 1.57408 15.1114 1.57408 14.0083V4.0083ZM4.35979 6.0083C4.10444 6.0083 3.89551 6.2333 3.89551 6.5083V13.5083C3.89551 13.7833 4.10444 14.0083 4.35979 14.0083C4.61515 14.0083 4.82408 13.7833 4.82408 13.5083V6.5083C4.82408 6.2333 4.61515 6.0083 4.35979 6.0083ZM7.14551 6.0083C6.89015 6.0083 6.68122 6.2333 6.68122 6.5083V13.5083C6.68122 13.7833 6.89015 14.0083 7.14551 14.0083C7.40086 14.0083 7.60979 13.7833 7.60979 13.5083V6.5083C7.60979 6.2333 7.40086 6.0083 7.14551 6.0083ZM9.93122 6.0083C9.67587 6.0083 9.46694 6.2333 9.46694 6.5083V13.5083C9.46694 13.7833 9.67587 14.0083 9.93122 14.0083C10.1866 14.0083 10.3955 13.7833 10.3955 13.5083V6.5083C10.3955 6.2333 10.1866 6.0083 9.93122 6.0083Z"
+                    fill="#818181"
+                  />
+                </svg>
+              </ng-container>
+
+              <input
+                type="file"
+                class="file_input"
+                #supportingDoc
+                (change)="filePicked($event, 'supportingDocument')"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------
+                                       DOCUMENT SECTION END
+      ------------------------------------------------------------------------------------->
+
+    <!------------------------------------------------------------------------------------
+                              BUSINESS OWNERS CONFIRM SECTION START
+    -------------------------------------------------------------------------------------->
+    <div
+      class="ownership-business"
+      *ngIf="currentStep === 'businessOwnerConfirm'"
+    >
+      <div class="back_arrow" (click)="currentStep = 'doc'">
+        <i class="fa-regular fa-arrow-left-long"></i>
+      </div>
+
+      <div class="header">
+        <h4>Do you have owners with more than 25% of</h4>
+        <h4>ownership for this business?.</h4>
+      </div>
+
+      <div class="image">
+        <img src="../../../../assets/icon/svg/chrctr_with_business_box.svg" />
+      </div>
+
+      <div
+        class="action_buttons"
+        [ngClass]="{ disable: loading || loadingSourceAction }"
+      >
+        <button class="back" (click)="submitDetails()">
+          {{ loadingSourceAction || loading ? "Loading" : "No" }}
+        </button>
+        <button
+          class="next flex items-center justify-center"
+          (click)="addOwnershipDetails()"
+        >
+          Yes
+        </button>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------
+                                 BUSINESS OWNERS CONFIRM SECTION END
+      ------------------------------------------------------------------------------------->
+
+    <!------------------------------------------------------------------------------------
+                                     BUSINESS OWNERS LIST SECTION START
+    -------------------------------------------------------------------------------------->
+    <div class="form_section" *ngIf="currentStep === 'businessOwnerList'">
+      <div class="business_owners_list">
+        <div
+          class="list_container"
+          [ngClass]="{ disable: loading || loadingSourceAction }"
+        >
+          <ng-container *ngFor="let item of businessOwners; let i = index">
+            <div class="single">
+              <div class="left">
+                <div class="icon">
+                  <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="label">
+                  <p>
+                    {{ item.firstName + " " + item.lastName }}
+                    <span>{{ item.ownershipPercentage }}%</span>
+                  </p>
+                </div>
+              </div>
+              <div class="right">
+                <i
+                  class="fa-solid fa-pen-to-square"
+                  (click)="addOwnershipDetails(item, i)"
+                ></i>
+                <i
+                  class="fa-solid fa-xmark"
+                  (click)="deleteBusinessOwner(i)"
+                ></i>
+              </div>
+            </div>
+          </ng-container>
+          <div class="add_btn" (click)="addOwnershipDetails()">
+            <i class="fa-solid fa-plus"></i>
+            <p>Add</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------
+                                     BUSINESS OWNERS LIST SECTION END
+    -------------------------------------------------------------------------------------->
+
+    <!-------------------------------------- ACTION BUTTONS START ----------------------------------------------->
+    <div
+      class="action_buttons"
+      [ngClass]="{
+        'top-1 !relative':
+          currentStep === 'details' &&
+          businessForm.controls.businessAddress.value
+      }"
+      *ngIf="currentStep !== 'businessOwnerConfirm'"
+      [ngStyle]="isModal && { bottom: '-55px' }"
+      [ngClass]="{ disable: loading || loadingSourceAction }"
+    >
+      <button
+        class="back"
+        *ngIf="currentStep === 'doc' || currentStep === 'businessOwnerList'"
+        (click)="goBack()"
+      >
+        {{ currentStep === "businessOwnerList" ? "Cancel" : "Back" }}
+      </button>
+      <button
+        class="next flex items-center justify-center"
+        (click)="nextStep()"
+      >
+        <span
+          class="loadingSpinner"
+          *ngIf="loadingSourceAction || loading"
+        ></span>
+        {{
+          loadingSourceAction || loading
+            ? "Loading"
+            : currentStep === "businessOwnerList"
+              ? "Submit"
+              : "Next"
+        }}
+      </button>
+    </div>
+    <!--------------------------------------   ACTION BUTTONS END   ----------------------------------------------->
+  </div>
+
+  <!--------------------------------------   RIGHT SIDE IMAGE SECTION START   ----------------------------------------------->
+  <div class="img_section" *ngIf="currentStep !== 'businessOwnerConfirm'">
+    <ng-container *ngIf="currentStep === 'details'">
+      <svg
+        width="256"
+        height="213"
+        viewBox="0 0 256 213"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g clip-path="url(#clip0_553_684)">
+          <path
+            d="M117.096 183.585H112.701V183.712H117.096V183.585Z"
+            fill="#EBEBEB"
+          />
+          <path
+            d="M57.0902 37.0619C56.5587 37.0534 56.0411 37.2329 55.6285 37.5688C55.7121 37.1096 55.7121 36.6391 55.6285 36.1799C55.4049 35.0887 54.8222 34.1043 53.9739 33.3846C53.1256 32.6648 52.0607 32.2514 50.9499 32.2106C50.3254 32.2026 49.7103 32.3637 49.1696 32.677C48.7586 31.9209 48.158 31.2853 47.4272 30.8328C46.6963 30.3803 45.8604 30.1266 45.0019 30.0967C44.5061 30.0793 44.0131 30.1769 43.5612 30.3818C43.1093 30.5867 42.7106 30.8934 42.3964 31.278C42.0821 31.6626 41.8607 32.1148 41.7494 32.5993C41.6381 33.0837 41.6399 33.5874 41.7547 34.071C41.7891 34.2423 41.833 34.4116 41.8862 34.578C41.538 34.485 41.1793 34.4373 40.819 34.436C40.3233 34.4186 39.8302 34.5162 39.3783 34.7211C38.9264 34.926 38.5278 35.2327 38.2135 35.6173C37.8993 36.002 37.6778 36.4541 37.5665 36.9386C37.4552 37.423 37.457 37.9267 37.5718 38.4104C37.7946 39.502 38.377 40.4868 39.2255 41.2067C40.074 41.9266 41.1394 42.3397 42.2504 42.3796H58.0462C58.3791 42.3917 58.7103 42.3265 59.014 42.1893C59.3177 42.0521 59.5857 41.8464 59.7971 41.5884C60.0086 41.3304 60.1577 41.0269 60.233 40.7017C60.3083 40.3764 60.3077 40.0381 60.2312 39.7132C60.0781 38.9832 59.6857 38.3257 59.1165 37.8452C58.5472 37.3647 57.8339 37.089 57.0902 37.0619V37.0619Z"
+            fill="#F5F5F5"
+          />
+          <path
+            d="M88.9604 59.9043V55.0073H79.0874V59.9043H62.71V175.109H91.3478V59.9043H88.9604Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M76.1884 66.0889H71.96V70.3268H76.1884V66.0889Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M82.0975 66.0889H77.8691V70.3268H82.0975V66.0889Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 72.481H66.0527V76.7189H70.2811V72.481Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M76.1884 72.481H71.96V76.7189H76.1884V72.481Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 72.481H83.7754V76.7189H88.0038V72.481Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 78.8784H66.0527V83.1164H70.2811V78.8784Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M82.0975 78.8789H77.8691V83.1168H82.0975V78.8789Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 78.8784H83.7754V83.1164H88.0038V78.8784Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 91.6636H66.0527V95.9015H70.2811V91.6636Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M82.0975 91.6636H77.8691V95.9015H82.0975V91.6636Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 98.0557H66.0527V102.294H70.2811V98.0557Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M76.1884 98.0562H71.96V102.294H76.1884V98.0562Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 98.0557H83.7754V102.294H88.0038V98.0557Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 129.982H66.0527V134.22H70.2811V129.982Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M76.1884 129.982H71.96V134.22H76.1884V129.982Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 129.982H83.7754V134.22H88.0038V129.982Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 136.375H66.0527V140.612H70.2811V136.375Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M82.0975 136.375H77.8691V140.612H82.0975V136.375Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 136.375H83.7754V140.612H88.0038V136.375Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 149.165H66.0527V153.402H70.2811V149.165Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M82.0975 149.165H77.8691V153.402H82.0975V149.165Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 155.557H66.0527V159.795H70.2811V155.557Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M76.1884 155.557H71.96V159.795H76.1884V155.557Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 155.557H83.7754V159.795H88.0038V155.557Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0038 104.453H83.7754V108.691H88.0038V104.453Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 110.846H66.0527V115.084H70.2811V110.846Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M76.1884 110.846H71.96V115.084H76.1884V110.846Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M82.1293 117.31L77.9014 117.249L77.8409 121.487L82.0688 121.547L82.1293 117.31Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M88.0336 117.395L83.8057 117.334L83.7452 121.571L87.9731 121.632L88.0336 117.395Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M70.2811 123.63H66.0527V127.868H70.2811V123.63Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M95.6922 82.7974H103.603H116.728V175.109H93.7803V82.7974H95.6922Z"
+            fill="#EBEBEB"
+          />
+          <path
+            d="M105.93 91.1514H109.318V87.7549H105.93V91.1514Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M101.195 91.1514H104.584V87.7549H101.195V91.1514Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 96.2764H114.047V92.8799H110.658V96.2764Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M105.93 96.2764H109.318V92.8799H105.93V96.2764Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 96.2764H99.8496V92.8799H96.4608V96.2764Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 101.396H114.047V98.0001H110.658V101.396Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M101.195 101.396H104.584V98.0001H101.195V101.396Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 101.396H99.8496V98.0001H96.4608V101.396Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 111.646H114.047V108.25H110.658V111.646Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M101.195 111.647H104.584V108.251H101.195V111.647Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 116.767H114.047V113.37H110.658V116.767Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M105.93 116.767H109.318V113.37H105.93V116.767Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 116.767H99.8496V113.37H96.4608V116.767Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 142.346H114.047V138.95H110.658V142.346Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M105.93 142.346H109.318V138.95H105.93V142.346Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 142.346H99.8496V138.95H96.4608V142.346Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 147.472H114.047V144.075H110.658V147.472Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M101.195 147.471H104.584V144.075H101.195V147.471Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 147.472H99.8496V144.075H96.4608V147.472Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 157.716H114.047V154.32H110.658V157.716Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M101.195 157.716H104.584V154.32H101.195V157.716Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 162.836H114.047V159.44H110.658V162.836Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M105.93 162.836H109.318V159.44H105.93V162.836Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 162.836H99.8496V159.44H96.4608V162.836Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4608 121.892H99.8496V118.495H96.4608V121.892Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 127.012H114.047V123.615H110.658V127.012Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M105.93 127.012H109.318V123.615H105.93V127.012Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M101.224 132.196L104.612 132.147L104.564 128.751L101.175 128.799L101.224 132.196Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M96.4827 132.26L99.8711 132.211L99.8226 128.815L96.4342 128.863L96.4827 132.26Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M110.658 137.262H114.047V133.865H110.658V137.262Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M52.0272 79.5986H58.916V72.6943H52.0272V79.5986Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 79.5986H51.1162V72.6943H44.2274V79.5986Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M52.0272 87.314H58.916V80.4096H52.0272V87.314Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 87.314H51.1162V80.4096H44.2274V87.314Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M52.0272 95.0293H58.916V88.1249H52.0272V95.0293Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 95.0293H51.1162V88.1249H44.2274V95.0293Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M52.0272 102.74H58.916V95.8354H52.0272V102.74Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M44.2274 102.74H51.1162V95.8354H44.2274V102.74Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M52.0272 110.455H58.916V103.551H52.0272V110.455Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 110.455H51.1162V103.551H44.2274V110.455Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M52.0272 118.161H58.916V111.256H52.0272V118.161Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 118.161H51.1162V111.256H44.2274V118.161Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M52.0272 125.876H58.916V118.972H52.0272V125.876Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M44.2274 125.876H51.1162V118.972H44.2274V125.876Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M52.0272 133.591H58.916V126.687H52.0272V133.591Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 133.591H51.1162V126.687H44.2274V133.591Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M52.0272 141.302H58.916V134.398H52.0272V141.302Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 141.302H51.1162V134.398H44.2274V141.302Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M52.0272 149.012H58.916V142.108H52.0272V149.012Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M44.2274 149.012H51.1162V142.108H44.2274V149.012Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M52.0272 156.728H58.916V149.823H52.0272V156.728Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M44.2274 156.728H51.1162V149.823H44.2274V156.728Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M52.0272 164.438H58.916V157.534H52.0272V164.438Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M44.2274 164.438H51.1162V157.534H44.2274V164.438Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 97.7969H132.149V92.2054H126.571V97.7969Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M120.253 97.7969H125.832V92.2054H120.253V97.7969Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 104.038H132.149V98.4462H126.571V104.038Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M120.253 104.038H125.832V98.4462H120.253V104.038Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 110.288H132.149V104.696H126.571V110.288Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M120.253 110.288H125.832V104.696H120.253V110.288Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 116.528H132.149V110.937H126.571V116.528Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M120.253 116.528H125.832V110.937H120.253V116.528Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 122.769H132.149V117.177H126.571V122.769Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M120.253 122.769H125.832V117.177H120.253V122.769Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M126.571 129.014H132.149V123.422H126.571V129.014Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M120.253 129.014H125.832V123.422H120.253V129.014Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 135.254H132.149V129.663H126.571V135.254Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M120.253 135.254H125.832V129.663H120.253V135.254Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 141.5H132.149V135.909H126.571V141.5Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M120.253 141.5H125.832V135.909H120.253V141.5Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 147.74H132.149V142.148H126.571V147.74Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M120.253 147.74H125.832V142.148H120.253V147.74Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 153.985H132.149V148.394H126.571V153.985Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M120.253 153.985H125.832V148.394H120.253V153.985Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M126.571 160.226H132.149V154.634H126.571V160.226Z"
+            fill="#F0F0F0"
+          />
+          <path
+            d="M120.253 160.226H125.832V154.634H120.253V160.226Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M126.571 166.471H132.149V160.88H126.571V166.471Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M120.253 166.471H125.832V160.88H120.253V166.471Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M115.736 39.8549C115.087 39.8439 114.455 40.0629 113.951 40.4734C114.06 39.9126 114.06 39.336 113.951 38.7752C113.675 37.4426 112.96 36.2413 111.922 35.3637C110.884 34.486 109.583 33.9826 108.225 33.934C107.463 33.9251 106.712 34.1212 106.051 34.5017C105.545 33.5783 104.809 32.8023 103.914 32.2496C103.02 31.6969 101.997 31.3864 100.947 31.3486C98.2665 31.3486 96.4912 33.5284 96.9717 36.2101C97.0124 36.43 97.0682 36.6468 97.1386 36.859C96.7112 36.7443 96.271 36.6847 95.8286 36.6815C93.153 36.6815 91.3726 38.8563 91.8581 41.543C92.1303 42.8785 92.8422 44.0837 93.8795 44.9653C94.9168 45.8468 96.2195 46.3537 97.5786 46.4045H116.91C117.317 46.4185 117.722 46.3382 118.093 46.1699C118.465 46.0015 118.792 45.7497 119.05 45.4339C119.309 45.118 119.491 44.7468 119.583 44.3489C119.675 43.9511 119.674 43.5373 119.58 43.1398C119.401 42.2389 118.925 41.4247 118.227 40.8287C117.53 40.2327 116.652 39.8897 115.736 39.8549V39.8549Z"
+            fill="#FAFAFA"
+          />
+          <path
+            d="M111.443 45.5635H93.7754V62.0235H111.443V45.5635Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.3"
+            d="M111.443 45.5635H93.7754V62.0235H111.443V45.5635Z"
+            fill="white"
+          />
+          <path
+            d="M119.281 45.5635H110.45V62.0235H119.281V45.5635Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M105.378 48.7925H99.8291V62.0234H105.378V48.7925Z"
+            fill="#263238"
+          />
+          <path
+            d="M101.215 48.7925H99.8291V62.0234H101.215V48.7925Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M100.573 59.8286H54.5615V190.819H100.573V59.8286Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.6"
+            d="M100.573 59.8286H54.5615V190.819H100.573V59.8286Z"
+            fill="white"
+          />
+          <path
+            d="M99.8846 59.8286V79.1984H89.7334V83.4921H99.8846V100.094H89.7334V104.388H99.8846V120.99H89.7334V125.283H99.8846V141.885H89.7334V146.179H99.8846V162.781H89.7334V167.075H99.8846V190.819H121.639V59.8286H99.8846Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.2"
+            d="M99.8846 59.8286V79.1984H89.7334V83.4921H99.8846V100.094H89.7334V104.388H99.8846V120.99H89.7334V125.283H99.8846V141.885H89.7334V146.179H99.8846V162.781H89.7334V167.075H99.8846V190.819H121.639V59.8286H99.8846Z"
+            fill="white"
+          />
+          <path
+            d="M90.3041 162.781H48.1162V167.074H90.3041V162.781Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M90.3041 141.885H48.1162V146.179H90.3041V141.885Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M90.3041 120.99H48.1162V125.283H90.3041V120.99Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M90.3041 100.094H48.1162V104.388H90.3041V100.094Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M90.3041 79.1987H48.1162V83.4924H90.3041V79.1987Z"
+            fill="#004a7c"
+          />
+          <g opacity="0.4">
+            <path
+              d="M90.3041 162.781H48.1162V167.074H90.3041V162.781Z"
+              fill="white"
+            />
+            <path
+              d="M90.3041 141.885H48.1162V146.179H90.3041V141.885Z"
+              fill="white"
+            />
+            <path
+              d="M90.3041 120.989H48.1162V125.283H90.3041V120.989Z"
+              fill="white"
+            />
+            <path
+              d="M90.3041 100.094H48.1162V104.387H90.3041V100.094Z"
+              fill="white"
+            />
+            <path
+              d="M90.3041 79.1982H48.1162V83.4919H90.3041V79.1982Z"
+              fill="white"
+            />
+          </g>
+          <path
+            d="M91.0076 171.769H64.1299V190.819H91.0076V171.769Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M69.5926 64.8823H58.4551V76.0449H69.5926V64.8823Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M82.8748 64.8828H71.7373V76.0454H82.8748V64.8828Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.7"
+            d="M96.157 64.8823H85.0195V76.0449H96.157V64.8823Z"
+            fill="white"
+          />
+          <path
+            opacity="0.7"
+            d="M69.5926 86.209H58.4551V97.3716H69.5926V86.209Z"
+            fill="white"
+          />
+          <path
+            d="M82.8748 86.209H71.7373V97.3716H82.8748V86.209Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.7"
+            d="M96.157 86.209H85.0195V97.3716H96.157V86.209Z"
+            fill="white"
+          />
+          <path
+            opacity="0.7"
+            d="M69.5926 107.104H58.4551V118.267H69.5926V107.104Z"
+            fill="white"
+          />
+          <path
+            opacity="0.7"
+            d="M82.8748 107.104H71.7373V118.267H82.8748V107.104Z"
+            fill="white"
+          />
+          <path
+            d="M96.157 107.104H85.0195V118.267H96.157V107.104Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.7"
+            d="M69.5926 128H58.4551V139.163H69.5926V128Z"
+            fill="white"
+          />
+          <path d="M82.8748 128H71.7373V139.163H82.8748V128Z" fill="#004a7c" />
+          <path
+            opacity="0.7"
+            d="M96.157 128H85.0195V139.163H96.157V128Z"
+            fill="white"
+          />
+          <path
+            d="M69.5926 148.901H58.4551V160.063H69.5926V148.901Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M82.8748 148.901H71.7373V160.063H82.8748V148.901Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.7"
+            d="M96.157 148.901H85.0195V160.063H96.157V148.901Z"
+            fill="white"
+          />
+          <path
+            d="M59.6285 64.8823H58.4551V76.0449H59.6285V64.8823Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M72.9107 64.8828H71.7373V76.0454H72.9107V64.8828Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M86.193 64.8823H85.0195V76.0449H86.193V64.8823Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M59.6285 86.209H58.4551V97.3716H59.6285V86.209Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M72.9107 86.209H71.7373V97.3716H72.9107V86.209Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M86.193 86.209H85.0195V97.3716H86.193V86.209Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M59.6285 107.104H58.4551V118.267H59.6285V107.104Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M72.9107 107.104H71.7373V118.267H72.9107V107.104Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M86.193 107.104H85.0195V118.267H86.193V107.104Z"
+            fill="#004a7c"
+          />
+          <path d="M59.6285 128H58.4551V139.163H59.6285V128Z" fill="#004a7c" />
+          <path d="M72.9107 128H71.7373V139.163H72.9107V128Z" fill="#004a7c" />
+          <path d="M86.193 128H85.0195V139.163H86.193V128Z" fill="#004a7c" />
+          <path
+            d="M59.6285 148.901H58.4551V160.063H59.6285V148.901Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M72.9107 148.901H71.7373V160.063H72.9107V148.901Z"
+            fill="#004a7c"
+          />
+          <path
+            d="M86.193 148.901H85.0195V160.063H86.193V148.901Z"
+            fill="#004a7c"
+          />
+          <g opacity="0.2">
+            <path
+              d="M59.6295 64.8823H58.4561V76.0449H59.6295V64.8823Z"
+              fill="black"
+            />
+            <path
+              d="M72.9107 64.8823H71.7373V76.0449H72.9107V64.8823Z"
+              fill="black"
+            />
+            <path
+              d="M86.193 64.8823H85.0195V76.0449H86.193V64.8823Z"
+              fill="black"
+            />
+            <path
+              d="M59.6295 86.209H58.4561V97.3716H59.6295V86.209Z"
+              fill="black"
+            />
+            <path
+              d="M72.9107 86.209H71.7373V97.3716H72.9107V86.209Z"
+              fill="black"
+            />
+            <path
+              d="M86.193 86.209H85.0195V97.3716H86.193V86.209Z"
+              fill="black"
+            />
+            <path
+              d="M59.6295 107.104H58.4561V118.267H59.6295V107.104Z"
+              fill="black"
+            />
+            <path
+              d="M72.9107 107.104H71.7373V118.267H72.9107V107.104Z"
+              fill="black"
+            />
+            <path
+              d="M86.193 107.104H85.0195V118.267H86.193V107.104Z"
+              fill="black"
+            />
+            <path d="M59.6295 128H58.4561V139.163H59.6295V128Z" fill="black" />
+            <path d="M72.9107 128H71.7373V139.163H72.9107V128Z" fill="black" />
+            <path d="M86.193 128H85.0195V139.163H86.193V128Z" fill="black" />
+            <path
+              d="M59.6295 148.901H58.4561V160.063H59.6295V148.901Z"
+              fill="black"
+            />
+            <path
+              d="M72.9107 148.901H71.7373V160.063H72.9107V148.901Z"
+              fill="black"
+            />
+            <path
+              d="M86.193 148.901H85.0195V160.063H86.193V148.901Z"
+              fill="black"
+            />
+          </g>
+          <path
+            opacity="0.4"
+            d="M89.7235 173.056H77.5693V190.819H89.7235V173.056Z"
+            fill="white"
+          />
+          <path
+            opacity="0.7"
+            d="M77.5692 173.056H65.415V190.819H77.5692V173.056Z"
+            fill="white"
+          />
+          <path
+            d="M66.6997 173.056H65.415V190.819H66.6997V173.056Z"
+            fill="#004a7c"
+          />
+          <path
+            opacity="0.2"
+            d="M66.6997 173.056H65.415V190.819H66.6997V173.056Z"
+            fill="black"
+          />
+        </g>
+        <line
+          x1="32.8184"
+          y1="190.616"
+          x2="230.266"
+          y2="190.616"
+          stroke="#C0D6FF"
+        />
+        <path
+          d="M153.278 168.458C152.5 168.458 151.869 167.826 151.869 167.049V164.936H146.235V167.049C146.235 167.826 145.604 168.458 144.826 168.458C144.049 168.458 143.418 167.826 143.418 167.049V164.936C143.418 163.383 144.681 162.119 146.235 162.119H151.869C153.423 162.119 154.686 163.383 154.686 164.936V167.049C154.686 167.826 154.055 168.458 153.278 168.458Z"
+          fill="#455A64"
+        />
+        <path
+          d="M149.39 178.965L149.052 179.021L148.714 178.965L132.149 173.443V186.416C132.149 188.557 133.882 190.289 136.023 190.289H162.081C164.222 190.289 165.954 188.557 165.954 186.416V173.443L149.39 178.965Z"
+          fill="#424769"
+        />
+        <path
+          d="M165.954 170.218V173.443L149.39 178.965L149.052 179.021L148.714 178.965L132.149 173.443V170.218C132.149 168.077 133.882 166.344 136.023 166.344H162.081C164.222 166.344 165.954 168.077 165.954 170.218V170.218Z"
+          fill="#FFCB7D"
+        />
+        <path
+          d="M149.052 162.119H146.235C144.681 162.119 143.418 163.383 143.418 164.936V166.345H146.235V164.936H149.052V162.119Z"
+          fill="#3C4E57"
+        />
+        <path
+          d="M132.149 173.443V186.416C132.149 188.557 133.882 190.289 136.023 190.289H149.052V179.021L148.714 178.965L132.149 173.443Z"
+          fill="#545A83"
+        />
+        <path
+          d="M149.052 166.344H146.235H143.418H136.023C133.882 166.344 132.149 168.077 132.149 170.218V173.443L148.714 178.965L149.052 179.021V166.344Z"
+          fill="#E9AE56"
+        />
+        <defs>
+          <clipPath id="clip0_553_684">
+            <rect
+              width="109"
+              height="185"
+              fill="white"
+              transform="translate(26 16)"
+            />
+          </clipPath>
+        </defs>
+      </svg>
+
+      <img
+        src="../../../../assets/icon/app_characters/chrctr_right_hand_up.svg"
+        alt=""
+      />
+    </ng-container>
+
+    <ng-container
+      *ngIf="currentStep === 'doc' || currentStep === 'businessOwnerList'"
+    >
+      <svg
+        width="256"
+        height="213"
+        viewBox="0 0 256 213"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g clip-path="url(#clip0_553_685)">
+          <g opacity="0.2" clip-path="url(#clip1_553_685)">
+            <path
+              d="M142 186.979H137.604V187.106H142V186.979Z"
+              fill="#EBEBEB"
+            />
+            <path
+              d="M81.9936 40.4564C81.462 40.4479 80.9444 40.6274 80.5318 40.9634C80.6154 40.5042 80.6154 40.0336 80.5318 39.5744C80.3082 38.4832 79.7256 37.4988 78.8772 36.7791C78.0289 36.0594 76.964 35.6459 75.8533 35.6051C75.2287 35.5972 74.6136 35.7583 74.0729 36.0715C73.6619 35.3154 73.0614 34.6798 72.3305 34.2273C71.5996 33.7749 70.7637 33.5211 69.9052 33.4912C69.4095 33.4738 68.9164 33.5714 68.4645 33.7763C68.0126 33.9812 67.614 34.2879 67.2997 34.6725C66.9855 35.0572 66.764 35.5093 66.6527 35.9938C66.5414 36.4782 66.5432 36.9819 66.658 37.4656C66.6924 37.6369 66.7363 37.8061 66.7895 37.9725C66.4413 37.8795 66.0826 37.8318 65.7223 37.8306C65.2266 37.8132 64.7336 37.9107 64.2816 38.1156C63.8297 38.3205 63.4311 38.6272 63.1168 39.0119C62.8026 39.3965 62.5812 39.8487 62.4699 40.3331C62.3586 40.8176 62.3604 41.3212 62.4751 41.8049C62.6979 42.8965 63.2803 43.8814 64.1288 44.6012C64.9774 45.3211 66.0427 45.7342 67.1537 45.7741H82.9495C83.2824 45.7862 83.6136 45.7211 83.9173 45.5838C84.221 45.4466 84.489 45.241 84.7005 44.9829C84.9119 44.7249 85.0611 44.4215 85.1363 44.0962C85.2116 43.7709 85.211 43.4327 85.1345 43.1077C84.9814 42.3778 84.589 41.7202 84.0198 41.2397C83.4506 40.7592 82.7373 40.4835 81.9936 40.4564V40.4564Z"
+              fill="#F5F5F5"
+            />
+            <path
+              d="M113.864 63.2988V58.4019H103.991V63.2988H87.6133V178.504H116.251V63.2988H113.864Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M101.092 69.4834H96.8633V73.7213H101.092V69.4834Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M107.001 69.4834H102.772V73.7213H107.001V69.4834Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 75.8755H90.9561V80.1134H95.1845V75.8755Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M101.092 75.8755H96.8633V80.1134H101.092V75.8755Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 75.8755H108.679V80.1134H112.907V75.8755Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 82.2729H90.9561V86.5109H95.1845V82.2729Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M107.001 82.2734H102.772V86.5114H107.001V82.2734Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 82.2729H108.679V86.5109H112.907V82.2729Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 95.0581H90.9561V99.296H95.1845V95.0581Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M107.001 95.0581H102.772V99.296H107.001V95.0581Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 101.45H90.9561V105.688H95.1845V101.45Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M101.092 101.451H96.8633V105.689H101.092V101.451Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 101.45H108.679V105.688H112.907V101.45Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 133.377H90.9561V137.615H95.1845V133.377Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M101.092 133.376H96.8633V137.614H101.092V133.376Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 133.377H108.679V137.615H112.907V133.377Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 139.769H90.9561V144.007H95.1845V139.769Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M107.001 139.769H102.772V144.007H107.001V139.769Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 139.769H108.679V144.007H112.907V139.769Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 152.559H90.9561V156.797H95.1845V152.559Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M107.001 152.559H102.772V156.797H107.001V152.559Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 158.951H90.9561V163.189H95.1845V158.951Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M101.092 158.951H96.8633V163.189H101.092V158.951Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 158.951H108.679V163.189H112.907V158.951Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.907 107.848H108.679V112.086H112.907V107.848Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 114.24H90.9561V118.478H95.1845V114.24Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M101.092 114.24H96.8633V118.478H101.092V114.24Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M107.033 120.704L102.805 120.644L102.744 124.881L106.972 124.942L107.033 120.704Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M112.937 120.789L108.709 120.729L108.648 124.966L112.876 125.027L112.937 120.789Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M95.1845 127.025H90.9561V131.263H95.1845V127.025Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M120.595 86.1919H128.506H141.631V178.504H118.684V86.1919H120.595Z"
+              fill="#EBEBEB"
+            />
+            <path
+              d="M130.833 94.5459H134.222V91.1495H130.833V94.5459Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M126.099 94.5459H129.487V91.1495H126.099V94.5459Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 99.6709H138.95V96.2745H135.561V99.6709Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M130.833 99.6709H134.222V96.2745H130.833V99.6709Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 99.6709H124.753V96.2745H121.364V99.6709Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 104.791H138.95V101.395H135.561V104.791Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M126.099 104.791H129.487V101.395H126.099V104.791Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 104.791H124.753V101.395H121.364V104.791Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 115.041H138.95V111.645H135.561V115.041Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M126.099 115.042H129.487V111.645H126.099V115.042Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 120.161H138.95V116.765H135.561V120.161Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M130.833 120.161H134.222V116.765H130.833V120.161Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 120.161H124.753V116.765H121.364V120.161Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 145.741H138.95V142.344H135.561V145.741Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M130.833 145.741H134.222V142.344H130.833V145.741Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 145.741H124.753V142.344H121.364V145.741Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 150.866H138.95V147.47H135.561V150.866Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M126.099 150.866H129.487V147.469H126.099V150.866Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 150.866H124.753V147.47H121.364V150.866Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 161.111H138.95V157.714H135.561V161.111Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M126.099 161.111H129.487V157.714H126.099V161.111Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 166.231H138.95V162.835H135.561V166.231Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M130.833 166.231H134.222V162.835H130.833V166.231Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 166.231H124.753V162.835H121.364V166.231Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.364 125.286H124.753V121.89H121.364V125.286Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 130.406H138.95V127.01H135.561V130.406Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M130.833 130.406H134.222V127.01H130.833V130.406Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M126.127 135.59L129.516 135.542L129.467 132.145L126.079 132.194L126.127 135.59Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M121.386 135.654L124.774 135.605L124.726 132.209L121.337 132.258L121.386 135.654Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M135.561 140.656H138.95V137.26H135.561V140.656Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M76.9305 82.9932H83.8193V76.0888H76.9305V82.9932Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 82.9932H76.0195V76.0888H69.1307V82.9932Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M76.9305 90.7085H83.8193V83.8041H76.9305V90.7085Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 90.7085H76.0195V83.8041H69.1307V90.7085Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M76.9305 98.4238H83.8193V91.5194H76.9305V98.4238Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 98.4238H76.0195V91.5194H69.1307V98.4238Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M76.9305 106.134H83.8193V99.2299H76.9305V106.134Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M69.1307 106.134H76.0195V99.2299H69.1307V106.134Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M76.9305 113.85H83.8193V106.945H76.9305V113.85Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 113.85H76.0195V106.945H69.1307V113.85Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M76.9305 121.555H83.8193V114.651H76.9305V121.555Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 121.555H76.0195V114.651H69.1307V121.555Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M76.9305 129.271H83.8193V122.366H76.9305V129.271Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M69.1307 129.271H76.0195V122.366H69.1307V129.271Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M76.9305 136.986H83.8193V130.081H76.9305V136.986Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 136.986H76.0195V130.081H69.1307V136.986Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M76.9305 144.697H83.8193V137.792H76.9305V144.697Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 144.697H76.0195V137.792H69.1307V144.697Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M76.9305 152.407H83.8193V145.502H76.9305V152.407Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M69.1307 152.407H76.0195V145.502H69.1307V152.407Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M76.9305 160.122H83.8193V153.218H76.9305V160.122Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M69.1307 160.122H76.0195V153.218H69.1307V160.122Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M76.9305 167.833H83.8193V160.929H76.9305V167.833Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M69.1307 167.833H76.0195V160.929H69.1307V167.833Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 101.191H157.053V95.6H151.474V101.191Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M145.156 101.191H150.735V95.6H145.156V101.191Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 107.432H157.053V101.841H151.474V107.432Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M145.156 107.432H150.735V101.841H145.156V107.432Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 113.682H157.053V108.091H151.474V113.682Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M145.156 113.682H150.735V108.091H145.156V113.682Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 119.923H157.053V114.331H151.474V119.923Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M145.156 119.923H150.735V114.331H145.156V119.923Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 126.163H157.053V120.572H151.474V126.163Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M145.156 126.163H150.735V120.572H145.156V126.163Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M151.474 132.408H157.053V126.817H151.474V132.408Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M145.156 132.408H150.735V126.817H145.156V132.408Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 138.649H157.053V133.057H151.474V138.649Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M145.156 138.649H150.735V133.057H145.156V138.649Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 144.895H157.053V139.303H151.474V144.895Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M145.156 144.895H150.735V139.303H145.156V144.895Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 151.134H157.053V145.543H151.474V151.134Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M145.156 151.134H150.735V145.543H145.156V151.134Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 157.38H157.053V151.788H151.474V157.38Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M145.156 157.38H150.735V151.788H145.156V157.38Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M151.474 163.62H157.053V158.029H151.474V163.62Z"
+              fill="#F0F0F0"
+            />
+            <path
+              d="M145.156 163.62H150.735V158.029H145.156V163.62Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M151.474 169.866H157.053V164.274H151.474V169.866Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M145.156 169.866H150.735V164.274H145.156V169.866Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M140.64 43.2494C139.991 43.2384 139.358 43.4574 138.854 43.8679C138.963 43.3071 138.963 42.7305 138.854 42.1697C138.578 40.8371 137.864 39.6359 136.826 38.7582C135.788 37.8806 134.486 37.3771 133.129 37.3285C132.366 37.3197 131.615 37.5157 130.954 37.8963C130.448 36.9729 129.712 36.1968 128.818 35.6441C127.923 35.0914 126.901 34.7809 125.85 34.7432C123.17 34.7432 121.394 36.923 121.875 39.6046C121.916 39.8245 121.971 40.0413 122.042 40.2535C121.615 40.1388 121.174 40.0792 120.732 40.0761C118.056 40.0761 116.276 42.2508 116.761 44.9375C117.034 46.273 117.745 47.4782 118.783 48.3598C119.82 49.2414 121.123 49.7482 122.482 49.799H141.813C142.22 49.813 142.625 49.7327 142.997 49.5644C143.368 49.3961 143.695 49.1442 143.954 48.8284C144.212 48.5126 144.394 48.1413 144.486 47.7434C144.578 47.3456 144.577 46.9318 144.484 46.5344C144.305 45.6334 143.828 44.8193 143.131 44.2232C142.433 43.6272 141.556 43.2842 140.64 43.2494V43.2494Z"
+              fill="#FAFAFA"
+            />
+            <path
+              d="M136.346 48.958H118.679V65.418H136.346V48.958Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.3"
+              d="M136.346 48.958H118.679V65.418H136.346V48.958Z"
+              fill="white"
+            />
+            <path
+              d="M144.185 48.958H135.354V65.418H144.185V48.958Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M130.281 52.187H124.732V65.4179H130.281V52.187Z"
+              fill="#263238"
+            />
+            <path
+              d="M126.118 52.187H124.732V65.4179H126.118V52.187Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M125.477 63.2231H79.4648V194.214H125.477V63.2231Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.6"
+              d="M125.477 63.2231H79.4648V194.214H125.477V63.2231Z"
+              fill="white"
+            />
+            <path
+              d="M124.788 63.2231V82.5929H114.637V86.8866H124.788V103.489H114.637V107.782H124.788V124.384H114.637V128.678H124.788V145.28H114.637V149.574H124.788V166.176H114.637V170.469H124.788V194.214H146.542V63.2231H124.788Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.2"
+              d="M124.788 63.2231V82.5929H114.637V86.8866H124.788V103.489H114.637V107.782H124.788V124.384H114.637V128.678H124.788V145.28H114.637V149.574H124.788V166.176H114.637V170.469H124.788V194.214H146.542V63.2231H124.788Z"
+              fill="white"
+            />
+            <path
+              d="M115.207 166.175H73.0195V170.469H115.207V166.175Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M115.207 145.28H73.0195V149.573H115.207V145.28Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M115.207 124.384H73.0195V128.678H115.207V124.384Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M115.207 103.489H73.0195V107.782H115.207V103.489Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M115.207 82.5933H73.0195V86.887H115.207V82.5933Z"
+              fill="#004a7c"
+            />
+            <g opacity="0.4">
+              <path
+                d="M115.207 166.175H73.0195V170.469H115.207V166.175Z"
+                fill="white"
+              />
+              <path
+                d="M115.207 145.28H73.0195V149.573H115.207V145.28Z"
+                fill="white"
+              />
+              <path
+                d="M115.207 124.384H73.0195V128.677H115.207V124.384Z"
+                fill="white"
+              />
+              <path
+                d="M115.207 103.488H73.0195V107.782H115.207V103.488Z"
+                fill="white"
+              />
+              <path
+                d="M115.207 82.5928H73.0195V86.8865H115.207V82.5928Z"
+                fill="white"
+              />
+            </g>
+            <path
+              d="M115.911 175.164H89.0332V194.214H115.911V175.164Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M94.4959 68.2769H83.3584V79.4395H94.4959V68.2769Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M107.778 68.2773H96.6406V79.4399H107.778V68.2773Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.7"
+              d="M121.06 68.2769H109.923V79.4395H121.06V68.2769Z"
+              fill="white"
+            />
+            <path
+              opacity="0.7"
+              d="M94.4959 89.6035H83.3584V100.766H94.4959V89.6035Z"
+              fill="white"
+            />
+            <path
+              d="M107.778 89.6035H96.6406V100.766H107.778V89.6035Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.7"
+              d="M121.06 89.6035H109.923V100.766H121.06V89.6035Z"
+              fill="white"
+            />
+            <path
+              opacity="0.7"
+              d="M94.4959 110.499H83.3584V121.662H94.4959V110.499Z"
+              fill="white"
+            />
+            <path
+              opacity="0.7"
+              d="M107.778 110.499H96.6406V121.662H107.778V110.499Z"
+              fill="white"
+            />
+            <path
+              d="M121.06 110.499H109.923V121.662H121.06V110.499Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.7"
+              d="M94.4959 131.395H83.3584V142.558H94.4959V131.395Z"
+              fill="white"
+            />
+            <path
+              d="M107.778 131.395H96.6406V142.558H107.778V131.395Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.7"
+              d="M121.06 131.395H109.923V142.558H121.06V131.395Z"
+              fill="white"
+            />
+            <path
+              d="M94.4959 152.295H83.3584V163.458H94.4959V152.295Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M107.778 152.295H96.6406V163.458H107.778V152.295Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.7"
+              d="M121.06 152.295H109.923V163.458H121.06V152.295Z"
+              fill="white"
+            />
+            <path
+              d="M84.5318 68.2769H83.3584V79.4395H84.5318V68.2769Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M97.8141 68.2773H96.6406V79.4399H97.8141V68.2773Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M111.096 68.2769H109.923V79.4395H111.096V68.2769Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M84.5318 89.6035H83.3584V100.766H84.5318V89.6035Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M97.8141 89.6035H96.6406V100.766H97.8141V89.6035Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M111.096 89.6035H109.923V100.766H111.096V89.6035Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M84.5318 110.499H83.3584V121.662H84.5318V110.499Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M97.8141 110.499H96.6406V121.662H97.8141V110.499Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M111.096 110.499H109.923V121.662H111.096V110.499Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M84.5318 131.395H83.3584V142.558H84.5318V131.395Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M97.8141 131.395H96.6406V142.558H97.8141V131.395Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M111.096 131.395H109.923V142.558H111.096V131.395Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M84.5318 152.295H83.3584V163.458H84.5318V152.295Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M97.8141 152.295H96.6406V163.458H97.8141V152.295Z"
+              fill="#004a7c"
+            />
+            <path
+              d="M111.096 152.295H109.923V163.458H111.096V152.295Z"
+              fill="#004a7c"
+            />
+            <g opacity="0.2">
+              <path
+                d="M84.5328 68.2769H83.3594V79.4395H84.5328V68.2769Z"
+                fill="black"
+              />
+              <path
+                d="M97.8141 68.2769H96.6406V79.4395H97.8141V68.2769Z"
+                fill="black"
+              />
+              <path
+                d="M111.096 68.2769H109.923V79.4395H111.096V68.2769Z"
+                fill="black"
+              />
+              <path
+                d="M84.5328 89.6035H83.3594V100.766H84.5328V89.6035Z"
+                fill="black"
+              />
+              <path
+                d="M97.8141 89.6035H96.6406V100.766H97.8141V89.6035Z"
+                fill="black"
+              />
+              <path
+                d="M111.096 89.6035H109.923V100.766H111.096V89.6035Z"
+                fill="black"
+              />
+              <path
+                d="M84.5328 110.499H83.3594V121.662H84.5328V110.499Z"
+                fill="black"
+              />
+              <path
+                d="M97.8141 110.499H96.6406V121.662H97.8141V110.499Z"
+                fill="black"
+              />
+              <path
+                d="M111.096 110.499H109.923V121.662H111.096V110.499Z"
+                fill="black"
+              />
+              <path
+                d="M84.5328 131.395H83.3594V142.557H84.5328V131.395Z"
+                fill="black"
+              />
+              <path
+                d="M97.8141 131.395H96.6406V142.558H97.8141V131.395Z"
+                fill="black"
+              />
+              <path
+                d="M111.096 131.395H109.923V142.558H111.096V131.395Z"
+                fill="black"
+              />
+              <path
+                d="M84.5328 152.295H83.3594V163.458H84.5328V152.295Z"
+                fill="black"
+              />
+              <path
+                d="M97.8141 152.295H96.6406V163.458H97.8141V152.295Z"
+                fill="black"
+              />
+              <path
+                d="M111.096 152.295H109.923V163.458H111.096V152.295Z"
+                fill="black"
+              />
+            </g>
+            <path
+              opacity="0.4"
+              d="M114.627 176.451H102.473V194.214H114.627V176.451Z"
+              fill="white"
+            />
+            <path
+              opacity="0.7"
+              d="M102.472 176.451H90.3184V194.214H102.472V176.451Z"
+              fill="white"
+            />
+            <path
+              d="M91.6031 176.451H90.3184V194.214H91.6031V176.451Z"
+              fill="#004a7c"
+            />
+            <path
+              opacity="0.2"
+              d="M91.6031 176.451H90.3184V194.214H91.6031V176.451Z"
+              fill="black"
+            />
+          </g>
+          <line
+            x1="32.6406"
+            y1="193.941"
+            x2="230.088"
+            y2="193.941"
+            stroke="#C0D6FF"
+          />
+          <path
+            d="M135.371 64.5149L130.242 59.3755L131.928 52.1664L119.71 45.4596C118.264 44.6659 116.433 45.2219 115.621 46.7015L101.83 71.8248C101.018 73.3044 101.532 75.1473 102.978 75.941L120.432 85.5221C121.878 86.3158 123.709 85.7598 124.521 84.2802L135.371 64.5149Z"
+            fill="#4086F4"
+          />
+          <path
+            d="M135.371 64.5148L124.521 84.28C123.709 85.7596 121.879 86.3156 120.433 85.5219L111.706 80.7314L128.438 50.25L131.928 52.1662L130.242 59.3754L135.371 64.5148Z"
+            fill="#4175DF"
+          />
+          <path
+            d="M135.37 64.5151L129.261 61.1617C128.301 60.6347 127.957 59.3999 128.496 58.4176L131.928 52.1665C132.155 52.2911 132.333 52.5049 132.391 52.7698L135.452 63.7463C135.538 64.0028 135.498 64.2829 135.37 64.5151Z"
+            fill="#80AEF8"
+          />
+          <path
+            d="M125.798 67.4722L115.325 61.7236C114.843 61.4588 114.671 60.8451 114.942 60.3515C115.213 59.8579 115.823 59.6728 116.305 59.9375L126.778 65.6862C127.26 65.951 127.431 66.5647 127.16 67.0583C126.889 67.5519 126.28 67.737 125.798 67.4722Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M123.837 71.044L113.364 65.2953C112.882 65.0306 112.711 64.4169 112.981 63.9233C113.252 63.4297 113.862 63.2445 114.344 63.5093L124.817 69.258C125.299 69.5228 125.47 70.1364 125.199 70.63C124.929 71.1236 124.319 71.3088 123.837 71.044Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M121.876 74.6163L111.403 68.8676C110.921 68.6028 110.75 67.9891 111.021 67.4955C111.291 67.002 111.901 66.8168 112.383 67.0816L122.856 72.8302C123.338 73.095 123.509 73.7087 123.239 74.2023C122.968 74.6959 122.358 74.881 121.876 74.6163Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M116.425 76.2718L109.443 72.4394C108.961 72.1746 108.79 71.5609 109.061 71.0673C109.332 70.5737 109.941 70.3886 110.423 70.6534L117.405 74.4858C117.888 74.7506 118.059 75.3643 117.788 75.8579C117.517 76.3515 116.907 76.5366 116.425 76.2718Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M114.679 75.3143L116.424 76.2724C116.907 76.5372 117.516 76.3521 117.787 75.8585C118.058 75.3649 117.887 74.7512 117.405 74.4864L115.659 73.5283L114.679 75.3143Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M116.64 71.7421L121.876 74.6164C122.358 74.8812 122.968 74.696 123.239 74.2024C123.51 73.7088 123.339 73.0952 122.856 72.8304L117.62 69.9561L116.64 71.7421Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M118.601 68.1703L123.837 71.0446C124.319 71.3094 124.929 71.1243 125.2 70.6307C125.471 70.1371 125.3 69.5234 124.817 69.2586L119.581 66.3843L118.601 68.1703Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M120.562 64.598L125.798 67.4724C126.28 67.7371 126.89 67.552 127.161 67.0584C127.432 66.5648 127.261 65.9511 126.778 65.6863L121.542 62.812L120.562 64.598Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M91.2206 103.548L84.6408 105.815L79.1332 101.34L68.2308 109.061C66.9405 109.975 66.6525 111.786 67.5875 113.106L83.4634 135.524C84.3984 136.844 86.2023 137.174 87.4926 136.26L103.067 125.23C104.358 124.317 104.646 122.506 103.711 121.185L91.2206 103.548Z"
+            fill="#4086F4"
+          />
+          <path
+            d="M91.221 103.548L103.711 121.185C104.646 122.506 104.358 124.317 103.068 125.23L95.2804 130.745L76.0186 103.546L79.1335 101.34L84.6412 105.815L91.221 103.548Z"
+            fill="#4175DF"
+          />
+          <path
+            d="M91.2203 103.548L85.7691 107.409C84.9125 108.015 83.7037 107.794 83.083 106.918L79.1328 101.34C79.3353 101.196 79.5942 101.133 79.8472 101.193L90.5916 103.156C90.849 103.189 91.0736 103.341 91.2203 103.548Z"
+            fill="#80AEF8"
+          />
+          <path
+            d="M89.7572 113.04L80.4122 119.657C79.9818 119.962 79.3811 119.853 79.0692 119.412C78.7573 118.972 78.8532 118.369 79.2836 118.064L88.6285 111.446C89.059 111.141 89.6597 111.251 89.9716 111.691C90.2835 112.132 90.1876 112.735 89.7572 113.04Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M92.015 116.227L82.6701 122.845C82.2396 123.15 81.6389 123.04 81.327 122.6C81.0151 122.159 81.111 121.556 81.5414 121.251L90.8863 114.633C91.3168 114.329 91.9175 114.438 92.2294 114.879C92.5413 115.319 92.4454 115.922 92.015 116.227Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M94.2718 119.415L84.9269 126.032C84.4965 126.337 83.8958 126.228 83.5838 125.787C83.2719 125.347 83.3678 124.744 83.7983 124.439L93.1432 117.821C93.5736 117.516 94.1743 117.626 94.4862 118.066C94.7982 118.507 94.7022 119.11 94.2718 119.415Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M93.4137 124.808L87.1837 129.22C86.7533 129.525 86.1526 129.415 85.8407 128.975C85.5288 128.534 85.6247 127.931 86.0551 127.626L92.285 123.214C92.7155 122.91 93.3162 123.019 93.6281 123.46C93.94 123.9 93.8441 124.503 93.4137 124.808Z"
+            fill="#FFF5F5"
+          />
+          <path
+            d="M91.8562 125.911L93.4136 124.808C93.8441 124.503 93.94 123.9 93.6281 123.459C93.3162 123.019 92.7155 122.909 92.285 123.214L90.7275 124.317L91.8562 125.911Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M89.5993 122.724L94.2718 119.415C94.7022 119.11 94.7981 118.507 94.4862 118.066C94.1743 117.626 93.5736 117.516 93.1432 117.821L88.4707 121.13L89.5993 122.724Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M87.3415 119.536L92.014 116.227C92.4444 115.922 92.5403 115.319 92.2284 114.879C91.9165 114.438 91.3158 114.329 90.8853 114.633L86.2129 117.942L87.3415 119.536Z"
+            fill="#E3E7EA"
+          />
+          <path
+            d="M85.0847 116.349L89.7571 113.04C90.1876 112.735 90.2835 112.132 89.9716 111.691C89.6596 111.251 89.0589 111.141 88.6285 111.446L83.9561 114.755L85.0847 116.349Z"
+            fill="#E3E7EA"
+          />
+          <g opacity="0.5" clip-path="url(#clip2_553_685)">
+            <path
+              d="M73.9217 80.9504L72.4172 76.7187L75.27 73.136L70.2183 66.1495C69.6204 65.3226 68.4499 65.1483 67.6038 65.76L53.2377 76.1477C52.3916 76.7594 52.1904 77.9256 52.7883 78.7525L60.005 88.7332C60.6029 89.5601 61.7734 89.7344 62.6195 89.1227L73.9217 80.9504Z"
+              fill="#4086F4"
+            />
+            <path
+              d="M73.9213 80.9502L62.619 89.1225C61.773 89.7342 60.6024 89.5599 60.0046 88.733L56.3962 83.7427L73.8262 71.1396L75.2695 73.1358L72.4167 76.7185L73.9213 80.9502Z"
+              fill="#4175DF"
+            />
+            <path
+              d="M73.9213 80.9506L71.3954 77.4574C70.9985 76.9084 71.1333 76.127 71.695 75.7208L75.2695 73.1362C75.3633 73.266 75.4061 73.4327 75.3689 73.5963L74.1704 80.5425C74.1507 80.7087 74.054 80.8546 73.9213 80.9506Z"
+              fill="#80AEF8"
+            />
+            <path
+              d="M67.7878 80.0663L63.4577 74.0778C63.2583 73.802 63.3253 73.4136 63.6075 73.2096C63.8898 73.0055 64.2796 73.0635 64.479 73.3394L68.8091 79.3278C69.0085 79.6037 68.9415 79.992 68.6592 80.1961C68.377 80.4002 67.9872 80.3421 67.7878 80.0663Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M65.7448 81.5433L61.4147 75.5549C61.2153 75.279 61.2823 74.8907 61.5646 74.6866C61.8468 74.4825 62.2366 74.5406 62.436 74.8164L66.7661 80.8049C66.9655 81.0807 66.8985 81.4691 66.6163 81.6731C66.334 81.8772 65.9442 81.8192 65.7448 81.5433Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M63.7018 83.0204L59.3718 77.0319C59.1723 76.7561 59.2393 76.3677 59.5216 76.1637C59.8038 75.9596 60.1936 76.0176 60.3931 76.2935L64.7231 82.2819C64.9226 82.5578 64.8556 82.9461 64.5733 83.1502C64.2911 83.3543 63.9013 83.2962 63.7018 83.0204Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M60.2165 82.5008L57.3298 78.5085C57.1303 78.2327 57.1973 77.8443 57.4796 77.6402C57.7618 77.4361 58.1516 77.4942 58.3511 77.77L61.2378 81.7623C61.4372 82.0382 61.3702 82.4265 61.088 82.6306C60.8057 82.8347 60.4159 82.7766 60.2165 82.5008Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M59.4943 81.5026L60.216 82.5007C60.4155 82.7765 60.8052 82.8346 61.0875 82.6305C61.3697 82.4264 61.4367 82.0381 61.2373 81.7622L60.5156 80.7642L59.4943 81.5026Z"
+              fill="#E3E7EA"
+            />
+            <path
+              d="M61.5373 80.0256L63.7023 83.0198C63.9018 83.2956 64.2916 83.3537 64.5738 83.1496C64.8561 82.9455 64.9231 82.5572 64.7236 82.2813L62.5586 79.2871L61.5373 80.0256Z"
+              fill="#E3E7EA"
+            />
+            <path
+              d="M63.5793 78.549L65.7443 81.5432C65.9438 81.8191 66.3336 81.8771 66.6158 81.673C66.8981 81.469 66.9651 81.0806 66.7656 80.8048L64.6006 77.8105L63.5793 78.549Z"
+              fill="#E3E7EA"
+            />
+            <path
+              d="M65.6223 77.072L67.7873 80.0662C67.9867 80.342 68.3765 80.4001 68.6588 80.196C68.941 79.9919 69.008 79.6036 68.8086 79.3277L66.6436 76.3335L65.6223 77.072Z"
+              fill="#E3E7EA"
+            />
+          </g>
+          <g opacity="0.5" clip-path="url(#clip3_553_685)">
+            <path
+              d="M91.0984 33.8752L88.607 34.9L86.3774 33.2953L82.339 36.5256C81.8611 36.9079 81.7907 37.6142 82.1819 38.1033L88.8242 46.4072C89.2153 46.8963 89.9199 46.9828 90.3978 46.6005L96.167 41.9859C96.6449 41.6036 96.7152 40.8972 96.324 40.4082L91.0984 33.8752Z"
+              fill="#4086F4"
+            />
+            <path
+              d="M91.0985 33.8752L96.3241 40.4082C96.7153 40.8973 96.645 41.6036 96.167 41.9859L93.2825 44.2932L85.2236 34.2183L86.3775 33.2953L88.6071 34.9L91.0985 33.8752Z"
+              fill="#4175DF"
+            />
+            <path
+              d="M91.0979 33.8753L89.0788 35.4904C88.7614 35.7442 88.2893 35.6862 88.0296 35.3616L86.377 33.2954C86.452 33.2354 86.5506 33.2049 86.6497 33.2225L90.8461 33.7379C90.9463 33.7449 91.0366 33.7986 91.0979 33.8753Z"
+              fill="#80AEF8"
+            />
+            <path
+              d="M90.7475 37.5762L87.286 40.3449C87.1266 40.4725 86.892 40.4437 86.7615 40.2805C86.631 40.1174 86.6544 39.8822 86.8138 39.7546L90.2753 36.9858C90.4348 36.8583 90.6694 36.8871 90.7999 37.0503C90.9304 37.2134 90.907 37.4486 90.7475 37.5762Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M91.6919 38.7568L88.2304 41.5256C88.0709 41.6531 87.8363 41.6243 87.7058 41.4612C87.5753 41.298 87.5987 41.0628 87.7582 40.9353L91.2197 38.1665C91.3791 38.039 91.6137 38.0678 91.7442 38.2309C91.8747 38.3941 91.8513 38.6293 91.6919 38.7568Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M92.6362 39.9375L89.1747 42.7063C89.0153 42.8338 88.7807 42.805 88.6502 42.6418C88.5197 42.4787 88.5431 42.2435 88.7025 42.1159L92.164 39.3472C92.3234 39.2196 92.5581 39.2484 92.6886 39.4116C92.8191 39.5747 92.7956 39.81 92.6362 39.9375Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M92.4267 42.0411L90.1191 43.8869C89.9596 44.0145 89.725 43.9857 89.5945 43.8225C89.464 43.6594 89.4874 43.4241 89.6469 43.2966L91.9545 41.4508C92.1139 41.3232 92.3486 41.352 92.4791 41.5152C92.6096 41.6783 92.5861 41.9135 92.4267 42.0411Z"
+              fill="#FFF5F5"
+            />
+            <path
+              d="M91.8501 42.5024L92.427 42.041C92.5865 41.9134 92.6099 41.6782 92.4794 41.5151C92.3489 41.3519 92.1143 41.3231 91.9548 41.4506L91.3779 41.9121L91.8501 42.5024Z"
+              fill="#E3E7EA"
+            />
+            <path
+              d="M90.9058 41.3218L92.6365 39.9374C92.796 39.8098 92.8194 39.5746 92.6889 39.4115C92.5584 39.2483 92.3238 39.2195 92.1643 39.3471L90.4336 40.7314L90.9058 41.3218Z"
+              fill="#E3E7EA"
+            />
+            <path
+              d="M89.9615 40.1411L91.6922 38.7567C91.8516 38.6292 91.8751 38.394 91.7446 38.2308C91.6141 38.0677 91.3794 38.0389 91.22 38.1664L89.4893 39.5508L89.9615 40.1411Z"
+              fill="#E3E7EA"
+            />
+            <path
+              d="M89.0171 38.9604L90.7479 37.5761C90.9073 37.4485 90.9307 37.2133 90.8002 37.0502C90.6697 36.887 90.4351 36.8582 90.2757 36.9857L88.5449 38.3701L89.0171 38.9604Z"
+              fill="#E3E7EA"
+            />
+          </g>
+        </g>
+        <defs>
+          <clipPath id="clip0_553_685">
+            <rect width="256" height="213" fill="white" />
+          </clipPath>
+          <clipPath id="clip1_553_685">
+            <rect
+              width="109"
+              height="185"
+              fill="white"
+              transform="translate(50.9033 19.3945)"
+            />
+          </clipPath>
+          <clipPath id="clip2_553_685">
+            <rect
+              width="21.0202"
+              height="21.5091"
+              fill="white"
+              transform="translate(67.668 62.623) rotate(54.1306)"
+            />
+          </clipPath>
+          <clipPath id="clip3_553_685">
+            <rect
+              width="12.6083"
+              height="12.9015"
+              fill="white"
+              transform="translate(80.3008 38.1562) rotate(-38.6558)"
+            />
+          </clipPath>
+        </defs>
+      </svg>
+
+      <img
+        src="../../../../assets/icon/app_characters/chrctr_right_hand_up_and_looking_right.svg"
+        alt=""
+      />
+    </ng-container>
+  </div>
+  <!--------------------------------------   RIGHT SIDE IMAGE SECTION END   ----------------------------------------------->
+</div>

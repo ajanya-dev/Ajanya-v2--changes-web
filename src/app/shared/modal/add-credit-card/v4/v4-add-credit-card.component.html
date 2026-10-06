@@ -1,0 +1,354 @@
+﻿<div class="v4-add-card flex flex-col max-h-[90vh]">
+  <!-- modal header -->
+  <div
+    class="flex-shrink-0 flex items-center justify-between px-5 py-3 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-lg font-semibold text-v4-main-text-color font-funnel">
+        {{ modalTitle }}
+      </h1>
+    </div>
+    <div
+      (click)="closeModal()"
+      class="w-8 h-8 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" [size]="18" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="flex-1 overflow-y-auto px-5 py-4 [background:color-mix(in_srgb,var(--v4-primary-brand-color)_3%,var(--v4-secondary-background-color))]">
+    @if (isReverifyMode) {
+      <div class="mb-3 rounded-xl px-3 py-2.5 [background:color-mix(in_srgb,var(--v4-primary-brand-color)_8%,var(--v4-secondary-background-color))]">
+        <div class="flex items-start gap-2">
+          <lucide-icon
+            [img]="ShieldCheckIcon"
+            [size]="16"
+            class="flex-shrink-0 mt-0.5 text-v4-primary-brand-bold-color"
+          />
+          <div class="flex-1 min-w-0 text-xs leading-5 text-v4-main-text-color">
+            <span class="font-semibold text-v4-primary-brand-bold-color">One-time card verification.</span>
+            We need to verify your card once more to keep your payment secure &mdash; you won't be asked again.
+            <button
+              type="button"
+              class="inline-flex items-center gap-0.5 font-medium text-v4-primary-brand-bold-color hover:underline"
+              [attr.aria-expanded]="showWhyAccordion"
+              (click)="showWhyAccordion = !showWhyAccordion"
+            >
+              Why am I seeing this?
+              <lucide-icon
+                [img]="showWhyAccordion ? ChevronUpIcon : ChevronDownIcon"
+                [size]="12"
+              />
+            </button>
+            @if (showWhyAccordion) {
+              <p class="text-xs text-v4-secondary-text-color mt-1 leading-5">
+                We periodically verify saved cards to ensure your account stays protected. Once verified, your card will work seamlessly for all future payments &mdash; no further action needed from you.
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2.5 flex-1" [formGroup]="form">
+      @if (showNickNameField) {
+        <div class="col-span-2 sm:col-span-4">
+          <app-common-input-v4
+            [control]="nickNameControl"
+            [formControl]="nickNameControl"
+            [placeholder]="'Card Nickname'"
+            [fieldLabel]="'Card Nickname'"
+            [isFieldRequired]="true"
+          />
+          @if (nickNameControl.touched && nickNameControl.hasError('sameNickName')) {
+            <p class="text-v4-common-red-color text-xs font-medium mt-1">
+              Please choose a nickname different from your existing card.
+            </p>
+          }
+        </div>
+      }
+      @if (!isGatewayFallback()) {
+      <app-common-input-v4
+        [control]="form.controls.firstName"
+        formControlName="firstName"
+        [placeholder]="'First Name'"
+        [fieldLabel]="'First Name'"
+        [isFieldRequired]="true"
+        autocomplete="off"
+        class="sm:col-span-2"
+      />
+      <app-common-input-v4
+        [control]="form.controls.lastName"
+        formControlName="lastName"
+        [placeholder]="'Last Name'"
+        [fieldLabel]="'Last Name'"
+        [isFieldRequired]="true"
+        autocomplete="off"
+        class="sm:col-span-2"
+      />
+      <app-common-input-v4
+        [control]="form.controls.email"
+        formControlName="email"
+        [placeholder]="'Email Address'"
+        [type]="'email'"
+        [fieldLabel]="'Email Address'"
+        [isFieldRequired]="true"
+        autocomplete="off"
+        class="col-span-2 sm:col-span-4"
+      />
+
+      <app-address-autocomplete-v4
+        [label]="'Address Line 1'"
+        [placeholder]="'Address Line 1'"
+        [control]="$any(form.controls.addressLine1)"
+        [allowedCountries]="['us']"
+        (addressSelected)="onAddressSelected($event)"
+        class="col-span-2 sm:col-span-4"
+      />
+      @if (
+        showMoreAddress() ||
+        form.controls.addressLine1.value ||
+        form.controls.addressLine2.value ||
+        form.controls.state.value ||
+        form.controls.zip.value ||
+        form.controls.country.value
+      ) {
+        <app-common-input-v4
+          [control]="form.controls.addressLine2"
+          formControlName="addressLine2"
+          [isFieldRequired]="false"
+          [placeholder]="'Address Line 2'"
+          [fieldLabel]="'Address Line 2'"
+          autocomplete="off"
+          class="col-span-2 sm:col-span-4"
+        />
+        <app-common-input-v4
+          [control]="form.controls.city"
+          formControlName="city"
+          [placeholder]="'City'"
+          [fieldLabel]="'City'"
+          [isFieldRequired]="true"
+          autocomplete="off"
+        />
+        <app-common-input-v4
+          [control]="form.controls.state"
+          formControlName="state"
+          [placeholder]="'State'"
+          [fieldLabel]="'State'"
+          [isFieldRequired]="true"
+          autocomplete="off"
+        />
+        <app-common-input-v4
+          [control]="form.controls.zip"
+          formControlName="zip"
+          [placeholder]="'Zip'"
+          [fieldLabel]="'Zip'"
+          [isFieldRequired]="true"
+          autocomplete="off"
+        />
+        <div>
+          <label class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+          for="country">
+          Country
+          <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-v4-common-dropdown
+            formControlName="country"
+            [isRequired]="false"
+            [isInvalid]="
+              form.controls.country.touched && form.controls.country.invalid
+            "
+            [config]="{
+              placeholder: 'Country',
+              style: { enableLabelIcon: false, size: 0 }
+            }"
+            [listData]="['US']"
+            [appendTo]="'body'"
+          />
+          <app-control-message-v4
+            [control]="form.controls.country"
+            [label]="'Country is required'"
+          />
+        </div>
+      }
+      }
+
+      @if (isGatewayFallback()) {
+        <div class="col-span-2 sm:col-span-4">
+          <p class="text-sm text-v4-main-text-color">
+            One last step to secure your card &mdash; please confirm your card number and CVV.
+          </p>
+          @if (maskedLast4) {
+            <div
+              class="mt-3 flex items-center gap-3 rounded-xl border border-v4-border-color p-4"
+              role="group"
+              aria-label="Card to confirm"
+            >
+              <div class="flex-shrink-0 w-9 h-9 rounded-full bg-v4-main-background-color flex items-center justify-center">
+                <lucide-icon [img]="CreditCardIcon" [size]="18" class="text-v4-primary-brand-bold-color" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-[12px] font-semibold uppercase tracking-wide text-v4-secondary-text-color">
+                  Card to confirm
+                </p>
+                <p class="text-sm font-semibold text-v4-primary-brand-bold-color mt-0.5 break-words">
+                  Card ending in &bull;&bull;&bull;&bull; {{ maskedLast4 }}
+                  @if (maskedExpiry) {
+                    &middot; Expires {{ maskedExpiry }}
+                  }
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (isReverifyMode) {
+        <!-- Reverification: card fields grouped in a labelled panel with the masked summary on top -->
+        <div
+          class="col-span-2 sm:col-span-4 mt-1 rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-3"
+          role="group"
+          aria-label="Card verification details"
+        >
+          <p class="text-[12px] font-semibold uppercase tracking-wide text-v4-secondary-text-color">
+            Card verification details
+          </p>
+          @if (maskedLast4) {
+            <div class="mt-2 mb-3 flex flex-wrap items-center gap-2">
+              <span
+                class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-v4-border-color bg-v4-secondary-background-color text-v4-primary-brand-bold-color"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                Card ending in &bull;&bull;&bull;&bull; {{ maskedLast4 }}
+              </span>
+              @if (maskedExpiry) {
+                <span
+                  class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-v4-border-color bg-v4-secondary-background-color text-v4-primary-brand-bold-color whitespace-nowrap"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                  Expires {{ maskedExpiry }}
+                </span>
+              }
+            </div>
+          } @else {
+            <div class="h-2"></div>
+          }
+          <ng-container *ngTemplateOutlet="cardFields" />
+        </div>
+      } @else {
+        <ng-container *ngTemplateOutlet="cardFields" />
+      }
+    </div>
+
+    <ng-template #cardFields>
+      <!-- TabaPay fields -->
+      @if (isTabaPayActive) {
+        <div class="flex flex-col gap-3 col-span-2 sm:col-span-4 relative min-h-40">
+          <div class="tabapay-section">
+            <div id="tabapay-container" class="w-full min-h-[200px]"></div>
+          </div>
+          @if (!tabapayFieldsReady()) {
+            <div
+              class="absolute h-44 w-full bg-v4-input-background-color top-0 left-0 flex justify-center items-center rounded-xl"
+            >
+              <lucide-icon
+                [img]="Loader2Icon"
+                [size]="24"
+                class="text-v4-primary-brand-color animate-spin"
+              ></lucide-icon>
+            </div>
+          }
+        </div>
+
+        <!-- NMI fields -->
+      } @else {
+        @if (!nmiTimout) {
+          <div class="flex flex-col gap-2.5 col-span-2 sm:col-span-4 relative min-h-32">
+            @if (!nmiFieldsReady) {
+              <div
+                class="absolute h-full w-full bg-v4-input-background-color top-0 left-0 flex justify-center items-center rounded-xl"
+              >
+                <lucide-icon
+                  [img]="Loader2Icon"
+                  [size]="24"
+                  class="text-v4-primary-brand-color animate-spin"
+                ></lucide-icon>
+              </div>
+            }
+
+            <!-- Card Number -->
+            <div>
+              <label class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide" for="ccnumber">Card Number</label>
+              <div id="ccnumber"></div>
+              <app-control-message-v4
+                [control]="nmiCcnumberControl"
+                [customMessages]="{ nmiError: nmiErrors.ccnumber.message }"
+              />
+            </div>
+
+            <!-- Expiry + CVV -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide" for="ccexp">Expiration Date</label>
+                <div id="ccexp"></div>
+                <app-control-message-v4
+                  [control]="nmiCcexpControl"
+                  [customMessages]="{ nmiError: nmiErrors.ccexp.message }"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide" for="cvv">CVV</label>
+                <div id="cvv"></div>
+                <app-control-message-v4
+                  [control]="nmiCvvControl"
+                  [customMessages]="{ nmiError: nmiErrors.cvv.message }"
+                />
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div
+            class="col-span-2 sm:col-span-4 text-sm text-v4-tertiary-text-color text-center py-6"
+          >
+            Something went wrong, please refresh and try again.
+          </div>
+        }
+      }
+    </ng-template>
+
+    <!-- 3DS mount point (hidden, used by Gateway.js 3DS flow) -->
+    <div id="threeDSMountPoint"></div>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex-shrink-0 flex justify-end items-center gap-3 px-5 py-3 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    @if (allowSkipGatewayAddition && prefillHint && !showNickNameField && !isGatewayFallback()) {
+      <app-common-button-v4
+        minWidth="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        [customHeight]="'36px'"
+        text="Pay Now, Verify Later"
+        [disabled]="submitting"
+        (clickEvent)="skipGatewayAddition()"
+      />
+    } @else {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        [customHeight]="'36px'"
+        text="Cancel"
+        (clickEvent)="closeModal()"
+      />
+    }
+    <app-common-button-v4
+      minWidth="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      [customHeight]="'36px'"
+      [text]="primaryCtaText"
+      [loading]="submitting"
+      (clickEvent)="storeCardData()"
+    />
+  </div>
+</div>

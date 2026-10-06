@@ -1,0 +1,1634 @@
+<header
+  class="sticky top-0 bg-v4-secondary-background-color"
+  [ngClass]="
+    showProfileMenu ||
+    showCompanyMenu ||
+    showHelpMenu ||
+    favoritesDrawer.isOpen()
+      ? 'z-[9999]'
+      : 'z-30'
+  "
+>
+  <div class="px-4 lg:px-5 py-2.5">
+    <div class="flex items-center justify-between gap-4">
+      <!-- LEFT SIDE -->
+      <div class="flex items-center gap-2 sm:gap-4 flex-1">
+        <!-- Mobile hamburger -->
+        <button
+          class="p-2.5 hover:bg-v4-tertiary-background-color rounded-xl transition-all lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+          (click)="showMobileMenu()"
+        >
+          <lucide-icon
+            [img]="icons['menu']"
+            [size]="22"
+            class="text-v4-main-text-color"
+          ></lucide-icon>
+        </button>
+
+        <!-- Mobile Search Button -->
+        <button
+          class="p-2.5 hover:bg-v4-tertiary-background-color rounded-xl transition-all lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+          (click)="showMobileSearch = true"
+        >
+          <lucide-icon
+            [img]="icons['search']"
+            [size]="20"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        <!-- Quick actions / favorites launcher -->
+        <app-favorites-drawer-v4
+          #favoritesDrawer
+          class="hidden lg:inline-flex"
+        ></app-favorites-drawer-v4>
+
+        <!-- Desktop Search -->
+        <div class="relative hidden lg:block lg:w-[180px] xl:w-[256px]">
+          <span
+            class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center text-v4-tertiary-text-color"
+          >
+            <lucide-icon [img]="icons['search']" [size]="16"></lucide-icon>
+          </span>
+          <input
+            #desktopSearchInput
+            type="search"
+            name="app-global-search"
+            autocomplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            aria-autocomplete="none"
+            placeholder="Search..."
+            [value]="searchQuery"
+            (input)="onSearchInput($any($event.target).value)"
+            (keydown)="onSearchKeyDown($event)"
+            (focus)="onSearchFocus()"
+            class="pl-10 pr-14 w-full h-9 rounded-xl text-[14px] text-v4-main-text-color placeholder:text-v4-placeholder-text-color bg-v4-secondary-background-color border border-v4-input-border-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-primary-brand-color focus-visible:ring-offset-1 transition-all duration-200"
+          />
+          <span
+            class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex items-center rounded border border-v4-border-color px-1.5 py-0.5 font-mono text-[12px] leading-none text-v4-subtle-text-color"
+          >
+            ⌘K
+          </span>
+
+          <!-- Search Results Dropdown -->
+          @if (showSearchResults) {
+            <!-- Backdrop -->
+            <div
+              role="presentation"
+              class="fixed inset-0 z-40"
+              (click)="closeSearchResults()"
+            ></div>
+
+            <div
+              class="absolute top-full left-0 right-0 mt-1 bg-v4-secondary-background-color border border-v4-border-color rounded-xl shadow-xl z-50 max-h-[400px] overflow-y-auto"
+            >
+              @if (filteredSearchResults.length > 0) {
+                @for (
+                  item of filteredSearchResults;
+                  track item.name;
+                  let isFirst = $first
+                ) {
+                  <button
+                    type="button"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-v4-tertiary-background-color"
+                    [class.opacity-50]="!item.routerLink && !item.action"
+                    [class.cursor-not-allowed]="
+                      !item.routerLink && !item.action
+                    "
+                    [class.cursor-pointer]="item.routerLink || item.action"
+                    (click)="navigateToSearchResult(item)"
+                  >
+                    <div
+                      class="w-8 h-8 rounded-lg bg-v4-input-background-color flex items-center justify-center flex-shrink-0"
+                    >
+                      @if (item.lucideIcon && icons[item.lucideIcon]) {
+                        <lucide-icon
+                          [img]="icons[item.lucideIcon]"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                      } @else if (item.icon) {
+                        <fa-icon
+                          [icon]="['fas', item.icon]"
+                          class="text-v4-tertiary-text-color text-sm"
+                        />
+                      } @else {
+                        <lucide-icon
+                          [img]="icons['search']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                      }
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-v4-main-text-color">
+                        {{ item.name }}
+                      </p>
+                      <p class="text-xs text-v4-tertiary-text-color">
+                        {{ item.category }}
+                      </p>
+                    </div>
+                    @if (isFirst) {
+                      <span
+                        class="text-xs text-v4-tertiary-text-color bg-v4-input-background-color px-2 py-0.5 rounded font-medium flex-shrink-0"
+                      >
+                        Enter &#8629;
+                      </span>
+                    }
+                  </button>
+                }
+              } @else {
+                <div class="px-4 py-6 text-center">
+                  <p class="text-sm text-v4-tertiary-text-color">
+                    No sections found for "{{ searchQuery }}"
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="flex items-center gap-1.5 sm:gap-3">
+        <!-- Trial Banner Desktop -->
+        @if (
+          isSubscribed === 0 &&
+          isShowTrailPeriod === 1 &&
+          isSubscribedEnd === 0 &&
+          adpMarketPlaceUser !== 1 &&
+          staticWhiteLabelConditions?.subscriptionVisible &&
+          personalInfo?.isLegalEnabled !== 1
+        ) {
+          <button
+            (click)="goToSubscription()"
+            class="hidden 2xl:inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3 h-9 text-[13px] font-medium text-v4-primary-brand-bold-color transition-all cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-yellow-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(
+                  in srgb,
+                  var(--v4-common-yellow-color) 20%,
+                  transparent
+                );
+            "
+          >
+            <lucide-icon
+              [img]="icons['zap']"
+              [size]="14"
+              class="text-v4-common-yellow-color [&_svg]:fill-v4-common-yellow-color"
+            ></lucide-icon>
+            @if (trialEnd > 0) {
+              Trial ends in {{ trialEnd }} days
+            } @else {
+              Trial ended
+            }
+            <span class="font-semibold">Upgrade ›</span>
+          </button>
+        }
+
+        <!-- Expired Subscription Banner Desktop -->
+        @if (subscribedEndDate !== "" && isSubscribedEnd === 1) {
+          <button
+            (click)="gtagScript(); goToSubscription('renew')"
+            class="hidden 2xl:inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3 h-9 text-[13px] font-medium text-v4-common-red-color transition-all cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-red-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(in srgb, var(--v4-common-red-color) 20%, transparent);
+            "
+          >
+            <lucide-icon
+              [img]="icons['circle-alert']"
+              [size]="14"
+              class="text-v4-common-red-color"
+            ></lucide-icon>
+            Subscription expired {{ subscribedEndDate }}
+            <span class="font-semibold">Renew</span>
+          </button>
+          @if (headerService.isRenewloading()) {
+            <span class="animate-pulse text-v4-common-red-color text-xs"
+              >...</span
+            >
+          }
+        }
+
+        <!-- Trial Banner Mobile -->
+        @if (
+          isSubscribed === 0 &&
+          isShowTrailPeriod === 1 &&
+          isSubscribedEnd === 0 &&
+          adpMarketPlaceUser !== 1 &&
+          staticWhiteLabelConditions?.subscriptionVisible &&
+          personalInfo?.isLegalEnabled !== 1
+        ) {
+          <button
+            type="button"
+            class="2xl:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-v4-common-yellow-color cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-yellow-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(
+                  in srgb,
+                  var(--v4-common-yellow-color) 20%,
+                  transparent
+                );
+            "
+            [matTooltip]="
+              trialEnd > 0
+                ? 'Trial ends in ' + trialEnd + ' days'
+                : 'Trial ended'
+            "
+            (click)="goToSubscription()"
+          >
+            <lucide-icon
+              [img]="icons['zap']"
+              [size]="14"
+              class="[&_svg]:fill-current"
+            ></lucide-icon>
+            <span class="text-xs font-semibold">
+              @if (trialEnd > 0) {
+                {{ trialEnd }}d
+              } @else {
+                Expired
+              }
+            </span>
+          </button>
+        }
+
+        <!-- Expired Subscription Banner Mobile -->
+        @if (subscribedEndDate !== "" && isSubscribedEnd === 1) {
+          <button
+            type="button"
+            class="2xl:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-v4-common-red-color cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-red-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(in srgb, var(--v4-common-red-color) 20%, transparent);
+            "
+            [matTooltip]="'Subscription expired ' + subscribedEndDate"
+            (click)="gtagScript(); goToSubscription('renew')"
+          >
+            <lucide-icon
+              [img]="icons['circle-alert']"
+              [size]="14"
+            ></lucide-icon>
+            <span class="text-xs font-semibold">Renew</span>
+          </button>
+        }
+
+        <!-- Re-Verification Required Badge -->
+        @if (rerunKybShowSignal()) {
+          <button
+            type="button"
+            appWhiteLabel
+            (click)="openRerunKybModal('kyb')"
+            [matTooltip]="'Re Verification Required'"
+            [matTooltipDisabled]="is2xlOrAbove()"
+            class="zm-reverify flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 h-9 text-[13px] font-medium text-v4-common-red-color whitespace-nowrap transition-all cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-red-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(in srgb, var(--v4-common-red-color) 20%, transparent);
+            "
+          >
+            <lucide-icon
+              [img]="icons['refresh-cw']"
+              [size]="14"
+              class="flex-shrink-0 text-v4-common-red-color"
+            ></lucide-icon>
+            <span class="hidden 2xl:inline whitespace-nowrap">
+              Re Verification Required
+            </span>
+          </button>
+        }
+
+        <!-- Additional Verification Required Badge -->
+        @if (eddTriggerStatus()) {
+          <button
+            type="button"
+            appWhiteLabel
+            (click)="openRerunKybModal('edd')"
+            [matTooltip]="'Additional Verification Required'"
+            [matTooltipDisabled]="is2xlOrAbove()"
+            class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 h-9 text-[13px] font-medium text-v4-common-red-color whitespace-nowrap transition-all cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-red-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(in srgb, var(--v4-common-red-color) 20%, transparent);
+            "
+          >
+            <lucide-icon
+              [img]="icons['circle-alert']"
+              [size]="14"
+              class="flex-shrink-0 text-v4-common-red-color"
+            ></lucide-icon>
+            <span class="hidden 2xl:inline whitespace-nowrap">
+              Additional Verification Required
+            </span>
+          </button>
+        }
+
+        <!-- Compliance Re-Verification Required Badge -->
+        @if (kybPersonaVerificationShowSignal()) {
+          <button
+            type="button"
+            appWhiteLabel
+            (click)="openKybPersonaVerificationModal()"
+            [matTooltip]="'Reverification Required'"
+            [matTooltipDisabled]="is2xlOrAbove()"
+            class="flex-shrink-0 flex items-center gap-2 px-4 h-11 rounded-xl whitespace-nowrap transition-all group active:scale-[0.98] hover:scale-[1.02] cursor-pointer"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--v4-common-red-color) 10%,
+                transparent
+              );
+              border: 1px solid
+                color-mix(in srgb, var(--v4-common-red-color) 20%, transparent);
+            "
+          >
+            <lucide-icon
+              [img]="icons['shield-check']"
+              [size]="14"
+              class="text-v4-common-red-color flex-shrink-0"
+            ></lucide-icon>
+            <span class="hidden 2xl:inline text-[13px] font-medium text-v4-common-red-color whitespace-nowrap">
+              Reverification Required
+            </span>
+          </button>
+        }
+
+        <!-- Enterprise Import Checks Button -->
+        @if (
+          isEnableYoungwilliamsPlugins ||
+          isEnableHaloPlugins ||
+          isEnabledhamaspikPlugins ||
+          isEnableSpectrumPlugins ||
+          isEnableMilwaukeePlugins ||
+          isEnableSalesForceplugins ||
+          isEnableBeazleyPlugin
+        ) {
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 h-9 rounded-xl cursor-pointer transition-all bg-common-secondary-green-color active:scale-[0.98] hover:opacity-90"
+            [matTooltip]="'Import Checks'"
+            [matTooltipDisabled]="isXlOrAbove()"
+            (click)="getImportChecksRoute()"
+          >
+            <lucide-icon
+              [img]="icons['download']"
+              [size]="14"
+              class="text-main-text-color"
+            ></lucide-icon>
+            <span
+              class="hidden xl:inline text-sm font-semibold text-main-text-color"
+            >
+              Import Checks
+            </span>
+          </button>
+        }
+
+        <!-- Version Switch Badge (→ Classic) — only for users with no plugins -->
+        <!-- @if (showVersionSwitcher()===0) { -->
+        <button
+          type="button"
+          (click)="switchToClassic()"
+          [matTooltip]="'Switch to Classic Version'"
+          [matTooltipDisabled]="isXlOrAbove()"
+          class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border border-v4-border-color bg-v4-secondary-background-color text-[13px] font-semibold text-v4-primary-brand-bold-color whitespace-nowrap hover:shadow-v4-card-hover transition-all cursor-pointer"
+        >
+          <lucide-icon
+            [img]="icons['arrow-right-left']"
+            [size]="14"
+            class="text-v4-primary-brand-bold-color flex-shrink-0"
+          ></lucide-icon>
+
+          <span class="hidden xl:inline whitespace-nowrap">
+            Switch to Classic Version
+          </span>
+        </button>
+        <!-- } -->
+
+        <!-- Book a Demo Button -->
+        @if (
+          isBookDemoDataLoaded &&
+          showBookDemo &&
+          !isHideBookDemo &&
+          !rerunKybShowSignal() &&
+          !eddTriggerStatus() &&
+          !kybPersonaVerificationShowSignal() &&
+          !bypassHeaderDemoButtonUser
+        ) {
+          <button
+            type="button"
+            (click)="onBookDemo()"
+            [matTooltip]="'Book a Demo'"
+            [matTooltipDisabled]="is2xlOrAbove()"
+            class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-xl bg-v4-primary-brand-color text-[13px] font-semibold text-white whitespace-nowrap hover:brightness-95 transition-all cursor-pointer"
+          >
+            <lucide-icon
+              [img]="icons['calendar']"
+              [size]="14"
+              class="text-white flex-shrink-0"
+            ></lucide-icon>
+            <span class="hidden 2xl:inline whitespace-nowrap">Instant Demo</span>
+          </button>
+        }
+
+        <!-- My Credits Mobile Compact -->
+        @if (mailCreditBalance === "--") {
+          <div
+            class="flex 2xl:hidden items-center gap-1.5 px-3 py-1.5 bg-v4-primary-brand-color rounded-xl animate-pulse"
+          >
+            <div class="flex items-center gap-1.5">
+              <div class="w-3.5 h-3.5 rounded bg-white/20"></div>
+              <div class="w-8 h-3 rounded bg-white/20"></div>
+            </div>
+          </div>
+        } @else {
+          <button
+            type="button"
+            class="flex 2xl:hidden items-center gap-1.5 px-3 py-1.5 bg-v4-primary-brand-color rounded-xl cursor-pointer active:bg-v4-primary-brand-bold-color transition-all"
+            [matTooltip]="'Credits'"
+            (click)="navigateToPricing()"
+          >
+            <lucide-icon
+              [img]="icons['dollar-sign']"
+              [size]="14"
+              class="text-v4-secondary-brand-color flex-shrink-0"
+            ></lucide-icon>
+            <span class="text-xs font-bold text-white">{{
+              +mailCreditBalance | currency
+            }}</span>
+          </button>
+        }
+
+        <!-- My Credits Desktop -->
+        @if (mailCreditBalance === "--") {
+          <div
+            class="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1.5 bg-v4-primary-brand-color rounded-full animate-pulse"
+          >
+            <div class="w-4 h-4 rounded bg-white/20"></div>
+            <div class="w-12 h-3 rounded bg-white/20"></div>
+            <div class="w-14 h-3.5 rounded bg-white/20"></div>
+          </div>
+        } @else {
+          <button
+            type="button"
+            class="zm-credits hidden 2xl:inline-flex items-center gap-1.5 whitespace-nowrap px-3 h-9 rounded-xl bg-v4-primary-brand-color text-[13px] font-semibold text-white cursor-pointer transition-all hover:brightness-95"
+            (click)="navigateToPricing()"
+          >
+            <lucide-icon
+              [img]="icons['dollar-sign']"
+              [size]="14"
+              class="flex-shrink-0 text-v4-secondary-brand-color"
+            ></lucide-icon>
+            <span>Credits</span>
+            <span class="font-funnel">{{ +mailCreditBalance | currency }}</span>
+          </button>
+        }
+
+        <!-- Icon group (bell / theme / help) — wrapped in single pill on md+ -->
+        <div class="flex items-center gap-0.5">
+          <!-- Notifications -->
+          <div class="relative">
+            <button
+              type="button"
+              class="relative p-2 rounded-lg transition-all cursor-pointer"
+              [class.notif-btn-active]="notificationMenuTrigger.menuOpen"
+              [class.hover:bg-v4-tertiary-background-color]="
+                !notificationMenuTrigger.menuOpen
+              "
+              [matMenuTriggerFor]="notificationDropdown"
+              #notificationMenuTrigger="matMenuTrigger"
+              [matTooltip]="'Notifications'"
+              [matTooltipDisabled]="notificationMenuTrigger.menuOpen"
+              (click)="dismissNewNotificationPanel()"
+            >
+              <lucide-icon
+                [img]="icons['bell']"
+                [size]="20"
+                class="inline-block"
+                [class.bell-shake-v4]="showNewNotificationPanel"
+                [style.color]="
+                  notificationMenuTrigger.menuOpen
+                    ? 'var(--v4-primary-brand-bold-color)'
+                    : 'var(--v4-secondary-text-color)'
+                "
+              ></lucide-icon>
+              @if (notificationCount > 0) {
+                <span
+                  class="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-[3px] flex items-center justify-center rounded-full bg-v4-common-red-color text-[12px] font-bold text-white border border-v4-secondary-background-color"
+                >
+                  {{ notificationCount > 99 ? "99+" : notificationCount }}
+                </span>
+              }
+            </button>
+
+            @if (showNewNotificationPanel) {
+              <div
+                class="new-noti-tooltip-v4 absolute top-full -right-[100px] z-20 mt-1.5 w-max bg-v4-primary-brand-color border border-v4-border-color shadow-lg rounded-lg font-peridot"
+                role="status"
+                aria-live="polite"
+              >
+                <!-- caret pointing up to the notification bell -->
+                <span
+                  class="absolute -top-1 right-[113px] w-2 h-2 rotate-45 bg-v4-primary-brand-color"
+                ></span>
+                <div class="flex items-center gap-1.5 pl-2 pr-1 py-1">
+                  <!-- bell with a live pulse dot -->
+                  <span class="relative flex items-center shrink-0">
+                    <lucide-icon
+                      [img]="icons['bell']"
+                      [size]="13"
+                      [style.color]="'#ffffff'"
+                    ></lucide-icon>
+                    <span class="absolute -top-0.5 -right-1 flex h-1.5 w-1.5">
+                      <span
+                        class="absolute inline-flex h-full w-full rounded-full bg-v4-common-red-color opacity-75 animate-ping"
+                      ></span>
+                      <span
+                        class="relative inline-flex h-1.5 w-1.5 rounded-full bg-v4-common-red-color"
+                      ></span>
+                    </span>
+                  </span>
+
+                  <!-- message -->
+                  <span
+                    class="text-[12px] font-semibold text-white whitespace-nowrap"
+                  >
+                    {{ newNotificationCount }} new notification{{
+                      newNotificationCount === 1 ? "" : "s"
+                    }}
+                  </span>
+
+                  <!-- dismiss -->
+                  <button
+                    type="button"
+                    class="flex items-center justify-center w-4 h-4 rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors shrink-0"
+                    aria-label="Dismiss new notification alert"
+                    (click)="
+                      dismissNewNotificationPanel(); $event.stopPropagation()
+                    "
+                  >
+                    <lucide-icon
+                      [img]="icons['x']"
+                      [size]="12"
+                      [style.color]="'currentColor'"
+                    ></lucide-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Notification Popover -->
+          <mat-menu
+            #notificationDropdown="matMenu"
+            class="notification-popover-v4 mt-2"
+          >
+            <div
+              role="presentation"
+              class="w-[340px] bg-v4-secondary-background-color rounded-xl overflow-hidden font-peridot tracking-[-0.011em]"
+              (click)="$event.stopPropagation()"
+            >
+              <!-- Header -->
+              <div class="px-4 pt-4 pb-2">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-semibold text-v4-main-text-color">
+                    Notifications
+                  </h3>
+                  @if (notificationCount > 0) {
+                    <button
+                      type="button"
+                      class="text-xs font-medium text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+                      (click)="markAllNotificationsRead()"
+                    >
+                      Mark all as read
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- List -->
+              <div class="max-h-[380px] overflow-y-auto">
+                @if (groupedNotifications.length > 0) {
+                  @for (group of groupedNotifications; track group.day) {
+                    <div
+                      class="flex items-center justify-between px-4 pt-3 pb-1"
+                    >
+                      <span
+                        class="text-xs font-medium text-v4-tertiary-text-color"
+                      >
+                        {{ group.day }}
+                      </span>
+                      <span class="text-xs text-v4-tertiary-text-color">
+                        {{ group.date }}
+                      </span>
+                    </div>
+                    @for (item of group.notifications; track item.id) {
+                      <div
+                        role="presentation"
+                        class="flex items-start gap-3 px-4 py-2.5 cursor-pointer hover:bg-v4-border-color transition-all"
+                        (click)="onNotificationClick(item)"
+                      >
+                        <!-- Icon -->
+                        <div
+                          class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
+                          [style.background-color]="
+                            getNotificationBgColor(item.notification?.icon)
+                          "
+                        >
+                          <lucide-icon
+                            [img]="
+                              icons[
+                                getNotificationIconInfo(item.notification?.icon)
+                                  .name
+                              ]
+                            "
+                            [size]="16"
+                            [class]="
+                              getNotificationIconInfo(item.notification?.icon)
+                                .color
+                            "
+                          ></lucide-icon>
+                        </div>
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0">
+                          <p
+                            class="text-sm text-v4-main-text-color truncate"
+                            [class.font-semibold]="!item.readAt"
+                          >
+                            {{ item.notification?.title }}
+                          </p>
+                          <span class="text-[12px] text-v4-tertiary-text-color">
+                            {{ item.dateDuaration }}
+                          </span>
+                        </div>
+                        @if (!item.readAt) {
+                          <span
+                            class="w-2 h-2 rounded-full bg-v4-primary-brand-bold-color flex-shrink-0 mt-2"
+                          ></span>
+                        }
+                      </div>
+                    }
+                  }
+                } @else {
+                  <div class="py-8 flex flex-col items-center text-center px-4">
+                    <lucide-icon
+                      [img]="icons['bell-off']"
+                      [size]="28"
+                      class="text-v4-tertiary-text-color mb-2"
+                    ></lucide-icon>
+                    <p class="text-sm text-v4-tertiary-text-color">
+                      No notifications
+                    </p>
+                  </div>
+                }
+              </div>
+
+              <!-- Footer -->
+              @if (notifications.length > 0) {
+                <div
+                  class="p-3 border-t border-v4-border-color flex justify-center"
+                >
+                  <button
+                    type="button"
+                    class="text-sm font-medium text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+                    (click)="viewAllNotifications()"
+                  >
+                    View All
+                  </button>
+                </div>
+              }
+            </div>
+          </mat-menu>
+
+          <!-- Theme toggle -->
+          <button
+            class="hidden md:flex relative p-2 rounded-lg transition-all hover:bg-v4-tertiary-background-color text-v4-secondary-text-color cursor-pointer"
+            (click)="toggleDarkMode()"
+            [matTooltip]="
+              isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'
+            "
+          >
+            @if (isDarkMode) {
+              <lucide-icon [img]="icons['sun']" [size]="20"></lucide-icon>
+            } @else {
+              <lucide-icon [img]="icons['moon']" [size]="20"></lucide-icon>
+            }
+          </button>
+
+          <!-- Help Icon with Dropdown -->
+          <div class="relative hidden md:block">
+            <button
+              type="button"
+              class="p-2 rounded-lg transition-all cursor-pointer"
+              [class.help-btn-active]="showHelpMenu"
+              [class.hover:bg-v4-tertiary-background-color]="!showHelpMenu"
+              [matTooltip]="'Help'"
+              [matTooltipDisabled]="showHelpMenu"
+              (click)="showHelpMenu = !showHelpMenu"
+            >
+              <lucide-icon
+                [img]="icons['circle-question-mark']"
+                [size]="20"
+                [style.color]="
+                  showHelpMenu
+                    ? 'var(--v4-primary-brand-bold-color)'
+                    : 'var(--v4-secondary-text-color)'
+                "
+              ></lucide-icon>
+            </button>
+
+            @if (showHelpMenu) {
+              <!-- Backdrop -->
+              <div
+                class="fixed inset-0 z-40"
+                tabindex="0"
+                role="button"
+                aria-label="Close help menu"
+                (click)="showHelpMenu = false"
+                (keydown.enter)="showHelpMenu = false"
+                (keydown.space)="showHelpMenu = false; $event.preventDefault()"
+              ></div>
+
+              <!-- Dropdown panel -->
+              <div
+                class="absolute top-full mt-2 w-72 bg-v4-secondary-background-color rounded-xl shadow-xl overflow-hidden z-50 border border-v4-border-color font-peridot help-section"
+              >
+                <div
+                  class="bg-v4-secondary-background-color rounded-xl w-72 overflow-hidden"
+                >
+                  <!-- Header -->
+                  <div
+                    class="p-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+                  >
+                    <div class="flex items-center gap-2">
+                      <lucide-icon
+                        [img]="icons['circle-question-mark']"
+                        [size]="18"
+                        class="text-v4-primary-brand-bold-color"
+                      ></lucide-icon>
+                      <h3
+                        class="text-sm font-semibold text-v4-main-text-color help-popover-v4-heading"
+                      >
+                        Help & Support
+                      </h3>
+                    </div>
+                  </div>
+                  <div class="p-2">
+                    <!-- Support & Chat -->
+                    @if (showLiveChat) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onLiveChat()"
+                      >
+                        <lucide-icon
+                          [img]="icons['message-square']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Live Chat</span
+                        >
+                      </button>
+                    }
+                    @if (showLiveScreenSharing) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onLiveScreenSharing()"
+                      >
+                        <lucide-icon
+                          [img]="icons['monitor']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Live Screen Sharing</span
+                        >
+                      </button>
+                    }
+                    @if (showLiveChat || showLiveScreenSharing) {
+                      <div class="border-t border-v4-border-color my-1"></div>
+                    }
+                    <!-- Learning Resources -->
+                    <button
+                      class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                      (click)="onHelpTutorial()"
+                    >
+                      <lucide-icon
+                        [img]="icons['book-open']"
+                        [size]="16"
+                        class="text-v4-tertiary-text-color"
+                      ></lucide-icon>
+                      <span class="text-sm text-v4-main-text-color"
+                        >Help / Tutorial</span
+                      >
+                    </button>
+                    @if (showVideoTutorial) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onVideoTutorial()"
+                      >
+                        <lucide-icon
+                          [img]="icons['video']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Video Tutorial</span
+                        >
+                      </button>
+                    }
+                    <div class="border-t border-v4-border-color my-1"></div>
+                    <!-- Feedback -->
+                    @if (showSubmitIdea) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onSubmitIdea()"
+                      >
+                        <lucide-icon
+                          [img]="icons['lightbulb']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Submit an Idea</span
+                        >
+                      </button>
+                    }
+                    @if (showReportIssue) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onReportIssue()"
+                      >
+                        <lucide-icon
+                          [img]="icons['circle-alert']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Report an Issue</span
+                        >
+                      </button>
+                    }
+                    @if (showCompliance) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onOurCompliance()"
+                      >
+                        <lucide-icon
+                          [img]="icons['heart']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Our Compliance</span
+                        >
+                      </button>
+                    }
+                    @if (showSubmitIdea || showReportIssue || showCompliance) {
+                      <div class="border-t border-v4-border-color my-1"></div>
+                    }
+                    <!-- Contact -->
+                    @if (showBookDemo) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onBookDemo(); showHelpMenu = false"
+                      >
+                        <lucide-icon
+                          [img]="icons['calendar']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Instant Demo</span
+                        >
+                      </button>
+                    }
+                    @if (showTextUs) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onTextUs()"
+                      >
+                        <lucide-icon
+                          [img]="icons['message-circle']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span class="text-sm text-v4-main-text-color"
+                          >Text Us</span
+                        >
+                      </button>
+                    }
+                    @if (showPhoneNumber) {
+                      <button
+                        class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                        (click)="onPhoneCall()"
+                      >
+                        <lucide-icon
+                          [img]="icons['phone']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                        <span
+                          class="text-sm text-v4-main-text-color font-medium"
+                          >{{
+                            staticWhiteLabelConditions.customerSupportNo
+                          }}</span
+                        >
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+              <!-- /dropdown panel -->
+            }
+          </div>
+          <!-- /help relative wrapper -->
+        </div>
+        <!-- /icon group wrapper -->
+
+        <!-- Right section wrapper: relative anchor for profile dropdown spans company→avatar -->
+        <div class="relative flex items-center gap-3 min-w-0">
+          <!-- Company Selector -->
+          <div class="relative min-w-0">
+            <!-- Company Selector Mobile -->
+            @if (!companyName) {
+              <div
+                class="flex 2xl:hidden items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-v4-secondary-background-color border border-v4-input-border-color animate-pulse"
+              >
+                <div
+                  class="w-[18px] h-[18px] rounded-md bg-v4-border-color"
+                ></div>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="flex 2xl:hidden items-center gap-1.5 px-2.5 py-1.5 rounded-xl cursor-pointer transition-all bg-v4-secondary-background-color border border-v4-input-border-color"
+                (click)="showCompanyMenu = !showCompanyMenu"
+              >
+                @if (activeCompanyLogo) {
+                  <img
+                    [ngSrc]="activeCompanyLogo"
+                    width="20"
+                    height="20"
+                    class="rounded-md object-cover flex-shrink-0"
+                    alt="company logo"
+                  />
+                } @else {
+                  <lucide-icon
+                    [img]="icons['building-2']"
+                    [size]="18"
+                    class="text-v4-tertiary-text-color"
+                  ></lucide-icon>
+                }
+                <lucide-icon
+                  [img]="
+                    showCompanyMenu
+                      ? icons['chevron-up']
+                      : icons['chevron-down']
+                  "
+                  [size]="14"
+                  class="text-v4-tertiary-text-color transition-transform duration-200"
+                ></lucide-icon>
+              </button>
+            }
+
+            <!-- Company Selector Desktop -->
+            @if (!companyName) {
+              <div
+                class="hidden 2xl:flex items-center gap-2.5 px-2 h-9 rounded-xl bg-v4-secondary-background-color border border-v4-border-color animate-pulse"
+              >
+                <div class="w-8 h-8 rounded-md bg-v4-border-color"></div>
+                <div class="w-20 h-3.5 rounded-md bg-v4-border-color"></div>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="hidden 2xl:flex items-center gap-2.5 px-2 h-9 max-w-[200px] rounded-xl cursor-pointer transition-all bg-v4-secondary-background-color border border-v4-border-color"
+                (click)="showCompanyMenu = !showCompanyMenu"
+              >
+                @if (activeCompanyLogo) {
+                  <img
+                    [ngSrc]="activeCompanyLogo"
+                    width="32"
+                    height="32"
+                    class="rounded-md object-cover flex-shrink-0"
+                    alt="company logo"
+                  />
+                } @else {
+                  <div
+                    class="w-8 h-8 rounded-md bg-v4-tertiary-background-color flex items-center justify-center flex-shrink-0"
+                  >
+                    <lucide-icon
+                      [img]="icons['building-2']"
+                      [size]="18"
+                      class="text-v4-primary-brand-bold-color"
+                    ></lucide-icon>
+                  </div>
+                }
+                <div class="text-left flex-1 min-w-0">
+                  <div
+                    class="text-[13px] font-semibold whitespace-nowrap truncate text-v4-main-text-color leading-tight"
+                  >
+                    {{ companyName }}
+                  </div>
+                  <div
+                    class="text-[12px] leading-tight text-v4-subtle-text-color mt-1"
+                  >
+                    Company
+                  </div>
+                </div>
+                <lucide-icon
+                  [img]="
+                    showCompanyMenu
+                      ? icons['chevron-up']
+                      : icons['chevron-down']
+                  "
+                  [size]="15"
+                  class="text-v4-tertiary-text-color flex-shrink-0 transition-transform duration-200"
+                ></lucide-icon>
+              </button>
+            }
+            <!-- Company dropdown (custom) - left edge aligns with My Credits left (offset 160px = 150px width + 10px gap) -->
+            @if (showCompanyMenu) {
+              <!-- Backdrop -->
+              <div
+                class="fixed inset-0 z-40"
+                tabindex="0"
+                role="button"
+                aria-label="Close company menu"
+                (click)="showCompanyMenu = false"
+                (keydown.enter)="showCompanyMenu = false"
+                (keydown.space)="
+                  showCompanyMenu = false; $event.preventDefault()
+                "
+              ></div>
+
+              <div
+                class="fixed inset-x-4 top-16 md:absolute md:inset-auto md:top-full md:-left-[160px] md:right-0 md:mt-2 md:min-w-[280px] bg-v4-secondary-background-color rounded-xl shadow-xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto font-peridot border border-v4-border-color"
+              >
+                <div
+                  class="p-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+                >
+                  <div class="flex items-center gap-2">
+                    <lucide-icon
+                      [img]="icons['building-2']"
+                      [size]="18"
+                      class="text-v4-primary-brand-bold-color"
+                    ></lucide-icon>
+                    <h3 class="text-sm font-semibold text-v4-main-text-color">
+                      Switch Company
+                    </h3>
+                  </div>
+                </div>
+                <div class="max-h-64 overflow-y-auto p-2">
+                  <app-header-company-dropdown-v4
+                    [allCompanies]="allCompanies"
+                    [activeCompanyId]="activeCompanyId"
+                    (selectedCompany)="
+                      onSelectCompany($event); showCompanyMenu = false
+                    "
+                  ></app-header-company-dropdown-v4>
+                </div>
+                <!-- Actions -->
+                <div class="p-2 border-t border-v4-border-color">
+                  <button
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="addCompany(); showCompanyMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['plus']"
+                      [size]="16"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                    <span class="text-sm font-medium text-v4-main-text-color"
+                      >Add Company</span
+                    >
+                  </button>
+                  <button
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="requestCompanyAccess(); showCompanyMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['mail']"
+                      [size]="16"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                    <span class="text-sm font-medium text-v4-main-text-color"
+                      >Request Company Access</span
+                    >
+                  </button>
+                  <button
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="managePage(); showCompanyMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['settings']"
+                      [size]="16"
+                      class="text-v4-primary-brand-bold-color"
+                    ></lucide-icon>
+                    <span
+                      class="text-sm text-v4-primary-brand-bold-color font-medium"
+                      >Company Management</span
+                    >
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <!-- /Company Selector -->
+
+          <!-- Separator -->
+          <div class="hidden sm:block h-8 w-px bg-v4-input-border-color"></div>
+
+          <!-- User section -->
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              class="cursor-pointer hover:scale-105 transition-transform"
+              (click)="showProfileMenu = !showProfileMenu"
+            >
+              <div
+                class="w-8 h-8 sm:w-9 sm:h-9 rounded-full relative overflow-hidden border border-v4-border-color hover:border-v4-tertiary-text-color transition-colors bg-v4-secondary-brand-color"
+              >
+                @if (profilePictureUrl) {
+                  <img
+                    class="absolute inset-0 w-full h-full object-cover z-10"
+                    [src]="profilePictureUrl"
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    (error)="onProfilePicError()"
+                  />
+                }
+                <span
+                  class="absolute inset-0 flex items-center justify-center text-v4-main-text-color font-semibold text-sm z-0"
+                  [class.hidden]="profilePictureUrl"
+                >
+                  {{ personalName | uppercase }}
+                </span>
+              </div>
+            </button>
+
+            <!-- Profile dropdown (custom) -->
+            @if (showProfileMenu) {
+              <!-- Backdrop -->
+              <div
+                class="fixed inset-0 z-40"
+                tabindex="0"
+                role="button"
+                aria-label="Close profile menu"
+                (click)="showProfileMenu = false"
+                (keydown.enter)="showProfileMenu = false"
+                (keydown.space)="
+                  showProfileMenu = false; $event.preventDefault()
+                "
+              ></div>
+
+              <!-- Dropdown panel -->
+              <div
+                class="font-peridot fixed inset-x-4 top-16 md:absolute md:inset-auto md:top-full md:right-0 md:mt-2 md:min-w-[240px] bg-v4-secondary-background-color rounded-xl shadow-xl overflow-hidden z-[9999] max-h-[70vh] overflow-y-auto border border-v4-border-color"
+              >
+                <!-- Current User Info -->
+                <div
+                  class="p-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-12 h-12 flex-shrink-0 rounded-full relative overflow-hidden border-2 border-v4-main-background-color bg-v4-secondary-brand-color"
+                    >
+                      @if (profilePictureUrl) {
+                        <img
+                          class="absolute inset-0 w-full h-full object-cover z-10"
+                          [src]="profilePictureUrl"
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          (error)="onProfilePicError()"
+                        />
+                      }
+                      <span
+                        class="absolute inset-0 flex items-center justify-center text-v4-badge-neutral-text-color font-semibold text-lg z-0"
+                        [class.hidden]="profilePictureUrl"
+                      >
+                        {{ personalName | uppercase }}
+                      </span>
+                    </div>
+                    <div>
+                      <div
+                        class="text-sm font-semibold text-v4-main-text-color"
+                      >
+                        {{ personalInfo?.name || personalInfo?.nickName }}
+                      </div>
+                      <div class="text-xs text-v4-tertiary-text-color">
+                        {{ personalInfo?.email }}
+                      </div>
+                      <!-- Level indicator - COMMENTED OUT
+                    <span
+                      class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium mt-1"
+                      [class]="
+                        verificationLevel === 2
+                          ? 'bg-v4-badge-accent-bg-color text-v4-common-violet-color'
+                          : 'bg-v4-badge-success-bg-color text-v4-secondary-brand-color'
+                      "
+                    >
+                      Level {{ verificationLevel }}
+                    </span>
+                    END COMMENTED OUT -->
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Menu Items -->
+                <div class="p-2">
+                  <a
+                    routerLink="/v4/manage/user-profile/index"
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="showProfileMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['user']"
+                      [size]="16"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                    <span class="text-sm text-v4-main-text-color"
+                      >My Profile</span
+                    >
+                  </a>
+                  <a
+                    routerLink="/v4/manage/company_management/index"
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="showProfileMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['building-2']"
+                      [size]="16"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                    <span class="text-sm text-v4-main-text-color"
+                      >Company Management</span
+                    >
+                  </a>
+                  <a
+                    routerLink="/v4/manage/user-profile/user-settings"
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="showProfileMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['settings']"
+                      [size]="16"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                    <span class="text-sm text-v4-main-text-color"
+                      >Settings</span
+                    >
+                  </a>
+
+                  <!-- Mobile-only: Help & Support -->
+                  <button
+                    class="md:hidden w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-v4-tertiary-background-color transition-all text-left cursor-pointer"
+                    (click)="showProfileMenu = false; onMobileHelpSupport()"
+                  >
+                    <lucide-icon
+                      [img]="icons['circle-question-mark']"
+                      [size]="16"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                    <span class="text-sm text-v4-main-text-color"
+                      >Help & Support</span
+                    >
+                  </button>
+
+                  <!-- Mobile-only: Dark Mode Toggle -->
+                  <button
+                    class="md:hidden w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-v4-tertiary-background-color transition-all text-left cursor-pointer"
+                    (click)="toggleDarkMode(); showProfileMenu = false"
+                  >
+                    <div class="flex items-center gap-3">
+                      @if (isDarkMode) {
+                        <lucide-icon
+                          [img]="icons['sun']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                      } @else {
+                        <lucide-icon
+                          [img]="icons['moon']"
+                          [size]="16"
+                          class="text-v4-tertiary-text-color"
+                        ></lucide-icon>
+                      }
+                      <span class="text-sm text-v4-main-text-color">{{
+                        isDarkMode ? "Light Mode" : "Dark Mode"
+                      }}</span>
+                    </div>
+                    <div
+                      class="w-9 h-5 rounded-full relative transition-colors"
+                      [ngClass]="{
+                        'bg-v4-primary-brand-color': isDarkMode,
+                        'bg-v4-input-background-color': !isDarkMode
+                      }"
+                    >
+                      <div
+                        class="absolute top-0.5 w-4 h-4 rounded-full bg-v4-main-background-color shadow-sm transition-transform"
+                        [ngClass]="{
+                          'translate-x-4': isDarkMode,
+                          'translate-x-0.5': !isDarkMode
+                        }"
+                      ></div>
+                    </div>
+                  </button>
+
+                  <!-- Divider before logout -->
+                  <div class="my-1 border-t border-v4-border-color"></div>
+
+                  <button
+                    class="v4-dropdown-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer hover:bg-v4-border-color"
+                    (click)="onLogout(); showProfileMenu = false"
+                  >
+                    <lucide-icon
+                      [img]="icons['log-out']"
+                      [size]="16"
+                      class="text-v4-common-red-color"
+                    ></lucide-icon>
+                    <span class="text-sm text-v4-common-red-color">Logout</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <!-- /user section -->
+        </div>
+        <!-- /right section relative wrapper -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Header bottom divider -->
+  <div class="h-px bg-v4-border-color"></div>
+
+  <!-- Mobile Search Overlay -->
+  @if (showMobileSearch) {
+    <div class="fixed inset-0 z-50 bg-v4-secondary-background-color lg:hidden">
+      <div class="flex items-center gap-3 p-4 border-b border-v4-border-color">
+        <div class="relative flex-1">
+          <lucide-icon
+            [img]="icons['search']"
+            [size]="16"
+            class="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none z-10 text-v4-tertiary-text-color"
+          ></lucide-icon>
+          <input
+            type="search"
+            name="app-global-search-mobile"
+            autocomplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            aria-autocomplete="none"
+            placeholder="Search..."
+            [value]="searchQuery"
+            (input)="onSearchInput($any($event.target).value)"
+            (keydown)="onSearchKeyDown($event)"
+            class="pl-10 pr-4 w-full h-9 rounded-xl text-sm text-v4-main-text-color placeholder:text-v4-placeholder-text-color bg-v4-secondary-background-color border border-v4-border-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-primary-brand-color focus-visible:ring-offset-1 transition-all duration-200"
+          />
+        </div>
+        <button
+          class="p-2.5 hover:bg-v4-tertiary-background-color rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+          (click)="
+            showMobileSearch = false;
+            searchQuery = '';
+            filteredSearchResults = [];
+            showSearchResults = false
+          "
+        >
+          <span class="text-sm font-medium text-v4-tertiary-text-color"
+            >Cancel</span
+          >
+        </button>
+      </div>
+      <div class="max-h-[calc(100vh-80px)] overflow-y-auto">
+        @if (filteredSearchResults.length > 0) {
+          @for (
+            item of filteredSearchResults;
+            track item.name;
+            let isFirst = $first
+          ) {
+            <button
+              type="button"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-v4-tertiary-background-color"
+              [class.opacity-50]="!item.routerLink && !item.action"
+              (click)="navigateToSearchResult(item); showMobileSearch = false"
+            >
+              <div
+                class="w-8 h-8 rounded-lg bg-v4-input-background-color flex items-center justify-center flex-shrink-0"
+              >
+                @if (item.lucideIcon && icons[item.lucideIcon]) {
+                  <lucide-icon
+                    [img]="icons[item.lucideIcon]"
+                    [size]="16"
+                    class="text-v4-tertiary-text-color"
+                  ></lucide-icon>
+                } @else {
+                  <lucide-icon
+                    [img]="icons['search']"
+                    [size]="16"
+                    class="text-v4-tertiary-text-color"
+                  ></lucide-icon>
+                }
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-v4-main-text-color">
+                  {{ item.name }}
+                </p>
+                <p class="text-xs text-v4-tertiary-text-color">
+                  {{ item.category }}
+                </p>
+              </div>
+              @if (isFirst) {
+                <span
+                  class="text-xs text-v4-tertiary-text-color bg-v4-input-background-color px-2 py-0.5 rounded font-medium flex-shrink-0"
+                >
+                  Enter &#8629;
+                </span>
+              }
+            </button>
+          }
+        } @else if (searchQuery.trim()) {
+          <div class="px-4 py-6 text-center">
+            <p class="text-sm text-v4-tertiary-text-color">
+              No sections found for "{{ searchQuery }}"
+            </p>
+          </div>
+        } @else {
+          <div class="p-4">
+            <p class="text-sm text-v4-tertiary-text-color">
+              Type to search sections...
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</header>
+
+<!-- Bulk payment progress -->
+@if (isShowPaymentSummary) {
+  <div
+    cdkDrag
+    cdkDragBoundary="body"
+    class="fixed top-16 inset-x-0 mx-auto z-50 w-[calc(100vw-32px)] max-w-[360px] cursor-move touch-none bg-v4-secondary-background-color border border-v4-border-color shadow-lg rounded-xl px-4 py-3"
+  >
+    @if (isBulkPaymentProcessing) {
+      <div class="flex items-center justify-between mb-2">
+        <span class="flex items-center gap-2 text-sm font-medium text-v4-main-text-color">
+          <lucide-icon
+            [img]="icons['refresh-cw']"
+            [size]="14"
+            class="animate-spin text-v4-common-blue-color"
+          ></lucide-icon>
+          Processing payments
+        </span>
+        <span class="text-xs text-v4-tertiary-text-color">
+          {{ width }} / {{ bulkPaymentCount }}
+        </span>
+      </div>
+      <div class="h-2 rounded-full bg-v4-tertiary-background-color overflow-hidden">
+        <div
+          class="h-full rounded-full bg-v4-common-green-color transition-all duration-300"
+          [style.width.%]="bulkPaymentCount ? (width / bulkPaymentCount) * 100 : 0"
+        ></div>
+      </div>
+    } @else {
+      <div class="flex items-center gap-3">
+        <lucide-icon
+          [img]="icons['circle-check']"
+          [size]="22"
+          class="text-v4-common-green-color shrink-0"
+        ></lucide-icon>
+        <div class="flex-1 min-w-0">
+          @if (abcEnterpriseCheckPrintStatus?.total) {
+            <p class="text-sm font-medium text-v4-main-text-color">Check Printing Completed</p>
+            <p class="flex gap-2 text-xs">
+              @if (abcEnterpriseCheckPrintStatus?.success) {
+                <span class="text-v4-common-green-color">Success: {{ abcEnterpriseCheckPrintStatus?.success }}</span>
+              }
+              @if (abcEnterpriseCheckPrintStatus?.fail) {
+                <span class="text-v4-common-red-color">Failed: {{ abcEnterpriseCheckPrintStatus?.fail }}</span>
+              }
+              @if (abcEnterpriseCheckPrintStatus?.canceled) {
+                <span class="text-v4-tertiary-text-color">Canceled: {{ abcEnterpriseCheckPrintStatus?.canceled }}</span>
+              }
+            </p>
+          } @else {
+            <p class="text-sm font-medium text-v4-main-text-color">Payments Completed</p>
+            @if (countOfFailedPayment) {
+              <p class="text-xs text-v4-common-red-color">{{ countOfFailedPayment }} Failed</p>
+            } @else {
+              <p class="text-xs text-v4-common-green-color">Success</p>
+            }
+          }
+        </div>
+        @if (!v3BulkPaymentService.abcEntCheckPrintCountSignal()) {
+          <button
+            class="text-sm font-medium text-v4-common-blue-color underline cursor-pointer"
+            (click)="openPaymentSummary()"
+          >
+            View Summary
+          </button>
+        }
+        <button class="cursor-pointer flex items-center" (click)="closeBulkProgress()">
+          <lucide-icon
+            [img]="icons['x']"
+            [size]="16"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+      </div>
+    }
+  </div>
+}
+
+<!-- Offline toast -->
+@if (isOffline) {
+  <div
+    class="fixed top-20 left-1/2 -translate-x-1/2 z-[99999] bg-v4-secondary-background-color shadow-lg rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-v4-common-red-color font-medium border border-v4-common-red-color"
+  >
+    <lucide-icon [img]="icons['wifi-off']" [size]="18"></lucide-icon>
+    You're offline. Check your connection.
+  </div>
+}
+
+<!-- Push notification toast -->
+<div
+  class="w-full flex justify-center absolute top-14 z-50 pointer-events-none"
+>
+  <div
+    class="min-w-[300px] bg-v4-secondary-background-color shadow-lg transition-all ease-in-out duration-500 overflow-hidden rounded-xl pointer-events-auto"
+    [ngClass]="
+      isNotification
+        ? 'max-h-[80px] border border-v4-common-blue-color'
+        : 'max-h-0 border-0'
+    "
+  >
+    <div class="w-[300px] flex justify-between px-3 pt-2">
+      <span class="text-v4-main-text-color text-xs font-medium">New</span>
+      <button (click)="closeNotification()" class="cursor-pointer">
+        <lucide-icon
+          [img]="icons['x']"
+          [size]="14"
+          class="text-v4-tertiary-text-color"
+        ></lucide-icon>
+      </button>
+    </div>
+    <div class="w-[300px] h-[50px] flex items-center px-3 pb-2">
+      <div
+        class="w-8 h-8 rounded-full flex items-center justify-center mr-3"
+        style="
+          background-color: color-mix(
+            in srgb,
+            var(--v4-common-blue-color) 15%,
+            transparent
+          );
+        "
+      >
+        <lucide-icon
+          [img]="icons['bell']"
+          [size]="16"
+          class="text-v4-common-blue-color"
+        ></lucide-icon>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm text-v4-main-text-color truncate">
+          {{ newNotification?.title }}
+        </p>
+        <span class="text-xs text-v4-tertiary-text-color">Now</span>
+      </div>
+    </div>
+  </div>
+</div>

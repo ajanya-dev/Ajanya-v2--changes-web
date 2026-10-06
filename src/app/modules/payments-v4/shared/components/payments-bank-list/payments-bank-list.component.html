@@ -1,0 +1,302 @@
+<!-- Add New Bank Form (inline) -->
+@if (showAddBankForm()) {
+  <div>
+    <button
+      type="button"
+      class="mb-3 flex items-center gap-1.5 text-sm font-medium text-v4-primary-brand-bold-color transition-colors"
+      (click)="cancelAddBank()"
+    >
+      <i-lucide [img]="ArrowLeftIcon" [size]="16"></i-lucide>
+      Back to bank list
+    </button>
+    <app-add-new-bank-v4-modal
+      [isComponent]="true"
+      (success)="onBankCreated($event)"
+      [searchBank]="searchTerm"
+    />
+  </div>
+} @else {
+  <!-- Selected Bank View -->
+  @if (selectedBank(); as bank) {
+    <div
+      class="selected-bank flex items-center gap-3 rounded-lg px-4 py-3"
+    >
+      <div
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-sm font-semibold"
+      >
+        <i-lucide
+          [img]="building2"
+          [size]="18"
+          class="text-v4-primary-brand-color"
+        ></i-lucide>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2">
+          <p class="truncate text-sm font-medium text-v4-main-text-color">
+            {{ getDisplayName(bank) }}
+          </p>
+          @switch (getBankVerificationStatus(bank)) {
+            @case ('achVerified') {
+              <span
+                class="inline-flex shrink-0 items-center rounded bg-v4-badge-success-bg-color text-v4-badge-success-text-color px-1.5 py-0.5 text-[12px] font-semibold"
+              >
+                ACH
+              </span>
+            }
+            @case ('verified') {
+              <span
+                class="inline-flex shrink-0 items-center rounded bg-v4-badge-info-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-info-text-color"
+              >
+                Verified
+              </span>
+            }
+          }
+        </div>
+        <p class="truncate text-xs text-v4-tertiary-text-color">
+          {{ getSubText(bank) }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="shrink-0 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+        (click)="removeSelectedBank()"
+      >
+        <i-lucide [img]="XIcon" [size]="18"></i-lucide>
+      </button>
+    </div>
+  } @else {
+    <!-- Search Section -->
+    <div class="relative mb-3">
+      <i-lucide
+        [img]="SearchIcon"
+        [size]="16"
+        class="absolute left-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color"
+      ></i-lucide>
+      <input
+        type="text"
+        class="w-full rounded-lg border-2 border-v4-border-color bg-v4-secondary-background-color py-2.5 pl-9 pr-3 text-sm text-v4-main-text-color placeholder-v4-subtle-text-color outline-none transition-colors focus:border-v4-primary-brand-color"
+        [placeholder]="placeholder()"
+        [(ngModel)]="searchTerm"
+        (keyup)="onSearch()"
+      />
+      @if (searchTerm && (isLoading$ | async) === false) {
+        <button
+          type="button"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+          (click)="clearSearch()"
+        >
+          <i-lucide [img]="XIcon" [size]="16"></i-lucide>
+        </button>
+      }
+    </div>
+
+    <!-- Add New Bank Account -->
+    @if (paymentsService.hasPermission.bank) {
+      <button
+        type="button"
+        class="mb-3 flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-v4-border-success px-4 py-3 transition-colors hover:bg-v4-surface-success"
+        (click)="addNewBankAccount()"
+      >
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-surface-success-bold"
+        >
+          <i-lucide
+            [img]="PlusIcon"
+            [size]="18"
+            class="text-v4-text-success"
+          ></i-lucide>
+        </div>
+        <div class="text-left">
+          <p class="text-sm font-semibold text-v4-text-success">
+            {{ addNewLabel() }}
+          </p>
+          <p class="text-xs text-v4-text-success">
+            {{ addNewSubLabel() }}
+          </p>
+        </div>
+      </button>
+    }
+
+    <!-- Bank Account List -->
+    <div
+      class="bank-list-container overflow-y-auto"
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+    >
+      @if (isFilterOn$ | async) {
+        @for (bank of filteredBankAccounts$ | async; track bank.id) {
+          <div
+            role="presentation"
+            class="flex cursor-pointer items-center gap-3 rounded-lg border border-v4-border-color px-4 py-3 transition-colors hover:bg-[#004a7c0D] [&+div]:mt-2 hover:border-v4-primary-brand-color"
+            (click)="selectBank(bank)"
+          >
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-sm font-semibold"
+            >
+              <i-lucide
+                [img]="building2"
+                [size]="18"
+                class="text-v4-primary-brand-color"
+              ></i-lucide>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <p class="truncate text-sm font-medium text-v4-main-text-color">
+                  {{ getDisplayName(bank) }}
+                </p>
+                @switch (getBankVerificationStatus(bank)) {
+                  @case ('achVerified') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[12px] font-semibold bg-v4-badge-success-bg-color text-v4-badge-success-text-color"
+                    >
+                      ACH
+                    </span>
+                  }
+                  @case ('verified') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-info-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-info-text-color"
+                    >
+                      Verified
+                    </span>
+                  }
+                  @case ('confirmMD') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-error-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-error-text-color"
+                    >
+                      Confirm MD
+                    </span>
+                  }
+                  @case ('pending') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-warning-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-warning-text-color"
+                    >
+                      Pending
+                    </span>
+                  }
+                  @case ('notVerified') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-warning-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-warning-text-color"
+                    >
+                      Not Verified
+                    </span>
+                  }
+                }
+              </div>
+              <p class="truncate text-xs text-v4-tertiary-text-color">
+                {{ getSubText(bank) }}
+              </p>
+            </div>
+          </div>
+        } @empty {
+          @if ((isLoading$ | async) === false) {
+            <p class="py-4 text-center text-sm text-v4-tertiary-text-color">
+              {{
+                !paymentsService.hasPermission.bank
+                  ? "Permission Denied"
+                  : "No bank accounts found"
+              }}
+            </p>
+          }
+        }
+      } @else {
+        @for (bank of displayedBankAccounts$ | async; track bank.id) {
+          <div
+            role="presentation"
+            class="flex cursor-pointer items-center gap-3 rounded-lg border border-v4-border-color px-4 py-3 transition-colors hover:bg-[#004a7c0D] [&+div]:mt-2 hover:border-v4-primary-brand-color"
+            (click)="selectBank(bank)"
+          >
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-sm font-semibold"
+            >
+              <i-lucide
+                [img]="building2"
+                [size]="18"
+                class="text-v4-primary-brand-color"
+              ></i-lucide>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <p class="truncate text-sm font-medium text-v4-main-text-color">
+                  {{ getDisplayName(bank) }}
+                </p>
+                @switch (getBankVerificationStatus(bank)) {
+                  @case ('achVerified') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded  px-1.5 py-0.5 text-[12px] font-semibold bg-v4-badge-success-bg-color text-v4-badge-success-text-color"
+                    >
+                      ACH
+                    </span>
+                  }
+                  @case ('verified') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-info-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-info-text-color"
+                    >
+                      Verified
+                    </span>
+                  }
+                  @case ('confirmMD') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-error-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-error-text-color"
+                    >
+                      Confirm MD
+                    </span>
+                  }
+                  @case ('pending') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-warning-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-warning-text-color"
+                    >
+                      Pending
+                    </span>
+                  }
+                  @case ('notVerified') {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded bg-v4-badge-warning-bg-color px-1.5 py-0.5 text-[12px] font-semibold text-v4-badge-warning-text-color"
+                    >
+                      Not Verified
+                    </span>
+                  }
+                }
+              </div>
+              <p class="truncate text-xs text-v4-tertiary-text-color">
+                {{ getSubText(bank) }}
+              </p>
+            </div>
+          </div>
+        } @empty {
+          @if ((isLoading$ | async) === false) {
+            <p class="py-4 text-center text-sm text-v4-tertiary-text-color">
+              {{
+                !paymentsService.hasPermission.bank
+                  ? "Permission Denied"
+                  : "No bank accounts found"
+              }}
+            </p>
+          }
+        }
+      }
+
+      <!-- Loader -->
+      @if (isLoading$ | async) {
+        <div class="space-y-2 py-2">
+          @for (i of [1, 2, 3]; track i) {
+            <div
+              class="flex animate-pulse items-center gap-3 rounded-lg px-4 py-3"
+            >
+              <div
+                class="h-10 w-10 shrink-0 rounded-full bg-v4-input-background-color"
+              ></div>
+              <div class="flex-1 space-y-2">
+                <div
+                  class="h-3.5 w-3/4 rounded bg-v4-input-background-color"
+                ></div>
+                <div
+                  class="h-3 w-1/2 rounded bg-v4-input-background-color"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+}

@@ -1,0 +1,1306 @@
+﻿<div class="add-payee-v4-wrapper" [class.embedded-mode]="isEmbedded()">
+  <!-- ====== MAIN PAGE ====== -->
+  @if (showPage === "main") {
+    <form [formGroup]="payeeForm" class="modal-form">
+      <!-- Header -->
+      @if (!isEmbedded()) {
+        <div
+          class="flex justify-between px-6 py-4 bg-v4-popup-header-footer-color border-b border-v4-border-color backdrop-blur-sm rounded-t-[20px]"
+        >
+          <div class="flex flex-col">
+            <h2
+              class="text-xl font-semibold text-v4-main-text-color font-funnel"
+            >
+              {{ !editMode ? "Add" : "Update" }} {{ activeTypeTitle | lowercase }}
+            </h2>
+            <p class="text-xs text-v4-tertiary-text-color font-peridot mt-0.5">
+              {{ !editMode ? "Add a new" : "Update" }}
+              {{ activeTypeTitle | lowercase }} record
+            </p>
+          </div>
+          <div
+            role="button"
+            tabindex="0"
+            (click)="closeModal()"
+            (keydown.enter)="closeModal()"
+            (keydown.space)="closeModal(); $event.preventDefault()"
+            class="min-w-[44px] min-h-[44px] p-2 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+          >
+            <lucide-icon name="x" class="text-v4-subtle-text-color" />
+          </div>
+        </div>
+      } @else {
+        <div
+          class="flex items-center justify-between px-4 py-3 border-b border-v4-border-color"
+        >
+          <h3 class="text-sm font-semibold text-v4-main-text-color">
+            {{ !editMode ? "Add" : "Update" }} {{ activeTypeTitle | lowercase }}
+          </h3>
+          <div
+            role="button"
+            tabindex="0"
+            (click)="closeModal()"
+            (keydown.enter)="closeModal()"
+            (keydown.space)="closeModal(); $event.preventDefault()"
+            class="min-w-[36px] min-h-[36px] p-1.5 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+          >
+            <lucide-icon
+              name="x"
+              [size]="18"
+              class="text-v4-subtle-text-color"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Type & Mode Selection -->
+      <div class="type-mode-bar">
+        <!-- Payee Type Tabs -->
+        <div class="type-selection">
+          <label class="section-label">Payee type</label>
+          <div class="payee-type-toggle">
+            <app-common-tab-v4
+              [tabs]="payeeTypeTabs"
+              [activeTab]="payeeType?.toString() ?? ''"
+              [variant]="'toggle'"
+              (tabChange)="onTabClick($event)"
+            />
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Scrollable Form Body -->
+      <div
+        class="form-body-v4 [background:color-mix(in_srgb,var(--v4-primary-brand-color)_3%,var(--v4-secondary-background-color))]"
+        (scroll)="onFormBodyScroll()"
+      >
+        @if (!isSendLink) {
+          <!-- ======== ADD MANUALLY MODE ======== -->
+          <div class="form-sections" #formSectionsRef>
+            <!-- Send Link Banner -->
+            <div class="send-link-banner flex flex-wrap items-center gap-2 rounded-[var(--radius-lg)] border border-v4-brand-border-color px-3 py-2 [background:color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,var(--v4-popup-background-color))]">
+              <lucide-icon name="link-2" [size]="15" class="send-link-banner-icon" />
+              <div class="send-link-banner-text">
+                <strong>Don't know the payee's details?</strong>
+                Send them a secure link and they fill everything in themselves.
+              </div>
+              <app-common-button-v4
+                [type]="{ style: 'outline', name: 'main' }"
+                [text]="'Send a link'"
+                [customHeight]="'36px'"
+                (clickEvent)="changeTransferType(transferTypes[1])"
+              />
+            </div>
+
+            <!-- Basic Information (always visible card) -->
+            <div
+              id="basic-section"
+              class="form-card basic-section"
+              [class.section-focused]="focusedSection === 'basic'"
+            >
+              <h3 class="card-title">
+                Basic Information
+              </h3>
+              <div class="form-grid">
+                <div class="form-field" data-field="payeeName">
+                  <app-common-input-v4
+                    [placeholder]="legalNameLabel"
+                    [fieldLabel]="legalNameLabel"
+                    [errorLabel]="legalNameLabel"
+                    [customMessages]="{ required: legalNameLabel + ' is required' }"
+                    formControlName="payeeName"
+                    [control]="payeeForm.controls.payeeName"
+                    [isFieldRequired]="true"
+                    [variant]="'compact'"
+                    [fieldHeight]="'34px'"
+                  />
+                </div>
+                <div class="form-field" data-field="payeeNickName">
+                  <app-common-input-v4
+                    [placeholder]="'Nickname'"
+                    [fieldLabel]="'Nickname'"
+                    [customMessages]="{ required: 'Nickname is required' }"
+                    formControlName="payeeNickName"
+                    [control]="payeeForm.controls.payeeNickName"
+                    [isFieldRequired]="!isBryancohen"
+                    [variant]="'compact'"
+                    [fieldHeight]="'34px'"
+                  />
+                </div>
+                <div class="form-field">
+                  <app-common-input-v4
+                    [placeholder]="'Email'"
+                    [fieldLabel]="'Email'"
+                    [type]="'email'"
+                    inputId="payee-email"
+                    formControlName="payeeEmail"
+                    [control]="payeeForm.controls.payeeEmail"
+                    [isFieldRequired]="false"
+                    autocomplete="off"
+                    [variant]="'compact'"
+                    [fieldHeight]="'34px'"
+                  />
+                </div>
+                <div class="form-field" #payeePhoneField>
+                  <label
+                    class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                    >Phone</label
+                  >
+                  <app-phone-input-v4
+                    formControlName="payeePhone"
+                    [control]="payeeForm.controls.payeePhone"
+                    [isFieldRequired]="false"
+                    [customMessages]="payeePhoneErrorMessages"
+                    (countryDropdown)="countryChange($event)"
+                    [variant]="'compact'"
+                    [fieldHeight]="'32px'"
+                  ></app-phone-input-v4>
+                </div>
+              </div>
+            </div>
+
+            <!-- Entity Information (Accordion) -->
+            <div
+              id="accordion-entity"
+              class="accordion-section entity-section"
+              [class.section-focused]="focusedSection === 'entity'"
+              [class.expanded]="expandedSections.has('entity')"
+            >
+              <button
+                class="accordion-header"
+                (click)="toggleSection('entity')"
+              >
+                <h3 class="accordion-title">
+                  <lucide-icon name="building-2" [size]="16" class="accordion-section-icon" />
+                  Entity information
+                </h3>
+                <div class="accordion-toggle">
+                  <span class="toggle-text">{{
+                    expandedSections.has("entity") ? "Collapse" : "Expand"
+                  }}</span>
+                  @if (expandedSections.has("entity")) {
+                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
+                  } @else {
+                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
+                  }
+                </div>
+              </button>
+              @if (expandedSections.has("entity")) {
+                <div class="accordion-body">
+                  <div class="form-grid">
+                    <div class="form-field">
+                      <label
+                        class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                        >Entity Type</label
+                      >
+                      <div class="angular-ocw-v4-ng-select-dropdown">
+                        <ng-select
+                          class="ng-dropdown-panel-v4 text-sm"
+                          formControlName="entityType"
+                          [items]="[
+                            { value: 'business', name: 'Business' },
+                            { value: 'individual', name: 'Individual' }
+                          ]"
+                          bindLabel="name"
+                          bindValue="value"
+                          placeholder="Select Entity Type"
+                          appendTo="body"
+                          [clearable]="false"
+                          [searchable]="false"
+                        ></ng-select>
+                      </div>
+                    </div>
+                    <div class="form-field" data-field="payeeCompany">
+                      <app-common-input-v4
+                        [placeholder]="'Company Name'"
+                        [fieldLabel]="'Company Name'"
+                        inputId="payee-company"
+                        formControlName="payeeCompany"
+                        [control]="payeeForm.controls.payeeCompany"
+                        [maxLength]="60"
+                        [showInfoIcon]="true"
+                        [tooltip]="
+                          'If an individual and not a business, please use your full legal name instead.'
+                        "
+                        [isFieldRequired]="
+                          isBusinessIsRequired ||
+                          effectiveData?.page === 'addCompany'
+                        "
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                    <div class="form-field full-width">
+                      <app-common-input-v4
+                        [placeholder]="'Payee ID/Acc Number'"
+                        [fieldLabel]="'Payee ID/Acc Number'"
+                        [formControlName]="
+                          payeeType === 1
+                            ? 'customerAccountNumber'
+                            : payeeType === 2
+                              ? 'vendorAccountNumber'
+                              : 'employeeAccountNumber'
+                        "
+                        [control]="
+                          payeeType === 1
+                            ? payeeForm.controls.customerAccountNumber
+                            : payeeType === 2
+                              ? payeeForm.controls.vendorAccountNumber
+                              : payeeForm.controls.employeeAccountNumber
+                        "
+                        [maxLength]="60"
+                        [isFieldRequired]="false"
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Address (Accordion) -->
+            <div
+              id="accordion-address"
+              class="accordion-section address-section"
+              [class.section-focused]="focusedSection === 'address'"
+              [class.expanded]="expandedSections.has('address')"
+            >
+              <button
+                class="accordion-header"
+                [class.has-error]="isAddressRequired() || isAddressCountryStateRequired()"
+                (click)="toggleSection('address')"
+              >
+                <h3 class="accordion-title">
+                  <lucide-icon name="map-pin" [size]="16" class="accordion-section-icon" />
+                  Address
+                  @if (isFinishedAddress) {
+                    <span class="added-badge">Added</span>
+                  }
+                </h3>
+                <div class="accordion-toggle">
+                  <span class="toggle-text">{{
+                    expandedSections.has("address") ? "Collapse" : "Expand"
+                  }}</span>
+                  @if (expandedSections.has("address")) {
+                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
+                  } @else {
+                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
+                  }
+                </div>
+              </button>
+              @if (expandedSections.has("address")) {
+                <div class="accordion-body">
+                  <div class="form-grid">
+                    <div class="form-field full-width address-line-compact" data-field="payeeAddress1">
+                      <app-address-autocomplete-v4
+                        [label]="'Address Line 1'"
+                        [placeholder]="'Address Line 1'"
+                        [control]="payeeForm.controls.payeeAddress1"
+                        [maxLength]="150"
+                        [isFieldRequired]="isBusinessIsRequired"
+                        (addressSelected)="onPayeeAddressSelected($event)"
+                      />
+                    </div>
+                    <div class="form-field full-width">
+                      <app-common-input-v4
+                        [placeholder]="'Address Line 2'"
+                        [fieldLabel]="'Address Line 2'"
+                        formControlName="payeeAddress2"
+                        [control]="payeeForm.controls.payeeAddress2"
+                        [maxLength]="150"
+                        [isFieldRequired]="false"
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                    <div class="form-field" data-field="payeeCity">
+                      <app-common-input-v4
+                        [placeholder]="'City'"
+                        [fieldLabel]="'City'"
+                        formControlName="payeeCity"
+                        [control]="payeeForm.controls.payeeCity"
+                        [maxLength]="50"
+                        [isFieldRequired]="isBusinessIsRequired"
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                    <div class="form-field state-field-compact" data-field="payeeState">
+                      <label
+                        class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                        >State</label
+                      >
+                      <app-common-state-select-v4
+                        formControlName="payeeState"
+                        [country]="payeeForm.controls.payeeCountry.value"
+                        [isRequired]="isBusinessIsRequired || isAddressCountryStateRequired()"
+                        placeholder="State"
+                        [controlClass]="'height-1'"
+                      ></app-common-state-select-v4>
+                    </div>
+                    <div class="form-field" data-field="payeeZip">
+                      <app-common-input-v4
+                        [placeholder]="
+                          !payeeForm.get('payeeCountry')?.value ||
+                          payeeForm.get('payeeCountry')?.value === 'US'
+                            ? 'Zip'
+                            : 'Postal Code'
+                        "
+                        [fieldLabel]="
+                          !payeeForm.get('payeeCountry')?.value ||
+                          payeeForm.get('payeeCountry')?.value === 'US'
+                            ? 'Zip'
+                            : 'Postal Code'
+                        "
+                        formControlName="payeeZip"
+                        [control]="payeeForm.controls.payeeZip"
+                        [maxLength]="10"
+                        [isFieldRequired]="isBusinessIsRequired"
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                    <div class="form-field" data-field="payeeCountry">
+                      <label
+                        class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                        >Country</label
+                      >
+                      <app-common-country-select-v4
+                        formControlName="payeeCountry"
+                        [isRequired]="isBusinessIsRequired || isAddressCountryStateRequired()"
+                        placeholder="Country"
+                        [controlClass]="'height-1'"
+                      ></app-common-country-select-v4>
+                    </div>
+                  </div>
+                  <div class="inline-form-actions">
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'main' }"
+                      [text]="'Cancel'"
+                      width="120px"
+                      [customHeight]="'36px'"
+                      (clickEvent)="
+                        resetToPrevForm('addressForm'); toggleSection('address')
+                      "
+                    />
+                    <app-common-button-v4
+                      [type]="{ style: 'primary', name: 'main' }"
+                      [text]="isFinishedAddress ? 'Update' : 'Add'"
+                      width="120px"
+                      [customHeight]="'36px'"
+                      (clickEvent)="addressAdded()"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+            @if (isAddressRequired() && !expandedSections.has('address')) {
+              <small class="address-required-msg">
+                <fa-icon
+                  [icon]="faCircleExclamation"
+                  class="text-[var(--destructive)]"
+                  size="sm"
+                  animation="shake"
+                />
+                Address is required
+              </small>
+            }
+
+            <!-- Bank Accounts (Accordion — Domestic + International) -->
+            <div
+              class="accordion-section banking-section"
+              [class.section-focused]="focusedSection === 'banking'"
+              [class.expanded]="expandedSections.has('banking')"
+            >
+              <button
+                class="accordion-header"
+                (click)="toggleSection('banking')"
+              >
+                <h3 class="accordion-title">
+                  <lucide-icon name="landmark" [size]="16" class="accordion-section-icon" />
+                  Bank accounts
+                  @if (isFinishedBank || isFinishedInternationalBank) {
+                    <span class="added-badge">Added</span>
+                  }
+                </h3>
+                <div class="accordion-toggle">
+                  <span class="toggle-text">{{
+                    expandedSections.has("banking") ? "Collapse" : "Expand"
+                  }}</span>
+                  @if (expandedSections.has("banking")) {
+                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
+                  } @else {
+                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
+                  }
+                </div>
+              </button>
+              @if (expandedSections.has("banking")) {
+                <div class="accordion-body bank-accordion-body">
+                  <!-- Domestic / International tab switcher -->
+                  <div class="bank-tab-row">
+                    <span class="bank-tab-label">Account Type</span>
+                    <div class="payee-type-toggle">
+                      <app-common-tab-v4
+                        [tabs]="bankTabs()"
+                        [activeTab]="bankActiveTab"
+                        variant="toggle"
+                        size="sm"
+                        (tabChange)="switchBankTab($event)"
+                      />
+                    </div>
+                  </div>
+
+                  @if (bankActiveTab === 'domestic') {
+                    <app-add-payee-bank-v4
+                      [showHeader]="false"
+                      [payeeBankDetails]="payeeBankDetails"
+                      [payeeId]="payeeId"
+                      [payeeName]="payeeForm.get('payeeName')?.value"
+                      [payeeAddress1]="payeeForm.get('payeeAddress1')?.value"
+                      [payeeAddress2]="payeeForm.get('payeeAddress2')?.value"
+                      [payeeCity]="payeeForm.get('payeeCity')?.value"
+                      [payeeState]="payeeForm.get('payeeState')?.value"
+                      [payeeZip]="payeeForm.get('payeeZip')?.value"
+                      [payeeCountry]="payeeForm.get('payeeCountry')?.value"
+                      (bankSetupFinished)="finishedIndicatorBank()"
+                      (emptyBank)="removingBankIndicator()"
+                      (bankCountChange)="domesticBankCount.set($event)"
+                      (back)="toggleSection('banking')"
+                    ></app-add-payee-bank-v4>
+                  }
+
+                  @if (bankActiveTab === 'international') {
+                    <app-add-payee-international-bank-v4
+                      [showHeader]="false"
+                      [payeeInternationalBankDetails]="payeeInternationalBankDetails"
+                      [payeeId]="payeeId"
+                      [payeePhone]="payeeForm.controls.payeePhone.value || ''"
+                      [payeeEmail]="payeeForm.controls.payeeEmail.value || ''"
+                      (emptyInternationalBank)="removingInternationalBankIndicator()"
+                      (InternationalBankSetupFinished)="finishedIndicatorInternationalBank($event)"
+                      (bankCountChange)="internationalBankCount.set($event)"
+                      (back)="toggleSection('banking')"
+                    ></app-add-payee-international-bank-v4>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Tax & Additional Info (Accordion) -->
+            <div
+              id="accordion-tax"
+              class="accordion-section"
+              [class.expanded]="expandedSections.has('tax')"
+            >
+              <button class="accordion-header" (click)="toggleSection('tax')">
+                <h3 class="accordion-title">
+                  <lucide-icon name="file-text" [size]="16" class="accordion-section-icon" />
+                  Add more info
+                </h3>
+                <div class="accordion-toggle">
+                  <span class="toggle-text">{{
+                    expandedSections.has("tax") ? "Collapse" : "Expand"
+                  }}</span>
+                  @if (expandedSections.has("tax")) {
+                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
+                  } @else {
+                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
+                  }
+                </div>
+              </button>
+              @if (expandedSections.has("tax")) {
+                <div class="accordion-body">
+                  <!-- Customer fields -->
+                  @if (payeeType?.toString() === "1") {
+                    <div class="form-grid">
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay from Bank A/C</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="customerDefaultPayFromAcount"
+                            [items]="bankAccounts"
+                            bindLabel="nickName"
+                            bindValue="id"
+                            placeholder="Select Bank Account"
+                            appendTo="body"
+                            [clearable]="true"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="flex items-center gap-1 text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay Category
+                          <lucide-icon
+                            name="info"
+                            [size]="13"
+                            class="text-v4-tertiary-text-color cursor-pointer"
+                            matTooltipClass="v4-info-tooltip"
+                            matTooltipPosition="before"
+                            matTooltip="Organize payment for your records.&#10;Helps with expense tracking/taxes."
+                          ></lucide-icon>
+                        </label>
+                        <app-category-dropdown-v4
+                          [selectedId]="customerCategoryId"
+                          (selectionEvent)="
+                            catagoryDropDownChange($event, 'customer')
+                          "
+                          [customHeight]="'1'"
+                        ></app-category-dropdown-v4>
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay Method</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="customerDefaultPayFromMethod"
+                            [items]="DefaultPayMethod"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select Pay Method"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'First Name'"
+                          [fieldLabel]="'First Name'"
+                          formControlName="customerFirstName"
+                          [control]="payeeForm.controls.customerFirstName"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Last Name'"
+                          [fieldLabel]="'Last Name'"
+                          formControlName="customerLastName"
+                          [control]="payeeForm.controls.customerLastName"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Customer Type</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="customerType"
+                            [items]="customerType"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select Type"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Business Website'"
+                          [fieldLabel]="'Business Website'"
+                          formControlName="payeeCompanyWebsite"
+                          [control]="payeeForm.controls.payeeCompanyWebsite"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                    </div>
+                  }
+                  <!-- Vendor fields -->
+                  @if (payeeType?.toString() === "2") {
+                    <div class="form-grid">
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay from Bank A/C</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="vendorDefaultPayAccount"
+                            [items]="bankAccounts"
+                            bindLabel="nickName"
+                            bindValue="id"
+                            placeholder="Select Bank Account"
+                            appendTo="body"
+                            [clearable]="true"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="flex items-center gap-1 text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay Category
+                          <lucide-icon
+                            name="info"
+                            [size]="13"
+                            class="text-v4-tertiary-text-color cursor-pointer"
+                            matTooltipClass="v4-info-tooltip"
+                            matTooltipPosition="before"
+                            matTooltip="Organize payment for your records.&#10;Helps with expense tracking/taxes."
+                          ></lucide-icon>
+                        </label>
+                        <app-category-dropdown-v4
+                          [selectedId]="vendorCategoryId"
+                          (selectionEvent)="
+                            catagoryDropDownChange($event, 'vendor')
+                          "
+                          [customHeight]="'1'"
+                        ></app-category-dropdown-v4>
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay Method</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="vendorDefaultPayMethod"
+                            [items]="DefaultPayMethod"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select Pay Method"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'First Name'"
+                          [fieldLabel]="'First Name'"
+                          formControlName="vendorFistName"
+                          [control]="payeeForm.controls.vendorFistName"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Last Name'"
+                          [fieldLabel]="'Last Name'"
+                          formControlName="vendorLastName"
+                          [control]="payeeForm.controls.vendorLastName"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Vendor Type</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="vendorType"
+                            [items]="customerType"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select Type"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Tax ID'"
+                          [fieldLabel]="'Tax ID'"
+                          formControlName="vendorTaxId"
+                          [control]="payeeForm.controls.vendorTaxId"
+                          [customMask]="'00-0000000'"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >1099 Vendor</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="vendor_1099"
+                            [items]="vendor_1099"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Payment Terms</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="vendorPaymentTerms"
+                            [items]="vendorPaymentTerms"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Payment Terms"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Business Website'"
+                          [fieldLabel]="'Business Website'"
+                          formControlName="payeeCompanyWebsite"
+                          [control]="payeeForm.controls.payeeCompanyWebsite"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                    </div>
+                  }
+                  <!-- Employee fields -->
+                  @if (payeeType?.toString() === "3") {
+                    <div class="form-grid">
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay from Bank A/C</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="employeeDefaultPayAccount"
+                            [items]="bankAccounts"
+                            bindLabel="nickName"
+                            bindValue="id"
+                            placeholder="Select Bank Account"
+                            appendTo="body"
+                            [clearable]="true"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      @if (payeeForm.controls?.employeeCategory) {
+                        <div class="form-field">
+                          <label
+                            class="flex items-center gap-1 text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                            >Default Pay Category
+                            <lucide-icon
+                              name="info"
+                              [size]="13"
+                              class="text-v4-tertiary-text-color cursor-pointer"
+                              matTooltipClass="v4-info-tooltip"
+                              matTooltipPosition="before"
+                              matTooltip="Organize payment for your records.&#10;Helps with expense tracking/taxes."
+                            ></lucide-icon>
+                          </label>
+                          <app-category-dropdown-v4
+                            [selectedId]="employeeCategoryId"
+                            (selectionEvent)="
+                              catagoryDropDownChange($event, 'employee')
+                            "
+                            [customHeight]="'1'"
+                          ></app-category-dropdown-v4>
+                        </div>
+                      }
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Default Pay Method</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="employeeDefaultPayMethod"
+                            [items]="DefaultPayMethod"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select Pay Method"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'First Name'"
+                          [fieldLabel]="'First Name'"
+                          formControlName="employeeFirstName"
+                          [control]="payeeForm.controls.employeeFirstName"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Last Name'"
+                          [fieldLabel]="'Last Name'"
+                          formControlName="employeeLastName"
+                          [control]="payeeForm.controls.employeeLastName"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-v4-date-picker
+                          [placeholder]="'Date of Birth'"
+                          [fieldLabel]="'Date of Birth'"
+                          formControlName="employeeDob"
+                          [control]="payeeForm.controls.employeeDob"
+                          [isFieldRequired]="false"
+                          [fieldHeight]="'32px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'SSN'"
+                          [fieldLabel]="'SSN'"
+                          formControlName="employeeSsn"
+                          [control]="payeeForm.controls.employeeSsn"
+                          [customMask]="'000-00-0000'"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Employee Type</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="employeeType"
+                            [items]="employeeType"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Select Type"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-amount-input-v4
+                          formControlName="employeeHourlyRate"
+                          fieldLabel="Hourly Rate"
+                          [height]="'32px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-amount-input-v4
+                          formControlName="employeeOvertimeRate"
+                          fieldLabel="Overtime Rate"
+                          [isRequired]="false"
+                          [height]="'32px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-amount-input-v4
+                          formControlName="employeeYtdEarning"
+                          fieldLabel="YTD Earning"
+                          [isRequired]="false"
+                          [height]="'32px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <app-common-amount-input-v4
+                          formControlName="employeeYtdTax"
+                          fieldLabel="YTD Tax"
+                          [isRequired]="false"
+                          [height]="'32px'"
+                        />
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Payment Schedule</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="employeePaymentSchedule"
+                            [items]="employeePaymentSchedule"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Payment Schedule"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <label
+                          class="block text-xs font-medium text-v4-secondary-text-color font-peridot mb-1.5 tracking-wide"
+                          >Filing Status</label
+                        >
+                        <div class="angular-ocw-v4-ng-select-dropdown">
+                          <ng-select
+                            class="ng-dropdown-panel-v4 text-sm"
+                            formControlName="employeeFillingStatus"
+                            [items]="employeeFilingStatus"
+                            bindLabel="name"
+                            bindValue="value"
+                            placeholder="Filing Status"
+                            appendTo="body"
+                            [clearable]="false"
+                            [searchable]="false"
+                          ></ng-select>
+                        </div>
+                      </div>
+                      <div class="form-field">
+                        <app-common-input-v4
+                          [placeholder]="'Business Website'"
+                          [fieldLabel]="'Business Website'"
+                          formControlName="payeeCompanyWebsite"
+                          [control]="payeeForm.controls.payeeCompanyWebsite"
+                          [maxLength]="60"
+                          [isFieldRequired]="false"
+                          [variant]="'compact'"
+                          [fieldHeight]="'34px'"
+                        />
+                      </div>
+                    </div>
+                  }
+                  <div class="inline-form-actions">
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'main' }"
+                      [text]="'Cancel'"
+                      width="120px"
+                      [customHeight]="'36px'"
+                      (clickEvent)="
+                        resetToPrevForm('addMoreInfoForm'); toggleSection('tax')
+                      "
+                    />
+                    <app-common-button-v4
+                      [type]="{ style: 'primary', name: 'main' }"
+                      [text]="'Add'"
+                      width="120px"
+                      [customHeight]="'36px'"
+                      (clickEvent)="moreInfoAdded()"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Request bank info checkbox -->
+            <div class="request-bank-section">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-sm"
+                  (change)="
+                    requestPayBtn(
+                      payeeForm.controls.payeeEmail,
+                      payeeForm.controls.payeeEmail.value,
+                      payeeForm.controls.payeePhone,
+                      payeeForm.controls.payeePhone.value,
+                      $event
+                    )
+                  "
+                />
+                <span>Request {{ activeTypeTitle | lowercase }} to add bank account</span>
+                <lucide-icon
+                  name="info"
+                  [size]="14"
+                  class="info-icon"
+                  matTooltipClass="v4-info-tooltip"
+                  matTooltipPosition="before"
+                  [matTooltip]="
+                    'A link will be sent to ' +
+                    activeTypeTitle.toLowerCase() +
+                    ' email or phone number to add their bank account details.'
+                  "
+                ></lucide-icon>
+              </label>
+            </div>
+          </div>
+        }
+
+        <!-- ======== SEND LINK MODE ======== -->
+        @if (isSendLink) {
+          <div class="send-link-section" [style.minHeight.px]="manualFormHeight">
+            <!-- Back to manual entry -->
+            <button
+              type="button"
+              class="back-to-manual"
+              (click)="changeTransferType(transferTypes[0])"
+            >
+              <lucide-icon name="arrow-left" [size]="14"></lucide-icon>
+              Back to manual entry
+            </button>
+
+            <!-- Send secure link card -->
+            <div class="send-link-card">
+              <div class="flex items-start gap-3">
+                <div class="shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-v4-primary-brand-bold-color [background:color-mix(in_srgb,var(--v4-primary-brand-color)_12%,var(--v4-popup-background-color))]">
+                  <lucide-icon name="link-2" [size]="20" />
+                </div>
+                <div>
+                  <h3 class="send-link-card-title">Send a secure link</h3>
+                  <p class="send-link-card-desc">
+                   send a link for payee to submit their info.
+                  </p>
+                </div>
+              </div>
+
+            <form [formGroup]="requestPayeeForm" class="send-link-form">
+              <div class="form-grid">
+                <div class="form-field full-width">
+                  <div class="checkbox-input-row">
+                    <input
+                      type="checkbox"
+                      class="v4-checkbox-sm"
+                      formControlName="emailCheck"
+                      (change)="setCheck('email')"
+                    />
+                    <div class="flex-1">
+                      <app-common-input-v4
+                        [placeholder]="'Email Address'"
+                        [type]="'email'"
+                        formControlName="payeeEmail"
+                        [control]="requestPayeeForm.controls.payeeEmail"
+                        [isFieldRequired]="false"
+                        (inputEvent)="getEmail()"
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div class="form-field full-width">
+                  <div class="checkbox-input-row">
+                    <input
+                      type="checkbox"
+                      class="v4-checkbox-sm"
+                      formControlName="phoneCheck"
+                      (change)="setCheck('phone')"
+                    />
+                    <div class="flex-1">
+                      <app-phone-input-v4
+                        formControlName="payeePhone"
+                        [control]="requestPayeeForm.controls.payeePhone"
+                        [isFieldRequired]="false"
+                        (countryDropdown)="requestCountryChange($event)"
+                        [variant]="'compact'"
+                        [fieldHeight]="'32px'"
+                      ></app-phone-input-v4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="request-bank-section">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    class="v4-checkbox-sm"
+                    [(ngModel)]="addPayeeBank"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="requestPayeeAccount()"
+                  />
+                  <span>Request {{ activeTypeTitle | lowercase }} to add bank account</span>
+                  <lucide-icon
+                    name="info"
+                    [size]="14"
+                    class="info-icon"
+                    [matTooltip]="
+                      'By selecting this option, the ' +
+                      activeTypeTitle.toLowerCase() +
+                      ' can use the same link to add both their details and bank account information.'
+                    "
+                  ></lucide-icon>
+                </label>
+              </div>
+
+              <!-- Share Link Box -->
+              <div class="share-link-box">
+                <h4 class="share-link-title">Share Link</h4>
+                <div class="share-link-input-row">
+                  <div
+                    class="share-link-input"
+                    [class.loading]="loadingSendLink()"
+                  >
+                    @if (loadingSendLink()) {
+                      <div class="skelton link-skeleton"></div>
+                    } @else {
+                      <lucide-icon
+                        name="link-2"
+                        [size]="14"
+                        class="link-icon"
+                      ></lucide-icon>
+                      <span
+                        class="link-text"
+                        [matTooltip]="
+                          (resendLink()?.length ?? 0) > 50
+                            ? (resendLink() ?? '')
+                            : ''
+                        "
+                      >
+                        {{ resendLink() | truncate: 50 }}
+                      </span>
+                    }
+                  </div>
+                  <button
+                    class="copy-btn"
+                    [class.copied]="urlCopied()"
+                    (click)="copyLink(resendLink())"
+                    [matTooltip]="urlCopied() ? 'Copied' : 'Copy URL'"
+                  >
+                    @if (urlCopied()) {
+                      <lucide-icon name="check" [size]="14"></lucide-icon>
+                      Copied
+                    } @else {
+                      <lucide-icon name="copy" [size]="14"></lucide-icon>
+                      Copy
+                    }
+                  </button>
+                  <button
+                    class="share-btn"
+                    [class.active]="toggleMoreShare()"
+                    (click)="toggleMoreShareCard()"
+                    matTooltip="Share URL"
+                  >
+                    <fa-icon [icon]="faShareNod"></fa-icon>
+                  </button>
+                </div>
+                @if (toggleMoreShare()) {
+                  <div class="social-share-row">
+                    @for (item of socialShareData; track item) {
+                      <button
+                        class="quick-share-icon-btn"
+                        [matTooltip]="item.name"
+                        (click)="shareUrlDirect(resendLink() ?? '', item.name)"
+                      >
+                        <span
+                          class="quick-share-circle"
+                          [style.background-color]="item.bgColor"
+                          [style.color]="item.iconColor"
+                        >
+                          <fa-icon
+                            [icon]="quickShareIcons[item.key]"
+                            class="text-base"
+                          ></fa-icon>
+                        </span>
+                      </button>
+                    }
+                    <button
+                      class="quick-share-icon-btn"
+                      matTooltip="More"
+                      (click)="openSocialShareModal(resendLink() ?? '')"
+                    >
+                      <span class="quick-share-circle more-circle">
+                        <lucide-icon name="more-horizontal" [size]="18" />
+                      </span>
+                    </button>
+                  </div>
+                }
+              </div>
+            </form>
+            </div><!-- /send-link-card -->
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="flex justify-end items-center gap-3 px-6 py-4 bg-v4-popup-header-footer-color border-t border-v4-border-color"
+      >
+        <div class="flex items-center gap-3">
+          @if (!isSendLink) {
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Cancel'"
+              width="120px"
+              [customHeight]="'36px'"
+              (clickEvent)="closeModal()"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="editMode ? 'Update' : 'Save'"
+              width="120px"
+              [loading]="loading"
+              [disabled]="loading"
+              [customHeight]="'36px'"
+              (clickEvent)="onSubmit()"
+            />
+          } @else {
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Cancel'"
+              width="120px"
+              [customHeight]="'36px'"
+              (clickEvent)="closeModal()"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="'Send Link'"
+              width="120px"
+              [loading]="loading"
+              [disabled]="loading"
+              [customHeight]="'36px'"
+              (clickEvent)="onSubmitself()"
+            />
+          }
+        </div>
+      </div>
+    </form>
+  }
+
+  <!-- Loading overlay -->
+  @if (isPermissionLoading()) {
+    <div class="permission-loading-overlay">
+      <span class="data_spinner"></span>
+    </div>
+  }
+</div>

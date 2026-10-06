@@ -1,0 +1,567 @@
+<div class="v4-send-payment-proof-modal v4-common-input-full-width">
+  <!-- ==================== HEADER ==================== -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-3">
+      @if (showBackButton()) {
+        <button
+          (click)="handleBack()"
+          class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+        >
+          <lucide-icon
+            [img]="ArrowLeftIcon"
+            [size]="20"
+            class="text-v4-subtle-text-color"
+          />
+        </button>
+      }
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        {{ modalTitle() }}
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- ==================== TABS (POD mode only) ==================== -->
+  @if (data.mode === "pod" && !proofType()) {
+    <div class="flex border-b border-v4-border-color">
+      <button
+        (click)="switchTab('request')"
+        class="flex-1 py-3 text-sm font-semibold transition-colors border-b-2"
+        [ngClass]="
+          podTab() === 'request'
+            ? 'text-v4-primary-brand-bold-color border-[#004a7c]'
+            : 'text-v4-subtle-text-color border-transparent hover:text-v4-main-text-color'
+        "
+      >
+        Request Proof
+      </button>
+      <button
+        (click)="switchTab('send')"
+        class="flex-1 py-3 text-sm font-semibold transition-colors border-b-2"
+        [ngClass]="
+          podTab() === 'send'
+            ? 'text-v4-primary-brand-bold-color border-[#004a7c]'
+            : 'text-v4-subtle-text-color border-transparent hover:text-v4-main-text-color'
+        "
+      >
+        Send Proof
+      </button>
+    </div>
+  }
+
+  <!-- ==================== CONTENT ==================== -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <!-- ===== PP / SHARE MODE (same tiles → email/SMS step) ===== -->
+    @if (data.mode !== "pod") {
+      @if (!proofType()) {
+        <!-- Proof list cards -->
+        <div class="grid grid-cols-2 gap-4 auto-rows-fr">
+          @for (item of proofsList(); track item.action) {
+            <button
+              (click)="sendProof(item.action)"
+              class="flex items-center gap-3 p-4 border-2 border-v4-border-color rounded-lg hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 transition-colors"
+            >
+              <div>
+                @if (item.action === 'whatsapp') {
+                  <fa-icon
+                    [icon]="faWhatsapp"
+                    class="text-[#25D366] text-2xl"
+                  ></fa-icon>
+                } @else {
+                  <lucide-icon
+                    [img]="item.icon"
+                    [size]="24"
+                    class="text-v4-primary-brand-bold-color"
+                  />
+                }
+              </div>
+              <span class="text-sm font-semibold text-v4-secondary-text-color">
+                @if (item.action === "copy" && isCopyProofLoading()) {
+                  Copying..
+                } @else if (
+                  item.action === "whatsapp" && isWhatsappProofLoading()
+                ) {
+                  Loading..
+                } @else if (item.action === "print" && isPrinting()) {
+                  Printing..
+                } @else if (item.action === "download" && isDownloading()) {
+                  Downloading..
+                } @else {
+                  {{ item.name }}
+                }
+              </span>
+            </button>
+          }
+        </div>
+
+        <!-- More / Less → social web share intents (payment proof and share modes) -->
+        <div class="mt-4">
+          <button
+            (click)="showMoreShare.set(!showMoreShare())"
+            [attr.aria-expanded]="showMoreShare()"
+            class="flex items-center gap-1.5 text-sm font-semibold text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+          >
+            <lucide-icon
+              [img]="showMoreShare() ? ChevronUpIcon : MoreHorizontalIcon"
+              [size]="18"
+            />
+            <span>{{ showMoreShare() ? "Less" : "More" }}</span>
+          </button>
+
+          @if (showMoreShare()) {
+            <div class="mt-3 flex flex-wrap gap-3">
+              @for (target of socialTargets; track target.key) {
+                <button
+                  (click)="shareToSocial(target)"
+                  [disabled]="!!sharingSocial()"
+                  [matTooltip]="target.name"
+                  class="w-10 h-10 flex justify-center items-center rounded-full border border-v4-border-color hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 transition-colors disabled:opacity-50"
+                  [ngClass]="{ 'animate-pulse': sharingSocial() === target.key }"
+                >
+                  <fa-icon
+                    [icon]="target.icon"
+                    class="text-lg"
+                    [style.color]="target.color"
+                  ></fa-icon>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      } @else if (proofType() === "Email") {
+        <!-- PP Email input -->
+        <div class="space-y-4">
+          <div class="flex items-start gap-2">
+            <div class="flex-1">
+              <app-common-input-v4
+                placeholder="Enter Email"
+                [type]="'email'"
+                [formControl]="sendEmail"
+                [control]="sendEmail"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [textColorInput]="'white'"
+              text="Send Email"
+              (clickEvent)="emailProof()"
+              [loading]="isEmailProofLoading()"
+            />
+          </div>
+        </div>
+      } @else if (proofType() === "SMS") {
+        <!-- PP SMS input -->
+        <div class="space-y-2">
+          <div class="flex items-start gap-2">
+            <div class="flex-1">
+              <app-phone-input-v4
+                [formControl]="sendPhoneNumber"
+                [control]="sendPhoneNumber"
+                placeholder="Phone"
+                (countryDropdown)="countryChange($event)"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [textColorInput]="'white'"
+              text="Send SMS"
+              (clickEvent)="smsProof()"
+              [loading]="isSMSProofLoading()"
+            />
+          </div>
+          <p class="text-sm text-v4-secondary-text-color">
+            Cost:
+            <span class="text-common-green-color font-bold">
+              ${{ sendPhoneNumber.value ? "0.50" : "0.00" }}
+            </span>
+          </p>
+        </div>
+      }
+    }
+
+    <!-- ===== POD MODE: REQUEST PROOF TAB ===== -->
+    @if (data.mode === "pod" && podTab() === "request") {
+      @if (requestStep() === "choose") {
+        <!-- Step 1: Email/SMS selection cards -->
+        <div class="flex gap-4">
+          <button
+            (click)="requestStep.set('email')"
+            class="flex-1 flex flex-col items-center gap-2 p-6 border border-v4-border-color rounded-xl hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 transition-colors"
+          >
+            <lucide-icon [img]="MailIcon" [size]="32" class="text-v4-primary-brand-bold-color" />
+            <span class="text-sm font-semibold text-v4-main-text-color"
+              >Email</span
+            >
+          </button>
+          <button
+            (click)="requestStep.set('sms')"
+            class="flex-1 flex flex-col items-center gap-2 p-6 border border-v4-border-color rounded-xl hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 transition-colors"
+          >
+            <lucide-icon [img]="PhoneIcon" [size]="32" class="text-v4-primary-brand-bold-color" />
+            <span class="text-sm font-semibold text-v4-main-text-color">SMS</span>
+          </button>
+        </div>
+      }
+
+      @if (requestStep() === "email") {
+        <!-- Step 2: Email input -->
+        <div class="space-y-4">
+          <div class="flex items-start gap-2">
+            <div class="flex-1">
+              <app-common-input-v4
+                placeholder="Enter Email"
+                [type]="'email'"
+                [formControl]="sendEmail"
+                [control]="sendEmail"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [textColorInput]="'white'"
+              text="Send Email"
+              (clickEvent)="sendRequestEmail()"
+              [loading]="isEmailProofLoading()"
+              [disabled]="!sendEmail.value"
+            />
+          </div>
+        </div>
+      }
+
+      @if (requestStep() === "sms") {
+        <!-- Step 2: SMS input -->
+        <div class="space-y-2">
+          <div class="flex items-start gap-2">
+            <div class="flex-1">
+              <app-phone-input-v4
+                [formControl]="sendPhoneNumber"
+                [control]="sendPhoneNumber"
+                placeholder="Phone"
+                (countryDropdown)="countryChange($event)"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [textColorInput]="'white'"
+              text="Send SMS"
+              (clickEvent)="sendRequestSMS()"
+              [loading]="isSMSProofLoading()"
+              [disabled]="!sendPhoneNumber.value"
+            />
+          </div>
+          <p class="text-sm text-v4-secondary-text-color">
+            Cost:
+            <span class="text-common-green-color font-bold">$0.50</span>
+          </p>
+        </div>
+      }
+    }
+
+    <!-- ===== POD MODE: SEND PROOF TAB ===== -->
+    @if (data.mode === "pod" && podTab() === "send") {
+      <div class="space-y-4">
+        <!-- Upload row: Upload button + Smartphone + QR Code -->
+        <div class="flex items-center gap-2">
+          <button
+            (click)="chooseMedia(uploadedFileInput)"
+            class="flex-1 flex items-center justify-center gap-2 py-3 border border-dashed border-v4-border-color rounded-lg hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 transition-colors"
+            [ngClass]="{ '!border-common-red-color': mediaNeeded() }"
+            [disabled]="isUploadedViaMobileOrQrCode()"
+            [matTooltip]="
+              uploadedFile()?.name && uploadedFile()!.name.length > 30
+                ? uploadedFile()!.name
+                : ''
+            "
+          >
+            @if (!uploadedFile()?.name) {
+              <lucide-icon
+                [img]="UploadIcon"
+                [size]="20"
+                class="text-v4-subtle-text-color"
+              />
+              <span class="text-sm font-medium text-v4-main-text-color"
+                >Upload Image/Video</span
+              >
+            } @else {
+              <span class="text-sm text-v4-main-text-color">{{
+                uploadedFile()!.name | truncate: 30
+              }}</span>
+              <lucide-icon
+                [img]="CircleCheckIcon"
+                [size]="16"
+                class="text-common-green-color"
+              />
+            }
+          </button>
+
+          <input
+            id="v4-file-upload"
+            class="hidden"
+            (change)="mediaPicked($event)"
+            type="file"
+            accept="image/*,video/*"
+            #uploadedFileInput
+            title=""
+          />
+
+          <button
+            (click)="addWithMobileDevice()"
+            class="w-9 h-9 border border-v4-border-color rounded-lg hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 flex justify-center items-center transition-colors"
+            matTooltip="Upload from mobile device"
+          >
+            <lucide-icon
+              [img]="SmartphoneIcon"
+              [size]="20"
+              class="text-v4-subtle-text-color"
+            />
+          </button>
+
+          <button
+            (click)="openQrCodeModal()"
+            class="w-9 h-9 border border-v4-border-color rounded-lg hover:border-v4-primary-brand-bold-color hover:bg-v4-primary-brand-bold-color/5 flex justify-center items-center transition-colors"
+            matTooltip="Scan QR code to upload"
+          >
+            <lucide-icon
+              [img]="QrCodeIcon"
+              [size]="20"
+              class="text-v4-subtle-text-color"
+            />
+          </button>
+        </div>
+
+        @if (mediaNeeded()) {
+          <span class="text-xs text-common-red-color"
+            >This field is required</span
+          >
+        }
+
+        <!-- Media preview -->
+        @if (mediaPreview()) {
+          <div class="flex items-center justify-between">
+            <button
+              (click)="showPreview.set(!showPreview())"
+              class="flex items-center gap-1 cursor-pointer"
+            >
+              <lucide-icon
+                [img]="mediaType() === 'image' ? ImageIcon : PlayIcon"
+                [size]="14"
+              />
+              <span class="text-xs text-v4-primary-brand-bold-color hover:underline pt-0.5"
+                >Preview</span
+              >
+            </button>
+            <button
+              (click)="removeMedia()"
+              class="text-xs text-common-red-color hover:underline cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+
+          @if (showPreview()) {
+            <div class="w-full">
+              @if (mediaType() === "image") {
+                <img
+                  class="w-full h-full object-cover max-h-48 rounded-lg"
+                  [src]="mediaPreview()"
+                  alt="Preview"
+                />
+              }
+              @if (mediaType() === "video") {
+                <video
+                  class="w-full h-full object-cover max-h-48 rounded-lg"
+                  [src]="mediaPreview()"
+                  controls
+                ></video>
+              }
+            </div>
+          }
+        }
+
+        <!-- Uploaded files table -->
+        @if (uploadedFiles().length > 0) {
+          <div
+            class="max-h-[180px] overflow-auto border border-v4-border-color rounded-lg"
+          >
+            <table class="w-full text-sm">
+              <thead class="bg-v4-secondary-background-color">
+                <tr>
+                  <td class="px-3 py-2 font-semibold text-v4-main-text-color">
+                    File
+                  </td>
+                  <td class="px-3 py-2 font-semibold text-v4-main-text-color">
+                    Date
+                  </td>
+                  <td class="px-3 py-2 font-semibold text-v4-main-text-color">
+                    Action
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                @for (
+                  file of uploadedFiles();
+                  track trackByAttachmentId($index, file)
+                ) {
+                  <tr class="border-t border-v4-border-color">
+                    <td class="px-3 py-2">
+                      <div class="flex items-center gap-2">
+                        <lucide-icon
+                          [img]="getFileIcon(file.fileName)"
+                          [size]="14"
+                        />
+                        <a
+                          role="presentation"
+                          (click)="openPodAttachment(file.id)"
+                          class="text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+                          >{{ file.fileName }}</a
+                        >
+                      </div>
+                    </td>
+                    <td class="px-3 py-2 text-v4-secondary-text-color">
+                      {{ file.formated_date || file.createdAt | date: "short" }}
+                    </td>
+                    <td class="px-3 py-2">
+                      <button (click)="deletePodAttachment(file.id)">
+                        <lucide-icon
+                          [img]="Trash2Icon"
+                          [size]="14"
+                          class="text-common-red-color cursor-pointer"
+                        />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Phone input for mobile upload -->
+        @if (showPhoneInput()) {
+          <div class="flex items-start gap-2">
+            <div class="flex-1">
+              <app-phone-input-v4
+                [formControl]="sendPhoneNumber"
+                [control]="sendPhoneNumber"
+                placeholder="Phone"
+                (countryDropdown)="countryChange($event)"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [textColorInput]="'white'"
+              [text]="phoneNumberButtonLabel()"
+              (clickEvent)="addWithMobileDevice()"
+              [loading]="phoneNumberSending()"
+            />
+          </div>
+        }
+
+        <!-- Timer display -->
+        @if (timerExist()) {
+          <div class="text-center text-sm text-v4-secondary-text-color">
+            Link expires in: {{ displayTimer() }}
+          </div>
+        }
+
+        <!-- Send via radio buttons -->
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-v4-main-text-color"
+            >Send via:</label
+          >
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="v4_send_via"
+                value="email"
+                [checked]="selectedSendMethod() === 'email'"
+                (change)="onSendMethodChange('email')"
+                class="v4-radio-sm"
+              />
+              <span class="text-sm text-v4-main-text-color">Email</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="v4_send_via"
+                value="sms"
+                [checked]="selectedSendMethod() === 'sms'"
+                (change)="onSendMethodChange('sms')"
+                class="v4-radio-sm"
+              />
+              <span class="text-sm text-v4-main-text-color">SMS</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Conditional email or phone input -->
+        @if (selectedSendMethod() === "email") {
+          <div>
+            <app-common-input-v4
+              placeholder="Enter Email"
+              [type]="'email'"
+              [isFieldRequired]="false"
+              [formControl]="sendEmail"
+              [control]="sendEmail"
+            />
+          </div>
+        }
+
+        @if (selectedSendMethod() === "sms") {
+          <div class="space-y-1">
+            <app-phone-input-v4
+              [formControl]="sendPhoneNumber"
+              [control]="sendPhoneNumber"
+              placeholder="Phone"
+              (countryDropdown)="countryChange($event)"
+            />
+            <p class="text-sm text-v4-secondary-text-color">
+              Cost:
+              <span class="text-common-green-color font-bold">
+                ${{ sendPhoneNumber.value ? "0.50" : "0.00" }}
+              </span>
+            </p>
+          </div>
+        }
+
+        <!-- Note -->
+        <div>
+          <app-common-input-v4
+            placeholder="Note (Optional)"
+            [isFieldRequired]="false"
+            [formControl]="notesControl"
+          />
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ==================== FOOTER (POD send tab only) ==================== -->
+  @if (data.mode === "pod" && podTab() === "send") {
+    <div
+      class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        [mat-dialog-close]="false"
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [textColorInput]="'white'"
+        text="Send Proof of Delivery"
+        (clickEvent)="submitPodProof()"
+        [loading]="isSubmittingProof()"
+        [disabled]="isSubmittingProof()"
+      />
+    </div>
+  }
+</div>

@@ -1,0 +1,255 @@
+<!--
+  Break on card width, not viewport width: below ~300px per card the titles
+  wrap and the chip titles truncate, so drop to 2 columns then 1.
+-->
+<div
+  class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3 items-stretch"
+>
+  @for (step of steps(); track step.config.id) {
+    <div
+      class="relative rounded-[13px] p-5 flex flex-col gap-3 transition-all"
+      [ngClass]="step.cardClasses"
+    >
+      <!-- Icon tile + status badge -->
+      <div class="flex items-center justify-between gap-2">
+        <div
+          class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          [ngClass]="{
+            'bg-v4-badge-success-bg-color text-v4-badge-success-text-color': step.isDone,
+            'bg-v4-surface-warning-bold text-v4-text-warning': step.isUnderReview,
+            'bg-v4-badge-info-bg-color text-v4-badge-info-text-color': step.isActive,
+            'bg-v4-badge-neutral-bg-color text-v4-badge-neutral-text-color': step.isLocked
+          }"
+        >
+          <lucide-angular
+            [img]="step.isUnderReview ? Clock : step.config.icon"
+            [size]="19"
+          ></lucide-angular>
+        </div>
+        <span
+          class="inline-flex items-center gap-1.5 text-[12px] font-bold rounded-full px-2.5 py-1 whitespace-nowrap"
+          [ngClass]="{
+            'bg-v4-badge-success-bg-color text-v4-badge-success-text-color': step.isDone,
+            'bg-v4-surface-warning-bold text-v4-text-warning': step.isUnderReview,
+            'bg-v4-badge-info-bg-color text-v4-badge-info-text-color': step.isActive,
+            'bg-v4-badge-neutral-bg-color text-v4-badge-neutral-text-color': step.isLocked
+          }"
+        >
+          @if (step.isDone) {
+            <lucide-angular [img]="Check" [size]="11"></lucide-angular>
+          }
+          {{ step.badge }}
+        </span>
+      </div>
+
+      <!-- Title + description -->
+      <div class="flex flex-col gap-1">
+        <div
+          class="text-base font-bold leading-tight"
+          [ngClass]="
+            step.isLocked
+              ? 'text-v4-secondary-text-color'
+              : 'text-v4-main-text-color'
+          "
+        >
+          {{ step.config.title }}
+        </div>
+        <div class="relative text-xs text-v4-tertiary-text-color leading-relaxed">
+          {{ step.description }}
+          @if (step.config.showPersonaInfo && !step.isDone && !step.isUnderReview) {
+            <span
+              tabindex="0"
+              class="peer inline-flex items-center justify-center w-[15px] h-[15px] align-[-2px] ml-1 border-[1.4px] border-v4-input-border-color rounded-full text-[12px] font-bold text-v4-tertiary-text-color cursor-pointer hover:border-v4-primary-brand-color hover:text-v4-primary-brand-color"
+            >i</span>
+            <!--
+              Anchored to the description block (left-0/right-0) rather than to
+              the icon, so the bubble can never spill outside the card.
+            -->
+            <span
+              role="tooltip"
+              class="pointer-events-none invisible opacity-0 transition-opacity peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100 absolute left-0 right-0 top-full mt-2 z-40 rounded-lg px-3 py-2.5 text-[12px] font-medium leading-relaxed bg-v4-badge-neutral-text-color text-white shadow-lg"
+            >
+              {{ personaTooltip }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Checklist box -->
+      <div
+        class="flex flex-col gap-1.5 rounded-xl px-3.5 py-3 bg-v4-tertiary-background-color border border-v4-border-color"
+      >
+        <span
+          class="text-[12px] font-bold tracking-[0.07em] text-v4-tertiary-text-color"
+        >
+          {{ step.itemsLabel }}
+        </span>
+        @for (item of step.items; track item.text) {
+          <span
+            class="flex items-center gap-2 text-xs"
+            [ngClass]="
+              step.isDone || item.preVerified
+                ? 'text-v4-text-success'
+                : 'text-v4-secondary-text-color'
+            "
+          >
+            <lucide-angular
+              [img]="step.isDone || item.preVerified ? Check : (item.icon ?? Check)"
+              [size]="12"
+              class="flex-shrink-0"
+              [ngClass]="
+                step.isDone || item.preVerified
+                  ? 'text-v4-text-success'
+                  : 'text-v4-tertiary-text-color'
+              "
+            ></lucide-angular>
+            <span class="min-w-0 break-words">{{ item.text }}</span>
+            @if (item.preVerified) {
+              <span
+                class="text-[12px] font-bold rounded-full px-1.5 py-0.5 bg-v4-badge-success-bg-color text-v4-badge-success-text-color whitespace-nowrap"
+              >
+                Verified
+              </span>
+            }
+          </span>
+        }
+      </div>
+
+      <!-- Unlock chip + feature pills; margin-top:auto per the reference -->
+      <div class="flex flex-col gap-[7px] mt-auto">
+        <div
+          role="button"
+          tabindex="0"
+          class="flex items-center gap-2 rounded-xl px-3 py-2 cursor-pointer select-none hover:brightness-95 border"
+          [ngClass]="
+            step.isDone || step.isLocked
+              ? 'bg-v4-input-background-color border-v4-border-color'
+              : 'bg-v4-badge-info-bg-color border-transparent'
+          "
+          (click)="toggleExpanded(step.config.key)"
+          (keydown.enter)="toggleExpanded(step.config.key)"
+          (keydown.space)="toggleExpanded(step.config.key)"
+        >
+          <lucide-angular
+            [img]="step.isDone ? LockOpen : Lock"
+            [size]="13"
+            class="flex-shrink-0"
+            [ngClass]="
+              step.isDone || step.isLocked
+                ? 'text-v4-secondary-text-color'
+                : 'text-v4-badge-info-text-color'
+            "
+          ></lucide-angular>
+          <span class="flex flex-col flex-1 min-w-0">
+            <span
+              class="text-[12px] font-bold tracking-[0.07em] opacity-75"
+              [ngClass]="
+                step.isDone || step.isLocked
+                  ? 'text-v4-secondary-text-color'
+                  : 'text-v4-badge-info-text-color'
+              "
+            >
+              {{ step.isDone ? 'UNLOCKED' : 'UNLOCKS' }}
+            </span>
+            <span
+              class="text-xs font-bold truncate"
+              [ngClass]="
+                step.isDone || step.isLocked
+                  ? 'text-v4-main-text-color'
+                  : 'text-v4-badge-info-text-color'
+              "
+            >
+              {{ step.config.chipTitle }}
+            </span>
+          </span>
+          <span
+            class="inline-flex items-center gap-1 text-[12px] font-semibold whitespace-nowrap"
+            [ngClass]="
+              step.isDone || step.isLocked
+                ? 'text-v4-secondary-text-color'
+                : 'text-v4-badge-info-text-color'
+            "
+          >
+            {{ moreLabel(step) }}
+            <lucide-angular
+              [img]="ChevronDown"
+              [size]="11"
+              class="transition-transform"
+              [class.rotate-180]="isExpanded(step.config.key)"
+            ></lucide-angular>
+          </span>
+        </div>
+
+        @if (isExpanded(step.config.key)) {
+          <div class="flex flex-wrap gap-1.5">
+            @for (feature of step.config.moreFeatures; track feature) {
+              <span
+                class="text-[12px] rounded-full px-2.5 py-0.5 bg-v4-input-background-color border border-v4-border-color text-v4-secondary-text-color"
+              >
+                {{ feature }}
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      <!--
+        Footer: CTA / locked / under review / completed.
+        Fixed min-height so every card's footer occupies the same band —
+        that is what keeps both the unlock chips and the CTAs on one line
+        across cards whose footer content differs.
+      -->
+      <div class="flex flex-col gap-[7px] mt-3">
+        @if (step.isActive) {
+          <button
+            type="button"
+            class="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-[15px] font-bold cursor-pointer border-0 bg-v4-primary-brand-color text-white shadow-lg hover:brightness-110"
+            (click)="onAction(step.config.key)"
+          >
+            {{ step.config.buttonText }}
+            <lucide-angular [img]="ArrowRight" [size]="14"></lucide-angular>
+          </button>
+          @if (!step.config.hideTimeOnActive) {
+            <div
+              class="flex items-center justify-center gap-1.5 text-xs text-v4-tertiary-text-color"
+            >
+              <lucide-angular [img]="Clock" [size]="12"></lucide-angular>
+              Takes {{ step.config.timeRequired }}
+            </div>
+          }
+        } @else if (step.isLocked) {
+          <div
+            class="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold bg-v4-input-background-color border border-v4-border-color text-v4-secondary-text-color"
+          >
+            <lucide-angular [img]="Lock" [size]="13"></lucide-angular>
+            Locked
+          </div>
+          <div class="text-center text-[12px] text-v4-tertiary-text-color">
+            {{ step.lockNote }} · {{ step.config.timeRequired }}
+          </div>
+        } @else if (step.isUnderReview) {
+          <div
+            class="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold bg-v4-surface-warning-bold text-v4-text-warning"
+          >
+            <lucide-angular [img]="Clock" [size]="13"></lucide-angular>
+            Reviewing
+          </div>
+          <div class="text-center text-[12px] text-v4-tertiary-text-color">
+            We will notify you when review is complete.
+          </div>
+        } @else {
+          <div
+            class="flex items-center justify-between gap-2 border-t border-v4-border-color pt-3.5"
+          >
+            <span
+              class="inline-flex items-center gap-1.5 text-xs font-bold text-v4-text-success"
+            >
+              <lucide-angular [img]="Check" [size]="14"></lucide-angular>
+              Completed successfully
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

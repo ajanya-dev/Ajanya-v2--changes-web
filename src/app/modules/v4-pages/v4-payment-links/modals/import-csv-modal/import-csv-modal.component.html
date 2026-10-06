@@ -1,0 +1,187 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-5">
+    <h2 class="text-lg font-semibold text-v4-main-text-color">Import Custom Links</h2>
+    <button mat-dialog-close class="p-1 rounded hover:bg-v4-tertiary-background-color transition-colors">
+      <lucide-angular name="x" [size]="18" class="text-v4-secondary-text-color" />
+    </button>
+  </div>
+
+  <!-- Steps indicator -->
+  <div class="flex items-center gap-2 mb-6">
+    @for (s of [1, 2, 3]; track s) {
+      <div class="flex items-center gap-2">
+        <div
+          class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium"
+          [ngClass]="
+            step() >= s
+              ? 'bg-v4-primary-brand-color text-white'
+              : 'bg-v4-border-color text-v4-tertiary-text-color'
+          "
+        >
+          {{ s }}
+        </div>
+        <span class="text-xs text-v4-secondary-text-color">
+          {{ s === 1 ? 'Upload' : s === 2 ? 'Edit' : 'Create' }}
+        </span>
+        @if (s < 3) {
+          <div class="w-8 h-px bg-v4-border-color"></div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Step 1: Upload -->
+  @if (step() === 1) {
+    <div class="space-y-4">
+      <div
+        class="border-2 border-dashed border-v4-border-color rounded-xl p-8 text-center"
+      >
+        <lucide-angular name="upload" [size]="32" class="mx-auto mb-3 text-v4-secondary-text-color" />
+        <p class="text-sm text-v4-main-text-color mb-1">Upload CSV File</p>
+        <p class="text-xs text-v4-secondary-text-color mb-4">Drag and drop or click to select</p>
+        <input
+          type="file"
+          accept=".csv"
+          (change)="onFileSelect($event)"
+          class="hidden"
+          #fileInput
+        />
+        <button
+          (click)="fileInput.click()"
+          class="px-4 h-11 text-xs rounded-lg bg-[#004a7c] text-white hover:opacity-90 transition-colors cursor-pointer"
+        >
+          Choose File
+        </button>
+        @if (selectedFile()) {
+          <div class="mt-3 flex justify-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-v4-tertiary-background-color border border-v4-border-color">
+              <lucide-angular name="file-text" [size]="14" class="text-v4-secondary-text-color shrink-0" />
+              <span class="text-xs text-v4-main-text-color truncate max-w-[260px]">{{ selectedFile()!.name }}</span>
+              <button
+                type="button"
+                (click)="discardFile(fileInput)"
+                class="p-0.5 rounded hover:bg-common-secondary-red-color transition-colors cursor-pointer"
+                matTooltip="Discard File"
+              >
+                <lucide-angular name="x" [size]="14" class="text-v4-common-red-color" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <button
+        (click)="downloadSample()"
+        class="text-xs text-v4-primary-brand-bold-color hover:underline flex items-center gap-1 cursor-pointer"
+      >
+        <lucide-angular name="download" [size]="12" />
+        Download sample template
+      </button>
+
+      <div class="flex justify-end">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Upload"
+          [loading]="uploading()"
+          [disabled]="!selectedFile()"
+          (clickEvent)="uploadFile()"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- Step 2: Edit -->
+  @if (step() === 2) {
+    <div class="space-y-4">
+      <div class="overflow-x-auto rounded-lg border border-v4-border-color">
+        <table class="w-full text-xs">
+          <thead class="bg-v4-secondary-background-color">
+            <tr>
+              <th class="px-3 py-2 text-left font-medium text-v4-secondary-text-color">Name</th>
+              <th class="px-3 py-2 text-left font-medium text-v4-secondary-text-color">Email</th>
+              <th class="px-3 py-2 text-left font-medium text-v4-secondary-text-color">Amount</th>
+              <th class="px-3 py-2 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track $index) {
+              <tr class="border-t border-v4-border-color">
+                <td class="px-2 py-1">
+                  <input
+                    [ngModel]="row.name"
+                    (ngModelChange)="updateRow($index, 'name', $event)"
+                    class="w-full px-2 py-1 text-xs rounded border border-v4-border-color bg-transparent text-v4-main-text-color focus:outline-none focus:ring-1 focus:ring-[#004a7c]"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <input
+                    [ngModel]="row.email"
+                    (ngModelChange)="updateRow($index, 'email', $event)"
+                    class="w-full px-2 py-1 text-xs rounded border border-v4-border-color bg-transparent text-v4-main-text-color focus:outline-none focus:ring-1 focus:ring-[#004a7c]"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-common-input-v4
+                    [placeholder]="'Amount'"
+                    [isFieldRequired]="false"
+                    [isNumberOnly]="true"
+                    [numberType]="'decimal'"
+                    [fieldHeight]="'28px'"
+                    [ngModel]="row.amount"
+                    (ngModelChange)="updateRow($index, 'amount', $event)"
+                  ></app-common-input-v4>
+                </td>
+                <td class="px-2 py-1">
+                  <button (click)="removeRow($index)" class="p-1 rounded hover:bg-common-secondary-red-color transition-colors">
+                    <lucide-angular name="trash-2" [size]="13" class="text-v4-common-red-color" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-v4-secondary-text-color">{{ rows().length }} rows</p>
+
+      <div class="flex justify-end gap-2">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Back"
+          minWidth="120px"
+          (clickEvent)="step.set(1)"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Save & Continue"
+          [loading]="uploading()"
+          (clickEvent)="saveEdits()"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- Step 3: Create -->
+  @if (step() === 3) {
+    <div class="text-center py-6 space-y-4">
+      <lucide-angular name="check-circle" [size]="48" class="mx-auto text-v4-common-green-color" />
+      <p class="text-sm text-v4-main-text-color font-medium">Data verified successfully</p>
+      <p class="text-xs text-v4-secondary-text-color">
+        {{ rows().length }} links are ready to be created.
+      </p>
+      <div class="flex justify-center gap-2 mt-4">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Back to Edit"
+          (clickEvent)="step.set(2)"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Create Links"
+          [loading]="creating()"
+          (clickEvent)="createLinks()"
+        />
+      </div>
+    </div>
+  }
+</div>

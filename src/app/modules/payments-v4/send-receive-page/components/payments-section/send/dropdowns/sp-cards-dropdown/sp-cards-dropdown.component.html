@@ -1,0 +1,164 @@
+﻿<app-sp-dropdown-shell
+  label="Select a credit card"
+  tooltip="Choose the specific card to pay from."
+  [(open)]="open"
+  (cleared)="clearSelection()"
+  [searchable]="true"
+  [searchPlaceholder]="enableAddNew() ? 'Search or add card' : 'Search cards'"
+  [searchTerm]="term()"
+  (searchTermChange)="onSearchInput($event)"
+>
+  <ng-container trigger>
+    <span
+      class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+    >
+      <lucide-icon [img]="CreditCardIcon" [size]="16" />
+    </span>
+    @if (selected(); as card) {
+      <span class="min-w-0 flex-1">
+        <span
+          class="block truncate font-bold leading-tight text-v4-main-text-color text-[13px]"
+          >{{ getCardTitle(card) }}</span
+        >
+        <span
+          class="block truncate leading-tight text-v4-tertiary-text-color text-[12px]"
+          >{{ getCardMaskedLast4(card) }}</span
+        >
+      </span>
+    } @else {
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholder() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel class="p-1">
+    <!--
+      Not gated on `hasPermission.card`: that flag is raised by a 403 from the
+      card *list*, so it says the user may not see cards — not that they may not
+      add one. A user with create but no view was left with an empty list and no
+      way to add anything. `cards-dropdown-v3` offers the row unconditionally and
+      lets the add-card flow refuse; so does the v4 dropdown this extends.
+    -->
+    @if (enableAddNew()) {
+      <button
+        type="button"
+        class="mb-2 flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-dashed border-v4-border-success p-2 text-left transition-colors hover:bg-v4-surface-success"
+        (click)="addNewCard()"
+      >
+        <span
+          class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-surface-success-bold text-v4-text-success"
+        >
+          @if (addingCard()) {
+            <span
+              class="h-4 w-4 animate-spin rounded-full border-2 border-v4-text-success border-t-transparent"
+            ></span>
+          } @else {
+            <lucide-icon [img]="PlusIcon" [size]="15" />
+          }
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block font-bold text-v4-text-success text-[13px]"
+            >{{ addingCard() ? 'Opening...' : 'Add New Card' }}</span
+          >
+          <span class="block truncate text-v4-text-success text-[12px]"
+            >Connect a new credit card</span
+          >
+        </span>
+      </button>
+    }
+
+    <div class="flex max-h-[280px] flex-col gap-[3px] overflow-y-auto">
+      @if (selectIsCardsLoading$ | async) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="flex animate-pulse items-center gap-2.5 rounded-[9px] p-2">
+            <span
+              class="h-7 w-7 shrink-0 rounded-[10px] bg-v4-brand-tint"
+            ></span>
+            <span class="flex-1 space-y-1.5">
+              <span
+                class="block h-3 w-3/4 rounded bg-v4-brand-tint"
+              ></span>
+              <span
+                class="block h-2.5 w-1/2 rounded bg-v4-brand-tint"
+              ></span>
+            </span>
+          </div>
+        }
+      } @else {
+        @for (card of visibleCards; track card.cardId) {
+          <div
+            class="flex w-full items-center gap-1 rounded-[9px] border-[1.5px] border-transparent pr-1 transition-colors hover:bg-v4-main-background-color"
+            [ngClass]="{ 'bg-v4-brand-tint': selected()?.cardId === card.cardId, '!border-v4-brand-tint-strong': selected()?.cardId === card.cardId }"
+          >
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 items-center gap-2.5 p-2 text-left"
+              (click)="onSelectCard(card)"
+            >
+              <span
+                class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] transition-colors"
+                [class.bg-v4-primary-brand-color]="
+                  selected()?.cardId === card.cardId"
+                [class.text-white]="selected()?.cardId === card.cardId"
+                [ngClass]="{ 'bg-v4-brand-tint': selected()?.cardId !== card.cardId }"
+                [class.text-v4-brand-border-color]="selected()?.cardId !== card.cardId"
+              >
+                <lucide-icon [img]="CreditCardIcon" [size]="15" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span
+                  class="block truncate font-bold text-v4-main-text-color text-[13px]"
+                  >{{ getCardTitle(card) }}</span
+                >
+                <span
+                  class="block truncate text-v4-tertiary-text-color text-[12px]"
+                  >{{ getCardMaskedLast4(card) }}</span
+                >
+              </span>
+            </button>
+
+            @if (showDefaultStar()) {
+              <button
+                type="button"
+                class="grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors hover:bg-v4-hover-tint"
+                [ngClass]="{
+                  '[&_svg]:fill-current': defaultItemId() === card.cardId
+                }"
+                [matTooltip]="
+                  defaultItemId() === card.cardId
+                    ? 'Remove as your default'
+                    : 'Set it as your default for next time'"
+                matTooltipPosition="above"
+                [attr.aria-pressed]="defaultItemId() === card.cardId"
+                [attr.aria-label]="
+                  defaultItemId() === card.cardId
+                    ? 'Remove default card'
+                    : 'Set as default card'"
+                (click)="onStarClick($event, card)"
+              >
+                <lucide-icon
+                  [img]="StarIcon"
+                  [size]="15"
+                  [class]="
+                    defaultItemId() === card.cardId
+                      ? 'text-v4-favorite-star-color'
+                      : 'text-v4-subtle-text-color'"
+                />
+              </button>
+            }
+          </div>
+        } @empty {
+          <p class="py-4 text-center text-v4-tertiary-text-color text-[12px]">
+            {{
+              !paymentsService.hasPermission.card
+                ?"Permission Denied"
+                :"No cards found"
+            }}
+          </p>
+        }
+      }
+    </div>
+  </div>
+</app-sp-dropdown-shell>

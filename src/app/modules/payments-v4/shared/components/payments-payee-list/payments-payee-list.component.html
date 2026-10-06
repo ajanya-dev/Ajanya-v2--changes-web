@@ -1,0 +1,234 @@
+<!-- ── Inline Add Payee Form ── -->
+@if (showAddPayeeForm()) {
+  <app-add-payee-modal-v4
+    [isEmbedded]="true"
+    (payeeSaved)="onPayeeSaved($event)"
+    (closed)="cancelAddPayee()"
+  />
+} @else if (showEditPayeeForm()) {
+  <!-- ── Inline Edit Payee Form ── -->
+  <app-add-payee-modal-v4
+    [isEmbedded]="true"
+    [embeddedConfig]="editPayeeConfig()"
+    (payeeUpdated)="onPayeeUpdated($event)"
+    (closed)="cancelEditPayee()"
+  />
+} @else {
+  <!-- Selected Payee View -->
+  @if (selectedPayee(); as payee) {
+    <div
+      class="selected-payee flex items-center gap-3 rounded-lg px-4 py-3"
+    >
+      <div
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-primary-brand-color text-sm font-semibold text-v4-secondary-brand-color"
+      >
+        <i-lucide
+          [img]="userIcon"
+          [size]="18"
+          class="text-v4-secondary-brand-color"
+        ></i-lucide>
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-v4-main-text-color">
+          {{ payee.name }}
+        </p>
+        @if (payee.email) {
+          <p
+            class="flex items-center gap-1 truncate text-xs text-v4-tertiary-text-color"
+          >
+            <i-lucide [img]="MailIcon" [size]="12" class="shrink-0"></i-lucide>
+            {{ payee.email }}
+          </p>
+        }
+      </div>
+      @if (!hidePayeeSummary() && payee.encryptedId) {
+        <button
+          type="button"
+          matTooltip="View Payee Summary"
+          class="shrink-0 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+          (click)="openPayeeSummary()"
+        >
+          <i-lucide [img]="HistoryIcon" [size]="16"></i-lucide>
+        </button>
+      }
+      <button
+        type="button"
+        class="shrink-0 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+        matTooltip="Edit Payee"
+        (click)="onEditPayee()"
+      >
+        <i-lucide [img]="PencilIcon" [size]="16"></i-lucide>
+      </button>
+      <button
+        type="button"
+        class="shrink-0 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+        (click)="removeSelectedPayee()"
+      >
+        <i-lucide [img]="XIcon" [size]="18"></i-lucide>
+      </button>
+    </div>
+  } @else {
+    <!-- Search Section -->
+    <div class="relative mb-3">
+      <i-lucide
+        [img]="SearchIcon"
+        [size]="16"
+        class="absolute left-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color"
+      ></i-lucide>
+      <input
+        type="text"
+        class="w-full rounded-lg border-2 border-v4-border-color bg-v4-secondary-background-color py-2.5 pl-9 pr-3 text-sm text-v4-main-text-color placeholder-v4-subtle-text-color outline-none transition-colors focus:border-v4-primary-brand-color"
+        placeholder="Search or add a payee"
+        [(ngModel)]="searchTerm"
+        (keyup)="onSearch()"
+      />
+      @if (searchTerm) {
+        <button
+          type="button"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+          (click)="clearSearch()"
+        >
+          <i-lucide [img]="XIcon" [size]="16"></i-lucide>
+        </button>
+      }
+    </div>
+
+    <!-- Add New Payee -->
+    @if(paymentsService.hasPermission.payee){
+      <button
+      type="button"
+      class="mb-3 flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-v4-border-success px-4 py-3 transition-colors hover:bg-v4-surface-success"
+      (click)="addNewPayee()"
+    >
+      <div
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-surface-success-bold"
+      >
+        <i-lucide
+          [img]="UserRoundPlusIcon"
+          [size]="18"
+          class="text-v4-text-success"
+        ></i-lucide>
+      </div>
+      <div class="text-left">
+        <p class="text-sm font-semibold text-v4-text-success">
+          Add New Payee
+        </p>
+        <p class="text-xs text-v4-text-success">
+          Add a vendor, customer, or employee
+        </p>
+      </div>
+    </button>
+    }
+
+    <!-- Payee List -->
+    <div
+      class="payee-list-container overflow-y-auto"
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+    >
+      @if (isFilterOn$ | async) {
+        @for (payee of filteredPayees$ | async; track payee.id) {
+          <div
+            role="presentation"
+            class="flex cursor-pointer items-center gap-3 rounded-lg border border-v4-border-color px-4 py-3 transition-colors hover:bg-[#004a7c0D] [&+div]:mt-2 hover:border-v4-primary-brand-color"
+            (click)="selectPayee(payee)"
+          >
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-primary-brand-color text-sm font-semibold text-v4-secondary-brand-color"
+            >
+              <i-lucide
+                [img]="userIcon"
+                [size]="18"
+                class="text-v4-secondary-brand-color"
+              ></i-lucide>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-v4-main-text-color">
+                {{ payee.name }}
+              </p>
+              @if (payee.email) {
+                <p
+                  class="flex items-center gap-1 truncate text-xs text-v4-tertiary-text-color"
+                >
+                  <i-lucide
+                    [img]="MailIcon"
+                    [size]="12"
+                    class="shrink-0"
+                  ></i-lucide>
+                  {{ payee.email }}
+                </p>
+              }
+            </div>
+          </div>
+        } @empty {
+          @if ((isLoading$ | async) === false) {
+            <p class="py-4 text-center text-sm text-v4-tertiary-text-color">
+              {{ !paymentsService.hasPermission.payee ? 'Permission Denied' : 'No payees found' }}
+            </p>
+          }
+        }
+      } @else {
+        @for (payee of displayedPayees$ | async; track payee.id) {
+          <div
+            role="presentation"
+            class="flex cursor-pointer items-center gap-3 rounded-lg border border-v4-border-color px-4 py-3 transition-colors hover:bg-[#004a7c0D] [&+div]:mt-2 hover:border-v4-primary-brand-color"
+            (click)="selectPayee(payee)"
+          >
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-v4-primary-brand-color text-sm font-semibold text-v4-secondary-brand-color"
+            >
+              <i-lucide
+                [img]="userIcon"
+                [size]="18"
+                class="text-v4-secondary-brand-color"
+              ></i-lucide>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-v4-main-text-color">
+                {{ payee.name }}
+              </p>
+              @if (payee.email) {
+                <p
+                  class="flex items-center gap-1 truncate text-xs text-v4-tertiary-text-color"
+                >
+                  <i-lucide
+                    [img]="MailIcon"
+                    [size]="12"
+                    class="shrink-0"
+                  ></i-lucide>
+                  {{ payee.email }}
+                </p>
+              }
+            </div>
+          </div>
+        } @empty {
+          @if ((isLoading$ | async) === false) {
+            <p class="py-4 text-center text-sm text-v4-tertiary-text-color">{{ !paymentsService.hasPermission.payee ? 'Permission Denied' : 'No payees found' }}</p>
+
+          }
+        }
+      }
+
+      <!-- Loader -->
+      @if (isLoading$ | async) {
+        <div class="space-y-2 py-2">
+          @for (i of [1, 2, 3]; track i) {
+            <div
+              class="flex animate-pulse items-center gap-3 rounded-lg px-4 py-3"
+            >
+              <div
+                class="h-10 w-10 shrink-0 rounded-full bg-v4-input-background-color"
+              ></div>
+              <div class="flex-1 space-y-2">
+                <div
+                  class="h-3.5 w-3/4 rounded bg-v4-input-background-color"
+                ></div>
+                <div class="h-3 w-1/2 rounded bg-v4-input-background-color"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+}

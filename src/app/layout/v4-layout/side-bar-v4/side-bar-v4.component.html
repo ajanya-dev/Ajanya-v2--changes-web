@@ -1,0 +1,593 @@
+<!-- Admin impersonation banner -->
+@if (isAdminLogin()) {
+  <div class="flex justify-center items-center">
+    <div
+      class="w-full py-2 px-3 flex items-center justify-center gap-2"
+      style="
+        background-color: color-mix(
+          in srgb,
+          var(--destructive) 15%,
+          transparent
+        );
+      "
+    >
+      <fa-icon [icon]="faUserSecret" class="text-destructive"></fa-icon>
+      <span class="text-destructive font-medium text-xs"
+        >Impersonated Session</span
+      >
+    </div>
+  </div>
+}
+
+<!-- ==================== DESKTOP SIDEBAR ==================== -->
+<aside
+  class="hidden lg:flex lg:relative flex-col h-full bg-v4-secondary-background-color border-r border-v4-border-color transition-[width] duration-300 ease-in-out overflow-visible"
+  [ngClass]="{
+    'w-[228px]': !isCollapsed(),
+    'w-[80px]': isCollapsed()
+  }"
+>
+  <!-- Logo area -->
+  <div
+    class="px-4 py-6 flex items-center justify-center relative border-b border-v4-border-subtle-color"
+  >
+    <div class="cursor-default">
+      @if (!isCollapsed()) {
+        <div
+          class="flex items-center justify-start relative"
+          style="width: 120px; height: 40px"
+        >
+          <img
+            class="mx-auto"
+            [ngSrc]="logoUrl()"
+            [alt]="appConfig?.websiteTitle"
+            [matTooltip]="appConfig?.websiteTitle"
+            width="284"
+            height="150"
+            priority
+          />
+        </div>
+      } @else {
+        <img
+          [src]="collapsedLogoUrl()"
+          alt="Logo"
+          class="w-10 h-10 object-contain"
+        />
+      }
+    </div>
+
+    <!-- Collapse toggle -->
+    <button
+      class="absolute top-6 right-0 translate-x-1/2 bg-v4-secondary-background-color rounded-full border border-v4-border-color p-1 flex items-center justify-center w-8 h-8 hover:bg-hover transition-colors cursor-pointer z-[999]"
+      (click)="toggleCollapse()"
+    >
+      @if (isCollapsed()) {
+        <lucide-icon
+          [img]="icons['chevron-right']"
+          [size]="16"
+          class="text-muted-foreground"
+        ></lucide-icon>
+      } @else {
+        <lucide-icon
+          [img]="icons['chevron-left']"
+          [size]="16"
+          class="text-muted-foreground"
+        ></lucide-icon>
+      }
+    </button>
+  </div>
+
+  <!-- Scrollable navigation -->
+  <nav
+    class="flex-1 overflow-y-auto py-3 px-3 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-black/20"
+  >
+    @for (
+      section of menuSections();
+      track section.category;
+      let sectionIdx = $index
+    ) {
+      <div class="mb-2">
+        <!-- Section header (expanded mode) -->
+        @if (!isCollapsed()) {
+          <div
+            class="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all mb-1 group"
+            [attr.role]="section.category !== 'MAIN' ? 'button' : null"
+            [attr.tabindex]="section.category !== 'MAIN' ? 0 : null"
+            [ngClass]="{
+              'cursor-pointer': section.category !== 'MAIN',
+              'hover:bg-v4-list-hover-color':
+                section.category !== 'MAIN' &&
+                selectedSectionCategory() !== section.category,
+              'bg-v4-primary-brand-color':
+                selectedSectionCategory() === section.category
+            }"
+            (click)="
+              section.category !== 'MAIN' ? onSectionHeaderClick(section) : null
+            "
+            (keydown)="onSectionHeaderKeydown($event, section)"
+          >
+            <h3
+              class="text-[12px] font-bold tracking-[0.04em] text-left uppercase transition-colors text-v4-tertiary-text-color"
+              [ngClass]="{
+                '!text-white':
+                  selectedSectionCategory() === section.category,
+                'hover:text-v4-primary-brand-bold-color':
+                  selectedSectionCategory() !== section.category &&
+                  section.category !== 'MAIN'
+              }"
+            >
+              {{ section.category }}
+            </h3>
+            @if (section.category !== "MAIN") {
+              <button
+                type="button"
+                class="transition-transform duration-200 cursor-pointer"
+                [ngClass]="{
+                  'rotate-180': isSectionExpanded(section.category)
+                }"
+                (click)="
+                  toggleSection(section.category); $event.stopPropagation()
+                "
+              >
+                <lucide-icon
+                  [img]="icons['chevron-down']"
+                  [size]="14"
+                  class="chevron-down-icon text-v4-tertiary-text-color"
+                  [ngClass]="{
+                    'is-active': selectedSectionCategory() === section.category,
+                    'group-hover:text-v4-main-text-color':
+                      selectedSectionCategory() !== section.category
+                  }"
+                ></lucide-icon>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Collapsed mode: divider -->
+        @if (isCollapsed() && sectionIdx > 0) {
+          <div class="h-px mb-2 bg-v4-border-color"></div>
+        }
+
+        <!-- Section items -->
+        <div
+          class="overflow-hidden transition-all duration-[250ms] ease-in-out"
+          [ngClass]="{
+            'max-h-[1000px] opacity-100':
+              isCollapsed() ||
+              isSectionExpanded(section.category) ||
+              section.category === 'MAIN',
+            'max-h-0 opacity-0':
+              !isCollapsed() &&
+              !isSectionExpanded(section.category) &&
+              section.category !== 'MAIN'
+          }"
+        >
+          <div class="space-y-0.5">
+            @for (item of section.items; track item.id) {
+              @if (!isCollapsed()) {
+                <!-- Expanded menu item -->
+                <button
+                  type="button"
+                  class="v4-sidebar-item-expanded w-full flex items-center gap-2.5 px-3 py-2 rounded-xl relative group cursor-pointer text-left"
+                  [ngClass]="{
+                    'text-white':
+                      selectedItemId() === item.id,
+                    'text-v4-secondary-text-color hover:bg-v4-list-hover-color hover:text-v4-main-text-color':
+                      selectedItemId() !== item.id,
+                    'text-[13px] font-semibold': section.category === 'MAIN',
+                    'text-[13px] font-medium': section.category !== 'MAIN'
+                  }"
+                  (click)="navigate(item)"
+                >
+                  @if (selectedItemId() === item.id) {
+                    <div
+                      class="v4-sidebar-active-bg absolute inset-0 rounded-xl bg-v4-primary-brand-color"
+                    ></div>
+                  }
+                  @if (item.highlight) {
+                    <div
+                      class="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 bg-v4-secondary-brand-color rounded-full z-10"
+                    ></div>
+                  }
+                  <div class="relative z-10 flex items-center gap-3 w-full">
+                    @if (item.lucideIcon) {
+                      <lucide-icon
+                        [img]="icons[item.lucideIcon]"
+                        [size]="18"
+                        class="v4-sidebar-icon flex-shrink-0"
+                        [ngClass]="{
+                          'text-white':
+                            selectedItemId() === item.id,
+                          'text-v4-secondary-text-color group-hover:text-v4-main-text-color':
+                            selectedItemId() !== item.id
+                        }"
+                      ></lucide-icon>
+                    } @else {
+                      <fa-icon
+                        [icon]="['fas', item.icon]"
+                        class="v4-sidebar-icon text-[15px] flex-shrink-0"
+                        [ngClass]="{
+                          'text-white':
+                            selectedItemId() === item.id,
+                          'text-v4-secondary-text-color group-hover:text-v4-main-text-color':
+                            selectedItemId() !== item.id
+                        }"
+                      ></fa-icon>
+                    }
+                    <span
+                      [ngClass]="{
+                        'text-white':
+                          selectedItemId() === item.id
+                      }"
+                      >{{ item.name }}</span
+                    >
+
+                    <!-- Home & Star icons on hover - COMMENTED OUT
+                    @if (
+                      hoveredItemId() === item.id &&
+                      selectedItemId() !== item.id
+                    ) {
+                      <div
+                        class="ml-auto flex items-center gap-2 animate-v4-fade-in"
+                      >
+                        @if (item.routerLink) {
+                          <button
+                            type="button"
+                            class="cursor-pointer p-0.5 rounded hover:bg-hover transition-colors"
+                            (click)="setHomePage($event, item.routerLink!)"
+                            title="Set as home page"
+                          >
+                            <lucide-icon
+                              [img]="icons['home']"
+                              [size]="16"
+                              [ngClass]="{
+                                'text-[#00c950] [&_svg]:fill-[#00c950]':
+                                  isHomePage(item.routerLink),
+                                'text-placeholder hover:text-[#00c950]':
+                                  !isHomePage(item.routerLink)
+                              }"
+                            ></lucide-icon>
+                          </button>
+                        }
+                        @if (item.name !== "Dashboard") {
+                          <button
+                            type="button"
+                            class="cursor-pointer p-0.5 rounded hover:bg-hover transition-colors"
+                            (click)="toggleFavorite($event, item.name)"
+                            title="Toggle favorite"
+                          >
+                            <lucide-icon
+                              [img]="icons['star']"
+                              [size]="16"
+                              [ngClass]="{
+                                'text-[#fdc700] [&_svg]:fill-[#fdc700]':
+                                  isFavorited(item.name),
+                                'text-placeholder hover:text-[#fdc700]':
+                                  !isFavorited(item.name)
+                              }"
+                            ></lucide-icon>
+                          </button>
+                        }
+                      </div>
+                    }
+                    END COMMENTED OUT -->
+                  </div>
+                </button>
+              } @else {
+                <!-- Collapsed icon-only -->
+                <button
+                  type="button"
+                  class="v4-sidebar-item-collapsed w-full flex items-center justify-center px-3 py-3 rounded-xl text-sm relative group cursor-pointer text-v4-secondary-text-color hover:bg-v4-list-hover-color hover:text-v4-main-text-color"
+                  [matTooltip]="item.name"
+                  matTooltipPosition="right"
+                  (click)="navigate(item)"
+                >
+                  @if (selectedItemId() === item.id) {
+                    <div
+                      class="v4-sidebar-active-bg absolute inset-0 rounded-xl bg-v4-primary-brand-color"
+                    ></div>
+                  }
+                  @if (item.highlight) {
+                    <div
+                      class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-v4-secondary-brand-color rounded-full z-10"
+                    ></div>
+                  }
+                  <div class="relative z-10 flex items-center justify-center">
+                    @if (item.lucideIcon) {
+                      <lucide-icon
+                        [img]="icons[item.lucideIcon]"
+                        [size]="18"
+                        class="v4-sidebar-icon"
+                        [ngClass]="{
+                          'text-white':
+                            selectedItemId() === item.id,
+                          'text-v4-secondary-text-color group-hover:text-v4-main-text-color':
+                            selectedItemId() !== item.id
+                        }"
+                      ></lucide-icon>
+                    } @else {
+                      <fa-icon
+                        [icon]="['fas', item.icon]"
+                        class="v4-sidebar-icon text-[18px]"
+                        [ngClass]="{
+                          'text-white':
+                            selectedItemId() === item.id,
+                          'text-v4-secondary-text-color group-hover:text-v4-main-text-color':
+                            selectedItemId() !== item.id
+                        }"
+                      ></fa-icon>
+                    }
+                  </div>
+                </button>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </nav>
+
+  <!-- Version / support (expanded only) -->
+  @if (!isCollapsed()) {
+    <div class="p-4">
+      <div class="flex items-center gap-1.5 px-1">
+        <span class="text-[12px] text-v4-tertiary-text-color">
+          Version 2.0
+        </span>
+        <span class="version-switch-beta-badge font-peridot">BETA</span>
+        <button
+          type="button"
+          class="v4-sidebar-support-btn ml-auto"
+          aria-label="Contact Support"
+          matTooltip="Contact Support"
+          matTooltipPosition="above"
+          (click)="onContactSupport()"
+        >
+          <lucide-icon
+            [img]="icons['message-square']"
+            [size]="15"
+          ></lucide-icon>
+        </button>
+      </div>
+    </div>
+  }
+</aside>
+
+<!-- ==================== MOBILE SIDEBAR ==================== -->
+
+<!-- Backdrop -->
+@if (isMobileOpen()) {
+  <div
+    role="presentation"
+    class="fixed inset-0 backdrop-blur-sm z-[999] lg:hidden"
+    style="background-color: rgba(0, 0, 0, 0.2)"
+    (click)="closeMobile()"
+  ></div>
+}
+
+<!-- Mobile drawer -->
+<aside
+  class="fixed lg:hidden inset-y-0 left-0 z-[1000] w-[85vw] max-w-[320px] flex flex-col h-full shadow-[4px_0_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-in-out bg-v4-secondary-background-color"
+  [ngClass]="{
+    'translate-x-0': isMobileOpen(),
+    '-translate-x-full': !isMobileOpen()
+  }"
+>
+  <!-- Mobile header -->
+  <div class="p-4 sm:p-6">
+    <div class="flex items-center justify-between">
+      <div
+        class="flex items-center justify-start relative w-[140px] h-[40px] sm:w-[180px] sm:h-[44px]"
+      >
+        <img
+          class="mx-auto"
+          [ngSrc]="logoUrl()"
+          [alt]="appConfig?.websiteTitle"
+          [matTooltip]="appConfig?.websiteTitle"
+          width="284"
+          height="150"
+          priority
+        />
+      </div>
+      <button
+        class="p-2.5 hover:bg-hover rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+        (click)="closeMobile()"
+      >
+        <lucide-icon
+          [img]="icons['x']"
+          [size]="22"
+          class="text-muted-foreground"
+        ></lucide-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Actions - Mobile Only -->
+  <div class="px-4 py-3">
+    <div class="grid grid-cols-2 gap-2">
+      <app-common-button-v4
+        class="block w-full"
+        [type]="{ style: 'primary', name: 'main' }"
+        [backGroundInput]="'var(--v4-primary-brand-color)'"
+        [textColorInput]="'#ffffff'"
+        text="Send"
+        lucideIcon="send"
+        [lucideIconSize]="18"
+        width="100%"
+        [minWidth]="'0'"
+        customHeight="48px"
+        (clickEvent)="onMobileSendPayment()"
+      />
+      <app-common-button-v4
+        class="block w-full"
+        [type]="{ style: 'neon', name: 'main' }"
+        text="Receive"
+        lucideIcon="receipt"
+        [lucideIconSize]="18"
+        width="100%"
+        [minWidth]="'0'"
+        customHeight="48px"
+        (clickEvent)="onMobileReceivePayment()"
+      />
+    </div>
+  </div>
+
+  <!-- Mobile navigation -->
+  <nav
+    class="flex-1 overflow-y-auto py-3 px-3 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-black/20"
+  >
+    @for (section of menuSections(); track section.category) {
+      <div class="mb-2">
+        <div
+          class="w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all mb-2 group"
+          [attr.role]="section.category !== 'MAIN' ? 'button' : null"
+          [attr.tabindex]="section.category !== 'MAIN' ? 0 : null"
+          [ngClass]="{
+            'cursor-pointer': section.category !== 'MAIN',
+            'bg-v4-primary-brand-color':
+              selectedSectionCategory() === section.category,
+            'hover:bg-v4-list-hover-color':
+              section.category !== 'MAIN' &&
+              selectedSectionCategory() !== section.category
+          }"
+          (click)="
+            section.category !== 'MAIN' ? onSectionHeaderClick(section) : null
+          "
+          (keydown)="onSectionHeaderKeydown($event, section)"
+        >
+          <h3
+            class="text-[12px] font-bold tracking-[0.04em] text-left uppercase transition-colors text-v4-tertiary-text-color"
+            [ngClass]="{
+              '!text-white':
+                selectedSectionCategory() === section.category,
+              'hover:text-v4-primary-brand-bold-color':
+                selectedSectionCategory() !== section.category &&
+                section.category !== 'MAIN'
+            }"
+          >
+            {{ section.category }}
+          </h3>
+          @if (section.category !== "MAIN") {
+            <button
+              type="button"
+              class="transition-transform duration-200 cursor-pointer"
+              [ngClass]="{ 'rotate-180': isSectionExpanded(section.category) }"
+              (click)="
+                toggleSection(section.category); $event.stopPropagation()
+              "
+            >
+              <lucide-icon
+                [img]="icons['chevron-down']"
+                [size]="14"
+                class="text-v4-tertiary-text-color"
+                [ngClass]="{
+                  '!text-white':
+                    selectedSectionCategory() === section.category,
+                  'group-hover:text-v4-main-text-color':
+                    selectedSectionCategory() !== section.category
+                }"
+              ></lucide-icon>
+            </button>
+          }
+        </div>
+
+        <div
+          class="overflow-hidden transition-all duration-[250ms] ease-in-out"
+          [ngClass]="{
+            'max-h-[1000px] opacity-100':
+              isSectionExpanded(section.category) ||
+              section.category === 'MAIN',
+            'max-h-0 opacity-0':
+              !isSectionExpanded(section.category) &&
+              section.category !== 'MAIN'
+          }"
+        >
+          <div class="space-y-0.5">
+            @for (item of section.items; track item.id) {
+              <button
+                type="button"
+                class="v4-sidebar-item-expanded w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm relative group min-h-[48px] cursor-pointer text-left hover:bg-v4-list-hover-color hover:text-v4-main-text-color"
+                [ngClass]="{
+                  'text-white': selectedItemId() === item.id,
+                  'text-v4-secondary-text-color': selectedItemId() !== item.id
+                }"
+                (click)="navigate(item)"
+              >
+                @if (selectedItemId() === item.id) {
+                  <div
+                    class="v4-sidebar-active-bg absolute inset-0 rounded-xl bg-v4-primary-brand-color"
+                  ></div>
+                }
+                @if (item.highlight) {
+                  <div
+                    class="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 bg-v4-secondary-brand-color rounded-full z-10"
+                  ></div>
+                }
+                <div class="relative z-10 flex items-center gap-3 w-full">
+                  @if (item.lucideIcon) {
+                    <lucide-icon
+                      [img]="icons[item.lucideIcon]"
+                      [size]="20"
+                      class="v4-sidebar-icon flex-shrink-0 group-hover:text-v4-main-text-color"
+                      [ngClass]="{
+                        'text-white':
+                          selectedItemId() === item.id,
+                        'text-v4-secondary-text-color':
+                          selectedItemId() !== item.id
+                      }"
+                    ></lucide-icon>
+                  } @else {
+                    <fa-icon
+                      [icon]="['fas', item.icon]"
+                      class="v4-sidebar-icon text-[20px] flex-shrink-0 group-hover:text-v4-main-text-color"
+                      [ngClass]="{
+                        'text-white':
+                          selectedItemId() === item.id,
+                        'text-v4-secondary-text-color':
+                          selectedItemId() !== item.id
+                      }"
+                    ></fa-icon>
+                  }
+                  <span class="font-medium flex-1 text-left">{{
+                    item.name
+                  }}</span>
+
+                  <!-- Show star for favorited items on mobile - COMMENTED OUT
+                  @if (isFavorited(item.name) && item.name !== "Dashboard") {
+                    <lucide-icon
+                      [img]="icons['star']"
+                      [size]="16"
+                      class="text-[#fdc700] [&_svg]:fill-[#fdc700] flex-shrink-0 relative z-10"
+                    ></lucide-icon>
+                  }
+                  END COMMENTED OUT -->
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </nav>
+
+  <!-- Version / support - mobile -->
+  <div class="p-4 border-t border-v4-border-color">
+    <div class="flex items-center justify-center gap-2">
+      <span class="text-sm font-semibold text-v4-secondary-text-color">
+        Version 2.0
+      </span>
+      <span class="version-switch-beta-badge font-peridot">BETA</span>
+      <button
+        type="button"
+        class="v4-sidebar-support-btn"
+        aria-label="Contact Support"
+        matTooltip="Contact Support"
+        matTooltipPosition="above"
+        (click)="closeMobile(); onContactSupport()"
+      >
+        <lucide-icon [img]="icons['message-square']" [size]="16"></lucide-icon>
+      </button>
+    </div>
+  </div>
+</aside>

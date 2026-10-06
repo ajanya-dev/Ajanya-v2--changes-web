@@ -1,0 +1,219 @@
+<div class="flex items-center gap-1.5">
+  <!-- Quick actions launcher ("+", the familiar "create new" cue) + drawer -->
+  <div class="relative flex items-center">
+    <button
+      type="button"
+      class="flex h-9 w-9 items-center justify-center rounded-xl border border-v4-primary-brand-color bg-v4-primary-brand-color text-white hover:opacity-90 transition-all cursor-pointer"
+      [attr.aria-expanded]="isOpen()"
+      aria-label="Create new: all quick actions"
+      matTooltip="Create new: all quick actions"
+      (click)="isOpen() && view() === 'all' ? close() : open('all')"
+    >
+      <lucide-icon
+        [img]="icons['plus']"
+        [size]="18"
+        class="transition-transform"
+        [class.rotate-45]="isOpen() && view() === 'all'"
+      ></lucide-icon>
+    </button>
+
+    <!-- Favorites: gold star, filled once something is pinned -->
+    <button
+      type="button"
+      class="ml-1.5 flex h-9 w-9 items-center justify-center rounded-xl border border-v4-border-color bg-v4-secondary-background-color text-v4-favorite-star-color hover:bg-v4-list-hover-color transition-all cursor-pointer"
+      [class.!border-v4-favorite-star-color]="isOpen() && view() === 'favorites'"
+      [ngClass]="{ '[&_svg]:fill-current': favoriteTiles().length > 0 }"
+      [attr.aria-expanded]="isOpen() && view() === 'favorites'"
+      aria-label="Favorites"
+      matTooltip="Favorites"
+      (click)="toggleFavorites()"
+    >
+      <lucide-icon [img]="icons['star']" [size]="17"></lucide-icon>
+    </button>
+
+    @if (isOpen()) {
+      <!-- Backdrop -->
+      <div
+        role="presentation"
+        class="fixed inset-0 z-40"
+        (click)="close()"
+      ></div>
+
+      <!-- Drawer panel -->
+      <div
+        class="absolute left-0 top-[calc(100%+0.5rem)] z-50 flex w-[min(600px,calc(100vw-1rem))] max-h-[calc(100vh-5rem)] flex-col gap-3 rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-3.5 shadow-v4-popup"
+      >
+        <!-- Search (full width) -->
+        <div class="shrink-0 relative">
+          <span
+            class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center text-v4-tertiary-text-color"
+          >
+            <lucide-icon [img]="icons['search']" [size]="15"></lucide-icon>
+          </span>
+          <input
+            type="text"
+            autocomplete="off"
+            placeholder="Search actions…"
+            [value]="search()"
+            (input)="onSearch($any($event.target).value)"
+            class="w-full rounded-xl border border-v4-input-border-color bg-v4-secondary-background-color py-2 pl-9 pr-3 text-xs text-v4-main-text-color placeholder:text-v4-placeholder-text-color focus:border-v4-primary-brand-color focus:outline-none focus:ring-2 focus:ring-v4-primary-brand-color/15 transition-all"
+          />
+        </div>
+
+        <!-- All actions / Favorites switch (v4 segmented pill) -->
+        <div
+          class="shrink-0 inline-flex self-start rounded-xl border border-v4-border-color p-0.5"
+          role="tablist"
+        >
+          <button
+            type="button"
+            role="tab"
+            class="rounded-[10px] px-3 py-1 text-[12px] font-semibold transition-colors"
+            [attr.aria-selected]="view() === 'all'"
+            [ngClass]="
+              view() === 'all'
+                ? 'bg-v4-primary-brand-color text-white'
+                : 'text-v4-secondary-text-color hover:text-v4-main-text-color'
+            "
+            (click)="view.set('all')"
+          >
+            All actions
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="flex items-center gap-1 rounded-[10px] px-3 py-1 text-[12px] font-semibold transition-colors"
+            [attr.aria-selected]="view() === 'favorites'"
+            [ngClass]="
+              view() === 'favorites'
+                ? 'bg-v4-primary-brand-color text-white'
+                : 'text-v4-secondary-text-color hover:text-v4-main-text-color'
+            "
+            (click)="view.set('favorites')"
+          >
+            <lucide-icon
+              [img]="icons['star']"
+              [size]="12"
+              class="text-v4-favorite-star-color [&_svg]:fill-current"
+            ></lucide-icon>
+            Favorites ({{ favoriteTiles().length }})
+          </button>
+        </div>
+
+        <!-- Explains what pinning does and where pins appear -->
+        <p
+          class="shrink-0 flex items-center gap-1.5 text-[12px] text-v4-secondary-text-color"
+        >
+          <lucide-icon
+            [img]="icons['star']"
+            [size]="13"
+            class="shrink-0 text-v4-favorite-star-color [&_svg]:fill-current"
+          ></lucide-icon>
+          Tap the star on any action to pin it to the top bar, right next to
+          +, for one-click access. Up to {{ maxFavorites }}.
+        </p>
+
+        <!-- Tile grid (each tile has a star: outline → filled yellow when pinned) -->
+        <div class="flex-1 min-h-0 overflow-y-auto">
+          @if (filteredTiles().length > 0) {
+            <div class="grid grid-cols-5 gap-3">
+              @for (tile of filteredTiles(); track tile.id) {
+                <button
+                  type="button"
+                  class="group relative flex flex-col items-center gap-1.5 rounded-xl border border-v4-border-color bg-v4-secondary-background-color px-1.5 pt-3 pb-[9px] hover:shadow-v4-card-hover transition-shadow cursor-pointer"
+                  [matTooltip]="descriptionFor(tile)"
+                  matTooltipShowDelay="400"
+                  matTooltipPosition="below"
+                  [attr.aria-description]="descriptionFor(tile) || null"
+                  (click)="onTileClick(tile)"
+                >
+                  <span
+                    role="button"
+                    tabindex="0"
+                    class="absolute right-[1px] top-[1px] flex h-[26px] w-[26px] items-center justify-center rounded-lg transition-all cursor-pointer hover:[&_svg]:fill-current"
+                    [ngClass]="{ '[&_svg]:fill-current': isFavorite(tile) }"
+                    [matTooltip]="
+                      isFavorite(tile)
+                        ? 'Unpin from the top bar'
+                        : 'Pin to the top bar (next to +)'
+                    "
+                    matTooltipShowDelay="300"
+                    [attr.aria-label]="
+                      isFavorite(tile)
+                        ? 'Unpin from the top bar'
+                        : 'Pin to the top bar'
+                    "
+                    (click)="toggleFavorite(tile, $event)"
+                    (keydown.enter)="toggleFavorite(tile, $event)"
+                    (keydown.space)="
+                      toggleFavorite(tile, $event); $event.preventDefault()
+                    "
+                  >
+                    <lucide-icon
+                      [img]="icons['star']"
+                      [size]="15"
+                      [class.text-v4-favorite-star-color]="isFavorite(tile)"
+                      [class.text-v4-tertiary-text-color]="!isFavorite(tile)"
+                    ></lucide-icon>
+                  </span>
+                  <span
+                    class="flex h-[30px] w-[30px] items-center justify-center rounded-[9px]"
+                    [ngClass]="colorFor(tile).bg"
+                  >
+                    <lucide-icon
+                      [img]="iconFor(tile)"
+                      [size]="17"
+                      [ngClass]="colorFor(tile).icon"
+                    ></lucide-icon>
+                  </span>
+                  <span
+                    class="max-w-full px-0.5 text-center text-[12px] font-medium leading-[1.25] text-v4-main-text-color"
+                  >
+                    {{ tile.title }}
+                  </span>
+                </button>
+              }
+            </div>
+          } @else if (view() === 'favorites' && !search()) {
+            <p class="text-xs text-v4-tertiary-text-color text-center py-6">
+              No favorites yet. Open
+              <button
+                type="button"
+                class="font-semibold text-v4-primary-brand-bold-color underline"
+                (click)="view.set('all')"
+              >
+                All actions</button
+              >
+              and tap the ☆ on any action to pin it here and to the top bar.
+            </p>
+          } @else {
+            <p class="text-xs text-v4-tertiary-text-color text-center py-6">
+              No actions match “{{ search() }}”.
+            </p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Pinned favorites — icon chips shown in the top bar right after "+" -->
+  @if (favoriteTiles().length > 0) {
+    <div class="hidden xl:flex items-center gap-1.5">
+      @for (fav of favoriteTiles(); track fav.id) {
+        <button
+          type="button"
+          (click)="onTileClick(fav)"
+          [matTooltip]="fav.title + ' (pinned)'"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-v4-border-color hover:shadow-v4-card-hover transition-all cursor-pointer"
+          [ngClass]="colorFor(fav).bg"
+        >
+          <lucide-icon
+            [img]="iconFor(fav)"
+            [size]="16"
+            [ngClass]="colorFor(fav).icon"
+          ></lucide-icon>
+        </button>
+      }
+    </div>
+  }
+</div>

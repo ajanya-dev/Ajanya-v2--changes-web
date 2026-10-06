@@ -1,0 +1,165 @@
+<div
+  class="relative flex flex-col rounded-[28px] overflow-hidden bg-main-background-color font-inter px-[26px] pt-6 pb-[22px] shadow-[0_26px_70px_-20px_rgba(24,39,75,0.34),0_8px_24px_-14px_rgba(24,39,75,0.22)]"
+>
+  <button
+    type="button"
+    [mat-dialog-close]="false"
+    aria-label="Close"
+    class="absolute top-[18px] right-[18px] w-[30px] h-[30px] rounded-lg grid place-items-center text-secondary-text-color hover:text-main-text-color transition-colors cursor-pointer"
+  >
+    <fa-icon [icon]="faXmark" class="text-lg" />
+  </button>
+
+  <div class="flex items-center pb-[15px] border-b border-input-border-color">
+    <img [src]="logoPath" alt="logo" class="h-[40px] w-auto block" />
+  </div>
+
+  <div class="text-center mt-5">
+    <div
+      class="relative mx-auto w-[54px] h-[54px] rounded-full grid place-items-center text-white"
+      style="
+        background: linear-gradient(
+          150deg,
+          var(--common-blue-color),
+          var(--common-dark-blue-color)
+        );
+        box-shadow:
+          0 0 0 6px var(--common-secondary-blue-color),
+          0 8px 16px -8px rgba(43, 125, 233, 0.65);
+      "
+    >
+      <img
+        src="assets/icon/svg/verify-email/verify-email-envelope.svg"
+        alt=""
+        class="w-[26px] h-[26px]"
+      />
+      <img
+        src="assets/icon/svg/verify-email/verify-email-shield-check.svg"
+        alt=""
+        class="absolute -right-[3px] -bottom-[3px] w-[22px] h-[22px]"
+      />
+    </div>
+    <h1
+      class="mt-4 text-[21px] font-bold tracking-[-0.01em] text-main-text-color"
+    >
+      Verify your email
+    </h1>
+    <p
+      class="mt-[7px] mx-auto max-w-[290px] text-[13px] leading-[1.5] text-secondary-text-color"
+    >
+      Enter the {{ otpSlots.length }}-digit code sent to
+      <span class="font-semibold text-main-text-color">{{ data.email }}</span>
+      to confirm it's you.
+    </p>
+  </div>
+
+  <div class="flex items-baseline justify-between mt-[22px] mb-[11px] px-0.5">
+    <span class="text-sm font-semibold text-main-text-color">Enter OTP</span>
+    <span class="text-[12px] text-secondary-text-color">
+      {{ otpSlots.length }}-digit code
+    </span>
+  </div>
+
+  <div class="flex gap-[9px]" (paste)="onOtpPaste($event)">
+    @for (slot of otpSlots; track slot) {
+      <input
+        #otpBox
+        type="text"
+        inputmode="numeric"
+        maxlength="1"
+        class="flex-1 min-w-0 h-[54px] rounded-[14px] bg-main-background-color border-[1.5px] text-[22px] font-semibold text-center text-main-text-color outline-none transition-[border-color,box-shadow,background] focus:border-common-blue-color focus:shadow-[0_0_0_4px_rgba(43,125,233,0.16)]"
+        [class.border-input-border-color]="!otpError()"
+        [class.border-common-red-color]="otpError()"
+        (keypress)="utils.numberOnly($event, 'numeric')"
+        (keydown)="onOtpKeyDown($event, slot)"
+        (input)="onOtpInput(slot)"
+        (click)="otpBox.select()"
+      />
+    }
+  </div>
+  @if (otpError()) {
+    <p class="text-xs text-common-red-color mt-2 px-0.5">{{ otpError() }}</p>
+  }
+
+  <div class="flex items-center justify-between mt-[14px] px-0.5 min-h-[30px]">
+    <button
+      type="button"
+      class="inline-flex items-center gap-1.5 text-[13.5px] font-semibold transition-colors"
+      [class.text-common-blue-color]="!isResendDisabled() && !resending()"
+      [class.cursor-pointer]="!isResendDisabled() && !resending()"
+      [class.text-secondary-text-color]="isResendDisabled() || resending()"
+      [class.opacity-60]="isResendDisabled() || resending()"
+      [class.cursor-not-allowed]="isResendDisabled() || resending()"
+      [disabled]="isResendDisabled() || resending()"
+      (click)="resendOtp()"
+    >
+      <fa-icon [icon]="faRotateRight" />
+      {{ resending() ? "Sending..." : "Resend Code" }}
+    </button>
+
+    @if (isResendDisabled()) {
+      <span
+        class="inline-flex items-center gap-2 text-[13px] font-semibold rounded-full px-[11px] py-[5px] whitespace-nowrap bg-common-secondary-blue-color text-secondary-text-color"
+      >
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 18 18"
+          fill="none"
+          class="w-[17px] h-[17px]"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="9"
+            cy="9"
+            r="7"
+            stroke="rgba(0,0,0,0.10)"
+            stroke-width="2.2"
+          />
+          <circle
+            cx="9"
+            cy="9"
+            r="7"
+            stroke="#004a7c"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            [attr.stroke-dasharray]="ringCircumference"
+            [attr.stroke-dashoffset]="ringDashoffset()"
+            transform="rotate(-90 9 9)"
+            class="timer-ring-progress"
+          />
+        </svg>
+        <span
+          >Resend in
+          <b class="font-bold tabular-nums">{{ formattedTime() }}</b></span
+        >
+      </span>
+    }
+  </div>
+
+  <div class="mt-[22px]">
+    <app-common-button-v35
+      class="block"
+      customClasses="!h-[50px] !rounded-[14px]"
+      [type]="{ style: 'general', name: 'money-action' }"
+      text="Verify"
+      width="100%"
+      backGroundInput="var(--common-blue-color)"
+      textColorInput="white"
+      boxshadow="0 8px 18px -8px rgba(43, 125, 233, 0.7)"
+      [disabled]="submitting()"
+      [loading]="submitting()"
+      (clickEvent)="submitOtp()"
+    />
+    <app-common-button-v35
+      class="block mt-[13px]"
+      customClasses="!h-[34px]"
+      [type]="'borderless'"
+      text="Cancel"
+      width="100%"
+      textColorInput="var(--secondary-text-color)"
+      [disabled]="submitting()"
+      (clickEvent)="cancel()"
+    />
+  </div>
+</div>

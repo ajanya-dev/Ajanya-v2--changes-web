@@ -1,0 +1,1365 @@
+<div class="min-h-screen bg-white font-inter relative">
+  <!-- Action Area - Back, Help, Close -->
+  <div class="action_area py-12 px-4 sm:px-6 lg:px-8">
+    <div
+      class="absolute top-[29px] left-[42px] cursor-pointer text-[#1d1d1f] hover:text-[#059669] transition-colors"
+      matTooltip="Go Back"
+      matTooltipClass="override_tooltip"
+      (click)="goBack()"
+      role="presentation"
+    >
+      <fa-icon class="text-2xl" [icon]="faArrowLeft"></fa-icon>
+    </div>
+    <div class="flex items-center gap-5 absolute top-[29px] right-[42px]">
+      @if (!isOutside) {
+        <app-common-help-button
+          [helpIcon]="true"
+          [isFromPlanPage]="true"
+        ></app-common-help-button>
+        <div
+          class="close_btn action_btn !static"
+          matTooltip="Close"
+          matTooltipClass="override_tooltip"
+        >
+          <button
+            (click)="onClose()"
+            class="text-2xl text-[#1d1d1f] hover:text-[#059669] transition-colors"
+          >
+            <fa-icon [icon]="faXmark"></fa-icon>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div>
+    <!-- Header Section -->
+    <div class="text-center mb-12 sub-container !p-0">
+      <h1 class="text-4xl md:text-5xl font-bold text-[#1d1d1f] mb-4">
+        Find the plan that works for your business
+      </h1>
+      <p class="text-[#6e6e73] text-lg mb-6">
+        Transparent pricing. No hidden fees. Pay $0 on eligible transactions<br
+          class="hidden sm:block"
+        />
+        with Zil Money Wallet.*
+      </p>
+      <div
+        class="inline-flex items-center gap-2 bg-white border border-[#e8e8ed] rounded-full px-5 py-2.5"
+      >
+        <fa-icon
+          [icon]="faShieldCheck"
+          class="text-[#1d1d1f] text-sm"
+        ></fa-icon>
+        <span class="text-[#1d1d1f] text-sm font-medium"
+          >60-Day Money-Back Guarantee</span
+        >
+      </div>
+    </div>
+
+    <!-- Pricing Cards Container -->
+    <div
+      class="flex flex-col lg:flex-row gap-6 sub-container"
+      [class.skelton]="autoClickOnPlan"
+    >
+      <!-- Pay As You Go Section (3 cards + common button) - Hidden when enterprise has 2 plans -->
+      @if (
+        showPayAsYouGo() &&
+        (availablePlans.includes("pay-as-you-go-monthly-v3") ||
+          !availablePlans.length) &&
+        enterPrisePlan.length !== 2
+      ) {
+        <div class="flex-1">
+          <!-- 3 Pay As You Go Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            @for (plan of plans; track plan.id) {
+              @if (plan.id !== "enterprise") {
+                <div
+                  class="relative rounded-2xl p-5 flex flex-col h-full hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)]"
+                  [class]="
+                    isPayAsYouGoPlan()
+                      ? 'bg-[linear-gradient(135deg,_#ecfdf5_0%,_#f0fdf4_100%)] border-2 border-[#059669]'
+                      : 'bg-white border border-[#e8e8ed] hover:border-[#d2d2d7]'
+                  "
+                  [class.skelton]="!availablePlans.length && !isOutside"
+                >
+                  <!-- Icon -->
+                  <div class="flex justify-center mb-4 mt-2">
+                    <div
+                      class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#0ea5e9] via-[#2dd4bf] to-[#34d399]"
+                    >
+                      <fa-icon
+                        [icon]="plan.icon"
+                        class="text-xl text-white"
+                      ></fa-icon>
+                    </div>
+                  </div>
+
+                  <!-- Title -->
+                  <h3 class="text-xl font-bold text-[#1d1d1f] text-center mb-2">
+                    {{ plan.title }}
+                  </h3>
+
+                  <!-- Description -->
+                  <p
+                    class="text-[#6e6e73] text-sm text-center mb-4 min-h-[60px]"
+                  >
+                    {{ plan.description }}
+                  </p>
+
+                  <!-- Divider after sub header -->
+                  <div class="border-t border-[#e8e8ed] mb-4"></div>
+
+                  <!-- Price Section -->
+                  <div class="text-center my-4 min-h-[90px]">
+                    <p class="text-[#6b7280] text-xs tracking-wide mb-1">
+                      {{ plan.priceLabel }}
+                    </p>
+                    <p class="text-3xl font-bold mb-1 text-[#1d1d1f]">
+                      {{ plan.price }}
+                    </p>
+                    @if (plan.priceSubtext) {
+                      <p class="text-[#6b7280] text-sm">
+                        {{ plan.priceSubtext }}
+                      </p>
+                    }
+                  </div>
+
+                  <!-- Features List with Background -->
+                  <div class="flex-1 rounded-xl p-4 mb-4">
+                    <ul class="divide-y divide-[#e8e8ed]">
+                      @for (feature of plan.features; track feature.text) {
+                        <li class="flex items-start gap-2 py-3">
+                          <span
+                            class="w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[linear-gradient(135deg,_#34d399_0%,_#059669_100%)] flex-shrink-0"
+                          >
+                            <fa-icon
+                              [icon]="faCheck"
+                              class="text-white text-[12px] mt-0.5"
+                            />
+                          </span>
+                          <span class="text-[#1d1d1f] text-sm">
+                            @if (feature.highlight) {
+                              <span class="text-[#059669] font-medium">{{
+                                feature.highlight
+                              }}</span
+                              >{{ feature.text }}
+                            } @else {
+                              {{ feature.text }}
+                            }
+                          </span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+
+                  <!-- Individual Get Started Button -->
+                  <!-- <button
+                    (click)="choosePlan('pay-as-you-go-monthly-v3')"
+                    [disabled]="isPayAsYouGoPlan()"
+                    class="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-[#1f1f1f] border border-[#3f3f46] text-[#1d1d1f] hover:bg-[#2a2a2a]"
+                    [class.opacity-50]="isPayAsYouGoPlan()"
+                    [class.cursor-not-allowed]="isPayAsYouGoPlan()"
+                  >
+                    {{ isPayAsYouGoPlan() ? 'Current Plan' : 'Get Started' }}
+                  </button> -->
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Common Get Started Button for Pay As You Go -->
+          <div class="mt-4">
+            <button
+              (click)="choosePlan('pay-as-you-go-monthly-v3')"
+              [disabled]="isPayAsYouGoPlan()"
+              class="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-[#00a5b2] text-[#1d1d1f]"
+              [class.opacity-50]="isPayAsYouGoPlan()"
+              [class.cursor-not-allowed]="isPayAsYouGoPlan()"
+            >
+              {{
+                loadingContent
+                  ? "Loading..."
+                  : isPayAsYouGoPlan()
+                    ? "Current Plan"
+                    : "Get Started"
+              }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Enterprise Card - Dynamic based on plan data -->
+      <!-- When 2 enterprise plans exist (no Pay As You Go), show full-width friendly layout -->
+      @if (enterPrisePlan.length === 2) {
+        <div class="w-full">
+          <div
+            class="relative rounded-2xl p-8 bg-white border border-[#e8e8ed]"
+            [ngClass]="{
+              'bg-[linear-gradient(135deg,_#ecfdf5_0%,_#f0fdf4_100%)] border-2 border-[#059669]':
+                currentPlan === enterPriseMonthlyPlanCode ||
+                currentPlan === enterPriseYearlyPlanCode,
+              skelton: !availablePlans.length && !isOutside
+            }"
+          >
+            <!-- Current Plan Badge -->
+            @if (
+              currentPlan &&
+              (currentPlan === enterPriseMonthlyPlanCode ||
+                currentPlan === enterPriseYearlyPlanCode)
+            ) {
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span
+                  class="bg-[#059669] text-[#1d1d1f] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wide"
+                >
+                  Current Plan
+                </span>
+              </div>
+            }
+
+            <!-- Header Section -->
+            <div class="text-center mb-8">
+              <div class="flex justify-center mb-4">
+                <div
+                  class="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-[#0ea5e9] via-[#2dd4bf] to-[#34d399]"
+                >
+                  <fa-icon
+                    [icon]="faBuildingColumnsRegular"
+                    class="text-2xl text-white"
+                  ></fa-icon>
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold text-[#1d1d1f] mb-2">
+                Enterprise Plan
+              </h3>
+              <p class="text-[#6e6e73] text-base mx-auto">
+                Bespoke, white-label, and API-driven solutions tailored for your
+                business
+              </p>
+            </div>
+
+            <!-- Volume / Custom Pricing Section -->
+            @if (isCustomPricing()) {
+              <div class="text-center mb-8">
+                <p class="text-4xl font-bold text-[#1d1d1f] mb-2">
+                  Volume / Custom Pricing
+                </p>
+                <p class="text-[#6e6e73] text-base">
+                  Customizable pricing according to your needs
+                </p>
+                <a
+                  href="tel:{{ supportNo }}"
+                  class="text-[#004a7c] text-lg font-medium hover:underline"
+                >
+                  {{ supportNo }}
+                </a>
+              </div>
+
+              <!-- Book Now & Support Options -->
+              <div
+                class="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto mb-8"
+              >
+                <button
+                  (click)="onBookNow()"
+                  class="flex-1 py-3 px-6 rounded-lg font-medium bg-[#00a5b2] text-[#1d1d1f] hover:bg-[#34d399] transition-colors"
+                >
+                  Book a Time Now
+                </button>
+                <div class="flex gap-2 flex-1">
+                  @for (option of supportOptions; track option.id) {
+                    <button
+                      (click)="onSupportClick(option.id)"
+                      class="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm bg-white text-[#1d1d1f] hover:bg-[#f9fafb] transition-colors border border-[#e8e8ed]"
+                    >
+                      <fa-icon [icon]="option.icon" class="text-sm"></fa-icon>
+                      <span>{{ option.name }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            } @else {
+              <!-- Pricing Cards - Side by Side (Non-Custom Pricing) -->
+              <div
+                class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto"
+              >
+                <!-- Monthly Plan Card -->
+                <div
+                  role="presentation"
+                  class="relative rounded-xl p-6 bg-white border-2 transition-all cursor-pointer hover:border-[#059669]/50 shadow-[0px_20px_25px_-5px_#0000001A]"
+                  [ngClass]="{
+                    'border-[#059669]':
+                      currentPlan === enterPriseMonthlyPlanCode,
+                    'border-transparent':
+                      currentPlan !== enterPriseMonthlyPlanCode
+                  }"
+                  (click)="chooseEnterprisePlan('monthly')"
+                >
+                  @if (currentPlan === enterPriseMonthlyPlanCode) {
+                    <div class="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                      <span
+                        class="bg-[#059669] text-[#1d1d1f] text-[12px] font-bold px-3 py-1 rounded-full uppercase"
+                      >
+                        Active
+                      </span>
+                    </div>
+                  }
+                  <div class="text-center">
+                    <p class="text-[#6e6e73] text-sm font-medium mb-2">
+                      Monthly
+                    </p>
+                    <p class="text-3xl font-bold text-[#1d1d1f] mb-1">
+                      {{ enterPrisePlan[0]?.planPrice | currency }}
+                    </p>
+                    <p class="text-[#6b7280] text-sm">per month</p>
+                  </div>
+                  <button
+                    [disabled]="currentPlan === enterPriseMonthlyPlanCode"
+                    class="w-full mt-10 mb-4 py-2.5 px-4 rounded-lg font-medium transition-all !bg-[#00a5b2]"
+                    [ngClass]="{
+                      'bg-[#00a5b2] text-[#1d1d1f]':
+                        currentPlan !== enterPriseMonthlyPlanCode,
+                      'bg-[#00a5b2] text-[#000000] cursor-not-allowed':
+                        currentPlan === enterPriseMonthlyPlanCode
+                    }"
+                  >
+                    {{
+                      currentPlan === enterPriseMonthlyPlanCode
+                        ? "Current Plan"
+                        : "Choose Monthly"
+                    }}
+                  </button>
+                  <div class="mt-4">
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >Dedicated Account Manager</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >Payments/Banking API</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >White-label Capability</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >Own Server Option</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Yearly Plan Card -->
+                <div
+                  role="presentation"
+                  class="relative rounded-xl p-6 bg-[linear-gradient(180deg,_#EDFDF5_0%,_#FFFFFF_100%)] border-2 transition-all cursor-pointer border-[#059669]/50 shadow-[0px_20px_25px_-5px_#0000001A]"
+                  [ngClass]="{
+                    'border-[#059669]':
+                      currentPlan === enterPriseYearlyPlanCode,
+                    'border-transparent':
+                      currentPlan !== enterPriseYearlyPlanCode
+                  }"
+                  (click)="chooseEnterprisePlan('yearly')"
+                >
+                  @if (currentPlan === enterPriseYearlyPlanCode) {
+                    <div class="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                      <span
+                        class="bg-[#059669] text-[#1d1d1f] text-[12px] font-bold px-3 py-1 rounded-full uppercase"
+                      >
+                        Active
+                      </span>
+                    </div>
+                  }
+                  @if (
+                    savedAmount > 0 && currentPlan !== enterPriseYearlyPlanCode
+                  ) {
+                    <div class="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                      <span
+                        class="bg-[linear-gradient(90deg,_#2CC991_0%,_#0B9E6F_100%)] text-white text-sm font-bold px-3 py-2 rounded-full uppercase"
+                      >
+                        Save {{ savedAmount | currency }}
+                      </span>
+                    </div>
+                  }
+                  <div class="text-center">
+                    <p class="text-[#6e6e73] text-sm font-medium mb-2">
+                      Yearly
+                    </p>
+                    <p class="text-3xl font-bold text-[#1d1d1f] mb-1">
+                      {{ enterPrisePlan[1]?.planPrice | currency }}
+                    </p>
+                    <p class="text-[#6b7280] text-sm">per year</p>
+                  </div>
+                  <button
+                    [disabled]="currentPlan === enterPriseYearlyPlanCode"
+                    class="w-full mt-10 mb-4 py-2.5 px-4 rounded-lg font-medium transition-all !bg-[linear-gradient(269.41deg,_#0A9D6F_0.15%,_#2ECB93_99.79%)] text-white"
+                    [ngClass]="{
+                      'bg-[#00a5b2]': currentPlan !== enterPriseYearlyPlanCode,
+                      'bg-[#00a5b2] cursor-not-allowed':
+                        currentPlan === enterPriseYearlyPlanCode
+                    }"
+                  >
+                    {{
+                      currentPlan === enterPriseYearlyPlanCode
+                        ? "Current Plan"
+                        : "Choose Yearly"
+                    }}
+                  </button>
+                  <div class="mt-4">
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >Dedicated Account Manager</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >Payments/Banking API</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >White-label Capability</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 pb-3">
+                      <span
+                        class="w-6 h-6 rounded-full flex justify-center items-center flex-shrink-0 bg-[linear-gradient(180deg,_#0EA273_0%,_#2395BC_100%)]"
+                      >
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px]"
+                        ></fa-icon>
+                      </span>
+                      <span class="text-[#1d1d1f] text-sm"
+                        >Own Server Option</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Customizable Pricing Info -->
+            @if (enterPrisePlan?.length) {
+              <div class="text-center mb-6 relative pb-8">
+                <span class="text-[#6e6e73] text-sm"
+                  >Customizable pricing according to your needs</span
+                >
+                <span
+                  class="absolute bottom-0 left-1/2 -translate-x-1/2 text-[#004a7c]"
+                >
+                  <a href="tel:{{ supportNo }}">{{ supportNo }}</a>
+                </span>
+              </div>
+            }
+
+            <!-- Support Section -->
+            <div class="text-center pt-6">
+              <p class="text-[#6e6e73] text-sm mb-3">
+                Need help or custom pricing?
+              </p>
+              <div class="flex flex-wrap justify-center gap-3">
+                @for (option of supportOptions; track option.id) {
+                  <button
+                    (click)="onSupportClick(option.id)"
+                    class="inline-flex items-center gap-2 py-2 px-4 rounded-lg font-medium text-sm bg-white text-[#1d1d1f] hover:bg-[#f9fafb] transition-colors border border-[#e8e8ed]"
+                  >
+                    <fa-icon [icon]="option.icon" class="text-sm"></fa-icon>
+                    <span>{{ option.name }}</span>
+                  </button>
+                }
+                <button
+                  (click)="onBookNow()"
+                  class="inline-flex items-center gap-2 py-2 px-4 rounded-lg font-medium text-sm bg-[#00a5b2] text-[#1d1d1f] hover:bg-[#34d399] transition-colors"
+                >
+                  Instant Demo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <!-- Standard Enterprise Card (shown alongside Pay As You Go) -->
+        <div class="w-full lg:w-80 lg:flex-shrink-0 flex flex-col">
+          <div
+            class="relative rounded-2xl p-5 flex flex-col flex-1 hover:border-[#d2d2d7] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)]"
+            [ngClass]="{
+              'bg-[rgba(209,250,229,0.5)] border-2 border-[#059669]':
+                currentPlan &&
+                (currentPlan === enterPriseMonthlyPlanCode ||
+                  currentPlan === enterPriseYearlyPlanCode),
+              'bg-white border border-[#e8e8ed]':
+                !currentPlan ||
+                (currentPlan !== enterPriseMonthlyPlanCode &&
+                  currentPlan !== enterPriseYearlyPlanCode),
+              skelton: !availablePlans.length && !isOutside
+            }"
+          >
+            <!-- Current Plan Badge for Enterprise - Using Best Value theme -->
+            @if (
+              currentPlan &&
+              (currentPlan === enterPriseMonthlyPlanCode ||
+                currentPlan === enterPriseYearlyPlanCode)
+            ) {
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span
+                  class="bg-[#059669] text-[#1d1d1f] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wide"
+                >
+                  Current Plan
+                </span>
+              </div>
+            }
+
+            <!-- Icon -->
+            <div class="flex justify-center mb-4 mt-2">
+              <div
+                class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#0ea5e9] via-[#2dd4bf] to-[#34d399]"
+              >
+                <fa-icon
+                  [icon]="faBuildingColumnsRegular"
+                  class="text-xl text-white"
+                ></fa-icon>
+              </div>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-xl font-bold text-[#1d1d1f] text-center mb-2">
+              Enterprise
+            </h3>
+
+            <!-- Description -->
+            <p class="text-[#6e6e73] text-sm text-center mb-4 min-h-[60px]">
+              Bespoke, white-label, and API-driven solutions with custom pricing
+            </p>
+
+            <!-- Divider after sub header -->
+            <div class="border-t border-[#e8e8ed] mb-4"></div>
+
+            <!-- Price Section - Dynamic based on plan data -->
+            <div class="text-center my-4 min-h-[90px]">
+              @if (isCustomPricing()) {
+                <div class="text-center mb-8">
+                  <p class="text-4xl font-bold text-[#1d1d1f] mb-2">
+                    Volume / Custom Pricing
+                  </p>
+                </div>
+              } @else if (enterPrisePlan.length === 1) {
+                <!-- Single plan -->
+                <p class="text-[#6b7280] text-xs uppercase tracking-wide mb-1">
+                  {{ isMonthlyPlan() ? "Monthly" : "Yearly" }}
+                </p>
+                <p class="text-3xl font-bold text-[#1d1d1f] mb-1">
+                  {{ enterPrisePlan[0]?.planPrice | currency
+                  }}{{ isMonthlyPlan() ? "/Month" : "/Year" }}
+                </p>
+              } @else {
+                <!-- Custom/Volume Pricing -->
+                <p class="text-[#6b7280] text-xs tracking-wide mb-1">
+                  Custom Pricing
+                </p>
+                <p class="text-3xl font-bold text-[#1d1d1f] mb-1">
+                  Call for Details
+                </p>
+              }
+            </div>
+
+            <!-- Features List with Background -->
+            <div class="flex-1 bg-white rounded-xl p-4">
+              <ul class="divide-y divide-[#e8e8ed]">
+                <li class="flex items-start gap-2 py-3">
+                  <span
+                    class="w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[linear-gradient(135deg,_#34d399_0%,_#059669_100%)] flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCheck"
+                      class="text-white text-[12px] mt-0.5"
+                    />
+                  </span>
+                  <span class="text-[#1d1d1f] text-sm"
+                    >Dedicated Account Manager</span
+                  >
+                </li>
+                <li class="flex items-start gap-2 py-3">
+                  <span
+                    class="w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[linear-gradient(135deg,_#34d399_0%,_#059669_100%)] flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCheck"
+                      class="text-white text-[12px] mt-0.5"
+                    />
+                  </span>
+                  <span class="text-[#1d1d1f] text-sm"
+                    >Payments/Banking API</span
+                  >
+                </li>
+                <li class="flex items-start gap-2 py-3">
+                  <span
+                    class="w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[linear-gradient(135deg,_#34d399_0%,_#059669_100%)] flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCheck"
+                      class="text-white text-[12px] mt-0.5"
+                    />
+                  </span>
+                  <span class="text-[#1d1d1f] text-sm"
+                    >White-label Capability</span
+                  >
+                </li>
+                <li class="flex items-start gap-2 py-3">
+                  <span
+                    class="w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[linear-gradient(135deg,_#34d399_0%,_#059669_100%)] flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCheck"
+                      class="text-white text-[12px] mt-0.5"
+                    />
+                  </span>
+                  <span class="text-[#1d1d1f] text-sm">Own Server Option</span>
+                </li>
+              </ul>
+            </div>
+            @if (enterPrisePlan?.length) {
+              <div class="text-center mb-6 relative pb-8">
+                <span class="text-[#6e6e73] text-sm"
+                  >Customizable pricing according to your needs</span
+                >
+                <span
+                  class="absolute bottom-0 left-1/2 -translate-x-1/2 text-[#004a7c]"
+                >
+                  <a href="tel:{{ supportNo }}">{{ supportNo }}</a>
+                </span>
+              </div>
+            }
+          </div>
+
+          <!-- Button Section - Outside the card -->
+          <div class="mt-4">
+            @if (isCustomPricing()) {
+              <!-- Volume / Custom Pricing Actions -->
+              <div class="space-y-3">
+                <button
+                  (click)="onBookNow()"
+                  class="w-full py-3 px-4 rounded-lg font-medium bg-[#00a5b2] text-[#1d1d1f] hover:bg-[#34d399] transition-colors"
+                >
+                  Book a Time Now
+                </button>
+                <div class="grid grid-cols-3 gap-2">
+                  @for (option of supportOptions; track option.id) {
+                    <button
+                      (click)="onSupportClick(option.id)"
+                      class="inline-flex items-center justify-center gap-1 py-2 px-2 rounded-lg font-medium text-xs bg-white text-[#1d1d1f] transition-colors border border-[#3f3f46]"
+                    >
+                      <fa-icon [icon]="option.icon" class="text-xs"></fa-icon>
+                      <span>{{ option.name }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            } @else if (enterPrisePlan.length === 1) {
+              <button
+                (click)="choosePlan(enterPrisePlan[0]?.planCode)"
+                [disabled]="currentPlan === enterPrisePlan[0]?.planCode"
+                class="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-[#00a5b2] text-[#000000]"
+                [class.opacity-50]="currentPlan === enterPrisePlan[0]?.planCode"
+                [class.cursor-not-allowed]="
+                  currentPlan === enterPrisePlan[0]?.planCode
+                "
+              >
+                {{
+                  currentPlan === enterPrisePlan[0]?.planCode
+                    ? "Current Plan"
+                    : "Choose Plan"
+                }}
+              </button>
+            } @else {
+              <div class="space-y-3">
+                <button
+                  (click)="onBookNow()"
+                  class="w-full py-3 px-4 rounded-lg font-medium bg-[#00a5b2] text-[#1d1d1f] hover:bg-[#34d399] transition-colors"
+                >
+                  Book a Time Now
+                </button>
+                <div class="grid grid-cols-3 gap-2">
+                  @for (option of supportOptions; track option.id) {
+                    <button
+                      (click)="onSupportClick(option.id)"
+                      class="inline-flex items-center justify-center gap-1 py-2 px-2 rounded-lg font-medium text-xs bg-white text-[#1d1d1f] transition-colors border border-[#3f3f46]"
+                    >
+                      <fa-icon [icon]="option.icon" class="text-xs"></fa-icon>
+                      <span>{{ option.name }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Send Money Comparison Section -->
+    <div class="mt-20 sub-container">
+      <!-- Section Header -->
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold text-[#1d1d1f] mb-3">
+          Send Money
+        </h2>
+        <p class="text-[#6e6e73] text-base">
+          Compare transaction fees across all payment methods
+        </p>
+      </div>
+
+      <!-- Comparison Table -->
+      <div
+        class="bg-white border border-[#e8e8ed] rounded-2xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+      >
+        <!-- Table Header -->
+        <div class="grid grid-cols-5 bg-[#fafafa]">
+          <div class="p-4 text-[#6e6e73] text-sm font-medium">
+            Payment Method
+          </div>
+          <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+            Bank Account
+          </div>
+          <div
+            class="p-4 text-center bg-[linear-gradient(135deg,_#ecfdf5_0%,_#d1fae5_100%)]"
+          >
+            <span class="text-[#059669] text-sm font-medium"
+              >Zil Money Wallet</span
+            >
+            <fa-icon
+              [icon]="faStar"
+              class="text-[#fbbf24] text-xs ml-1"
+            ></fa-icon>
+          </div>
+          <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+            Credit Card
+          </div>
+          <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+            Enterprise
+          </div>
+        </div>
+
+        <!-- Table Body -->
+        @for (section of comparisonSections; track section.title) {
+          <!-- Section Title Row -->
+          <div class="grid grid-cols-5 border-t border-[#e8e8ed]">
+            <div class="col-span-5 p-4 bg-[#fafafa]">
+              <div class="flex items-center gap-2">
+                <fa-icon
+                  [icon]="section.icon"
+                  class="text-[#6b7280] text-sm"
+                ></fa-icon>
+                <span
+                  class="text-[#6e6e73] text-xs font-semibold uppercase tracking-wider"
+                  >{{ section.title }}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Rows -->
+          @for (row of section.rows; track row.feature) {
+            <div
+              class="grid grid-cols-5 border-t border-[#e8e8ed] hover:bg-[#fafafa] transition-colors"
+            >
+              <!-- Feature Name -->
+              <div class="p-4 text-[#1d1d1f] text-sm">
+                {{ row.feature }}
+              </div>
+
+              <!-- Bank Account -->
+              <div class="p-4 text-center">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.bankAccount }
+                  "
+                ></ng-container>
+              </div>
+
+              <!-- Zil Wallet (Highlighted Column) -->
+              <div class="p-4 text-center bg-[rgba(209,250,229,0.5)]">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.zilWallet, isWallet: true }
+                  "
+                ></ng-container>
+              </div>
+
+              <!-- Credit Card -->
+              <div class="p-4 text-center">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.creditCard }
+                  "
+                ></ng-container>
+              </div>
+
+              <!-- Enterprise -->
+              <div class="p-4 text-center">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.enterprise }
+                  "
+                ></ng-container>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Receive Money Comparison Section -->
+    <div class="mt-20 bg-[#fafafa]">
+      <div class="sub-container">
+        <!-- Section Header -->
+        <div class="text-center mb-10">
+          <h2 class="text-3xl md:text-4xl font-bold text-[#1d1d1f] mb-3">
+            Receive Money
+          </h2>
+          <p class="text-[#6e6e73] text-base">
+            Accept payments from customers and vendors
+          </p>
+        </div>
+
+        <!-- Comparison Table -->
+        <div
+          class="bg-white border border-[#e8e8ed] rounded-2xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+        >
+          <!-- Table Header -->
+          <div class="grid grid-cols-5 bg-[#fafafa]">
+            <div class="p-4 text-[#6e6e73] text-sm font-medium">
+              Payment Method
+            </div>
+            <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+              Bank Account
+            </div>
+            <div
+              class="p-4 text-center bg-[linear-gradient(135deg,_#ecfdf5_0%,_#d1fae5_100%)]"
+            >
+              <span class="text-[#059669] text-sm font-medium"
+                >Zil Money Wallet</span
+              >
+              <fa-icon
+                [icon]="faStar"
+                class="text-[#fbbf24] text-xs ml-1"
+              ></fa-icon>
+            </div>
+            <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+              Credit Card
+            </div>
+            <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+              Enterprise
+            </div>
+          </div>
+
+          <!-- Table Body -->
+          @for (row of receiveMoneyRows; track row.feature) {
+            <div
+              class="grid grid-cols-5 border-t border-[#e8e8ed] hover:bg-[#fafafa] transition-colors"
+            >
+              <!-- Feature Name -->
+              <div class="p-4 text-[#1d1d1f] text-sm">
+                {{ row.feature }}
+              </div>
+
+              <!-- Bank Account -->
+              <div class="p-4 text-center">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.bankAccount }
+                  "
+                ></ng-container>
+              </div>
+
+              <!-- Zil Wallet (Highlighted Column) -->
+              <div class="p-4 text-center bg-[rgba(209,250,229,0.5)]">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.zilWallet, isWallet: true }
+                  "
+                ></ng-container>
+              </div>
+
+              <!-- Credit Card -->
+              <div class="p-4 text-center">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.creditCard }
+                  "
+                ></ng-container>
+              </div>
+
+              <!-- Enterprise -->
+              <div class="p-4 text-center">
+                <ng-container
+                  *ngTemplateOutlet="
+                    cellTemplate;
+                    context: { $implicit: row.enterprise }
+                  "
+                ></ng-container>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Wallet Withdrawal Rates Section -->
+    <div class="mt-20 sub-container">
+      <div class="flex flex-col border border-[#e8e8ed] rounded-[20px] p-10">
+        <!-- Section Header -->
+        <div class="mb-6">
+          <h2 class="text-[22px] font-bold text-[#1d1d1f] mb-1">
+            Wallet Withdrawal Rates******
+          </h2>
+          <p class="text-[#6e6e73] text-base">
+            When withdrawing funds FROM your Zil Money Wallet
+          </p>
+        </div>
+
+        <!-- Withdrawal Rates Grid -->
+        <div class="bg-white rounded-2xl">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            @for (item of withdrawalRates; track item.name) {
+              <div
+                class="bg-[#f9fafb] rounded-xl px-4 py-3 flex items-center justify-between"
+              >
+                <span class="text-[#1d1d1f] text-sm">{{ item.name }}</span>
+                <div class="flex items-center gap-1">
+                  @if (item.isFree) {
+                    <span class="text-[#059669] font-semibold text-sm">{{
+                      item.rate
+                    }}</span>
+                    @if (item.suffix) {
+                      <span class="text-[#6e6e73] text-sm">{{
+                        item.suffix
+                      }}</span>
+                    }
+                    <fa-icon
+                      [icon]="faCheck"
+                      class="text-[#059669] text-sm"
+                    ></fa-icon>
+                  } @else {
+                    <span class="text-[#1d1d1f] font-semibold text-sm">{{
+                      item.rate
+                    }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Check Mailing Services Section -->
+    <div class="mt-20 bg-[#fafafa]">
+      <div class="sub-container">
+        <!-- Section Header -->
+        <div class="text-center mb-10">
+          <h2 class="text-3xl md:text-4xl font-bold text-[#1d1d1f] mb-3">
+            Check Mailing Services
+          </h2>
+          <p class="text-[#6e6e73] text-base">
+            Same pricing across all plans (except Enterprise custom pricing)
+          </p>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Domestic Check Mailing -->
+          <div
+            class="bg-white border border-[#e8e8ed] rounded-2xl overflow-hidden"
+          >
+            <div class="p-6 border-b border-[#e8e8ed] bg-[#fafafa]">
+              <div class="flex items-center gap-3 mb-1">
+                <fa-icon
+                  [icon]="faCity"
+                  class="text-[#fbbf24] text-lg"
+                ></fa-icon>
+                <h3 class="text-xl font-semibold text-[#1d1d1f]">
+                  Domestic Check Mailing
+                </h3>
+              </div>
+              <p class="text-[#6b7280] text-sm">US delivery options</p>
+            </div>
+            <div class="divide-y divide-[#e8e8ed]">
+              @for (item of domesticMailingRates; track item.name) {
+                <div
+                  class="flex justify-between items-center px-6 py-4 hover:bg-[#fafafa] transition-colors"
+                >
+                  <span class="text-[#1d1d1f] text-sm">{{ item.name }}</span>
+                  <span class="text-[#059669] font-semibold">{{
+                    item.price
+                  }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- International Mailing -->
+          <div
+            class="bg-white border border-[#e8e8ed] rounded-2xl overflow-hidden"
+          >
+            <div class="p-6 border-b border-[#e8e8ed] bg-[#fafafa]">
+              <div class="flex items-center gap-3 mb-1">
+                <fa-icon
+                  [icon]="faEarthAmericas"
+                  class="text-[#22c55e] text-lg"
+                ></fa-icon>
+                <h3 class="text-xl font-semibold text-[#1d1d1f]">
+                  International Mailing
+                </h3>
+              </div>
+              <p class="text-[#6b7280] text-sm">Global delivery options</p>
+            </div>
+            <div class="divide-y divide-[#e8e8ed]">
+              @for (item of internationalMailingRates; track item.name) {
+                <div
+                  class="flex justify-between items-center px-6 py-4 hover:bg-[#fafafa] transition-colors"
+                >
+                  <span class="text-[#1d1d1f] text-sm">{{ item.name }}</span>
+                  <span class="text-[#059669] font-semibold">{{
+                    item.price
+                  }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform Features Section -->
+    <div class="mt-20 sub-container">
+      <!-- Section Header -->
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold text-[#1d1d1f] mb-3">
+          Platform Features
+        </h2>
+        <p class="text-[#6e6e73] text-base">What's included with every plan</p>
+      </div>
+
+      <!-- Platform Features Comparison Table -->
+      <div
+        class="bg-white border border-[#e8e8ed] rounded-2xl overflow-hidden mb-8"
+      >
+        <!-- Table Header -->
+        <div class="grid grid-cols-5 bg-[#fafafa]">
+          <div class="p-4 text-[#6e6e73] text-sm font-medium">Feature</div>
+          <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+            Bank Account
+          </div>
+          <div
+            class="p-4 text-center bg-[linear-gradient(135deg,_#ecfdf5_0%,_#d1fae5_100%)]"
+          >
+            <span class="text-[#059669] text-sm font-medium"
+              >Zil Money Wallet</span
+            >
+            <fa-icon
+              [icon]="faStar"
+              class="text-[#fbbf24] text-xs ml-1"
+            ></fa-icon>
+          </div>
+          <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+            Credit Card
+          </div>
+          <div class="p-4 text-[#6e6e73] text-sm font-medium text-center">
+            Enterprise
+          </div>
+        </div>
+
+        <!-- Table Body -->
+        @for (row of platformFeatures; track row.feature) {
+          <div
+            class="grid grid-cols-5 border-t border-[#e8e8ed] hover:bg-[#fafafa] transition-colors"
+          >
+            <!-- Feature Name -->
+            <div class="p-4 text-[#1d1d1f] text-sm">
+              {{ row.feature }}
+            </div>
+
+            <!-- Bank Account -->
+            <div class="p-4 text-center">
+              <ng-container
+                *ngTemplateOutlet="
+                  cellTemplate;
+                  context: { $implicit: row.bankAccount }
+                "
+              ></ng-container>
+            </div>
+
+            <!-- Zil Wallet (Highlighted Column) -->
+            <div class="p-4 text-center bg-[rgba(209,250,229,0.5)]">
+              <ng-container
+                *ngTemplateOutlet="
+                  cellTemplate;
+                  context: { $implicit: row.zilWallet, isWallet: true }
+                "
+              ></ng-container>
+            </div>
+
+            <!-- Credit Card -->
+            <div class="p-4 text-center">
+              <ng-container
+                *ngTemplateOutlet="
+                  cellTemplate;
+                  context: { $implicit: row.creditCard }
+                "
+              ></ng-container>
+            </div>
+
+            <!-- Enterprise -->
+            <div class="p-4 text-center">
+              <ng-container
+                *ngTemplateOutlet="
+                  cellTemplate;
+                  context: { $implicit: row.enterprise }
+                "
+              ></ng-container>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Three Feature Cards -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Included in All Plans -->
+        <div class="bg-white border border-[#e8e8ed] rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <fa-icon
+              [icon]="faSquareCheck"
+              class="text-[#22c55e] text-xl"
+            ></fa-icon>
+            <h3 class="text-lg font-semibold text-[#1d1d1f]">
+              Included in All Plans
+            </h3>
+          </div>
+          <hr class="border-[#e8e8ed] mt-2 mb-6" />
+          <ul class="space-y-3">
+            @for (feature of includedInAllPlans; track feature) {
+              <li class="flex items-start gap-2">
+                <span
+                  class="w-4 h-4 rounded flex justify-center items-center flex-shrink-0 bg-[#059669]"
+                >
+                  <fa-icon
+                    [icon]="faCheck"
+                    class="text-white text-[12px] mt-0.5"
+                  />
+                </span>
+                <span class="text-[#1d1d1f] text-sm">{{ feature }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Enterprise-Only Features -->
+        <div class="bg-white border border-[#e8e8ed] rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <fa-icon
+              [icon]="faBuilding"
+              class="text-[#6b7280] text-xl"
+            ></fa-icon>
+            <h3 class="text-lg font-semibold text-[#1d1d1f]">
+              Enterprise-Only Features
+            </h3>
+          </div>
+          <hr class="border-[#e8e8ed] mt-2 mb-6" />
+          <ul class="space-y-3">
+            @for (feature of enterpriseOnlyFeatures; track feature) {
+              <li class="flex items-start gap-2">
+                <span
+                  class="w-4 h-4 rounded flex justify-center items-center flex-shrink-0 bg-[#059669]"
+                >
+                  <fa-icon
+                    [icon]="faCheck"
+                    class="text-white text-[12px] mt-0.5"
+                  />
+                </span>
+                <span class="text-[#1d1d1f] text-sm">{{ feature }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Why Choose Wallet? -->
+        <div class="bg-white border border-[#e8e8ed] rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <fa-icon [icon]="faTrophy" class="text-[#fbbf24] text-xl"></fa-icon>
+            <h3 class="text-lg font-semibold text-[#1d1d1f]">
+              Why Choose Wallet?
+            </h3>
+          </div>
+          <hr class="border-[#e8e8ed] mt-2 mb-6" />
+          <ul class="space-y-3">
+            @for (feature of whyChooseWallet; track feature) {
+              <li class="flex items-start gap-2">
+                <span
+                  class="w-4 h-4 rounded flex justify-center items-center flex-shrink-0 bg-[#059669]"
+                >
+                  <fa-icon
+                    [icon]="faCheck"
+                    class="text-white text-[12px] mt-0.5"
+                  />
+                </span>
+                <span class="text-[#1d1d1f] text-sm">{{ feature }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Important Information Section -->
+    <div class="mt-20 border-t border-[#e8e8ed] pt-12 sub-container">
+      <h3 class="text-xl font-bold text-[#1d1d1f] mb-6">
+        Important Information
+      </h3>
+      <div class="space-y-4">
+        @for (footnote of footnotes; track footnote.symbol) {
+          <p class="text-sm text-[#6e6e73]">
+            <span>{{ footnote.symbol }}</span>
+            <span class="font-medium ml-1">{{ footnote.title }}</span>
+            {{ footnote.description }}
+          </p>
+        }
+      </div>
+
+      <!-- Disclosure Box -->
+      <div
+        class="mt-10 bg-[#4a90d91a] border border-[#4a90d933] rounded-xl p-6"
+      >
+        @for (disclosure of disclosures; track disclosure.title) {
+          <p class="text-sm text-[#6e6e73] mb-4 last:mb-0">
+            <span class="font-medium text-[#1d1d1f]">{{
+              disclosure.title
+            }}</span>
+            {{ disclosure.description }}
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA Section -->
+<div
+  class="bg-[linear-gradient(180deg,_white_0%,_#ecfdf5_100%)] py-20 px-4 sm:px-6 lg:px-8"
+>
+  <div class="max-w-4xl mx-auto text-center">
+    <h2 class="text-3xl md:text-4xl font-bold text-[#1d1d1f] mb-4">
+      Ready to stop paying transaction fees?
+    </h2>
+    <p class="text-[#6e6e73] text-lg mb-8">
+      Join thousands of businesses saving money with Zil Money Wallet
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <!-- <button
+        (click)="onStartFreeTrial()"
+        class="px-8 py-3 bg-[#059669] text-[#1d1d1f] font-semibold rounded-lg hover:bg-[#bef264] transition-colors"
+      >
+        Start Free Trial
+      </button> -->
+      <button
+        (click)="onTalkToSales()"
+        class="px-8 py-3 bg-white border border-[#d2d2d7] text-[#1d1d1f] font-semibold rounded-lg hover:bg-[#fafafa] hover:border-[#86868b] transition-colors"
+      >
+        Talk to Sales
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Cell Template -->
+<ng-template #cellTemplate let-value let-isWallet="isWallet">
+  @if (value.isCallForPricing) {
+    <span class="text-[#1d1d1f] text-sm">Call for Pricing</span>
+  } @else if (value.isFree) {
+    <span class="text-[#059669] text-sm font-medium">
+      {{ value.text }}
+      <fa-icon [icon]="faCheck" class="text-[#059669] text-xs ml-1"></fa-icon>
+    </span>
+  } @else if (value.isBadge) {
+    <span
+      class="inline-block bg-[linear-gradient(135deg,_#ecfdf5_0%,_#d1fae5_100%)] text-[#059669] text-xs font-medium px-3 py-1 rounded-full"
+    >
+      {{ value.text }}
+    </span>
+  } @else if (value.highlight && value.suffix) {
+    <span class="text-sm">
+      <span class="text-[#059669] font-medium">{{ value.highlight }}</span>
+      <span class="text-[#6e6e73]">{{ value.suffix }}</span>
+    </span>
+  } @else if (value.highlight && isWallet) {
+    <span class="text-[#059669] text-sm font-medium">{{ value.text }}</span>
+  } @else {
+    <span class="text-[#6e6e73] text-sm">{{ value.text }}</span>
+  }
+</ng-template>

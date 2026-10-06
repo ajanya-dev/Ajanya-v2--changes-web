@@ -1,0 +1,197 @@
+﻿<app-sp-dropdown-shell
+  [label]="label()"
+  [tooltip]="tooltip()"
+  [required]="required()"
+  [(open)]="open"
+  (cleared)="clearSelection()"
+  [searchable]="true"
+  [searchPlaceholder]="
+    enableAddNew() && paymentsService.hasPermission.bank
+      ? 'Search or add bank account'
+      : 'Search bank accounts'"
+  [searchTerm]="term()"
+  (searchTermChange)="onSearchInput($event)"
+>
+  <ng-container trigger>
+    <span
+      class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+    >
+      <lucide-icon [img]="LandmarkIcon" [size]="16" />
+    </span>
+    @if (selected(); as bank) {
+      <span class="flex min-w-0 flex-1 items-baseline gap-2">
+        <span
+          class="truncate font-bold leading-tight text-v4-main-text-color text-[13px]"
+          >{{ getBankDisplayName(bank) }}</span
+        >
+        @if (bank.accountNumber) {
+          <span
+            class="shrink-0 leading-tight text-v4-tertiary-text-color text-[12px]"
+            >{{ maskAccount(bank) }}</span
+          >
+        }
+      </span>
+    } @else {
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholderText() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel class="p-1">
+    <div
+      class="flex max-h-[296px] flex-col overflow-y-auto"
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+    >
+      @for (bank of bankAccountsToList$ | async; track bank.id) {        <div
+          class="group flex w-full items-center gap-1 rounded-lg pr-1.5 transition-colors hover:bg-v4-main-background-color focus-within:bg-v4-main-background-color"
+          [class.bg-v4-brand-tint]="selected()?.id === bank.id"
+          [class.opacity-50]="bank.id === disableSelectionId()"
+        >
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-3 px-2 py-2 text-left"
+            [class.cursor-not-allowed]="bank.id === disableSelectionId()"
+            [attr.aria-disabled]="bank.id === disableSelectionId()"
+            [attr.aria-selected]="selected()?.id === bank.id"
+            (click)="onSelectBank(bank)"
+          >
+            <lucide-icon
+              [img]="LandmarkIcon"
+              [size]="18"
+              class="shrink-0"
+              [class.text-v4-primary-brand-bold-color]="selected()?.id === bank.id"
+              [class.text-v4-tertiary-text-color]="selected()?.id !== bank.id"
+            />
+            <span class="min-w-0 flex-1">
+              <span class="flex items-center gap-1.5">
+                <span
+                  class="truncate text-sm font-semibold text-v4-main-text-color"
+                  >{{ getBankDisplayName(bank) }}</span
+                >
+                @if (showVerificationBadge() && getVerificationState(bank) === "verified") {
+                  <lucide-icon
+                    [img]="VerifiedIcon"
+                    [size]="18"
+                    class="shrink-0 text-v4-text-success"
+                    role="img"
+                    aria-label="Verified"
+                    matTooltip="Verified"
+                    matTooltipPosition="above"
+                  />
+                }
+              </span>
+              <span class="block truncate text-[12px] text-v4-tertiary-text-color">
+                {{ getBankSubText(bank) }}
+              </span>
+            </span>
+            @if (isAchBadgeVisible(bank)) {
+              <span
+                class="shrink-0 rounded bg-v4-surface-success px-1.5 py-0.5 text-[12px] font-semibold text-v4-text-success"
+                matTooltip="Verified for ACH payments"
+                matTooltipPosition="above"
+                >ACH</span
+              >
+            }
+          </button>
+
+          @if (showVerificationBadge() && bank.id !== disableSelectionId()) {
+            @switch (getVerificationState(bank)) {
+              @case ("pending") {
+                <span class="shrink-0 px-1 text-[13px] text-v4-tertiary-text-color"
+                  >Pending</span
+                >
+              }
+              @case ("verified") {}
+              @default {
+                <button
+                  type="button"
+                  class="flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-1 text-[13px] font-semibold text-v4-text-warning transition-colors hover:bg-v4-surface-warning"
+                  [matTooltip]="
+                    getVerificationState(bank) === 'confirmMD'
+                      ? 'Confirm the micro-deposit amounts'
+                      : 'Verify this account to send payments from it'"
+                  matTooltipPosition="above"
+                  (click)="onVerifyClick($event, bank)"
+                >
+                  {{ getVerificationState(bank) === "confirmMD" ? "Confirm deposit" : "Verify" }}
+                  <lucide-icon [img]="ChevronRightIcon" [size]="14" />
+                </button>
+              }
+            }
+          }
+
+          @if (showDefaultStar() && bank.id !== disableSelectionId()) {
+            <button
+              type="button"
+              class="grid h-7 w-7 shrink-0 place-items-center rounded-full transition-[opacity,background-color]"
+              [disabled]="!isStarEnabled(bank)"
+              [ngClass]="{
+                'hover:bg-v4-hover-tint': isStarEnabled(bank),
+                '[&_svg]:fill-current': defaultItemId() === bank.id,
+                'opacity-60 hover:opacity-100 focus-visible:opacity-100':
+                  defaultItemId() !== bank.id
+              }"
+              [class.cursor-not-allowed]="!isStarEnabled(bank)"
+              [matTooltip]="
+                defaultItemId() === bank.id
+                  ? 'Remove as your default'
+                  : 'Set it as your default for next time'"
+              matTooltipPosition="above"
+              [attr.aria-pressed]="defaultItemId() === bank.id"
+              [attr.aria-label]="
+                defaultItemId() === bank.id
+                  ? 'Remove default account'
+                  : 'Set as default account'"
+              (click)="onStarClick($event, bank)"
+            >
+              <lucide-icon
+                [img]="StarIcon"
+                [size]="15"
+                [class]="
+                  defaultItemId() === bank.id
+                    ? 'text-v4-favorite-star-color'
+                    : 'text-v4-tertiary-text-color'"
+              />
+            </button>
+          }
+        </div>
+      } @empty {
+        @if ((bankAccountsState$ | async)?.isLoading !== true) {
+          <p class="py-4 text-center text-[13px] text-v4-tertiary-text-color">
+            {{
+              !paymentsService.hasPermission.bank
+                ?"Permission Denied"
+                :"No bank accounts found"
+            }}
+          </p>
+        }
+      }
+
+      @if ((bankAccountsState$ | async)?.isLoading) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="flex animate-pulse items-center gap-3 rounded-lg px-2 py-2.5">
+            <span class="h-[18px] w-[18px] shrink-0 rounded bg-v4-brand-tint"></span>
+            <span class="flex-1 space-y-1.5">
+              <span class="block h-3 w-3/4 rounded bg-v4-brand-tint"></span>
+              <span class="block h-2.5 w-1/2 rounded bg-v4-brand-tint"></span>
+            </span>
+          </div>
+        }
+      }
+    </div>
+
+    @if (enableAddNew() && paymentsService.hasPermission.bank) {
+      <button
+        type="button"
+        class="mt-1 flex h-10 w-full items-center gap-2 rounded-lg border-t border-v4-border-color px-2 text-sm font-semibold text-v4-primary-brand-bold-color transition-colors hover:bg-v4-brand-tint"
+        (click)="addNewBankAccount()"
+      >
+        <lucide-icon [img]="PlusIcon" [size]="16" />
+        Add bank account
+      </button>
+    }
+  </div>
+</app-sp-dropdown-shell>

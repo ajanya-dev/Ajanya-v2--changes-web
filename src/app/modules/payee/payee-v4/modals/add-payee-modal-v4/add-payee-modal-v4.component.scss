@@ -1,0 +1,1014 @@
+@use "src/app/shared/components/v3/drop-downs/styles/drop-down-v4.scss" as v4;
+
+// Add Payee Modal V4 Styles
+// Self-contained height management — does NOT depend on dialog parent flex
+
+:host {
+  display: block;
+  overflow: hidden;
+  font-family: var(--font-funnel);
+}
+
+.v4-native-input {
+  width: 100%;
+  padding: 0 16px;
+  min-height: 44px;
+  height: 44px;
+  border: 1px solid var(--v4-input-border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--v4-main-text-color);
+  background-color: var(--v4-popup-background-color);
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: var(--v4-subtle-text-color);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: 0 0 0 2px var(--v4-badge-info-bg-color);
+  }
+}
+
+.add-payee-v4-wrapper {
+  height: auto;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &.embedded-mode {
+    box-shadow: none;
+    border-radius: 0;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .embedded-mode & {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+
+// ===== Back Button =====
+.back-btn-v4 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--v4-main-text-color);
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: var(--v4-input-background-color);
+  }
+}
+
+// ===== Type & Mode Selection Bar =====
+.type-mode-bar {
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--v4-input-border-color);
+  flex-shrink: 0;
+}
+
+.section-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v4-tertiary-text-color);
+  font-family: var(--font-peridot);
+}
+
+// Label sits inline, left of the type toggle.
+.type-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.payee-type-toggle {
+  ::ng-deep .grid.p-1.bg-v4-secondary-background-color {
+    display: inline-flex;
+    gap: 8px;
+    padding: 0;
+    width: auto;
+  }
+
+  ::ng-deep .toggle-tab {
+    padding: 6px 14px;
+    font-size: 13px;
+    gap: 6px;
+
+    &.active {
+      box-shadow: none;
+    }
+
+    &:not(.active) {
+      background: transparent;
+    }
+  }
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--v4-input-background-color);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+// ===== Scrollable Form Body =====
+.form-body-v4 {
+  max-height: calc(85vh - 260px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 24px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  .embedded-mode & {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--v4-input-border-color);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--v4-tertiary-text-color);
+    }
+  }
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// ===== Form Card (Basic Info) =====
+.form-card {
+  background: var(--v4-popup-background-color);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  border: 1px solid var(--v4-input-border-color);
+}
+
+// Small uppercase caption rather than a heading.
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--v4-tertiary-text-color);
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+.title-indicator {
+  width: 4px;
+  height: 20px;
+  background: var(--v4-input-border-color);
+  border-radius: 9999px;
+  transition: background-color 0.15s;
+
+  &.active {
+    background: var(--v4-primary-brand-color);
+  }
+}
+
+
+// ===== Form Grid =====
+.form-grid {
+  display: grid;
+  // minmax(0, 1fr) (not 1fr == minmax(auto, 1fr)) so a long selected state/country
+  // value truncates via ng-select's built-in ellipsis instead of widening the column.
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.form-field {
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+.address-line-compact,
+.state-field-compact {
+  ::ng-deep .v4-input-style {
+    height: 34px !important;
+  }
+}
+
+.bank-accordion-body {
+  ::ng-deep .v4-input-style {
+    height: 34px !important;
+  }
+
+  ::ng-deep .ng-select-container {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  ::ng-deep .angular-ocw-v4-ng-select-dropdown .ng-select-container {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  ::ng-deep .top-\[34px\] {
+    top: 39px !important;
+    transform: translateY(-50%) !important;
+  }
+
+  ::ng-deep .ng-select-container .ng-value-container .ng-input {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  // app-add-payee-international-bank-v4's Cancel/Add buttons don't expose a
+  // customHeight input at their call site (it's shared with another, unrelated
+  // consumer outside this modal) — matched via CSS instead, scoped to this
+  // accordion body only.
+  ::ng-deep app-common-button-v4 button {
+    height: 36px !important;
+  }
+}
+
+// Phone input — matched to the same 34px compact height, across the whole modal.
+.add-payee-v4-wrapper {
+  ::ng-deep .date-picker-trigger {
+    height: 34px !important;
+  }
+
+  ::ng-deep [cdkOverlayOrigin] {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  ::ng-deep .flex-1.min-w-0.px-3.flex.items-center {
+    min-height: 34px !important;
+  }
+
+  // Outline buttons (Send a link, Cancel) default to a 2px inline border in
+  // app-common-button-v4; thinned to 1px here to match the 1px cards and inputs.
+  ::ng-deep app-common-button-v4 button.outline-main-btn {
+    border-width: 1px !important;
+  }
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v4-secondary-text-color);
+  margin-bottom: 6px;
+  letter-spacing: 0.025em;
+  font-family: var(--font-peridot);
+}
+
+// ===== V4 Select =====
+.v4-select {
+  width: 100%;
+  padding: 8px 12px;
+  min-height: 44px;
+  height: 44px;
+  border: 1px solid var(--v4-input-border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--v4-popup-background-color);
+  color: var(--v4-main-text-color);
+  font-family: var(--font-funnel);
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: 0 0 0 2px var(--v4-badge-info-bg-color);
+  }
+}
+
+// ===== Accordion =====
+.accordion-section {
+  border: 1px solid var(--v4-input-border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--v4-popup-background-color);
+
+  // Consecutive sections read as one card split by dividers: pull each one up
+  // over the 8px .form-sections gap plus the shared 1px border.
+  & + & {
+    margin-top: -9px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  &:has(+ &) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+/* The section the payment sent the user here to fix. */
+.section-focused {
+  animation: v4-section-focus 2.4s ease-out;
+  border-color: var(--v4-primary-brand-color);
+}
+
+@keyframes v4-section-focus {
+  0%,
+  60% {
+    box-shadow: 0 0 0 2px var(--v4-primary-brand-color);
+  }
+
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  min-height: 48px;
+  background: var(--v4-popup-background-color);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  font-family: var(--font-funnel);
+
+  &:hover {
+    background: var(--v4-input-background-color);
+  }
+
+  &.has-error {
+    border: 1px solid var(--v4-common-red-color);
+    border-radius: var(--radius-lg);
+  }
+}
+
+.accordion-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--v4-main-text-color);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .title-indicator {
+    background: var(--v4-input-border-color);
+  }
+}
+
+// Icon in a tinted chip.
+.accordion-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--v4-primary-brand-color) 10%, var(--v4-secondary-background-color));
+  color: var(--v4-primary-brand-bold-color);
+  flex-shrink: 0;
+}
+
+// Completed sections: pushed to the right, next to the chevron.
+.added-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-peridot);
+  background: var(--v4-badge-success-bg-color);
+  color: var(--v4-badge-success-text-color);
+}
+
+.accordion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--v4-tertiary-text-color);
+
+  // Chevron only: points down when collapsed (the template's chevron-right,
+  // turned) and up when expanded (its chevron-down, flipped).
+  lucide-icon {
+    display: inline-flex;
+    transform: rotate(90deg);
+  }
+
+  .expanded > .accordion-header & lucide-icon {
+    transform: rotate(180deg);
+  }
+}
+
+// The Expand/Collapse word stays for screen readers only.
+.toggle-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.accordion-body {
+  padding: 14px;
+  border-top: 1px solid var(--v4-input-border-color);
+  animation: accordionOpen 0.2s ease-out;
+
+  .v4-native-input {
+    padding: 0 12px;
+    min-height: 40px;
+    height: 40px;
+  }
+}
+
+@keyframes accordionOpen {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.completed-icon {
+  color: var(--v4-primary-brand-bold-color);
+}
+
+.address-required-msg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 16px 0;
+  margin-top: -8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--v4-common-red-color);
+  font-family: var(--font-peridot);
+}
+
+// ===== Banking Actions =====
+.banking-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.bank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bank-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--v4-input-background-color);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--v4-main-text-color);
+  font-family: var(--font-peridot);
+}
+
+.bank-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bank-item-detail {
+  color: var(--v4-tertiary-text-color);
+  font-size: 12px;
+}
+
+.bank-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--v4-tertiary-text-color);
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--v4-input-border-color);
+    color: var(--v4-main-text-color);
+  }
+}
+
+.icon-btn-destructive {
+  &:hover {
+    background: var(--v4-badge-error-bg-color);
+    color: var(--v4-common-red-color);
+  }
+}
+
+// ===== Inline Bank Form =====
+.inline-bank-form {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--v4-input-background-color);
+  border: 1px solid var(--v4-input-border-color);
+  border-radius: 12px;
+}
+
+.inline-intl-bank-form {
+  margin-top: 12px;
+}
+
+.inline-form-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--v4-main-text-color);
+  margin: 0 0 16px 0;
+}
+
+.wire-toggle-row {
+  margin: 16px 0 8px;
+}
+
+.wire-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--v4-input-border-color);
+}
+
+.wire-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--v4-tertiary-text-color);
+  margin: 0 0 12px 0;
+}
+
+.inline-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--v4-input-border-color);
+}
+
+// ===== Request Bank Section =====
+.request-bank-section {
+  padding: 4px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v4-main-text-color);
+  font-family: var(--font-peridot);
+  cursor: pointer;
+
+}
+
+.info-icon {
+  color: var(--v4-tertiary-text-color);
+}
+
+// ===== Send Link Section =====
+.send-link-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.send-link-desc {
+  font-size: 14px;
+  color: var(--v4-tertiary-text-color);
+  font-family: var(--font-peridot);
+}
+
+.send-link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checkbox-input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  input[type="checkbox"] {
+    margin-top: 10px;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    accent-color: var(--v4-primary-brand-color);
+    cursor: pointer;
+  }
+}
+
+// ===== Share Link Box =====
+.share-link-box {
+  padding: 16px;
+  background: var(--v4-input-background-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--v4-input-border-color);
+}
+
+.share-link-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--v4-main-text-color);
+  margin: 0 0 8px 0;
+  font-family: var(--font-peridot);
+}
+
+.share-link-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.share-link-input {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--v4-popup-background-color);
+  border: 1px solid var(--v4-input-border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.link-skeleton {
+  height: 14px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+.link-icon {
+  color: var(--v4-tertiary-text-color);
+  flex-shrink: 0;
+}
+
+.link-text {
+  font-size: 13px;
+  color: var(--v4-main-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-peridot);
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-width: 92px;
+  background: var(--v4-primary-brand-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: box-shadow 0.15s ease;
+  font-family: var(--font-peridot);
+
+  &:hover {
+    box-shadow:
+      0 10px 15px -3px color-mix(in srgb, var(--v4-primary-brand-color) 30%, transparent),
+      0 4px 6px -4px color-mix(in srgb, var(--v4-primary-brand-color) 20%, transparent);
+  }
+
+  &.copied {
+    background: var(--v4-secondary-brand-color);
+    color: var(--v4-primary-brand-color);
+  }
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  background: var(--v4-input-background-color);
+  border: 1px solid var(--v4-primary-brand-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--v4-primary-brand-bold-color);
+  transition: background-color 0.15s;
+
+  &.active {
+    background: var(--v4-primary-brand-color);
+    color: var(--v4-secondary-brand-color);
+    border-color: var(--v4-primary-brand-color);
+  }
+}
+
+.social-share-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  background: var(--v4-popup-header-footer-color);
+  border: 1px solid var(--v4-border-color);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  margin-top: 12px;
+}
+
+.quick-share-icon-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: color-mix(
+      in srgb,
+      var(--v4-primary-brand-color) 5%,
+      transparent
+    );
+  }
+}
+
+.quick-share-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.more-circle {
+    background: var(--v4-input-background-color);
+    color: var(--v4-main-text-color);
+  }
+}
+
+// ===== Footer =====
+.required-note {
+  font-size: 12px;
+  color: var(--v4-tertiary-text-color);
+  margin: 0;
+  font-family: var(--font-peridot);
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+.required-star {
+  color: var(--v4-common-red-color);
+}
+
+.sub-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--v4-main-text-color);
+  margin: 0 0 16px 0;
+}
+
+// ===== Loading overlay =====
+.permission-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--v4-secondary-background-color);
+}
+
+// ===== Responsive =====
+@media (max-width: 640px) {
+  .type-mode-bar {
+    padding: 12px 16px;
+  }
+
+  .form-body-v4 {
+    padding: 12px 16px;
+  }
+
+  .mode-toggle {
+    width: 100%;
+  }
+}
+
+// ===== Send Link Banner =====
+.send-link-banner-icon {
+  color: var(--v4-primary-brand-bold-color);
+  flex-shrink: 0;
+}
+
+.send-link-banner-text {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--v4-main-text-color);
+  font-family: var(--font-peridot);
+  min-width: 160px;
+
+  strong {
+    color: var(--v4-primary-brand-bold-color);
+    font-weight: 600;
+  }
+}
+
+
+// ===== Back to Manual Entry =====
+.back-to-manual {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v4-primary-brand-bold-color);
+  font-family: var(--font-peridot);
+  padding: 0;
+  margin-bottom: 8px;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// ===== Send Link Card =====
+.send-link-card {
+  background: var(--v4-popup-background-color);
+  border: 1px solid var(--v4-input-border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.send-link-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--v4-main-text-color);
+  margin: 0 0 6px 0;
+  font-family: var(--font-funnel);
+}
+
+.send-link-card-desc {
+  font-size: 13px;
+  color: var(--v4-tertiary-text-color);
+  font-family: var(--font-peridot);
+  margin: 0;
+}
+
+// ===== Bank Tab Switcher =====
+.bank-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bank-tab-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--v4-tertiary-text-color);
+  font-family: var(--font-peridot);
+  white-space: nowrap;
+}
+
+
+// ===== V4 dropdown mixin for ng-select =====
+.angular-ocw-v4-ng-select-dropdown {
+  @include v4.v4-dropdown-styles;
+
+  ng-select {
+    ::ng-deep .ng-select-container {
+      height: 34px !important;
+      min-height: 34px !important;
+      border-radius: 0.75rem !important;
+    }
+  }
+}
+
+// Category dropdown is a child component (app-category-dropdown-v4); its own
+// .height-1 rule is scoped to its own component and wins on specificity, so
+// match its stable classes here (not just .ng-select-container) to override it.
+::ng-deep app-category-dropdown-v4 .ng-dropdown-panel-v4.text-sm.height-1.ng-select.ng-select-single.ng-select-searchable.ng-select-clearable .ng-select-container {
+  height: 34px !important;
+  min-height: 34px !important;
+}
+
+// ===== ng-deep overrides for intl-tel-input =====
+::ng-deep {
+  .add-payee-v4-wrapper {
+    .iti {
+      width: 100%;
+    }
+
+    // Phone input background & height consistency
+    app-phone-input-v4 > div {
+      background-color: var(--v4-secondary-background-color);
+    }
+
+    .phone_input {
+      min-height: 44px;
+      border-radius: 10px;
+
+      .input_style {
+        min-height: 44px;
+      }
+    }
+  }
+}

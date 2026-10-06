@@ -1,0 +1,155 @@
+﻿<app-sp-dropdown-shell
+  label="Select a wallet"
+  tooltip="Choose the specific wallet to pay from."
+  [(open)]="open"
+  (cleared)="clearSelection()"
+  [searchable]="true"
+  [searchPlaceholder]="'Search wallets'"
+  [searchTerm]="term()"
+  (searchTermChange)="onSearchInput($event)"
+>
+  <ng-container trigger>
+    <span
+      class="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+    >
+      @if (selected()?.logo) {
+        <img
+          [src]="selected()?.logo"
+          alt="logo"
+          class="h-7 w-7 rounded-[10px] object-cover"
+        />
+      } @else {
+        <lucide-icon [img]="WalletIcon" [size]="16" />
+      }
+    </span>
+    @if (selected(); as wallet) {
+      <span class="flex min-w-0 flex-1 items-baseline gap-2">
+        <span
+          class="truncate font-bold leading-tight text-v4-main-text-color text-[13px]"
+          >{{ getWalletDisplayName(wallet) }}</span
+        >
+        <span
+          class="ml-auto shrink-0 leading-tight text-v4-tertiary-text-color text-[12px]"
+          >{{ getWalletBalance(wallet) }}</span
+        >
+      </span>
+    } @else {
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholderText() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel class="p-1">
+    <div
+      class="flex max-h-[280px] flex-col gap-[3px] overflow-y-auto"
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+    >
+      @for (wallet of walletsToList$ | async; track wallet.uuId) {
+        <div
+          class="flex w-full items-center gap-1 rounded-[9px] border-[1.5px] border-transparent pr-1 transition-colors hover:bg-v4-main-background-color"
+          [ngClass]="{ 'bg-v4-brand-tint': selected()?.id === wallet.id, '!border-v4-brand-tint-strong': selected()?.id === wallet.id }"
+        >
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-2.5 p-2 text-left"
+            (click)="onSelectWallet(wallet)"
+          >
+            <span
+              class="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-[10px] transition-colors"
+              [class.bg-v4-primary-brand-color]="selected()?.id === wallet.id"
+              [class.text-white]="selected()?.id === wallet.id"
+              [ngClass]="{ 'bg-v4-brand-tint': selected()?.id !== wallet.id }"
+              [class.text-v4-brand-border-color]="selected()?.id !== wallet.id"
+            >
+              @if (wallet.logo) {
+                <img
+                  [src]="wallet.logo"
+                  alt="logo"
+                  class="h-7 w-7 rounded-[10px] object-cover"
+                />
+              } @else {
+                <lucide-icon [img]="WalletIcon" [size]="15" />
+              }
+            </span>
+            <span class="min-w-0 flex-1">
+              <span
+                class="block truncate font-bold text-v4-main-text-color text-[13px]"
+                >{{ getWalletDisplayName(wallet) }}</span
+              >
+              <span
+                class="block truncate text-v4-tertiary-text-color text-[12px]"
+                >Balance: {{ getWalletBalance(wallet)
+                }}{{
+                  getMaskedAccount(wallet)
+                    ?" · " + getMaskedAccount(wallet)
+                    :""
+                }}</span
+              >
+            </span>
+          </button>
+
+          @if (showDefaultStar()) {
+            <button
+              type="button"
+              class="grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors hover:bg-v4-hover-tint"
+              [ngClass]="{
+                '[&_svg]:fill-current': defaultItemId() === wallet.id
+              }"
+              [matTooltip]="
+                defaultItemId() === wallet.id
+                  ? 'Remove as your default'
+                  : 'Set it as your default for next time'"
+              matTooltipPosition="above"
+              [attr.aria-pressed]="defaultItemId() === wallet.id"
+              [attr.aria-label]="
+                defaultItemId() === wallet.id
+                  ? 'Remove default wallet'
+                  : 'Set as default wallet'"
+              (click)="onStarClick($event, wallet)"
+            >
+              <lucide-icon
+                [img]="StarIcon"
+                [size]="15"
+                [class]="
+                  defaultItemId() === wallet.id
+                    ? 'text-v4-favorite-star-color'
+                    : 'text-v4-subtle-text-color'"
+              />
+            </button>
+          }
+        </div>
+      } @empty {
+        @if ((selectIsWalletsLoading$ | async) !== true) {
+          <p class="py-4 text-center text-v4-tertiary-text-color text-[12px]">
+            {{
+              (isPermissionDenied$ | async) || !paymentsService.hasPermission.wallet
+                ?"Permission Denied"
+                :"No wallets found"
+            }}
+          </p>
+        }
+      }
+
+      @if (selectIsWalletsLoading$ | async) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="flex animate-pulse items-center gap-2.5 rounded-[9px] p-2">
+            <span
+              class="h-7 w-7 shrink-0 rounded-[10px] bg-v4-brand-tint"
+            ></span>
+            <span class="flex-1 space-y-1.5">
+              <span
+                class="block h-3 w-3/4 rounded bg-v4-brand-tint"
+              ></span>
+              <span
+                class="block h-2.5 w-1/2 rounded bg-v4-brand-tint"
+              ></span>
+            </span>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</app-sp-dropdown-shell>

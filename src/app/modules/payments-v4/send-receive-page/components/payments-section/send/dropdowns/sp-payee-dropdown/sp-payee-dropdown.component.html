@@ -1,0 +1,161 @@
+﻿<app-sp-dropdown-shell
+  [label]="label()"
+  [tooltip]="tooltip()"
+  [required]="required()"
+  [(open)]="open"
+  (cleared)="clearSelection()"
+  [searchable]="true"
+  [searchPlaceholder]="'Search or add a payee'"
+  [searchTerm]="term()"
+  (searchTermChange)="onSearchInput($event)"
+>
+  <ng-container trigger>
+    @if (selected(); as p) {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon [img]="UserIcon" [size]="16" />
+      </span>
+      <span class="min-w-0 flex-1 text-left">
+        <span
+          class="block truncate font-bold text-v4-main-text-color text-[13px]"
+          >{{ payeeLabel(p) }}</span
+        >
+      </span>
+    } @else {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon [img]="UserIcon" [size]="15" />
+      </span>
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholder() ||"Search or select a payee" }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel>
+    @if (enableAddNew() && paymentsService.hasPermission.payee) {
+      <button
+        type="button"
+        class="mb-2 flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-dashed border-v4-border-success p-2 text-left transition-colors hover:bg-v4-surface-success"
+        (click)="addNewPayee()"
+      >
+        <span
+          class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-surface-success-bold text-v4-text-success"
+        >
+          <lucide-icon [img]="UserRoundPlusIcon" [size]="15" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block font-bold text-v4-text-success text-[13px]"
+            >Add New Payee</span
+          >
+          <span class="block truncate text-v4-text-success text-[12px]"
+            >Add a vendor, customer, or employee</span
+          >
+        </span>
+      </button>
+    }
+
+    <div
+      class="flex max-h-[280px] flex-col gap-[3px] overflow-y-auto"
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+    >
+      @if ((selectIsPayeesFilterOn$ | async) !== true) {
+        @for (payee of filteredPayee$ | async; track payee.id) {
+          <ng-container
+            [ngTemplateOutlet]="row"
+            [ngTemplateOutletContext]="{ $implicit: payee }"
+          />
+        } @empty {
+          @if ((selectIsPayeesLoading$ | async) === false) {
+            <p class="py-4 text-center text-v4-tertiary-text-color text-[12px]">
+              {{
+                !paymentsService.hasPermission.payee
+                  ?"Permission Denied"
+                  :"No payees found"
+              }}
+            </p>
+          }
+        }
+      } @else {
+        @for (payee of payeesFiltered$ | async; track payee.id) {
+          <ng-container
+            [ngTemplateOutlet]="row"
+            [ngTemplateOutletContext]="{ $implicit: payee }"
+          />
+        } @empty {
+          @if ((selectIsPayeesLoading$ | async) === false) {
+            <p class="py-4 text-center text-v4-tertiary-text-color text-[12px]">
+              {{
+                !paymentsService.hasPermission.payee
+                  ?"Permission Denied"
+                  :"No payees found"
+              }}
+            </p>
+          }
+        }
+      }
+
+      @if (selectIsPayeesLoading$ | async) {
+        @for (i of [1, 2, 3]; track i) {
+          <div
+            class="flex animate-pulse items-center gap-2.5 rounded-[9px] p-2"
+          >
+            <span class="h-7 w-7 shrink-0 rounded-[10px] bg-v4-border-color"></span>
+            <span class="flex-1">
+              <span class="mb-1 block h-3 w-2/5 rounded bg-v4-border-color"></span>
+              <span class="block h-2.5 w-3/5 rounded bg-v4-border-color"></span>
+            </span>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</app-sp-dropdown-shell>
+
+<ng-template #row let-payee>
+  <div
+    class="group flex w-full items-center gap-1 rounded-[9px] border-[1.5px] border-transparent pr-1 transition-colors hover:bg-v4-main-background-color"
+    [ngClass]="{ 'bg-v4-brand-tint': selected()?.id === payee.id, '!border-v4-brand-tint-strong': selected()?.id === payee.id }"
+  >
+    <button
+      type="button"
+      class="flex min-w-0 flex-1 items-center gap-2.5 p-2 text-left"
+      (click)="onSelectPayee(payee)"
+    >
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] transition-colors"
+        [class.bg-v4-primary-brand-color]="selected()?.id === payee.id"
+        [class.text-white]="selected()?.id === payee.id"
+        [ngClass]="{ 'bg-v4-brand-tint': selected()?.id !== payee.id }"
+        [class.text-v4-brand-border-color]="selected()?.id !== payee.id"
+      >
+        <lucide-icon [img]="UserIcon" [size]="15" />
+      </span>
+      <span class="min-w-0 flex-1">
+        <span
+          class="block truncate font-bold text-v4-main-text-color text-[13px]"
+          >{{ payeeLabel(payee) }}</span
+        >
+        @if (payee.email) {
+          <span
+            class="block truncate text-v4-tertiary-text-color text-[12px]"
+            >{{ payee.email }}</span
+          >
+        }
+      </span>
+    </button>
+    <button
+      type="button"
+      class="shrink-0 p-1 text-v4-subtle-text-color hover:text-v4-brand-border-color"
+      matTooltip="Edit payee"
+      matTooltipPosition="above"
+      (click)="$event.stopPropagation(); editPayeeRow(payee)"
+    >
+      <lucide-icon [img]="PencilIcon" [size]="14" />
+    </button>
+  </div>
+</ng-template>

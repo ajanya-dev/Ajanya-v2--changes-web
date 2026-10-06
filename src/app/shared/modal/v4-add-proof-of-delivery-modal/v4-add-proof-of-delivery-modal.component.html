@@ -1,0 +1,308 @@
+<div class="v4-add-proof-of-delivery-modal">
+  <!-- ==================== HEADER ==================== -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      Add Proof of Delivery
+    </h1>
+    <button
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- ==================== BODY ==================== -->
+  <div class="p-6 bg-v4-tertiary-background-color" [formGroup]="podForm">
+    <div class="flex flex-col gap-5">
+      <!-- 1. Send type radio -->
+      <div class="flex gap-7">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="v4_pod_send_type"
+            value="email"
+            [checked]="sendType() === 'email'"
+            (change)="changeType({ value: 'email' })"
+          />
+          <span class="text-sm text-v4-main-text-color">Email</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="v4_pod_send_type"
+            value="sms"
+            [checked]="sendType() === 'sms'"
+            (change)="changeType({ value: 'sms' })"
+          />
+          <span class="text-sm text-v4-main-text-color">Phone</span>
+        </label>
+      </div>
+
+      <!-- 2. Email / Phone input -->
+      @if (sendType() === "email") {
+        <div>
+          <app-common-input-v4
+            placeholder="Enter Email"
+            [type]="'email'"
+            formControlName="email"
+            [control]="podForm.controls.email"
+          />
+        </div>
+      } @else {
+        <div class="flex flex-col gap-1">
+          <app-phone-input-v4
+            formControlName="phone"
+            [control]="podForm.controls.phone"
+          />
+          <div class="flex justify-end">
+            <p class="text-sm font-semibold">
+              Cost:
+              <span class="text-common-green-color">
+                ${{ podForm.controls.phone.value ? "0.50" : "0.00" }}
+              </span>
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- 3. Signature -->
+      <div class="flex flex-col">
+        <div
+          class="border relative flex justify-center items-center border-v4-border-color w-full h-28 rounded-lg cursor-pointer"
+          [ngClass]="{ '!border-common-red-color': showError().signError }"
+          role="presentation"
+          (click)="addSignature()"
+        >
+          @if (signaturePadImg() === "") {
+            <div class="flex justify-center items-center h-full w-full gap-2">
+              <lucide-icon
+                [img]="PenLineIcon"
+                [size]="20"
+                class="text-v4-subtle-text-color"
+              />
+              <p
+                class="text-v4-main-text-color font-peridot text-sm font-semibold"
+              >
+                Add Signature
+              </p>
+            </div>
+          } @else {
+            <img
+              class="absolute top-3 left-[41%] right-0 h-24 w-32"
+              [src]="signaturePadImg()"
+              alt="Signature"
+            />
+          }
+        </div>
+        <div
+          class="flex px-1"
+          [ngClass]="{ 'justify-end': signaturePadImg() !== '' }"
+        >
+          @if (signaturePadImg() !== "") {
+            <span
+              role="presentation"
+              class="cursor-pointer text-common-red-color text-xs font-medium font-peridot"
+              (click)="removeSign($event)"
+            >
+              Clear
+            </span>
+          } @else if (showError().signError) {
+            <span
+              class="text-common-red-color text-xs font-medium font-peridot"
+            >
+              This field is required
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- 4. File upload or mobile-uploaded badge -->
+      @if (podFromPhone().length > 0) {
+        <div
+          class="flex justify-center cursor-pointer items-center h-10 bg-common-secondary-blue-color rounded relative"
+        >
+          <div class="flex w-full px-3 gap-2 items-center">
+            <lucide-icon
+              [img]="CircleCheckIcon"
+              [size]="16"
+              class="text-common-green-color"
+            />
+            <span
+              class="font-peridot font-normal text-main-text-color text-sm"
+              [matTooltip]="
+                podFromPhone()[0].document_name?.length > 37
+                  ? podFromPhone()[0].document_name
+                  : ''
+              "
+            >
+              {{ podFromPhone()[0].document_name | truncate: 37 }}
+            </span>
+          </div>
+        </div>
+      } @else {
+        <div class="flex flex-col gap-2">
+          <!-- Upload button -->
+          <button
+            (click)="chooseMedia(uploadedFileInput)"
+            class="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-v4-border-color rounded-lg hover:border-[#004a7c] hover:bg-[#004a7c]/5 transition-colors"
+            [ngClass]="{ '!border-common-red-color': showError().imageError }"
+            [matTooltip]="
+              uploadedFile()?.name && uploadedFile()!.name.length > 30
+                ? uploadedFile()!.name
+                : ''
+            "
+          >
+            @if (!uploadedFile()?.name) {
+              <lucide-icon
+                [img]="UploadIcon"
+                [size]="20"
+                class="text-v4-subtle-text-color"
+              />
+              <span class="text-sm font-medium text-v4-main-text-color">
+                Upload Image/Video
+              </span>
+            } @else {
+              <span class="text-sm text-v4-main-text-color">
+                {{ uploadedFile()!.name | truncate: 30 }}
+              </span>
+              <lucide-icon
+                [img]="CircleCheckIcon"
+                [size]="16"
+                class="text-common-green-color"
+              />
+            }
+          </button>
+
+          <input
+            id="v4-pod-file-upload"
+            class="hidden"
+            (change)="mediaPicked($event)"
+            type="file"
+            accept="image/*,video/*"
+            #uploadedFileInput
+            title=""
+          />
+
+          <!-- Preview toggle -->
+          @if (mediaPreview()) {
+            <div class="flex items-center justify-between">
+              <button
+                (click)="showPreview.set(!showPreview())"
+                class="flex items-center gap-1 cursor-pointer"
+              >
+                <lucide-icon [img]="ImageIcon" [size]="14" />
+                <span class="text-xs text-v4-primary-brand-bold-color hover:underline pt-0.5"
+                  >Preview</span
+                >
+              </button>
+              <button
+                (click)="removeMedia()"
+                class="text-xs text-common-red-color hover:underline cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+
+            @if (showPreview()) {
+              <div class="w-full flex justify-center items-center">
+                <div class="w-[300px]">
+                  @if (mediaType() === "image") {
+                    <img
+                      class="w-full h-full object-cover rounded-lg"
+                      [src]="mediaPreview()"
+                      alt="Captured Image"
+                    />
+                  }
+                  @if (mediaType() === "video") {
+                    <video
+                      class="w-full h-full object-cover rounded-lg"
+                      [src]="mediaPreview()"
+                      controls
+                    ></video>
+                  }
+                </div>
+              </div>
+            }
+          } @else if (showError().imageError) {
+            <span class="text-xs text-common-red-color"
+              >This field is required</span
+            >
+          }
+        </div>
+      }
+
+      <!-- 5. Send Link / QR Code action cards -->
+      <div class="w-full flex flex-wrap gap-3">
+        @for (item of proofsList; track item.action) {
+          <button
+            [disabled]="
+              (isQrLoading() && item.action === 'qr') ||
+              (isSmsLoading() && item.action === 'sms') ||
+              (item.action === 'sms' && smsCountdown() !== '')
+            "
+            (click)="sendProof(item.action)"
+            class="flex-1 min-w-[180px] bg-v4-secondary-background-color border border-v4-border-color rounded-lg min-h-10 px-5 flex gap-4 items-center cursor-pointer group hover:shadow-common-box-shadow hover:border-v4-primary-brand-bold-color transition-colors disabled:opacity-55 disabled:pointer-events-none"
+          >
+            <lucide-icon
+              [img]="item.icon"
+              [size]="18"
+              class="text-v4-primary-brand-bold-color group-hover:translate-x-0.5 transition-transform"
+            />
+            <span
+              class="text-v4-primary-brand-bold-color font-peridot text-sm font-semibold group-hover:translate-x-0.5 transition-transform"
+            >
+              @if (item.action === "sms") {
+                {{ isResendLink() ? "Resend Link" : "Send Link" }}
+                {{ smsCountdown() !== "" ? "(" + smsCountdown() + ")" : "" }}
+              } @else {
+                {{ item.name }}
+              }
+            </span>
+            @if (
+              (isQrLoading() && item.action === "qr") ||
+              (isSmsLoading() && item.action === "sms")
+            ) {
+              <lucide-icon
+                [img]="QrCodeIcon"
+                [size]="14"
+                class="ml-auto text-v4-primary-brand-bold-color animate-spin"
+              />
+            }
+          </button>
+        }
+      </div>
+
+      <!-- 6. Notes -->
+      <div>
+        <app-common-input-v4
+          placeholder="Note (Optional)"
+          [isFieldRequired]="false"
+          formControlName="notes"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="close()"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Submit"
+      width="120px"
+      (clickEvent)="submit()"
+      [loading]="isSubmitting()"
+      [disabled]="isSubmitting()"
+    />
+  </div>
+</div>

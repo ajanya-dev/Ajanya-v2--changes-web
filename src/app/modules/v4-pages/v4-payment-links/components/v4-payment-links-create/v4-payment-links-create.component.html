@@ -1,0 +1,693 @@
+@if (!isModal()) {
+  <!-- Layout adapts for full page vs modal -->
+  <div class="h-full overflow-y-auto bg-v4-main-background-color">
+    <div class="p-4 lg:p-8">
+      <!-- Header (only on full page; modal uses wrapper's fixed header) -->
+      <div class="flex items-center gap-4 mb-6">
+        <button
+          type="button"
+          class="flex items-center justify-center hover:opacity-70 transition-opacity cursor-pointer bg-transparent border-none p-0"
+          [class.hidden]="isModal()"
+          (click)="goBack()"
+        >
+          <lucide-icon name="arrow-left" [size]="20" class="text-v4-secondary-text-color" />
+        </button>
+        <div>
+          <h1 class="text-2xl font-bold text-v4-main-text-color">
+            @if (mode === 'update') {
+              Edit Payment Link
+            } @else {
+              Create Payment Link
+            }
+          </h1>
+          <p class="text-[0.9375rem] font-normal leading-snug text-v4-secondary-text-color mt-1">
+            @if (mode === 'update') {
+              Update your payment link settings
+            } @else {
+              Set up a new payment link for your customers
+            }
+          </p>
+        </div>
+      </div>
+  
+      <!-- Two Column Layout (single column when modal - no live preview) -->
+      <div class="grid grid-cols-1 gap-6" [class.xl:grid-cols-2]="!isModal()">
+  
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- LEFT COLUMN: Form                          -->
+        <!-- ═══════════════════════════════════════════ -->
+        <ng-container *ngTemplateOutlet="mainContent"></ng-container>
+  
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- RIGHT COLUMN: Live Preview (sticky) - hidden in modal -->
+        <!-- ═══════════════════════════════════════════ -->
+        @if (!isModal()) {
+          <div class="xl:sticky xl:top-6 xl:self-start">
+            <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+              <div class="mb-4">
+                <h3 class="text-lg font-bold text-v4-main-text-color flex items-center gap-2">
+                  <lucide-angular name="eye" [size]="20" class="text-v4-primary-brand-bold-color" />
+                  Link Preview
+                </h3>
+                <p class="text-sm text-v4-secondary-text-color mt-1">See how your payment link will appear to customers</p>
+              </div>
+              <div class="rounded-xl border border-v4-border-color overflow-hidden preview-keep-banner">
+                <app-payment-links-preview
+                  [config]="previewLinkConfig()"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}@else{
+  <div class="">
+    <!-- modal header -->
+    <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          Create Payment Link
+        </h1>
+        <h2 class="text-xs text-v4-subtle-text-color">Set up a new payment link for your customers</h2>
+      </div>
+      <div [mat-dialog-close]="false" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  
+    <!-- modal body start -->
+    <div class="p-6 bg-v4-tertiary-background-color max-h-[70vh] overflow-y-auto">
+      <ng-container *ngTemplateOutlet="mainContent"></ng-container>
+    </div>
+    <!-- modal body end -->
+  
+    <div class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color">
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        [textClasses]="'text-sm'"
+        (clickEvent)="goBack()"
+      />
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Create Payment Link"
+        [textClasses]="'text-sm'"
+        (clickEvent)="submit()"
+        [disabled]="isClick()"
+        [loading]="isClick()"
+      />
+    </div>
+  </div>
+}
+
+<ng-template #mainContent>
+  <div class="space-y-6">
+  
+    <!-- ── Section 1: Basic Information ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-semibold text-v4-main-text-color mb-2" for="payment-link-name">
+            Name <span class="text-v4-common-red-color">*</span>
+          </label>
+          <app-common-input-v4
+            [placeholder]="'Enter name'"
+            [formControl]="form.controls.name"
+            [control]="form.controls.name"
+          />
+        </div>
+
+        <!-- Recipient Bank -->
+        <div>
+          <label class="block text-sm font-semibold text-v4-main-text-color mb-2" for="payment-link-bank">
+            Recipient Bank <span class="text-v4-common-red-color">*</span>
+          </label>
+          <app-bank-ac-dropdown-v4
+            id="payment-link-bank"
+            [placeholder]="'Select recipient bank'"
+            permissionContext="forPaymentLink"
+            (ready)="onBankDropDownReady($event)"
+            (changeEvent)="onBankChange($event)"
+          />
+          @if (form.controls.bankAccount.touched && form.controls.bankAccount.hasError('required')) {
+            <p class="text-v4-common-red-color text-xs mt-1">Please select a bank account</p>
+          }
+        </div>
+
+        <!-- Company Name -->
+        <div>
+          <label class="block text-sm font-semibold text-v4-main-text-color mb-2" for="payment-link-company-name">
+            Company Name
+          </label>
+          <app-common-input-v4
+            [placeholder]="'Enter company name'"
+            [formControl]="form.controls.company_name"
+            [control]="form.controls.company_name"
+            [isFieldRequired]="false"
+            [maxLength]="20"
+          />
+        </div>
+
+        <!-- Comments -->
+        <div>
+          <label class="block text-sm font-semibold text-v4-main-text-color mb-2" for="payment-link-comments">
+            Comments
+          </label>
+          <app-common-input-v4
+            [placeholder]="'Add comments'"
+            [formControl]="form.controls.bottomText"
+            [control]="form.controls.bottomText"
+            [isFieldRequired]="false"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 2: Required Document Types ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+      <div class="flex items-center gap-2 mb-3">
+        <mat-checkbox
+          class="v4-checkbox"
+          [checked]="showMultipleDocumentTypes"
+          (change)="onDocumentTypesToggle($event.checked)"
+          color="primary"
+        >
+          <span class="text-base font-semibold text-v4-main-text-color ml-2">Document Types</span>
+        </mat-checkbox>
+        <lucide-angular
+          name="circle-help"
+          [size]="16"
+          class="text-v4-secondary-text-color cursor-pointer"
+          matTooltip="Request specific document types from customers when they make a payment"
+        />
+      </div>
+
+      @if (showMultipleDocumentTypes) {
+        <p class="text-xs text-v4-secondary-text-color mb-3">
+          Specify the documents the recipient must upload during payment.
+        </p>
+        <div class="space-y-3">
+          @for (field of form.controls.custom_fields.controls; track $index) {
+            <div class="flex items-start gap-2">
+              <app-common-input-v4
+                [placeholder]="'Enter required document name'"
+                [formControl]="field"
+                [control]="field"
+                [isFieldRequired]="false"
+                class="flex-1"
+              />
+              @if (form.controls.custom_fields.length < 3) {
+                <button
+                  type="button"
+                  (click)="addDocumentTypeField()"
+                  class="p-2.5 rounded-lg bg-v4-tertiary-background-color text-v4-primary-brand-bold-color hover:opacity-80 transition-colors border border-v4-border-color"
+                  matTooltip="Add another document type"
+                >
+                  <lucide-angular name="plus" [size]="18" />
+                </button>
+              }
+              <button
+                type="button"
+                (click)="removeDocumentTypeField($index)"
+                class="p-2.5 rounded-lg bg-common-secondary-red-color text-v4-common-red-color hover:bg-common-secondary-red-color transition-colors"
+                matTooltip="Remove this document type"
+              >
+                <lucide-angular name="trash-2" [size]="18" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ── Section 3: Payment Link (URL + Auto Redirect) ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6 overflow-visible">
+      <h3 class="text-base font-semibold text-v4-main-text-color mb-4 flex items-center gap-2">
+        <lucide-angular name="link" [size]="20" class="text-v4-primary-brand-bold-color" />
+        Payment Link
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Editable Short URL -->
+        <div>
+          <label class="block text-sm font-medium text-v4-main-text-color mb-2" for="payment-link-url">
+            Payment Link URL
+          </label>
+          <div [class]="shortUrlBorderClass()">
+            <span class="px-4 py-2.5 text-v4-secondary-text-color font-mono text-sm bg-v4-secondary-background-color border-r border-v4-border-color whitespace-nowrap">
+              {{ paymentShortLink }}/
+            </span>
+            <div class="flex-1 slug-input-no-border">
+              <app-common-input-v4
+                [placeholder]="'your-link-slug'"
+                [formControl]="form.controls.shortUrl"
+                [isFieldRequired]="false"
+              />
+            </div>
+            <!-- Validation status indicator (create/duplicate only) -->
+            @if (mode !== 'update') {
+              <div class="pr-3 flex items-center">
+                @if (shortUrlValidation().loading) {
+                  <lucide-angular name="loader" [size]="18" class="animate-spin text-v4-common-yellow-color" />
+                } @else if (!shortUrlValidation().valid && form.controls.shortUrl.value) {
+                  <lucide-angular name="circle-alert" [size]="18" class="text-v4-common-red-color" />
+                } @else if (form.controls.shortUrl.value && form.controls.shortUrl.valid && shortUrlValidation().valid) {
+                  <lucide-angular name="circle-check" [size]="18" class="text-v4-common-green-color" />
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Validation message (create/duplicate only) -->
+          @if (mode !== 'update') {
+            @if (form.controls.shortUrl.touched && form.controls.shortUrl.hasError('required')) {
+              <div class="flex items-center gap-1.5 mt-1.5">
+                <lucide-angular name="circle-alert" [size]="14" class="text-v4-common-red-color" />
+                <p class="text-xs text-v4-common-red-color font-medium">This field is required</p>
+              </div>
+            } @else if (form.controls.shortUrl.touched && form.controls.shortUrl.hasError('pattern')) {
+              <div class="flex items-center gap-1.5 mt-1.5">
+                <lucide-angular name="circle-alert" [size]="14" class="text-v4-common-red-color" />
+                <p class="text-xs text-v4-common-red-color font-medium">Only lowercase letters, numbers, and dashes allowed</p>
+              </div>
+            } @else if (!shortUrlValidation().valid && shortUrlValidation().message) {
+              <div class="flex items-center gap-1.5 mt-1.5">
+                <lucide-angular name="circle-alert" [size]="14" class="text-v4-common-red-color" />
+                <p class="text-xs text-v4-common-red-color font-medium">{{ shortUrlValidation().message }}</p>
+              </div>
+            } @else if (shortUrlValidation().loading) {
+              <p class="text-xs text-v4-common-yellow-color mt-1">Checking availability...</p>
+            } @else {
+              <p class="text-xs text-v4-secondary-text-color mt-1">Only lowercase letters, numbers, and dashes allowed</p>
+            }
+          }
+        </div>
+
+        <!-- Auto Redirect -->
+        <div>
+          <div class="flex items-center gap-2">
+            <mat-checkbox
+              class="v4-checkbox"
+              [formControl]="form.controls.autoRedirect"
+              color="primary"
+            >
+              <span class="text-sm font-semibold text-v4-main-text-color relative -top-[2px] ml-2">Auto Redirect</span>
+            </mat-checkbox>
+            <lucide-angular
+              name="circle-help"
+              [size]="16"
+              class="text-v4-secondary-text-color cursor-pointer"
+              matTooltip="By adding the URL, the user can redirect to the page after payment."
+            />
+          </div>
+          @if (form.controls.autoRedirect.value) {
+            <div class="mt-2 ml-8">
+              <app-v4-common-dropdown
+                [config]="{ placeholder: 'Enter redirect URL' }"
+                [listData]="redirectUrls"
+                [formControl]="form.controls.redirectUrl"
+                [clearable]="true"
+                [searchable]="true"
+                [addTag]="redirectUrlAddTag"
+                [addTagText]="'Use this URL'"
+                appendTo="body"
+              />
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 4: Logo Upload ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+      <input
+        #logoInput
+        type="file"
+        accept=".jpg,.png,.jpeg"
+        (change)="onLogoFileSelect($event)"
+        class="hidden"
+      />
+      @if (selectedLogoFile()) {
+        <div class="flex items-center justify-between px-4 py-3 rounded-lg border border-v4-border-color bg-v4-main-background-color">
+          <div class="flex items-center gap-2">
+            <lucide-angular name="circle-check" [size]="18" class="text-v4-common-green-color" />
+            <span class="text-sm text-v4-main-text-color">{{ selectedLogoFile()!.name }}</span>
+          </div>
+          <button
+            type="button"
+            (click)="removeLogo(logoInput)"
+            class="text-v4-secondary-text-color hover:text-v4-common-red-color transition-colors cursor-pointer"
+          >
+            <lucide-angular name="x" [size]="18" />
+          </button>
+        </div>
+      } @else {
+        <div class="flex justify-center">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Choose Logo"
+            lucideIcon="upload"
+            [textClasses]="'text-sm'"
+            (clickEvent)="logoInput.click()"
+          />
+        </div>
+      }
+    </div>
+
+    <!-- ── Section 5: Available Payment Channels ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6 overflow-visible">
+      <h3 class="text-lg font-bold text-v4-main-text-color mb-4 flex items-center gap-2">
+        <lucide-angular name="credit-card" [size]="20" class="text-v4-primary-brand-bold-color" />
+        Available Payment Channels
+      </h3>
+      <p class="text-sm text-v4-secondary-text-color mb-4">
+        Select which payment methods your customers can use
+      </p>
+
+      @if (paymentOptionsLoading()) {
+        <div class="flex items-center justify-center py-8">
+          <lucide-angular name="loader" [size]="24" class="animate-spin text-v4-primary-brand-color" />
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <!-- PayPal -->
+          @if (paymentOptions.paypal_payments.length > 0) {
+            <div
+              [class]="paypal()
+                ? 'rounded-xl border-2 transition-all border-[#004a7c] bg-[#004a7c]/5'
+                : 'rounded-xl border-2 transition-all border-v4-border-color'"
+            >
+              <label class="relative flex items-center gap-3 h-[60px] px-4 cursor-pointer" for="payment-link-paypal">
+                <mat-checkbox
+                  class="v4-checkbox"
+                  [checked]="paypal()"
+                  (change)="onPaypalToggle($event.checked)"
+                  color="primary"
+                />
+                <img src="assets/images/payment-links/paypal-logo.svg" alt="PayPal" class="h-16" />
+              </label>
+              @if (paypal()) {
+                <div class="px-4 pb-4">
+                  <app-v4-common-dropdown
+                    [config]="{ placeholder: 'Select PayPal account...', displayField: 'nickName', outputField: 'id', enableAddNew: true, addNewLabel: 'Add New PayPal Account', addNewSubLabel: 'Connect a new PayPal account' }"
+                    [listData]="paymentOptions.paypal_payments"
+                    [(ngModel)]="selectedPaypalId"
+                    (ngModelChange)="selectedPaypalId && onPaymentOptionSelect(2, selectedPaypalId!)"
+                    (buttonClick)="openAddCredentialModal(2)"
+                    [clearable]="false"
+                    [searchable]="false"
+                    appendTo="body"
+                  ></app-v4-common-dropdown>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Stripe -->
+          @if (paymentOptions.stripe_payments.length > 0) {
+            <div
+              [class]="stripe()
+                ? 'rounded-xl border-2 transition-all border-[#004a7c] bg-[#004a7c]/5'
+                : 'rounded-xl border-2 transition-all border-v4-border-color'"
+            >
+              <label class="relative flex items-center gap-3 h-[60px] px-4 cursor-pointer" for="payment-link-stripe">
+                <mat-checkbox
+                  class="v4-checkbox"
+                  [checked]="stripe()"
+                  (change)="onStripeToggle($event.checked)"
+                  color="primary"
+                />
+                <img src="assets/images/payment-links/stripe.svg" alt="Stripe" class="h-10" />
+              </label>
+              @if (stripe()) {
+                <div class="px-4 pb-4">
+                  <app-v4-common-dropdown
+                    [config]="{ placeholder: 'Select Stripe account...', displayField: 'nickName', outputField: 'id', enableAddNew: true, addNewLabel: 'Add New Stripe Account', addNewSubLabel: 'Connect a new Stripe account' }"
+                    [listData]="paymentOptions.stripe_payments"
+                    [(ngModel)]="selectedStripeId"
+                    (ngModelChange)="selectedStripeId && onPaymentOptionSelect(1, selectedStripeId!)"
+                    (buttonClick)="openAddCredentialModal(1)"
+                    [clearable]="false"
+                    [searchable]="false"
+                    appendTo="body"
+                  ></app-v4-common-dropdown>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Stripe Checkout (separate, below grid - always shown) -->
+        <div
+          [class]="stripeCheckout()
+            ? 'mt-3 p-3 rounded-xl border-2 transition-all border-[#004a7c] bg-[#004a7c]/5'
+            : 'mt-3 p-3 rounded-xl border-2 transition-all border-v4-border-color'"
+        >
+          <label class="flex items-center gap-3 cursor-pointer" for="payment-link-stripe-checkout">
+            <mat-checkbox
+              class="v4-checkbox"
+              [checked]="stripeCheckout()"
+              (change)="onStripeCheckoutToggle($event.checked)"
+              color="primary"
+            />
+            <img src="assets/images/payment-links/stripe-checkout-logo.png" alt="Stripe Checkout" class="h-8" />
+          </label>
+          @if (stripeCheckout()) {
+            <div class="mt-3 ml-8">
+              <app-v4-common-dropdown
+                [config]="{ placeholder: 'Select Stripe Checkout account...', displayField: 'nickName', outputField: 'id', enableAddNew: true, addNewLabel: 'Add New Stripe Checkout Account', addNewSubLabel: 'Connect a new Stripe Checkout account' }"
+                [listData]="paymentOptions.stripe_checkout_payments"
+                [(ngModel)]="selectedStripeCheckoutId"
+                (ngModelChange)="selectedStripeCheckoutId && onPaymentOptionSelect(4, selectedStripeCheckoutId!)"
+                (buttonClick)="openAddCredentialModal(4)"
+                [clearable]="false"
+                [searchable]="false"
+                appendTo="body"
+              ></app-v4-common-dropdown>
+            </div>
+          }
+        </div>
+
+        <!-- BitPay (separate, below grid) -->
+        @if (paymentOptions.bitpay_payments.length > 0) {
+          <div
+            [class]="bitpay()
+              ? 'mt-3 p-3 rounded-xl border-2 transition-all border-[#004a7c] bg-[#004a7c]/5'
+              : 'mt-3 p-3 rounded-xl border-2 transition-all border-v4-border-color'"
+          >
+            <div class="flex items-center gap-3">
+              <mat-checkbox
+                class="v4-checkbox"
+                [checked]="bitpay()"
+                (change)="onBitpayToggle($event.checked)"
+                color="primary"
+              />
+              <label class="flex items-center gap-2 cursor-pointer flex-1" for="payment-link-bitpay">
+                <img src="assets/images/payment-links/bitpay.svg" alt="BitPay" class="h-8" />
+                <div>
+                  <span class="text-sm font-semibold text-v4-main-text-color">BitPay</span>
+                  <p class="text-xs text-v4-secondary-text-color">Accept cryptocurrency payments</p>
+                </div>
+              </label>
+            </div>
+            @if (bitpay()) {
+              <div class="mt-3 ml-8">
+                <div class="flex items-center gap-2">
+                  <select
+                    class="flex-1 min-w-0 px-3 py-2 text-sm border border-v4-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004a7c] focus:border-[#004a7c] bg-v4-main-background-color text-v4-main-text-color cursor-pointer"
+                    [value]="selectedBitpayId || ''"
+                    (change)="selectedBitpayId = $any($event.target).value; onPaymentOptionSelect(3, selectedBitpayId!)"
+                  >
+                    @if (paymentOptions.bitpay_payments.length === 1) {
+                      <option [value]="paymentOptions.bitpay_payments[0].id">{{ paymentOptions.bitpay_payments[0].nickName }}</option>
+                    } @else {
+                      <option value="" disabled selected>Select BitPay account...</option>
+                      @for (item of paymentOptions.bitpay_payments; track item.id) {
+                        <option [value]="item.id">{{ item.nickName }}</option>
+                      }
+                    }
+                  </select>
+                  <app-common-button-v4
+                    [type]="{ style: 'primary', name: 'main' }"
+                    text="Add"
+                    lucideIcon="plus"
+                    (clickEvent)="openAddCredentialModal(3)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (
+          !paymentOptionsLoading() &&
+          paymentOptions.stripe_payments.length === 0 &&
+          paymentOptions.paypal_payments.length === 0 &&
+          paymentOptions.bitpay_payments.length === 0 &&
+          paymentOptions.stripe_checkout_payments.length === 0
+        ) {
+          <p class="text-xs text-v4-secondary-text-color mt-4">
+            No payment credentials configured. Payers will only be able to pay via eCheck.
+          </p>
+        }
+      }
+    </div>
+
+    <!-- ── Section 6: Set Expiry Rules ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+      <div class="flex items-center gap-3">
+        <mat-checkbox
+          class="v4-checkbox"
+          [checked]="showExpiryRules"
+          (change)="showExpiryRules = $event.checked"
+          color="primary"
+        />
+        <label class="text-base font-semibold text-v4-main-text-color cursor-pointer flex items-center gap-2" for="payment-link-set-expiry-rules">
+          <lucide-angular name="calendar" [size]="18" class="text-v4-primary-brand-bold-color" />
+          Set Expiry Rules
+        </label>
+      </div>
+
+      @if (showExpiryRules) {
+        <div class="mt-4 ml-8 space-y-4">
+          <!-- Expiration Date -->
+          <div>
+            <label class="block text-sm font-medium text-v4-main-text-color mb-2" for="payment-link-expiration-date">Expiration Date</label>
+            <app-v4-date-picker
+              [placeholder]="'Select date'"
+              [minDate]="minExpiryDate"
+              [formControl]="form.controls.expiryDate"
+              [control]="form.controls.expiryDate"
+              [isFieldRequired]="false"
+            />
+          </div>
+
+          <!-- Maximum Payments Allowed -->
+          <div>
+            <label class="block text-sm font-medium text-v4-main-text-color mb-2" for="payment-link-maximum-payments-allowed">Maximum Payments Allowed</label>
+            <app-common-input-v4
+              [placeholder]="'e.g., 100'"
+              [isNumberOnly]="true"
+              [numberType]="'numeric'"
+              [formControl]="form.controls.maxTransactionCount"
+              [control]="form.controls.maxTransactionCount"
+              [isFieldRequired]="false"
+            />
+          </div>
+
+          <!-- Total Payment Cap -->
+          <div>
+            <label class="block text-sm font-medium text-v4-main-text-color mb-2" for="payment-link-total-payment-cap">Total Payment Cap ($)</label>
+            <app-common-input-v4
+              [placeholder]="'e.g., 10000'"
+              [isNumberOnly]="true"
+              [numberType]="'decimal'"
+              [formControl]="form.controls.maxTotalAmount"
+              [control]="form.controls.maxTotalAmount"
+              [isFieldRequired]="false"
+            />
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Section 7: Advanced Settings ── -->
+    <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+      <h3 class="text-lg font-bold text-v4-main-text-color mb-6 flex items-center gap-2">
+        <lucide-angular name="settings" [size]="20" class="text-v4-primary-brand-bold-color" />
+        Advanced Settings
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Require Bank Verification -->
+        <div class="flex items-center gap-3">
+          <mat-checkbox
+            class="v4-checkbox"
+            [formControl]="form.controls.isBankVerifyRequired"
+            color="primary"
+          />
+          <label class="text-sm text-v4-main-text-color cursor-pointer" for="payment-link-require-bank-verification">
+            Require Bank Verification. If customer pay by Check/ACH
+          </label>
+        </div>
+
+        <!-- Deduct Transaction Fee -->
+        <div class="flex items-center gap-3">
+          <mat-checkbox
+            class="v4-checkbox"
+            [formControl]="form.controls.deduct_service_fee_from_main_amount"
+            color="primary"
+          />
+          <label class="text-sm text-v4-main-text-color cursor-pointer" for="payment-link-add-transaction-fee">
+            Add Transaction fee to the customer on top of the payment
+          </label>
+        </div>
+
+        <!-- Require Company Name -->
+        <div class="flex items-center gap-3">
+          <mat-checkbox
+            class="v4-checkbox"
+            [formControl]="form.controls.is_payee_company_required"
+            color="primary"
+          />
+          <label class="text-sm text-v4-main-text-color cursor-pointer" for="payment-link-require-company-name">
+            Require Company Name
+          </label>
+        </div>
+
+        <!-- Require Address -->
+        <div class="flex items-center gap-3">
+          <mat-checkbox
+            class="v4-checkbox"
+            [formControl]="form.controls.address_needed"
+            color="primary"
+          />
+          <label class="text-sm text-v4-main-text-color cursor-pointer" for="payment-link-require-address">
+            Require Address
+          </label>
+        </div>
+
+        <!-- Require Check Number -->
+        <div class="flex items-center gap-3">
+          <mat-checkbox
+            class="v4-checkbox"
+            [formControl]="form.controls.allow_check_number"
+            color="primary"
+          />
+          <label class="text-sm text-v4-main-text-color cursor-pointer" for="payment-link-require-check-number">
+            Require Check Number
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Action Buttons (full page only; modal uses wrapper's fixed footer) ── -->
+    @if (!isModal()) {
+      <div class="flex items-center justify-end gap-4 pb-4">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Cancel'"
+          [width]="'120px'"
+          [textClasses]="'text-sm'"
+          (clickEvent)="goBack()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="mode === 'update' ? 'Update Payment Link' : 'Create Payment Link'"
+          [width]="'200px'"
+          [textClasses]="'text-sm'"
+          [loading]="isClick()"
+          [disabled]="isClick()"
+          (clickEvent)="submit()"
+        />
+      </div>
+    }
+  </div>
+</ng-template>

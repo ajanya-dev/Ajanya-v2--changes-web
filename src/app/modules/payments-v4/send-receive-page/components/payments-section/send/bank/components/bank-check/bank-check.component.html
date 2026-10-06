@@ -1,0 +1,150 @@
+﻿<div [formGroup]="form" class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-[18px]">
+  <!--
+    Issue date. "Without Date" disables this field, so the tooltip says why it is shut
+    (bank-ac-check html L161-165).
+  -->
+  <!--
+    Schedule date. Checks are scheduled from the Checks page; this only shows when editing
+    one that already is, so its date can be moved (bank-ac-check `getCheckData` L730-741).
+  -->
+  @if (bankCheckService.isScheduled()) {
+    <div data-field="scheduleDate" class="flex flex-col">
+      <app-common-input-v4
+        variant="compact"
+        [fieldLabel]="'Schedule Date'"
+        [placeholder]="''"
+        [type]="'date'"
+        [isFieldRequired]="true"
+        [minDate]="minScheduleDate"
+        formControlName="scheduleDate"
+      />
+      <app-control-message-v4
+        [control]="form.controls.scheduleDate"
+        [customMessages]="{
+          required: 'Please choose a schedule date'
+        }"
+      />
+    </div>
+  }
+
+  <!--
+    Direct deposit's destination account. Optional: a deposit lands in the payee's
+    account and only names a bank when they withdraw. Hidden while the money is
+    being kept in their wallet, where it means nothing at all.
+  -->
+  @if (needsPayeeBank()) {
+    <div data-field="payeeBankAc" class="flex flex-col gap-[7px]">
+      <app-sp-payee-bank-dropdown
+        class="relative block"
+        label="Payee's Bank Account"
+        [walletOption]="true"
+        walletOptionLabel="Master Wallet"
+        [payeeId]="sendStateService.payeeId()"
+        [payeeEncryptedId]="
+          sendStateService.payeeDetails()?.payeeEncryptedId ?? ''
+        "
+        [payeeName]="
+          sendStateService.payeeDetails()?.payee_information?.payee_name ?? ''
+        "
+        [preselectBankId]="sendStateService.preferredBankId()"
+        [paymentMethod]="sendStateService.methodId()"
+        [reloadTrigger]="sendStateService.payeeBankReloadTrigger()"
+        [externalLoading]="sendStateService.payeeFetching()"
+        (bankSelected)="onDepositBankSelected($event)"
+      />
+      <app-control-message-v4
+        [control]="form.controls.payeeBankAc"
+        [customMessages]="{
+          required: 'Please select a bank account for the payee'
+        }"
+      />
+    </div>
+  }
+
+  <div data-field="category" class="flex flex-col">
+    <app-sp-category-dropdown
+      class="relative block"
+      formControlName="category"
+      [enableAddNew]="true"
+      (ready)="onCategoryReady($event)"
+      [zIndex]="0"
+    />
+    <app-control-message-v4
+      [control]="form.controls.category"
+      [customMessages]="{
+        required: 'Please choose a category'
+      }"
+    />
+  </div>
+
+  <div data-field="payeeIdNumber" class="flex flex-col">
+    <app-common-input-v4
+      variant="compact"
+      [fieldLabel]="('Payee' | whiteLabel: 'payeeName') + ' ID/Account Number'"
+      [placeholder]="('Payee' | whiteLabel: 'payeeName') + ' ID/Account Number'"
+      [isFieldRequired]="false"
+      [maxLength]="30"
+      formControlName="payeeIdNumber"
+    />
+    <app-control-message-v4 [control]="form.controls.payeeIdNumber" />
+  </div>
+
+  <div data-field="invoiceNumber" class="flex flex-col">
+    <app-common-input-v4
+      variant="compact"
+      [fieldLabel]="'Invoice number'"
+      [placeholder]="'Enter invoice number'"
+      [isFieldRequired]="false"
+      [maxLength]="190"
+      [showInfoIcon]="true"
+      [infoInLabel]="true"
+      [tooltip]="invoiceTooltip"
+      formControlName="invoiceNumber"
+    />
+    <app-control-message-v4 [control]="form.controls.invoiceNumber" />
+  </div>
+
+  <app-schedule-notify
+    [form]="form"
+    [frequencies]="recurringFrequencies()"
+    [defaultFrequency]="recurringDefaultFrequency()"
+    [endOptions]="recurringEndOptions()"
+    [showIncludeThisPayment]="showsIncludeThisPayment()"
+  >
+    @if (hasCustomFields()) {
+      <button
+        footerEnd
+        type="button"
+        class="cf-chip"
+        [class.on]="showCustomFields()"
+        (click)="toggleCustomFields()"
+      >
+        <lucide-icon [img]="PlusIcon" [size]="14" />
+        <span>Custom fields</span>
+        <span class="cnt">{{ customFields().length }}</span>
+      </button>
+    }
+  </app-schedule-notify>
+
+  @if (showCustomFields() && hasCustomFields()) {
+    <div class="cond-block md:col-span-2">
+      <div class="cond-title">Custom fields</div>
+      <div class="field-grid">
+        @for (field of customFields(); track field.id) {
+          <div class="flex flex-col gap-[7px]">
+            <app-common-input-v4
+              variant="compact"
+              [fieldLabel]="field.custom_element"
+              [placeholder]="'Enter ' + field.custom_element"
+              [isFieldRequired]="false"
+              [maxLength]="150"
+              [ngModelOptions]="{ standalone: true }"
+              [ngModel]="customFieldValue(field.custom_element)"
+              (ngModelChange)="onCustomFieldInput(field.custom_element, $event)"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

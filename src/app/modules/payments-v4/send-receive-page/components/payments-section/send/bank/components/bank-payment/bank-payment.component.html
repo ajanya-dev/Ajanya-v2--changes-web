@@ -1,0 +1,85 @@
+﻿<div [formGroup]="form" class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-[18px]">
+  <!--
+    Payee bank account. A wire must have one; an ACH falls back to the payee's default
+    direct-deposit account. Vendor-decide names none — the vendor decides where it lands.
+  -->
+  @if (needsPayeeBank()) {
+    <div data-field="payeeBankAc" class="flex flex-col">
+      <app-sp-payee-bank-dropdown
+        class="relative block"
+        [required]="isWire()"
+        [ngClass]="
+          isApprovedReadOnly() ? 'disable_field pointer-events-none' : ''
+        "
+        [payeeId]="sendStateService.payeeId()"
+        [payeeEncryptedId]="sendStateService.payeeDetails()?.payeeEncryptedId ?? ''"
+        [payeeName]="sendStateService.payeeDetails()?.payee_information?.payee_name ?? ''"
+        [preselectBankId]="sendStateService.preferredBankId()"
+        [paymentMethod]="sendStateService.methodId()"
+        [reloadTrigger]="sendStateService.payeeBankReloadTrigger()"
+        [externalLoading]="sendStateService.payeeFetching()"
+        (bankSelected)="onBankListSelected($event)"
+        (wireAllowedChange)="onWireAllowedChange($event)"
+      />
+      <app-control-message-v4
+        [control]="form.controls.payeeBankAc"
+        [customMessages]="{
+          required: 'Please select a bank account for the payee'
+        }"
+      />
+    </div>
+  }
+
+  <div data-field="category" class="flex flex-col">
+    <app-sp-category-dropdown
+      class="relative block"
+      [ngClass]="
+        isApprovedReadOnly() ? 'disable_field pointer-events-none' : ''
+      "
+      formControlName="category"
+      [zIndex]="0"
+      [enableAddNew]="true"
+      (ready)="onCategoryReady($event)"
+    />
+  </div>
+
+  <div data-field="payeeIdNumber" class="flex flex-col">
+    <app-common-input-v4
+      variant="compact"
+      [fieldLabel]="('Payee' | whiteLabel: 'payeeName') + ' ID/Account Number'"
+      [placeholder]="('Payee' | whiteLabel: 'payeeName') + ' ID/Account Number'"
+      [isFieldRequired]="false"
+      [maxLength]="30"
+      [readOnly]="isApprovedReadOnly()"
+      [isApprovedReadOnly]="isApprovedReadOnly()"
+      formControlName="payeeIdNumber"
+    />
+    <app-control-message-v4 [control]="form.controls.payeeIdNumber" />
+  </div>
+
+  <div data-field="invoiceNumber" class="flex flex-col">
+    <app-common-input-v4
+      variant="compact"
+      [fieldLabel]="'Invoice number'"
+      [placeholder]="'Enter invoice number'"
+      [isFieldRequired]="false"
+      [maxLength]="320"
+      [showInfoIcon]="true"
+      [infoInLabel]="true"
+      [tooltip]="invoiceTooltip"
+      [readOnly]="isApprovedReadOnly()"
+      [isApprovedReadOnly]="isApprovedReadOnly()"
+      formControlName="invoiceNumber"
+    />
+    <app-control-message-v4 [control]="form.controls.invoiceNumber" />
+  </div>
+
+
+  <app-schedule-notify
+    [form]="form"
+    [allowScheduledDate]="false"
+    [frequencies]="frequencies"
+    [endOptions]="recurringEndOptions"
+    [showIncludeThisPayment]="false"
+  />
+</div>

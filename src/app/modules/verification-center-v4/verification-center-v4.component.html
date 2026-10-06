@@ -1,0 +1,200 @@
+<div
+  class="w-full max-w-[1200px] mx-auto flex flex-col gap-4 px-2 lg:px-6 py-2 font-peridot"
+>
+  @if (loading()) {
+    <!-- Skeleton: greeting -->
+    <div class="flex flex-col gap-2">
+      <div class="shimmer h-6 w-80 rounded"></div>
+      <div class="shimmer h-4 w-64 rounded"></div>
+    </div>
+
+    <!-- Skeleton: section card -->
+    <div
+      class="bg-v4-secondary-background-color border border-v4-border-color rounded-2xl p-5 flex flex-col gap-4"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex flex-col gap-2 flex-1">
+          <div class="shimmer h-5 w-64 rounded"></div>
+          <div class="shimmer h-3 w-96 max-w-full rounded"></div>
+        </div>
+        <div class="shimmer h-7 w-32 rounded-full"></div>
+      </div>
+      <div class="flex gap-1.5">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="shimmer flex-1 h-[7px] rounded-full"></div>
+        }
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        @for (i of [1, 2, 3]; track i) {
+          <div
+            class="rounded-xl p-5 border border-v4-border-color flex flex-col gap-3 min-h-[360px]"
+          >
+            <div class="flex items-center justify-between">
+              <div class="shimmer w-10 h-10 rounded-xl"></div>
+              <div class="shimmer h-6 w-20 rounded-full"></div>
+            </div>
+            <div class="shimmer h-4 w-40 rounded"></div>
+            <div class="shimmer h-3 w-full rounded"></div>
+            <div class="shimmer h-20 w-full rounded-xl"></div>
+            <div class="flex-1"></div>
+            <div class="shimmer h-12 w-full rounded-xl"></div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <!-- Greeting -->
+    <div class="flex flex-col gap-0.5">
+      <h1 class="m-0 text-xl font-bold text-v4-main-text-color">
+        Hi {{ companyName() }}, welcome to {{ productName }}
+      </h1>
+      <p class="m-0 text-sm text-v4-secondary-text-color">
+        @if (allDone()) {
+          Your account is verified and ready to move money.
+        } @else {
+          Finish verification to start moving money.
+        }
+      </p>
+    </div>
+
+    <!-- Verification section -->
+    <section
+      class="bg-v4-secondary-background-color border border-v4-border-color rounded-2xl shadow-sm p-5 flex flex-col gap-4"
+    >
+      <div class="flex flex-col gap-3">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="flex flex-col gap-0.5 flex-1 min-w-[260px]">
+            <h2 class="m-0 text-[17px] font-bold text-v4-main-text-color">
+              @if (allDone()) {
+                Your account is fully set up
+              } @else {
+                Finish setting up your account
+              }
+            </h2>
+            <p class="m-0 text-[13px] text-v4-secondary-text-color">
+              @if (allDone()) {
+                All three verification steps are complete. You've unlocked 10+
+                payment methods, credit card rewards, and funds ready to send.
+              } @else if (completedCount() === 0) {
+                Complete {{ totalSteps() }} quick steps to unlock 10+ payment
+                methods, funds ready to send, and credit card rewards.
+              } @else {
+                {{ remainingSteps() }} more
+                {{ remainingSteps() === 1 ? 'step' : 'steps' }} to unlock 10+
+                payment methods, funds ready to send, and credit card rewards.
+              }
+            </p>
+          </div>
+          <span
+            class="inline-flex items-center gap-1.5 self-start text-xs font-bold rounded-full px-3 py-1.5 border whitespace-nowrap"
+            [class]="
+              completedCount() > 0
+                ? 'bg-v4-badge-success-bg-color text-v4-badge-success-text-color border-v4-border-success-subtle'
+                : 'bg-v4-badge-neutral-bg-color text-v4-badge-neutral-text-color border-v4-border-color'
+            "
+          >
+            @if (completedCount() > 0) {
+              <lucide-angular [img]="Check" [size]="13"></lucide-angular>
+            }
+            {{ completedCount() }} of {{ totalSteps() }} completed
+          </span>
+        </div>
+
+        <!-- Progress segments -->
+        <div class="flex gap-1.5">
+          @for (segment of progressSegments(); track $index) {
+            <div
+              class="flex-1 h-[7px] rounded-full transition-colors duration-300"
+              [class]="segment"
+            ></div>
+          }
+        </div>
+
+        <!-- Progress strip -->
+        @if (almostThere() || allDone()) {
+          <div
+            class="flex items-center gap-3 flex-wrap rounded-xl px-3.5 py-3 border"
+            [class]="
+              allDone()
+                ? 'bg-v4-surface-success border-v4-border-success-subtle'
+                : 'bg-v4-input-background-color border-v4-border-color'
+            "
+          >
+            <lucide-angular
+              [img]="allDone() ? Check : ArrowRight"
+              [size]="16"
+              class="flex-shrink-0"
+              [class]="
+                allDone() ? 'text-v4-text-success' : 'text-v4-secondary-text-color'
+              "
+            ></lucide-angular>
+            <span
+              class="flex-1 min-w-[200px] text-[13px] font-semibold"
+              [class]="
+                allDone() ? 'text-v4-text-success' : 'text-v4-secondary-text-color'
+              "
+            >
+              @if (allDone()) {
+                All set — your account is verified and ready to move money.
+              } @else {
+                Almost there — add a payment source to start moving money.
+              }
+            </span>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-bold cursor-pointer border-0 whitespace-nowrap hover:brightness-110"
+              [class]="
+                allDone()
+                  ? 'bg-v4-primary-brand-color text-white'
+                  : 'bg-v4-primary-brand-color text-white'
+              "
+              (click)="
+                allDone() ? onTryCheckNow() : openPaymentSourceModal()
+              "
+            >
+              {{ allDone() ? 'Make Payment' : 'Add Payment Source' }}
+              <lucide-angular [img]="ArrowRight" [size]="14"></lucide-angular>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Step cards -->
+      <app-current-step-focus
+        [stepConfigs]="allStepConfigs"
+        [stepStatuses]="stepStatuses()"
+        [completedCount]="completedCount()"
+        [emailAddress]="emailAddress()"
+        [emailVerified]="emailVerified()"
+        [phoneVerified]="phoneVerified()"
+        (actionClicked)="onStepAction($event)"
+      />
+
+      <!-- Support row -->
+      <div
+        class="flex items-center gap-2.5 border-t border-v4-border-color pt-4"
+      >
+        <div
+          class="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0 bg-v4-badge-info-bg-color"
+        >
+          <lucide-angular
+            [img]="MessageCircle"
+            [size]="14"
+            class="text-v4-badge-info-text-color"
+          ></lucide-angular>
+        </div>
+        <span class="flex-1 text-[12.5px] text-v4-secondary-text-color">
+          Stuck on a step? Our team can walk you through verification in
+          minutes.
+        </span>
+        <button
+          type="button"
+          class="text-[12.5px] font-bold rounded-lg px-3.5 py-2 cursor-pointer whitespace-nowrap bg-transparent border border-v4-border-color text-v4-primary-brand-bold-color hover:bg-v4-list-hover-color"
+          (click)="goToLiveChat()"
+        >
+          Chat with support
+        </button>
+      </div>
+    </section>
+  }
+</div>

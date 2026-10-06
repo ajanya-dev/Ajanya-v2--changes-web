@@ -1,0 +1,607 @@
+<div class="h-full flex flex-col">
+  <div
+    class="top-section h-[38px] flex justify-between items-center px-5"
+    [ngClass]="{ 'shadow-common-tab-bottom z-50': isShadow }"
+  >
+    <div
+      class="h-full flex-1 flex justify-between items-center border-b border-input-border-color"
+      [ngClass]="{ '!border-b-0': isShadow }"
+    >
+      @if (
+        this.walletDataService.onBoardingStatusSignal() === "rejected" ||
+        walletDataService.walletDataSignal()?.id === ""
+      ) {
+        <div
+          tabindex="0"
+          class="h-full flex justify-center items-center border-b-[3px] border-common-blue-color px-4"
+        >
+          <div class="font-roboto font-semibold text-xs text-main-text-color">
+            All
+          </div>
+        </div>
+      } @else {
+        <div class="tab-group flex h-full">
+          <ng-container>
+            @for (tab of tabs; track tab) {
+              <div
+                role="presentation"
+                class="tab-item"
+                (click)="toggleAccountDetails(tab.value)"
+                [ngClass]="{
+                  'border-b-common-blue-color border-b-4':
+                    currentTab === tab.value
+                }"
+              >
+                {{ tab.label }}
+                <div
+                  class="ml-1"
+                  [ngClass]="{
+                    skelton:
+                      walletDataService.onBoardingStateSignal()
+                        .onBoardingLoading
+                  }"
+                >
+                  @if (tab.value === "card") {
+                    <span class="text-sm text-main-text-color"
+                      >({{
+                        walletDataService.totalCreatedcardCount() || 0
+                      }})</span
+                    >
+                  }
+                </div>
+              </div>
+            }
+          </ng-container>
+        </div>
+      }
+      <div class="flex gap-5 items-center">
+        <span
+          class="v35-labels underline"
+          role="presentation"
+          (click)="openPrenoteAch()"
+          >ACH Prenote Transactions</span
+        >
+        <!-- <span
+          class="v35-labels underline"
+          role="presentation"
+          (click)="openZelleTransactions()"
+          >Zelle Transactions</span
+        > -->
+        <fa-icon
+          class="cursor-pointer text-secondary-text-color"
+          matTooltip="Settings"
+          [icon]="['fas', 'gear']"
+          (click)="openSettings()"
+        ></fa-icon>
+        <app-demo-video slug="v35Wallet"></app-demo-video>
+      </div>
+    </div>
+  </div>
+  @if (currentTab === "details") {
+    <div
+      class="main-section flex-1 flex flex-col overflow-auto px-5"
+      appScrollListener
+      #mainSection
+      (scroll)="onScroll()"
+    >
+      @if (walletDataService.walletDataSignal()) {
+        <div class="flex gap-4 items-center pb-3">
+          <div class="grow">
+            <div class="flex-col flex gap-2 py-3 sm:flex-row">
+              @if (
+                this.walletDataService.walletAccountsSignal()?.data?.length !==
+                  0 && !walletDataService.isLoading
+              ) {
+                <div class="flex gap-2 max-sm:justify-between">
+                  <app-common-button-v35
+                    class="w-24 max-sm:w-full"
+                    text="Send"
+                    [type]="{ style: 'green', name: 'money-action' }"
+                    toolTip="Send payments from your wallet"
+                    width="100%"
+                    (clickEvent)="sendPayments()"
+                  ></app-common-button-v35>
+                  <app-common-button-v35
+                    class="w-24 max-sm:w-full"
+                    text="Transfer"
+                    [type]="{ style: 'blue', name: 'money-action' }"
+                    toolTip="Transfer the fund from your wallet"
+                    width="100%"
+                    (clickEvent)="
+                      transferFromWallet(walletDataService.walletDataSignal())
+                    "
+                  ></app-common-button-v35>
+                </div>
+              }
+              @if (
+                this.walletDataService.walletAccountsSignal()?.data?.length !==
+                  0 && walletDataService.isLoading
+              ) {
+                <div class="flex gap-2 max-sm:justify-between">
+                  <div class="w-24 h-8 max-sm:w-full skelton"></div>
+                  <div class="w-24 h-8 max-sm:w-full skelton"></div>
+                </div>
+              }
+              @if (
+                this.walletDataService.walletAccountsSignal()?.data?.length !==
+                  0 && !walletDataService.isLoading
+              ) {
+                <div class="flex gap-2">
+                  <app-common-button-v35
+                    class="w-24 max-sm:w-full"
+                    text="Withdraw"
+                    [type]="{ style: 'violet', name: 'money-action' }"
+                    toolTip="Withdraw fund from your wallet"
+                    width="100%"
+                    (clickEvent)="
+                      menuAction(
+                        walletDataService.walletDataSignal()?.id !== ''
+                          ? walletDataService.walletDataSignal()
+                          : undefined,
+                        4
+                      )
+                    "
+                  ></app-common-button-v35>
+                  <app-common-button-v35
+                    class="w-24 max-sm:w-full"
+                    text="Recharge"
+                    [type]="{ style: 'blue', name: 'money-action' }"
+                    toolTip="Recharge your credit from your wallet"
+                    width="100%"
+                    (clickEvent)="
+                      menuAction(
+                        walletDataService.walletDataSignal()?.id !== ''
+                          ? walletDataService.walletDataSignal()
+                          : undefined,
+                        2
+                      )
+                    "
+                  ></app-common-button-v35>
+
+                  @if (!isArcharina) {
+                    <app-common-button-v35
+                      class="w-34 max-sm:w-full"
+                      text="Issue Visa Card"
+                      [type]="{ style: 'blue', name: 'money-action' }"
+                      backGroundInput="var(--common-yellow-color)"
+                      toolTip="Issue Visa Card"
+                      width="100%"
+                      (clickEvent)="
+                        menuAction(walletDataService.walletDataSignal(), 10)
+                      "
+                    ></app-common-button-v35>
+                  }
+                </div>
+              }
+              @if (
+                this.walletDataService.walletAccountsSignal()?.data?.length !==
+                  0 && walletDataService.isLoading
+              ) {
+                <div class="flex gap-2 max-sm:justify-between">
+                  <div class="w-24 h-8 max-sm:w-full skelton"></div>
+                  <div class="w-24 h-8 max-sm:w-full skelton"></div>
+                </div>
+              }
+              @if (
+                this.walletDataService.onBoardingStatusSignal() === "index" &&
+                !this.walletDataService.onBoardingLoadingSignal() &&
+                walletDataService.walletDataSignal()?.id !== "" &&
+                !walletDataService.isLoading
+              ) {
+                <div class="flex gap-2">
+                  <!-- <app-common-button-v35
+                    class="w-24 max-sm:w-full"
+                    text="Issue Card"
+                    [type]="{ style: 'general', name: 'money-action' }"
+                    customClasses="bg-[#004a7c] text-[#FFFFFF]"
+                    toolTip="Create Visa Credit or Gift Cards instantly using your wallet."
+                    width="100%"
+                    (clickEvent)="
+                      menuAction(
+                        walletDataService.walletDataSignal()?.id !== ''
+                          ? walletDataService.walletDataSignal()
+                          : undefined,
+                        7
+                      )
+                    "
+                  ></app-common-button-v35> -->
+                  <app-common-button-v35
+                    class="w-24 max-sm:w-full"
+                    text="All Cards"
+                    [type]="{ style: 'general', name: 'money-action' }"
+                    customClasses="bg-[#3A2E78] text-[#FFFFFF]"
+                    toolTip="View and manage all your Visa Credit and Gift Cards in one place."
+                    width="100%"
+                    (clickEvent)="
+                      menuAction(
+                        walletDataService.walletDataSignal()?.id !== ''
+                          ? walletDataService.walletDataSignal()
+                          : undefined,
+                        8
+                      )
+                    "
+                  ></app-common-button-v35>
+                </div>
+              }
+              @if (
+                walletDataService.walletDataSignal()?.id !== "" &&
+                !walletDataService.isLoading &&
+                !isArcharina
+              ) {
+                <app-common-button-v35
+                  class="max-sm:w-full"
+                  text="International Payments"
+                  [type]="{ style: 'general', name: 'money-action' }"
+                  customClasses="bg-[#3A2E78] text-[#FFFFFF]"
+                  width="100%"
+                  (clickEvent)="
+                    menuAction(
+                      walletDataService.walletDataSignal()?.id !== ''
+                        ? walletDataService.walletDataSignal()
+                        : undefined,
+                      9
+                    )
+                  "
+                />
+              }
+              @if (
+                (this.walletDataService.onBoardingLoadingSignal() &&
+                  walletDataService.walletDataSignal()?.id !== "") ||
+                walletDataService.isLoading
+              ) {
+                <div class="flex gap-2 max-sm:justify-between">
+                  <div class="w-24 h-8 max-sm:w-full skelton"></div>
+                  <div class="w-24 h-8 max-sm:w-full skelton"></div>
+                </div>
+              }
+            </div>
+            @if (
+              this.walletDataService.walletAccountsSignal()?.data?.length !==
+                0 && !walletDataService.isLoading
+            ) {
+              <div class="bg-secondary-background-color rounded-[3px]">
+                <div
+                  class="wallet-information-container px-4 pt-3 pb-6 flex flex-col gap-2"
+                >
+                  <div class="flex justify-between">
+                    <div class="w-fit rounded-[5px] flex items-center gap-2">
+                      @if (walletDataService.walletDataSignal()?.logo) {
+                        <img
+                          [ngSrc]="walletDataService.walletDataSignal()?.logo"
+                          alt="logo"
+                          class="rounded-full"
+                          width="32"
+                          height="32"
+                        />
+                      }
+                      <h1
+                        class="font-inter text-base font-medium text-secondary-text-color px-1 bg-main-background-color"
+                      >
+                        {{
+                          walletDataService.walletDataSignal()?.id !== ""
+                            ? walletDataService.walletDataSignal()?.walletName
+                            : "All Wallets"
+                        }}
+                      </h1>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div
+                        class="block"
+                        *ngIf="walletDataService.walletDataSignal()?.id !== ''"
+                      >
+                        <span
+                          role="presentation"
+                          (click)="
+                            walletDataService.downloadStatement(
+                              walletDataService.walletDataSignal()?.uuId
+                            )
+                          "
+                          class="gap-1 v35-labels items-center flex text-end"
+                          >Download Statement</span
+                        >
+                      </div>
+
+                      @if (
+                        walletDataService.walletDataSignal()?.id !== "" &&
+                        !walletDataService.walletDataSignal()?.logo
+                      ) {
+                        <div class="flex items-center gap-2">
+                          <app-common-button-v35
+                            text="Add Logo for Wallet"
+                            [type]="{ style: 'filled', name: 'main' }"
+                            toolTip="Add logo to your wallet"
+                            (clickEvent)="openLogoUpdateModal()"
+                          ></app-common-button-v35>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="flex gap-7">
+                    <div>
+                      <h1
+                        class="font-inter font-normal text-xs text-secondary-text-color pb-1"
+                      >
+                        Available Balance
+                      </h1>
+                      <p
+                        class="font-inter text-base font-semibold text-main-text-color"
+                      >
+                        ${{
+                          walletDataService.walletDataSignal()?.id !== ""
+                            ? walletDataService.walletDataSignal()
+                                ?.availableBalance
+                            : walletDataService.walletAccountsSignal()
+                                ?.totalAvailableBalance
+                        }}
+                      </p>
+                    </div>
+                    <!-- Hide when screen size less than 640px -->
+                    <div class="flex items-end max-sm:hidden">
+                      <app-common-button-v35
+                        class="add-fund-button"
+                        text="Add Fund"
+                        [type]="'list'"
+                        toolTip="Add fund to your wallet"
+                        (clickEvent)="
+                          menuAction(walletDataService.walletDataSignal(), 1)
+                        "
+                      ></app-common-button-v35>
+                    </div>
+                    <div>
+                      <h1
+                        class="font-inter font-normal text-xs text-secondary-text-color pb-1"
+                      >
+                        Current Balance
+                      </h1>
+                      <p
+                        class="font-inter text-base font-semibold text-main-text-color"
+                      >
+                        ${{
+                          walletDataService.walletDataSignal()?.id !== ""
+                            ? walletDataService.walletDataSignal()
+                                ?.currentBalance
+                            : walletDataService.walletAccountsSignal()
+                                ?.totalCurrentBalance
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                  <!-- shown only screen size less than 640px -->
+                  <div class="hidden max-sm:flex">
+                    <app-common-button-v35
+                      text="Add Fund"
+                      [type]="'list'"
+                      toolTip="Add fund to your wallet"
+                      (clickEvent)="
+                        menuAction(walletDataService.walletDataSignal(), 1)
+                      "
+                    ></app-common-button-v35>
+                  </div>
+                </div>
+              </div>
+            }
+            @if (
+              this.walletDataService.walletAccountsSignal()?.data?.length !==
+                0 && walletDataService.isLoading
+            ) {
+              <div>
+                <div class="skelton h-28 w-full"></div>
+              </div>
+            }
+          </div>
+          @if (
+            walletDataService.walletDataSignal()?.id !== "" &&
+            this.walletDataService.onBoardingStatusSignal() !== "rejected" &&
+            !isArcharina
+          ) {
+            <div
+              class="aspect-[85.60/53.98] w-[273px] h-[170px] bg-[#d5af34] p-2 flex flex-col justify-between rounded-[9px] shrink-0 border-[.66px] border-[#fffac2] shadow-[-5px_5px_4px_0px_rgba(0,0,0,0.18)] ml-2 relative"
+              [ngClass]="{
+                skelton:
+                  this.walletDataService.walletAccountsSignal()?.data
+                    ?.length !== 0 && walletDataService.isLoading
+              }"
+            >
+              <div class="flex justify-end">
+                <img
+                  ngSrc="assets/images/virtual-card/zm logo.svg"
+                  alt=""
+                  width="94"
+                  height="25"
+                  [ngClass]="{
+                    'opacity-50': !walletDataService.selectedCardSignal()
+                  }"
+                />
+              </div>
+              <div class="flex flex-col">
+                <div class="flex flex-col px-4">
+                  <div
+                    class="flex gap-1"
+                    [ngClass]="{
+                      'opacity-50': !walletDataService.selectedCardSignal()
+                    }"
+                  >
+                    <img
+                      ngSrc="assets/images/virtual-card/chip.svg"
+                      alt=""
+                      width="35"
+                      height="35"
+                    />
+                    <img
+                      ngSrc="assets/images/virtual-card/wifi.svg"
+                      alt=""
+                      width="18"
+                      height="24"
+                    />
+                    <div></div>
+                  </div>
+                  <div class="credit-card-font font-normal">
+                    @if (!walletDataService.cardLoadingSignal()) {
+                      <div
+                        class="text-white text-[19px]"
+                        [ngClass]="{
+                          'text-[20.8px]':
+                            !walletDataService.selectedCardSignal()?.last4
+                        }"
+                      >
+                        **** **** ****
+                        {{
+                          walletDataService.selectedCardSignal()
+                            ? walletDataService.selectedCardSignal()?.last4
+                            : "****"
+                        }}
+                      </div>
+                    } @else {
+                      <div class="card-skeleton h-7 w-[222px]"></div>
+                    }
+                  </div>
+                  <div
+                    class="flex justify-end items-center lato-regular text-white text-[12px]"
+                    [ngClass]="{
+                      'opacity-50': !walletDataService.selectedCardSignal()
+                    }"
+                  >
+                    <div class="whitespace-nowrap pr-[2px]">CVV</div>
+                    <div class="text-white">****</div>
+                  </div>
+                </div>
+                <div
+                  class="flex flex-col pl-4"
+                  [ngClass]="{
+                    'opacity-50': !walletDataService.selectedCardSignal()
+                  }"
+                >
+                  <div class="flex items-center justify-center">
+                    <div
+                      class="flex flex-col items-start lato-regular text-white text-[7px] pr-[2px] leading-tight"
+                    >
+                      <div>VALID</div>
+                      <div>THRU</div>
+                    </div>
+                    <div class="text-white font-roboto text-lg">**/**</div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div
+                        class="text-white font-medium truncate font-roboto text-base leading-[14px]"
+                        style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                        [matTooltip]="
+                          walletDataService.selectedCardSignal()?.nameOnCard
+                        "
+                      >
+                        {{
+                          walletDataService.selectedCardSignal()?.nameOnCard
+                            | truncate: 25
+                        }}
+                      </div>
+                    </div>
+                    <div>
+                      <img
+                        ngSrc="assets/images/virtual-card/visa logo.svg"
+                        alt="visa-logo"
+                        width="59"
+                        height="18"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              @if (
+                !walletDataService.selectedCardSignal() &&
+                !walletDataService.cardLoadingSignal() &&
+                !walletDataService.onBoardingLoadingSignal()
+              ) {
+                <div
+                  class="!absolute w-full h-full flex justify-center items-center"
+                >
+                  <div class="h-full w-full flex justify-center items-center">
+                    <app-common-button-v35
+                      text="Create First Card"
+                      [type]="{ name: 'main', style: 'filled' }"
+                      (clickEvent)="
+                        createCardPage()
+                      "
+                      [disabled]="
+                        raincardHelperService.userService.isUserDataLoading ||
+                        raincardHelperService.rainCardLoading
+                      "
+                      [loading]="
+                        raincardHelperService.userService.isUserDataLoading ||
+                        raincardHelperService.rainCardLoading
+                      "
+                    ></app-common-button-v35>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+      <div class="flex-1">
+        <app-wallet-transactions-v35></app-wallet-transactions-v35>
+      </div>
+    </div>
+    @if (
+      this.walletDataService.walletAccountsSignal()?.data?.length === 0 &&
+      !walletDataService.isLoading
+    ) {
+      <div class="h-full flex flex-col justify-center items-center">
+        <img
+          class="nodata_img"
+          ngSrc="/assets/images/warning/empty-activity.svg"
+          alt="Data not found"
+          width="80"
+          height="40"
+        />
+        @if (walletDataService.searchInput) {
+          <div class="text-lg font-normal">Sorry, No results found.</div>
+        } @else {
+          <div
+            class="text-lg font-normal font-roboto text-main-text-color pb-5"
+          >
+            To create a wallet, you must add a bank account.
+          </div>
+          <div>
+            <app-common-button-v35
+              type="list"
+              width="256px"
+              text="Add now"
+              [isAddIcon]="true"
+              (clickEvent)="onNew()"
+            ></app-common-button-v35>
+          </div>
+        }
+      </div>
+    }
+  }
+  @if (
+    currentTab === "card" && walletDataService.walletDataSignal()?.id !== ""
+  ) {
+    @if (walletDataService.onBoardingLoadingSignal()) {
+      <div class="justify-center items-center">
+        <span class="data_spinner"></span>
+      </div>
+    }
+    @if (
+      (!walletDataService.onBoardingLoadingSignal() &&
+        walletDataService.onBoardingStatusSignal() === "index") ||
+      walletDataService.onBoardingStatusSignal() === "welcome"
+    ) {
+      <div class="h-full overflow-hidden">
+        <app-manage-card-v35 [showAllCards]="false"></app-manage-card-v35>
+      </div>
+    }
+
+    @if (
+      (!walletDataService.onBoardingLoadingSignal() &&
+        walletDataService.onBoardingStatusSignal() === "submitted") ||
+      walletDataService.onBoardingStatusSignal() === "rejected"
+    ) {
+      <div class="h-full overflow-hidden">
+        <app-rain-card-submitted
+          [onBoardingStatus]="walletDataService.onBoardingStatusSignal()"
+        ></app-rain-card-submitted>
+      </div>
+    }
+  }
+</div>
