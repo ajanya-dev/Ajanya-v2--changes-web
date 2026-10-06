@@ -1,0 +1,261 @@
+<div class="flex flex-col h-full max-h-[90vh]">
+  <!-- Header -->
+  <div
+    class="flex items-start justify-between gap-4 px-4 py-4 md:px-6 bg-v4-secondary-background-color border-b border-v4-border-color shrink-0"
+  >
+    <div class="min-w-0 flex-1">
+      <h2
+        class="text-xl md:text-2xl font-bold tracking-tight text-v4-main-text-color font-funnel"
+      >
+        {{ title }}
+      </h2>
+      <p
+        class="mt-1 text-sm leading-6 text-v4-secondary-text-color font-peridot"
+      >
+        {{ description }}
+      </p>
+    </div>
+    <button
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+    >
+      <lucide-icon
+        [img]="XIcon"
+        [size]="18"
+        class="text-v4-secondary-text-color"
+      />
+    </button>
+  </div>
+
+  <!-- Content Area -->
+  <div
+    class="flex-1 overflow-y-auto bg-v4-tertiary-background-color px-4 py-4 md:px-6 md:py-5"
+  >
+    <div class="mx-auto max-w-[880px]">
+      <!-- Payment Method Selection (only for change-payment mode) -->
+      @if (!isUpdateCardOnly) {
+        <div class="mb-5 grid gap-3 md:grid-cols-2">
+          <!-- Card -->
+          <button
+            class="h-auto flex items-center gap-3 rounded-2xl border px-4 py-5 text-left transition-all cursor-pointer bg-v4-secondary-background-color"
+            [class.border-v4-primary-brand-bold-color]="
+              paymentMethod() === 'Card'
+            "
+            [class.payment-method-active]="paymentMethod() === 'Card'"
+            [class.border-v4-border-color]="paymentMethod() !== 'Card'"
+            (click)="switchPaymentMethod('Card')"
+          >
+            <div
+              class="flex h-5 w-5 items-center justify-center rounded-full border shrink-0"
+              [class.border-v4-secondary-brand-color]="
+                paymentMethod() === 'Card'
+              "
+              [class.bg-v4-secondary-brand-color]="paymentMethod() === 'Card'"
+              [class.border-v4-border-color]="paymentMethod() !== 'Card'"
+            >
+              @if (paymentMethod() === "Card") {
+                <lucide-icon [img]="CheckIcon" [size]="12" color="black" />
+              }
+            </div>
+            <lucide-icon
+              [img]="CreditCardIcon"
+              [size]="18"
+              style="color: var(--v4-primary-brand-bold-color)"
+            />
+            <span
+              class="text-base font-semibold text-v4-main-text-color font-peridot"
+              >Card</span
+            >
+          </button>
+
+          <!-- Wallet -->
+          <button
+            class="h-auto flex items-center gap-3 rounded-2xl border px-4 py-5 text-left transition-all cursor-pointer bg-v4-secondary-background-color"
+            [class.border-v4-primary-brand-bold-color]="
+              paymentMethod() === 'Wallet'
+            "
+            [class.payment-method-active]="paymentMethod() === 'Wallet'"
+            [class.border-v4-border-color]="paymentMethod() !== 'Wallet'"
+            (click)="switchPaymentMethod('Wallet')"
+          >
+            <div
+              class="flex h-5 w-5 items-center justify-center rounded-full border shrink-0"
+              [class.border-v4-secondary-brand-color]="
+                paymentMethod() === 'Wallet'
+              "
+              [class.bg-v4-secondary-brand-color]="paymentMethod() === 'Wallet'"
+              [class.border-v4-border-color]="paymentMethod() !== 'Wallet'"
+            >
+              @if (paymentMethod() === "Wallet") {
+                <lucide-icon [img]="CheckIcon" [size]="12" color="black" />
+              }
+            </div>
+            <lucide-icon
+              [img]="WalletIcon"
+              [size]="18"
+              style="color: var(--v4-primary-brand-bold-color)"
+            />
+            <span
+              class="text-base font-semibold text-v4-main-text-color font-peridot"
+              >Wallet</span
+            >
+          </button>
+        </div>
+      }
+
+      <!-- Secured Payment Loading Overlay -->
+      @if (securedLoading()) {
+        <div
+          class="secured-loading-overlay flex flex-col items-center justify-center py-10 mb-5 rounded-2xl border border-v4-border-color bg-v4-secondary-background-color"
+        >
+          <lucide-icon
+            [img]="ShieldCheckIcon"
+            [size]="40"
+            class="text-v4-common-green-color mb-3"
+          />
+          <p class="text-sm font-semibold text-v4-main-text-color font-peridot">
+            Secured Payment Gateway
+          </p>
+          <div
+            class="mt-3 w-8 h-8 border-2 border-v4-primary-brand-color border-t-transparent rounded-full animate-spin"
+          ></div>
+        </div>
+      }
+
+      <!-- Payment Content -->
+      <div
+        class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden min-h-[500px]"
+        [class.hidden]="securedLoading()"
+      >
+        @if (isUpdateCardOnly || paymentMethod() === "Card") {
+          <!-- Card Payment (iframe) -->
+          @if (cardLoading()) {
+            <div class="flex justify-center items-center py-20">
+              <div
+                class="w-8 h-8 border-2 border-v4-primary-brand-color border-t-transparent rounded-full animate-spin"
+              ></div>
+            </div>
+          } @else if (isItDownGrade) {
+            <!-- Downgrade Warning -->
+            <div class="px-6 py-14 text-center">
+              <div
+                class="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-v4-badge-error-bg-color text-v4-common-red-color"
+              >
+                <lucide-icon [img]="TriangleAlertIcon" [size]="36" />
+              </div>
+              <h3
+                class="text-xl font-bold text-v4-main-text-color font-peridot"
+              >
+                Subscription downgrades aren't permitted.
+              </h3>
+              <p class="mt-3 text-sm text-v4-secondary-text-color font-peridot">
+                Please contact support for assistance with your subscription
+                changes.
+              </p>
+            </div>
+          } @else if (cardLink) {
+            <iframe
+              [src]="cardLink"
+              class="zoho-card-iframe w-full border-0"
+              style="min-height: 600px"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
+            ></iframe>
+          } @else {
+            <div class="px-6 py-14 text-center">
+              <p class="text-sm text-v4-secondary-text-color font-peridot">
+                Unable to load payment form. Please try again.
+              </p>
+            </div>
+          }
+        } @else {
+          <!-- Wallet Payment -->
+          <div class="p-6">
+            <div [formGroup]="walletForm">
+              <span
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >
+                Select Wallet <span class="text-v4-common-red-color">*</span>
+              </span>
+              <app-v4-common-dropdown
+                [config]="walletDropdownConfig"
+                [listData]="walletList"
+                [loading]="walletLoading"
+                [isRequired]="true"
+                [clearable]="false"
+                [searchable]="true"
+                [appendTo]="'body'"
+                formControlName="wallet"
+              />
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Security Badge -->
+      <div
+        class="mt-8 flex items-center justify-center gap-2 text-sm font-semibold font-peridot"
+        style="color: var(--v4-primary-brand-bold-color)"
+      >
+        <lucide-icon
+          [img]="ShieldCheckIcon"
+          [size]="18"
+          class="text-v4-common-green-color"
+        />
+        <span>Secured Payment by</span>
+        @if (staticWhiteLabelConditions.zilMoneyLogoVisible) {
+          <!--
+            Two logo variants: the colored Zil Money logo for light mode,
+            and the white-label "white" logo for dark mode. The
+            secured-payment-logo--light / --dark classes are toggled by
+            descendant selectors keyed off body.dark-mode in this
+            component's scss. body.dark-mode is the global theme flag set
+            by ThemeService, and CDK overlays mount as children of body,
+            so the cascade reaches inside the modal.
+          -->
+          <img
+            [src]="appConfig?.zilMoneyLogo || 'assets/main/zil_Money_logo.svg'"
+            class="h-10 secured-payment-logo--light"
+            alt="ZilMoney"
+          />
+          <!--
+            Hardcoded to the same wave-Z white Zil Money logo the v4
+            sidebar uses (side-bar-v4.component.ts:74), so it's
+            guaranteed to be the exact icon the user requested.
+          -->
+          <img
+            src="assets/white_label/zilmoney/assets/app_logo_white.svg"
+            class="h-10 secured-payment-logo--dark"
+            alt="ZilMoney"
+          />
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="shrink-0 border-t border-v4-border-color bg-v4-secondary-background-color px-4 py-4 md:px-6"
+  >
+    <div
+      class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end"
+    >
+      @if (!isUpdateCardOnly && paymentMethod() === "Wallet") {
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Update Payment'"
+          width="180px"
+          [disabled]="walletForm.invalid || isPaymentLoading()"
+          [loading]="isPaymentLoading()"
+          (clickEvent)="submitWalletPayment()"
+        />
+      }
+
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Cancel'"
+        width="120px"
+        (clickEvent)="close()"
+      />
+    </div>
+  </div>
+</div>

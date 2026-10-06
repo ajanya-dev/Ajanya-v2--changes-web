@@ -1,0 +1,268 @@
+@if (showField) {
+  <div #amountWrapper>
+    @if (fieldLabel()) {
+      @if (isHero) {
+        <label
+          for="amount-input"
+          class="block text-lg md:text-2xl font-bold text-v4-main-text-color mb-4 md:mb-6 text-center"
+          [ngClass]="{'!mb-2 !md:mb-2':forPayment()}"
+        >
+          {{ fieldLabel() }}
+        </label>
+      } @else {
+        <label for="amount-input" class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5">
+          {{ fieldLabel() }}
+          @if (isRequired()) {
+            <span class="text-v4-common-red-color">*</span>
+          }
+        </label>
+      }
+    }
+
+    <div
+      class="relative flex items-center"
+      [class.justify-center]="isHero"
+      cdkOverlayOrigin
+      #trigger="cdkOverlayOrigin"
+    >
+      <div
+        class="flex items-center w-full"
+        [class.justify-center]="isHero"
+        [class.gap-2]="isHero"
+        [class.md:gap-3]="isHero"
+        [class.py-4]="isHero"
+        [class.md:py-6]="isHero"
+        [ngClass]="{'!p-0 !md:p-0':forPayment()}"
+      >
+        @if (isHero) {
+          <span class="hero-dollar-sign">$</span>
+        }
+        <input
+          id="amount-input"
+          #heroInput
+          class="default-input focus:outline-none focus:ring-2 focus:ring-v4-brand-border-color focus:border-v4-brand-border-color"
+          [autocomplete]="autocomplete()"
+          [class]="customClass() || null"
+          [ngClass]="{
+            '!border-none': !border() && !isHero,
+            'disable-click': isDisabled(),
+            '!opacity-50': isDisabled(),
+            'hero-placeholder':
+              isHero && (!amount || amount === '0.00' || amount === '$0.00')
+          }"
+          [style.height]="!isHero ? height() : 'auto'"
+          [attr.readonly]="isReadOnly() || null"
+          [maxLength]="maxLength()"
+          [ngModel]="amount"
+          (ngModelChange)="onAmountModelChange($event)"
+          [placeholder]="isFocused ? '' : isHero ? '0.00' : '$0.00'"
+          mask="separator.2"
+          [leadZero]="true"
+          thousandSeparator=","
+          [prefix]="isHero ? '' : '$ '"
+          (blur)="onTouched ? onTouched() : ''; onBlur()"
+          (focus)="onFocus()"
+          [dropSpecialCharacters]="false"
+        />
+      </div>
+      @if (!isFocused && !amount && !isHero) {
+        <span class="amount-visual-placeholder">0.00</span>
+      }
+      @if (enableBreakdown()) {
+        <div
+          class="default-action-btn"
+          [class]="isHero ? 'hero-action-btn' : 'default-action-btn'"
+        >
+          <div
+            role="presentation"
+            class="flex justify-center items-center w-full h-full cursor-pointer"
+            (click)="toggleBreakdownRequest.emit()"
+          >
+            <fa-icon
+              [ngClass]="{
+                '!text-v4-primary-brand-color': showBreakdownPanel()
+              }"
+              class="text-v4-tertiary-text-color hover:text-v4-main-text-color transition-colors"
+              [class.text-lg]="isHero"
+              [icon]="faCalculator"
+              matTooltip="Breakdown"
+            ></fa-icon>
+          </div>
+        </div>
+      }
+      @if (isCalculator()) {
+        <div
+          class="default-action-btn"
+          [class]="isHero ? 'hero-action-btn' : 'default-action-btn'"
+        >
+          <div
+            role="presentation"
+            class="flex justify-center items-center w-full h-full cursor-pointer"
+            (click)="openCalculator()"
+          >
+            <fa-icon
+              class="text-v4-tertiary-text-color hover:text-v4-main-text-color transition-colors"
+              [class.text-lg]="isHero"
+              [icon]="faCalculator"
+              matTooltip="Calculator"
+            ></fa-icon>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (enableBreakdown() && breakdownSummary) {
+      <div
+        class="w-full mt-1 text-xs text-v4-tertiary-text-color overflow-x-auto whitespace-nowrap"
+        [class.text-center]="isHero"
+      >
+        {{ breakdownSummary }}
+      </div>
+    }
+
+    <!-- Breakdown Overlay -->
+    <ng-container *ngTemplateOutlet="breakdownOverlay"></ng-container>
+  </div>
+
+  <!-- Shared Breakdown Overlay Template -->
+  <ng-template #breakdownOverlay>
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="trigger"
+      [cdkConnectedOverlayOpen]="enableBreakdown() && showBreakdownPanel()"
+      [cdkConnectedOverlayPositions]="[
+        {
+          originX: 'start',
+          originY: 'bottom',
+          overlayX: 'start',
+          overlayY: 'top',
+          offsetY: 4
+        },
+        {
+          originX: 'start',
+          originY: 'top',
+          overlayX: 'start',
+          overlayY: 'bottom',
+          offsetY: -4
+        }
+      ]"
+    >
+      <div #breakdownPanelRef class="breakdown-panel">
+        <div class="flex justify-between items-center font-medium mb-2">
+          <span class="text-sm font-semibold text-v4-main-text-color"
+            >Amount Breakdown</span
+          >
+          <button
+            class="w-6 h-6 flex items-center justify-center rounded-md text-v4-tertiary-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color transition-colors"
+            (click)="toggleBreakdownRequest.emit()"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="max-h-[240px] overflow-y-auto custom-scrollbar">
+          <div
+            class="text-xs font-medium text-v4-tertiary-text-color mb-1.5 uppercase tracking-wider"
+          >
+            Bills
+          </div>
+          @for (item of denominations; track item.value) {
+            @if (item.value >= 1) {
+              <div
+                class="flex justify-between gap-2 items-center text-sm text-v4-main-text-color mb-1.5"
+              >
+                <span class="w-1/4 font-medium">{{
+                  "$" + (item.value | number: "1.2-2")
+                }}</span>
+                <span class="w-1/8 text-v4-tertiary-text-color">×</span>
+                <input
+                  type="number"
+                  [(ngModel)]="item.count"
+                  (ngModelChange)="onDenominationChange(item)"
+                  (keydown)="preventNegativeInput($event)"
+                  (focus)="clearIfZero(item)"
+                  (blur)="restoreIfEmpty(item)"
+                  min="0"
+                  step="1"
+                  class="denomination-input"
+                />
+                <span class="w-1/8 text-v4-tertiary-text-color">=</span>
+                <span
+                  class="w-1/3 text-left truncate overflow-hidden whitespace-nowrap font-medium"
+                  >${{ item.value * item.count | number: "1.2-2" }}</span
+                >
+              </div>
+            }
+          }
+
+          @for (item of denominations; track item.value) {
+            @if (item.value < 1) {
+              @if (item.value === 0.5) {
+                <div
+                  class="text-xs font-medium text-v4-tertiary-text-color my-2 uppercase tracking-wider"
+                >
+                  Coins
+                </div>
+              }
+              <div
+                class="flex justify-between gap-2 items-center text-sm text-v4-main-text-color mb-1.5"
+              >
+                <span class="w-1/4 font-medium">{{
+                  item.value * 100 + "¢"
+                }}</span>
+                <span class="w-1/8 text-v4-tertiary-text-color">×</span>
+                <input
+                  type="number"
+                  [(ngModel)]="item.count"
+                  (ngModelChange)="onDenominationChange(item)"
+                  (keydown)="preventNegativeInput($event)"
+                  (focus)="clearIfZero(item)"
+                  (blur)="restoreIfEmpty(item)"
+                  min="0"
+                  class="denomination-input"
+                />
+                <span class="w-1/8 text-v4-tertiary-text-color">=</span>
+                <span
+                  class="w-1/3 text-left truncate overflow-hidden whitespace-nowrap font-medium"
+                  >${{ item.value * item.count | number: "1.2-2" }}</span
+                >
+              </div>
+            }
+          }
+        </div>
+
+        <div
+          class="flex justify-between border-t border-v4-input-border-color mt-2 pt-2 text-sm font-semibold text-v4-main-text-color"
+        >
+          <span>Total :</span>
+          <span class="truncate overflow-hidden whitespace-nowrap max-w-[210px]"
+            >${{ totalDenomination | number: "1.2-2" }}</span
+          >
+        </div>
+
+        <div class="flex justify-end gap-2 mt-3">
+          <app-common-button-v4
+            [text]="'Cancel'"
+            [type]="{ style: 'outline', name: 'main' }"
+            (clickEvent)="toggleBreakdownRequest.emit()"
+          ></app-common-button-v4>
+          <app-common-button-v4
+            [text]="'Apply'"
+            [type]="{ style: 'primary', name: 'main' }"
+            (clickEvent)="applyBreakdown()"
+            [disabled]="totalDenomination === 0"
+          ></app-common-button-v4>
+        </div>
+      </div>
+    </ng-template>
+  </ng-template>
+}
+
+@if (control()) {
+  <app-control-message-v4
+    [control]="control()!"
+    [label]="errorLabel()"
+    [isMarginTopEnabled]="false"
+    [marginTopOverride]="'mt-1'"
+  />
+}

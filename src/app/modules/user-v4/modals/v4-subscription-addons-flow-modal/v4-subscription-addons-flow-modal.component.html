@@ -1,0 +1,854 @@
+<div class="flex flex-col h-full max-h-[90vh]">
+  <!-- Header -->
+  <div
+    class="flex items-start justify-between gap-4 px-4 py-4 md:px-6 bg-v4-secondary-background-color border-b border-v4-border-color shrink-0"
+  >
+    <div class="min-w-0 flex-1">
+      <h2
+        class="text-xl md:text-2xl font-bold tracking-tight text-v4-main-text-color font-funnel"
+      >
+        {{ getStepMeta().title }}
+      </h2>
+      <p
+        class="mt-1 text-sm leading-6 text-v4-secondary-text-color font-peridot"
+      >
+        {{ getStepMeta().description }}
+      </p>
+    </div>
+    <button
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+    >
+      <lucide-icon
+        [img]="XIcon"
+        [size]="18"
+        class="text-v4-secondary-text-color"
+      />
+    </button>
+  </div>
+
+  <!-- Content Area -->
+  <div
+    class="flex-1 overflow-y-auto bg-v4-tertiary-background-color px-4 py-4 md:px-6 md:py-5"
+  >
+    <!-- Loading -->
+    @if (isInitLoading()) {
+      <div class="flex justify-center items-center py-20">
+        <div
+          class="w-8 h-8 border-2 border-v4-primary-brand-color border-t-transparent rounded-full animate-spin"
+        ></div>
+      </div>
+    } @else {
+      <div class="mx-auto max-w-[880px]">
+        <!-- ==================== STEP 1: ADDONS ==================== -->
+        @if (step() === "addons") {
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+            <!-- Addon Cards -->
+            <div
+              class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-3"
+            >
+              <div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  @for (addon of addOnsList; track addon.addonCode) {
+                    <div
+                      class="addon-card rounded-2xl border p-3.5 transition-all duration-200"
+                      [class.border-v4-primary-brand-color]="
+                        isAddonSelected(addon.addonCode)
+                      "
+                      [class.shadow-lg]="isAddonSelected(addon.addonCode)"
+                      [class.border-v4-border-color]="
+                        !isAddonSelected(addon.addonCode)
+                      "
+                    >
+                      <!-- Addon Header -->
+                      <div class="mb-3 flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                          <div
+                            class="flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
+                            [class.bg-v4-primary-brand-color]="
+                              isAddonSelected(addon.addonCode)
+                            "
+                            [class.text-white]="
+                              isAddonSelected(addon.addonCode)
+                            "
+                            [class.addon-icon-inactive]="
+                              !isAddonSelected(addon.addonCode)
+                            "
+                            [class.text-v4-primary-brand-bold-color]="
+                              !isAddonSelected(addon.addonCode)
+                            "
+                          >
+                            <lucide-icon
+                              [img]="getAddonIcon(addon)"
+                              [size]="16"
+                            />
+                          </div>
+                          <div>
+                            <h3
+                              class="text-sm font-bold text-v4-main-text-color font-peridot"
+                            >
+                              {{ addon.addonDisplayText || addon.addonName }}
+                            </h3>
+                            <div class="mt-0.5">
+                              <span
+                                class="text-lg font-bold text-v4-primary-brand-bold-color font-peridot"
+                              >
+                                {{ addon.monthlyPrice | currency }}
+                              </span>
+                              <span
+                                class="text-xs font-medium text-v4-secondary-text-color font-peridot"
+                              >
+                                /month
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        @if (isAddonSelected(addon.addonCode)) {
+                          <div
+                            class="flex h-6 w-6 items-center justify-center rounded-full bg-v4-secondary-brand-color text-black shrink-0"
+                          >
+                            <lucide-icon [img]="CheckIcon" [size]="14" />
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Description -->
+                      <p
+                        class="min-h-[48px] text-xs leading-5 text-v4-secondary-text-color font-peridot"
+                      >
+                        {{ addon.description }}
+                      </p>
+
+                      <!-- Actions -->
+                      <div class="mt-3 flex flex-wrap items-center gap-2">
+                        @if (addon.addonQuantityType === 2) {
+                          <div class="w-[76px]">
+                            <app-v4-select-dropdown
+                              [items]="quantityOptions"
+                              [selectedValue]="getQuantity(addon.addonCode)"
+                              [compact]="true"
+                              (selectionChange)="
+                                onQuantityChange(addon.addonCode, $event)
+                              "
+                            />
+                          </div>
+                        }
+
+                        <app-common-button-v4
+                          [type]="
+                            isAddonSelected(addon.addonCode)
+                              ? { style: 'neon', name: 'main' }
+                              : { style: 'primary', name: 'main' }
+                          "
+                          [text]="
+                            isAddonSelected(addon.addonCode) ? 'Added' : 'Add'
+                          "
+                          [customClasses]="'!py-2 !px-4 !min-w-[78px]'"
+                          [textClasses]="'!text-xs'"
+                          (clickEvent)="toggleAddon(addon)"
+                        />
+
+                        @if (isAddonSelected(addon.addonCode)) {
+                          <button
+                            class="addon-remove-btn h-9 w-9 rounded-lg border bg-v4-badge-error-bg-color text-v4-common-red-color flex items-center justify-center cursor-pointer transition-colors"
+                            (click)="removeAddon(addon)"
+                          >
+                            <lucide-icon [img]="Trash2Icon" [size]="16" />
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Billing Summary Sidebar -->
+            <div class="lg:sticky lg:top-0 lg:self-start">
+              <ng-container *ngTemplateOutlet="billingSummary" />
+            </div>
+          </div>
+        }
+
+        <!-- ==================== STEP 2: BILLING ==================== -->
+        @if (step() === "billing") {
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+            <!-- Billing Form -->
+            <div
+              class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-4 md:p-5"
+            >
+              <form [formGroup]="billingForm" class="grid gap-3 md:grid-cols-2">
+                <!-- First Name -->
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'First Name'"
+                    [fieldLabel]="'First Name'"
+                    [control]="billingForm.controls.firstName"
+                    formControlName="firstName"
+                    [fieldHeight]="'44px'"
+                    [maxLength]="30"
+                  />
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'Last Name'"
+                    [fieldLabel]="'Last Name'"
+                    [control]="billingForm.controls.lastName"
+                    formControlName="lastName"
+                    [fieldHeight]="'44px'"
+                    [maxLength]="30"
+                  />
+                </div>
+
+                <!-- Company Name -->
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'Company Name'"
+                    [fieldLabel]="'Company Name'"
+                    [control]="billingForm.controls.companyName"
+                    formControlName="companyName"
+                    [fieldHeight]="'44px'"
+                    [maxLength]="50"
+                  />
+                </div>
+
+                <!-- Phone -->
+                <div>
+                  <label
+                    class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                  >
+                    Phone <span class="text-v4-common-red-color">*</span>
+                  </label>
+                  <app-phone-input-v4
+                    [placeholder]="'Phone'"
+                    [control]="billingForm.controls.phone"
+                    formControlName="phone"
+                    [fieldHeight]="'44px'"
+                    [showCountryDropdown]="false"
+                    [isFieldRequired]="false"
+                  />
+                </div>
+
+                <!-- Address (full width) with Google autocomplete -->
+                <div class="md:col-span-2">
+                  <app-address-autocomplete-v4
+                    [label]="'Address'"
+                    [placeholder]="'Address'"
+                    [control]="$any(billingForm.controls.address)"
+                    [allowedCountries]="['us', 'ca']"
+                    (addressSelected)="onAddressSelected($event)"
+                  />
+                </div>
+
+                <!-- City -->
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'City'"
+                    [fieldLabel]="'City'"
+                    [control]="billingForm.controls.city"
+                    formControlName="city"
+                    [fieldHeight]="'44px'"
+                  />
+                </div>
+
+                <!-- State -->
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'State'"
+                    [fieldLabel]="'State'"
+                    [control]="billingForm.controls.state"
+                    formControlName="state"
+                    [fieldHeight]="'44px'"
+                  />
+                </div>
+
+                <!-- Zip -->
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'Zip Code'"
+                    [fieldLabel]="'Zip Code'"
+                    [control]="billingForm.controls.zip"
+                    formControlName="zip"
+                    [fieldHeight]="'44px'"
+                    [maxLength]="11"
+                  />
+                </div>
+
+                <!-- Country -->
+                <div>
+                  <label
+                    class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5 text-v4-main-text-color font-peridot"
+                  >
+                    Country <span class="text-v4-common-red-color">*</span>
+                  </label>
+                  <app-common-country-dropdown-v4
+                    [allowedCountry]="allowedCountries"
+                    [placeholder]="'Select Country'"
+                    formControlName="country"
+                    [isFieldRequired]="true"
+                  />
+                  <app-control-message-v4
+                    [control]="billingForm.controls.country"
+                  />
+                </div>
+              </form>
+            </div>
+
+            <!-- Billing Summary Sidebar -->
+            <div class="lg:sticky lg:top-0 lg:self-start">
+              <ng-container *ngTemplateOutlet="billingSummary" />
+            </div>
+          </div>
+        }
+
+        <!-- ==================== STEP 3: PAYMENT ==================== -->
+        @if (step() === "payment") {
+          <div>
+            <!-- Payment Method Selection -->
+            <div class="mb-5 grid gap-3 md:grid-cols-2">
+              <!-- Card -->
+              <button
+                class="h-auto flex items-center gap-3 rounded-2xl border px-4 py-5 text-left transition-all cursor-pointer bg-v4-secondary-background-color"
+                [class.border-v4-primary-brand-color]="
+                  paymentMethod() === 'Card'
+                "
+                [class.payment-method-active]="paymentMethod() === 'Card'"
+                [class.border-v4-border-color]="paymentMethod() !== 'Card'"
+                (click)="switchPaymentMethod('Card')"
+              >
+                <div
+                  class="flex h-5 w-5 items-center justify-center rounded-full border shrink-0"
+                  [class.border-v4-secondary-brand-color]="
+                    paymentMethod() === 'Card'
+                  "
+                  [class.bg-v4-secondary-brand-color]="
+                    paymentMethod() === 'Card'
+                  "
+                  [class.border-v4-border-color]="paymentMethod() !== 'Card'"
+                >
+                  @if (paymentMethod() === "Card") {
+                    <lucide-icon
+                      [img]="CheckIcon"
+                      [size]="12"
+                      class="text-black"
+                    />
+                  }
+                </div>
+                <lucide-icon
+                  [img]="CreditCardIcon"
+                  [size]="18"
+                  style="color: var(--v4-primary-brand-bold-color)"
+                />
+                <span
+                  class="text-base font-semibold text-v4-main-text-color font-peridot"
+                  >Card</span
+                >
+              </button>
+
+              <!-- Wallet -->
+              <button
+                class="h-auto flex items-center gap-3 rounded-2xl border px-4 py-5 text-left transition-all cursor-pointer bg-v4-secondary-background-color"
+                [class.border-v4-primary-brand-color]="
+                  paymentMethod() === 'Wallet'
+                "
+                [class.payment-method-active]="paymentMethod() === 'Wallet'"
+                [class.border-v4-border-color]="paymentMethod() !== 'Wallet'"
+                (click)="switchPaymentMethod('Wallet')"
+              >
+                <div
+                  class="flex h-5 w-5 items-center justify-center rounded-full border shrink-0"
+                  [class.border-v4-secondary-brand-color]="
+                    paymentMethod() === 'Wallet'
+                  "
+                  [class.bg-v4-secondary-brand-color]="
+                    paymentMethod() === 'Wallet'
+                  "
+                  [class.border-v4-border-color]="paymentMethod() !== 'Wallet'"
+                >
+                  @if (paymentMethod() === "Wallet") {
+                    <lucide-icon
+                      [img]="CheckIcon"
+                      [size]="12"
+                      class="text-black"
+                    />
+                  }
+                </div>
+                <lucide-icon
+                  [img]="WalletIcon"
+                  [size]="18"
+                  style="color: var(--v4-primary-brand-bold-color)"
+                />
+                <span
+                  class="text-base font-semibold text-v4-main-text-color font-peridot"
+                  >Wallet</span
+                >
+              </button>
+            </div>
+
+            <!-- Secured Payment Loading Overlay -->
+            @if (securedLoading()) {
+              <div
+                class="secured-loading-overlay flex flex-col items-center justify-center py-10 mb-5 rounded-2xl border border-v4-border-color bg-v4-secondary-background-color"
+              >
+                <lucide-icon
+                  [img]="ShieldCheckIcon"
+                  [size]="40"
+                  class="text-v4-common-green-color mb-3"
+                />
+                <p
+                  class="text-sm font-semibold text-v4-main-text-color font-peridot"
+                >
+                  Secured Payment Gateway
+                </p>
+                <div
+                  class="mt-3 w-8 h-8 border-2 border-v4-primary-brand-color border-t-transparent rounded-full animate-spin"
+                ></div>
+              </div>
+            }
+
+            <!-- Payment Content -->
+            <div
+              class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden"
+              [class.hidden]="securedLoading()"
+            >
+              @if (paymentMethod() === "Card") {
+                <!-- Card Payment (iframe) -->
+                @if (cardLoading()) {
+                  <div class="flex justify-center items-center py-20">
+                    <div
+                      class="w-8 h-8 border-2 border-v4-primary-brand-color border-t-transparent rounded-full animate-spin"
+                    ></div>
+                  </div>
+                } @else if (isItDownGrade) {
+                  <!-- Downgrade Warning -->
+                  <div class="px-6 py-14 text-center">
+                    <div
+                      class="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-v4-badge-error-bg-color text-v4-common-red-color"
+                    >
+                      <lucide-icon [img]="TriangleAlertIcon" [size]="36" />
+                    </div>
+                    <h3
+                      class="text-xl font-bold text-v4-main-text-color font-peridot"
+                    >
+                      Subscription downgrades aren't permitted.
+                    </h3>
+                    <p
+                      class="mt-3 text-sm text-v4-secondary-text-color font-peridot"
+                    >
+                      Please contact support for assistance with your
+                      subscription changes.
+                    </p>
+                  </div>
+                } @else if (cardLink) {
+                  <iframe
+                    [src]="cardLink"
+                    class="zoho-card-iframe w-full border-0"
+                    style="min-height: 400px"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
+                  ></iframe>
+                } @else {
+                  <div class="px-6 py-14 text-center">
+                    <p
+                      class="text-sm text-v4-secondary-text-color font-peridot"
+                    >
+                      Unable to load payment form. Please try again.
+                    </p>
+                  </div>
+                }
+              } @else {
+                <!-- Wallet Payment -->
+                <div class="p-6">
+                  <div [formGroup]="walletForm">
+                    <label
+                      class="mb-1.5 block text-xs font-semibold text-v4-main-text-color font-peridot"
+                    >
+                      Select Wallet
+                      <span class="text-v4-common-red-color">*</span>
+                    </label>
+                    <app-wallet-dropdown-v4
+                      formControlName="wallet"
+                      [showLogoUpdateModal]="false"
+                      [append]="'body'"
+                      (ready)="autoPopulateWallet($event)"
+                    />
+                    <app-control-message-v4
+                      [control]="walletForm.controls.wallet"
+                    />
+
+                    <!-- Wallet Total -->
+                    <div
+                      class="mt-5 flex items-center justify-between rounded-xl bg-v4-tertiary-background-color px-4 py-3"
+                    >
+                      <span
+                        class="text-sm font-bold text-v4-main-text-color font-peridot"
+                      >
+                        Total:
+                      </span>
+                      <span
+                        class="text-lg font-bold text-v4-primary-brand-bold-color font-peridot"
+                      >
+                        {{ addonTotal() | currency }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Security Badge -->
+            <div
+              class="mt-8 flex items-center justify-center gap-2 text-sm font-semibold text-v4-primary-brand-color font-peridot"
+            >
+              <lucide-icon
+                [img]="ShieldCheckIcon"
+                [size]="18"
+                class="text-v4-common-green-color"
+              />
+              <span>Secured Payment by</span>
+              @if (staticWhiteLabelConditions.zilMoneyLogoVisible) {
+                <img
+                  [src]="brandLogoUrl()"
+                  class="h-12 w-32"
+                  width="200"
+                  height="100"
+                  alt="ZilMoney"
+                />
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ==================== STEP 4: COMPLETE ==================== -->
+        @if (step() === "complete") { 
+          <div class="space-y-4">
+            <!-- Hero Banner -->
+            <div
+              class="complete-hero relative overflow-hidden px-5 py-8 text-center shadow-sm"
+            >
+              <div class="complete-circle-1"></div>
+              <div class="complete-circle-2"></div>
+
+              <div class="relative z-10 flex flex-col items-center">
+                <div
+                  class="flex h-16 w-16 items-center justify-center rounded-full border border-v4-border-success bg-v4-surface-success-bold"
+                >
+                  <lucide-icon
+                    [img]="CircleCheckBigIcon"
+                    [size]="36"
+                    class="text-v4-text-success"
+                  />
+                </div>
+
+                <div
+                  class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-v4-badge-success-bg-color px-3 py-1"
+                >
+                  <div
+                    class="h-2 w-2 rounded-full bg-v4-badge-success-text-color"
+                  ></div>
+                  <span
+                    class="text-xs font-semibold font-peridot text-v4-badge-success-text-color"
+                    >Active now</span
+                  >
+                </div>
+
+                <h2
+                  class="mt-3 text-2xl font-bold text-v4-main-text-color font-funnel"
+                >
+                  You're All Set
+                </h2>
+                <p
+                  class="mt-2 max-w-xl text-sm text-v4-secondary-text-color font-peridot leading-6"
+                >
+                  Your add-on subscription has been configured and is ready for
+                  the next step.
+                </p>
+              </div>
+            </div>
+
+            <!-- Stat Cards -->
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div
+                class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-4"
+              >
+                <div
+                  class="text-[12px] font-semibold uppercase tracking-wide text-v4-secondary-text-color font-peridot mb-1.5"
+                >
+                  Add-ons
+                </div>
+                <div
+                  class="text-lg font-bold text-v4-main-text-color font-peridot"
+                >
+                  {{ selectedAddonList().length }}
+                </div>
+              </div>
+              <div
+                class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-4"
+              >
+                <div
+                  class="text-[12px] font-semibold uppercase tracking-wide text-v4-secondary-text-color font-peridot mb-1.5"
+                >
+                  Payment Method
+                </div>
+                <div
+                  class="text-lg font-bold text-v4-main-text-color font-peridot capitalize"
+                >
+                  {{ paymentMethod() }}
+                </div>
+              </div>
+              <div
+                class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-4"
+              >
+                <div
+                  class="text-[12px] font-semibold uppercase tracking-wide text-v4-secondary-text-color font-peridot mb-1.5"
+                >
+                  Total
+                </div>
+                <div
+                  class="text-lg font-bold text-v4-primary-brand-bold-color font-peridot"
+                >
+                  {{ addonTotal() | currency }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Subscription Summary Card -->
+            <div
+              class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-4 md:p-5"
+            >
+              <div class="border-b border-v4-border-color pb-3 mb-3">
+                <h3
+                  class="text-sm font-bold text-v4-main-text-color font-peridot"
+                >
+                  Subscription Summary
+                </h3>
+                <p
+                  class="text-xs text-v4-secondary-text-color font-peridot mt-1"
+                >
+                  Review the selections completed in this flow.
+                </p>
+              </div>
+
+              @if (selectedAddonList().length > 0) {
+                <div class="space-y-2.5">
+                  @for (
+                    addon of selectedAddonList();
+                    track addon.details.addonCode
+                  ) {
+                    <div
+                      class="flex items-center justify-between rounded-xl bg-v4-tertiary-background-color px-3.5 py-2.5"
+                    >
+                      <div>
+                        <div
+                          class="text-sm font-semibold text-v4-main-text-color font-peridot"
+                        >
+                          {{
+                            addon.details.addonDisplayText ||
+                              addon.details.addonName
+                          }}
+                          <span> (x{{ addon.quantity }})</span>
+                        </div>
+                        <div
+                          class="text-xs text-v4-secondary-text-color font-peridot"
+                        >
+                          Configured in this subscription flow
+                        </div>
+                      </div>
+                      <span
+                        class="text-sm font-semibold text-v4-main-text-color font-peridot"
+                      >
+                        {{ +addon.details.price * addon.quantity | currency }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p
+                  class="text-xs text-v4-secondary-text-color font-peridot py-2"
+                >
+                  No add-ons were selected.
+                </p>
+              }
+
+              <!-- Info box -->
+              <div
+                class="mt-3 flex items-start gap-3 rounded-xl border border-v4-border-success-subtle bg-v4-surface-success px-3.5 py-2.5"
+              >
+                <div
+                  class="flex h-6 w-6 items-center justify-center rounded-full bg-v4-common-green-color text-white shrink-0 mt-0.5"
+                >
+                  <lucide-icon [img]="CheckIcon" [size]="14" />
+                </div>
+                <p class="text-xs font-peridot leading-5 text-v4-text-success">
+                  If you don't see the updated subscription state immediately,
+                  wait about one minute and refresh the page.
+                </p>
+              </div>
+            </div>
+
+            <!-- G2 Tracking Pixel -->
+            @if (environment.production) {
+              <img
+                src="https://tracking.g2crowd.com/funnels/81043695-b0d8-45d0-b0b0-c310fa87e83d.gif?stage=finish&stype=offer"
+                class="hidden"
+              />
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="shrink-0 border-t border-v4-border-color bg-v4-secondary-background-color px-4 py-4 md:px-6"
+  >
+    <div
+      class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end"
+    >
+      @if (step() !== "complete") {
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="step() === 'addons' ? 'Cancel' : 'Back'"
+          [lucideIcon]="step() !== 'addons' ? ArrowLeftIcon : null"
+          [lucideIconSize]="16"
+          width="120px"
+          (clickEvent)="step() === 'addons' ? close() : handleBack()"
+        />
+      }
+
+      @if (step() === "complete") {
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Done'"
+          width="120px"
+          (clickEvent)="closeWithRefresh()"
+        />
+      } @else if (step() !== "payment" || paymentMethod() === "Wallet") {
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="getPrimaryLabel()"
+          width="180px"
+          [disabled]="isPrimaryDisabled()"
+          [loading]="isPaymentLoading()"
+          (clickEvent)="handlePrimaryAction()"
+        />
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ==================== BILLING SUMMARY TEMPLATE ==================== -->
+<ng-template #billingSummary>
+  <div
+    class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color p-4"
+  >
+    <!-- Billing Header -->
+    <div class="mb-3 border-b border-v4-border-color pb-3">
+      <div
+        class="text-[12px] font-bold uppercase tracking-[0.18em] text-v4-primary-brand-bold-color font-peridot"
+      >
+        Billing
+      </div>
+    </div>
+
+    <!-- Base Plan -->
+    @if (selectedPlanDetails && showBasePlan) {
+      <div class="mb-3 border-b border-v4-border-color pb-3">
+        <div class="text-sm font-semibold text-v4-main-text-color font-peridot">
+          Base Plan
+        </div>
+        <div
+          class="mt-2 flex items-center justify-between rounded-xl bg-v4-tertiary-background-color px-3 py-2"
+        >
+          <div
+            class="text-sm font-semibold text-v4-main-text-color font-peridot"
+          >
+            {{ selectedPlanDetails.planName }}
+          </div>
+          <div
+            class="text-sm font-semibold text-v4-main-text-color font-peridot"
+          >
+            {{ selectedPlanDetails.planPrice | currency }}
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Addons List -->
+    <div class="space-y-2.5">
+      <div>
+        <div class="text-sm font-semibold text-v4-main-text-color font-peridot">
+          Addons
+        </div>
+        @if (selectedAddonList().length > 0) {
+          <div class="mt-2.5 space-y-2.5">
+            @for (addon of selectedAddonList(); track addon.details.addonCode) {
+              <div
+                class="flex items-start justify-between gap-3 rounded-xl bg-v4-tertiary-background-color px-3 py-2"
+              >
+                <div>
+                  <div
+                    class="text-sm font-semibold text-v4-main-text-color font-peridot"
+                  >
+                    {{
+                      addon.details.addonDisplayText || addon.details.addonName
+                    }}
+                    <span> (x{{ addon.quantity }})</span>
+                  </div>
+                </div>
+                <div
+                  class="text-sm font-semibold text-v4-main-text-color font-peridot"
+                >
+                  {{ +addon.details.price * addon.quantity | currency }}
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="mt-2 text-xs text-v4-secondary-text-color font-peridot">
+            No add-ons selected.
+          </p>
+        }
+      </div>
+
+      <!-- Total -->
+      <div class="border-t border-v4-border-color pt-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold text-v4-main-text-color font-peridot"
+            >Total</span
+          >
+          <span
+            class="text-lg font-bold text-v4-primary-brand-bold-color font-peridot"
+          >
+            {{ (showBasePlan ? +(selectedPlanDetails?.planPrice || 0) : 0) + addonTotal() | currency }}
+          </span>
+        </div>
+        <div
+          class="mt-2 text-center text-[12px] font-semibold text-v4-secondary-text-color font-peridot"
+        >
+          {{ billingIntervalLabel() }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Proration Info -->
+    @if (showProrationFaq) {
+      <div
+        class="mt-4 rounded-2xl border border-v4-border-color bg-v4-tertiary-background-color p-3"
+      >
+        <h4 class="text-sm font-bold text-v4-main-text-color font-peridot">
+          Why do my payments differ from the total?
+        </h4>
+        <p
+          class="mt-1.5 text-[12px] leading-5 text-v4-secondary-text-color font-peridot"
+        >
+          When you make changes to your plan, we will prorate any previous
+          payments and apply the corresponding credit to your new plan.
+        </p>
+      </div>
+    }
+  </div>
+</ng-template>

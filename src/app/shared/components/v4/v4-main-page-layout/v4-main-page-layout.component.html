@@ -1,0 +1,195 @@
+<div class="w-full flex flex-col gap-6">
+  <!-- Header -->
+  <app-v4-main-page-header
+    [title]="config().title"
+    [subtitle]="config().subtitle"
+  />
+
+  <!-- API Stats Cards (hidden on mobile, 2-col tablet, 4-col desktop) -->
+  @if (config().apiCards.length) {
+    <div class="api-cards-grid hidden md:grid gap-3" [style.grid-template-columns]="'repeat(' + config().apiCards.length + ', minmax(0, 1fr))'">
+      @for (card of config().apiCards; track card.label) {
+        <app-v4-main-page-api-card
+          [icon]="card.icon"
+          [label]="card.label"
+          [value]="card.value"
+          [valueColor]="card.valueColor || ''"
+          [subtitle]="card.subtitle"
+          [subtitleColor]="card.subtitleColor"
+          [iconBgColor]="card.iconBgColor"
+          [iconColor]="card.iconColor"
+          [isLoading]="config().isLoading ?? false"
+          [comingSoon]="card.comingSoon ?? false"
+        />
+      }
+    </div>
+  }
+
+  <!-- CTA Banner (hidden on mobile) -->
+  @if (config().ctaBanner; as banner) {
+    <div
+      class="hidden md:flex gap-4 rounded-2xl px-6 py-4 items-center relative overflow-hidden"
+      [style.background-color]="banner.bgColor"
+      [class.justify-between]="!!banner.buttonText"
+    >
+      <!-- Decorative circles -->
+      <div class="absolute -top-12 -right-12 w-44 h-44 rounded-full pointer-events-none bg-v4-cta-banner-circle-color"></div>
+      <div class="absolute -bottom-20 -left-16 w-44 h-44 rounded-full pointer-events-none bg-v4-cta-banner-circle-color"></div>
+
+      <!-- Optional Icon (e.g., Business Tools clock) -->
+      @if (banner.icon && !banner.buttonText) {
+        <div
+          class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white/20 relative z-10"
+        >
+          <lucide-icon [img]="banner.icon" [size]="22" class="text-white" />
+        </div>
+      }
+
+      <div class="relative z-10 flex-1 min-w-0">
+        <!-- Optional Badge (e.g., Services NOW AVAILABLE) -->
+        @if (banner.badge) {
+          <span
+            class="inline-block text-xs font-bold px-3 py-1 rounded-full mb-2 font-peridot"
+            [style.background-color]="banner.badge.bgColor"
+            [style.color]="banner.badge.textColor"
+          >
+            {{ banner.badge.text }}
+          </span>
+        }
+        <h3
+          class="text-base font-bold font-funnel m-0"
+          [style.color]="banner.titleColor"
+        >
+          {{ banner.title }}
+        </h3>
+        <p
+          class="text-[13px] font-peridot m-0 mt-1"
+          [style.color]="banner.subtitleColor"
+        >
+          {{ banner.subtitle }}
+        </p>
+      </div>
+
+      @if (banner.buttonText) {
+        <div class="shrink-0 relative z-10">
+          <app-common-button-v4
+            [text]="banner.buttonText"
+            [type]="{ style: banner.buttonStyle, name: 'main' }"
+            [lucideIcon]="banner.buttonIcon || ''"
+            [lucideIconSize]="banner.buttonIconSize || 0"
+            iconPosition="end"
+            [customHeight]="'36px'"
+            [disabled]="banner.buttonDisabled || false"
+            (clickEvent)="ctaClick.emit()"
+          />
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Slot: After Banner -->
+  <ng-content select="[afterBanner]" />
+
+  <!-- Mobile Menu Grid (visible only on mobile) -->
+  @for (section of config().featureSections; track section.title) {
+    <div class="md:hidden">
+      <div class="grid grid-cols-2 gap-3">
+        @for (card of section.cards; track card.heading) {
+          <button
+            type="button"
+            class="bg-v4-secondary-background-color border border-v4-border-color rounded-2xl p-4 flex flex-col items-start text-left active:bg-v4-input-background-color transition-colors cursor-pointer"
+            (click)="cardClick.emit(card)"
+          >
+            <div
+              class="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
+              [style.background-color]="card.iconBgColor"
+            >
+              @if(card?.fontIcon){
+                <fa-icon
+                  [icon]="card.fontIcon"
+                 />
+              }@else{
+                <lucide-icon
+                  [img]="card.icon"
+                  [size]="20"
+                  [style.color]="card.iconColor"
+                />
+              }
+            </div>
+            <span class="text-sm font-bold text-v4-main-text-color font-funnel">
+              {{ card.heading }}
+            </span>
+            <span
+              class="text-xs text-v4-secondary-text-color font-peridot mt-0.5 line-clamp-2"
+            >
+              {{ card.description }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Desktop Feature Sections (hidden on mobile) -->
+  @for (section of config().featureSections; track section.title) {
+    <div class="hidden md:block">
+      <h2 class="text-lg font-bold text-v4-main-text-color font-funnel mb-4">
+        {{ section.title }}
+      </h2>
+
+      @if (section.customTemplate) {
+        <!-- Cards with a badge or Coming Soon: same compact row as the standard cards -->
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          @for (card of section.cards; track card.heading) {
+            <app-v4-main-page-card
+              [icon]="card.icon"
+              [heading]="card.heading"
+              [description]="card.description"
+              [buttonText]="card.buttonText"
+              [iconBgColor]="card.iconBgColor"
+              [iconColor]="card.iconColor"
+              [fontIcon]="card.fontIcon"
+              [badge]="card.badge || ''"
+              [badgeColor]="card.badgeColor || ''"
+              [comingSoon]="card.comingSoon ?? false"
+              (buttonClick)="cardClick.emit(card)"
+            />
+          }
+        </div>
+      } @else {
+        <!-- Standard feature cards -->
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          @for (card of section.cards; track card.heading) {
+            <app-v4-main-page-card
+              [icon]="card.icon"
+              [heading]="card.heading"
+              [description]="card.description"
+              [buttonText]="card.buttonText"
+              [iconBgColor]="card.iconBgColor"
+              [iconColor]="card.iconColor"
+              (buttonClick)="cardClick.emit(card)"
+              [fontIcon]="card.fontIcon"
+            />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Slot: After Features -->
+  <ng-content select="[afterFeatures]" />
+
+  <!-- Benefits Section -->
+  @if (config().benefits; as benefits) {
+    <app-v4-main-page-benefits
+      [heading]="benefits.heading"
+      [benefits]="benefits.items"
+    />
+  }
+
+  <!-- Slot: After Benefits -->
+  <ng-content select="[afterBenefits]" />
+
+  <!-- Slot: Footer -->
+  <ng-content select="[footer]" />
+</div>

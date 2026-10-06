@@ -1,0 +1,464 @@
+<div class="relative flex flex-col max-h-[90vh]">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Set Positive Pay
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Configure FTP, SFTP, or Email delivery
+      </h2>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color overflow-y-auto flex-1">
+    <div [formGroup]="positivePayForm" class="flex flex-col gap-5">
+      <!-- Bank Accounts -->
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="isSelectAll"
+            (change)="selectAll($event)"
+            [ngModelOptions]="{ standalone: true }"
+            id="selectAllAccounts"
+            class="cursor-pointer"
+          />
+          <label
+            for="selectAllAccounts"
+            class="text-sm text-v4-main-text-color cursor-pointer"
+          >
+            Select All
+            <span class="text-xs text-v4-subtle-text-color ml-1"
+              >(Select bank accounts to set up for Positive Pay)</span
+            >
+          </label>
+        </div>
+        <app-bank-multi-select-dropdown-v4
+          [routingNumber]="injectData.bank_routing_number"
+          [selectedBankAccounts]="bankAccounts()"
+          [selectAll]="isChecked()"
+          placeholder="All Bank Accounts"
+          (selectionEvent)="bankSlectionEvent($event)"
+        />
+        <app-control-message-v4
+          [control]="positivePayForm.controls.bankAccounts"
+        />
+      </div>
+
+      <!-- Setup Method & File Type -->
+      <div class="flex items-start gap-3">
+        @if (isLoadingFileTypes()) {
+          <div class="skeleton w-full h-10 rounded-lg"></div>
+          <div class="skeleton w-full h-10 rounded-lg"></div>
+        } @else {
+          <div class="w-full">
+            <label
+              class="flex items-center gap-1 text-sm font-medium text-v4-secondary-text-color mb-1"
+            >
+              Setup method <span class="text-v4-common-red-color">*</span>
+              <lucide-icon
+                [img]="InfoIcon"
+                [size]="13"
+                class="text-v4-subtle-text-color"
+                matTooltip="How would you like your bank to receive check information"
+              />
+            </label>
+            <app-v4-common-dropdown
+              formControlName="driver"
+              [listData]="driverOptionsList"
+              [config]="{
+                placeholder: 'Select setup method',
+                displayField: 'label',
+                outputField: 'value'
+              }"
+              [clearable]="false"
+              [searchable]="false"
+              [appendTo]="'body'"
+            />
+            <app-control-message-v4
+              [control]="positivePayForm.controls.driver"
+            />
+          </div>
+          <div class="w-full">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+              >File type <span class="text-v4-common-red-color">*</span></label
+            >
+            <app-v4-common-dropdown
+              formControlName="fileType"
+              [listData]="fileTypesList"
+              [config]="{
+                placeholder: 'Select file type',
+                displayField: 'label',
+                outputField: 'value'
+              }"
+              [clearable]="false"
+              [searchable]="false"
+              [appendTo]="'body'"
+            />
+            <app-control-message-v4
+              [control]="positivePayForm.controls.fileType"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- Email (driver === 3) or FTP/SFTP fields -->
+      @if (positivePayForm.controls.driver.value?.toString() === "3") {
+        <div>
+          <app-common-input-v4
+            placeholder="Email"
+            formControlName="email"
+            [maxlength]="40"
+            [fieldLabel]="'Email'"
+            [isFieldRequired]="true"
+          />
+          <app-control-message-v4 [control]="positivePayForm.controls.email" />
+        </div>
+      } @else {
+        <div class="flex flex-col gap-4">
+          <p class="text-xs text-v4-subtle-text-color">
+            The following details will be provided by your bank
+          </p>
+          <div class="flex gap-3">
+            <div class="w-full">
+              <app-common-input-v4
+                placeholder="Host"
+                formControlName="host"
+                [fieldLabel]="'Host'"
+                [isFieldRequired]="true"
+              />
+              <app-control-message-v4
+                [control]="positivePayForm.controls.host"
+              />
+            </div>
+            <div class="w-full">
+              <app-common-input-v4
+                placeholder="Port"
+                formControlName="port"
+                [fieldLabel]="'Port'"
+                [isFieldRequired]="true"
+              />
+              <app-control-message-v4
+                [control]="positivePayForm.controls.port"
+              />
+            </div>
+          </div>
+          <div>
+            <app-common-input-v4
+              placeholder="Username"
+              formControlName="userName"
+              [fieldLabel]="'Username'"
+              [isFieldRequired]="true"
+            />
+            <app-control-message-v4
+              [control]="positivePayForm.controls.userName"
+            />
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-full">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Auth type <span class="text-v4-common-red-color">*</span></label
+              >
+              <app-v4-common-dropdown
+                formControlName="logonType"
+                [listData]="logonTypeOptions"
+                [config]="{
+                  placeholder: 'Select auth type',
+                  displayField: 'label',
+                  outputField: 'value'
+                }"
+                [clearable]="false"
+                [searchable]="false"
+                [appendTo]="'body'"
+              />
+              <app-control-message-v4
+                [control]="positivePayForm.controls.logonType"
+              />
+            </div>
+            @if (showPasswordField()) {
+              <div class="w-full">
+                <app-common-input-v4
+                  placeholder="Password"
+                  formControlName="password"
+                  type="password"
+                  [fieldLabel]="'Password'"
+                  [isFieldRequired]="true"
+                />
+                <app-control-message-v4
+                  [control]="positivePayForm.controls.password"
+                />
+              </div>
+            }
+            @if (showSshField()) {
+              <div class="w-full">
+                <label
+                  class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+                  >SSH Key <span class="text-v4-common-red-color">*</span></label
+                >
+                <app-v4-common-dropdown
+                  [(ngModel)]="sshItem"
+                  (ngModelChange)="onChangeSsh($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [required]="true"
+                  [config]="{
+                    placeholder: 'Select SSH',
+                    displayField: 'nickName',
+                    style: { enableLabelIcon: false, size: 0 },
+                    enableAddNew: true
+                  }"
+                  [listData]="sshList"
+                  (buttonClick)="AddNewSSH()"
+                />
+                <app-control-message-v4
+                  [control]="positivePayForm.controls.ssh"
+                />
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Timezone & Schedule -->
+      <div class="flex flex-col gap-4">
+        <p class="text-xs text-v4-subtle-text-color">
+          Please specify your bank's preferred times to receive checks. You
+          can select multiple time slots, though most banks prefer a single
+          time, often in the evening.
+        </p>
+        <div>
+          <label
+            class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+            >Time Zone</label
+          >
+          <app-v4-common-dropdown
+            formControlName="time_zone"
+            [listData]="timeZoneList ?? []"
+            [config]="{
+              placeholder: 'Select Time Zone',
+              displayField: 'name',
+              outputField: 'value'
+            }"
+            [appendTo]="'body'"
+          />
+        </div>
+        <div>
+          <label
+            class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+            >Time 1 <span class="text-v4-common-red-color">*</span></label
+          >
+          <input
+            type="time"
+            class="v4-time-input"
+            formControlName="timeToUpload"
+          />
+          <app-control-message-v4
+            [control]="positivePayForm.controls.timeToUpload"
+          />
+        </div>
+      </div>
+
+      <!-- Additional Emails -->
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="showMoreEmails"
+            (change)="toggleMoreEmails()"
+            [ngModelOptions]="{ standalone: true }"
+            id="addMoreEmails"
+            class="cursor-pointer"
+          />
+          <label
+            for="addMoreEmails"
+            class="text-sm text-v4-main-text-color cursor-pointer"
+          >
+            Positive Pay Email Notifications
+          </label>
+          <lucide-icon
+            [img]="InfoIcon"
+            [size]="14"
+            class="text-v4-subtle-text-color"
+            matTooltip="Positive Pay files sent securely to all listed emails, across all setup methods."
+          />
+        </div>
+        @if (showMoreEmails) {
+          <div
+            formArrayName="additionalEmails"
+            class="flex flex-col gap-3 max-h-[156px] overflow-y-auto"
+          >
+            @for (
+              email of additionalEmailsArray.controls;
+              track email;
+              let i = $index
+            ) {
+              <div class="flex items-start gap-2">
+                <div class="w-full">
+                  <app-common-input-v4
+                    [formControlName]="i"
+                    [placeholder]="'Email ' + (i + 1)"
+                    type="email"
+                  />
+                  <app-control-message-v4
+                    [control]="additionalEmailsArray.at(i)"
+                  />
+                </div>
+                <div class="flex items-center gap-1">
+                  <app-common-button-v4
+                    [type]="{ style: 'primary', name: 'main' }"
+                    [backGroundInput]="'var(--v4-badge-info-bg-color)'"
+                    [textColorInput]="'var(--v4-badge-info-text-color)'"
+                    lucideIcon="plus"
+                    [lucideIconSize]="14"
+                    text=""
+                    width="44px"
+                    toolTip="Add another email address"
+                    (clickEvent)="addEmailField()"
+                  />
+                  <app-common-button-v4
+                    [type]="{ style: 'destructive', name: 'main' }"
+                    [backGroundInput]="'var(--v4-badge-error-bg-color)'"
+                    [textColorInput]="'var(--v4-badge-error-text-color)'"
+                    lucideIcon="trash-2"
+                    [lucideIconSize]="14"
+                    text=""
+                    width="44px"
+                    toolTip="Remove email address"
+                    (clickEvent)="removeEmailField(i)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Extra Schedule / Settings links -->
+      <div class="flex items-center justify-between">
+        <span
+          role="presentation"
+          (click)="extraTimesToUpload()"
+          class="text-xs text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+        >
+          {{ !showScheduleTime() ? "Add" : "Remove" }} Schedule Time
+        </span>
+        <span
+          role="presentation"
+          (click)="openSettingModal()"
+          class="text-xs text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+        >
+          Settings
+        </span>
+      </div>
+
+      <!-- Extra Schedule Times -->
+      @if (showScheduleTime()) {
+        <div class="flex flex-col gap-4">
+          <div class="flex gap-3">
+            <div class="w-full">
+              <label class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+                >Time 2</label
+              >
+              <input
+                type="time"
+                class="v4-time-input"
+                (change)="selectDate($event, 0)"
+                [value]="uploadTimesArray[0]"
+              />
+            </div>
+            <div class="w-full">
+              <label class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+                >Time 3</label
+              >
+              <input
+                type="time"
+                class="v4-time-input"
+                (change)="selectDate($event, 1)"
+                [value]="uploadTimesArray[1]"
+              />
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-full">
+              <label class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+                >Time 4</label
+              >
+              <input
+                type="time"
+                class="v4-time-input"
+                (change)="selectDate($event, 2)"
+                [value]="uploadTimesArray[2]"
+              />
+            </div>
+            <div class="w-full">
+              <label class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+                >Time 5</label
+              >
+              <input
+                type="time"
+                class="v4-time-input"
+                (change)="selectDate($event, 3)"
+                [value]="uploadTimesArray[3]"
+              />
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-full">
+              <label class="block text-sm font-medium text-v4-secondary-text-color mb-1"
+                >Time 6</label
+              >
+              <input
+                type="time"
+                class="v4-time-input"
+                (change)="selectDate($event, 4)"
+                [value]="uploadTimesArray[4]"
+              />
+            </div>
+            <div class="w-full"></div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Save"
+      (clickEvent)="submit()"
+      [disabled]="loading()"
+      [loading]="loading()"
+    />
+  </div>
+
+  @if (fetchData()) {
+    <div
+      class="absolute inset-0 flex items-center justify-center bg-v4-tertiary-background-color/60 rounded-lg z-10"
+    >
+      <div
+        class="w-8 h-8 border-2 border-v4-primary-color border-t-transparent rounded-full animate-spin"
+      ></div>
+    </div>
+  }
+</div>

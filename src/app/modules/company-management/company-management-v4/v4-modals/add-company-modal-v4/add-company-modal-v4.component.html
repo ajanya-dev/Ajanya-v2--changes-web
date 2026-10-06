@@ -1,0 +1,258 @@
+<div class="flex flex-col h-full max-h-[95vh] font-peridot">
+  <!-- Header -->
+  <div
+    class="sticky top-0 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-v4-border-color bg-v4-secondary-background-color z-10"
+  >
+    <div class="flex items-center gap-3">
+      <div
+        class="w-10 h-10 rounded-xl flex items-center justify-center bg-v4-primary-brand-color"
+      >
+        @if (isEditMode) {
+          <lucide-icon
+            name="pencil"
+            [size]="20"
+            class="text-v4-secondary-brand-color"
+          />
+        } @else {
+          <lucide-icon
+            name="building-2"
+            [size]="20"
+            class="text-v4-secondary-brand-color"
+          />
+        }
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-v4-main-text-color">
+          {{ isEditMode ? "Edit Company" : "Add New Company" }}
+        </h2>
+        <p class="text-xs text-v4-tertiary-text-color">
+          {{
+            isEditMode
+              ? "Update company details"
+              : "Create a new company profile"
+          }}
+        </p>
+      </div>
+    </div>
+    <button
+      class="p-2 rounded-xl hover:bg-v4-background-color transition-colors"
+      (click)="close()"
+    >
+      <lucide-icon name="x" [size]="20" class="text-v4-tertiary-text-color" />
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6 space-y-6">
+    <!-- Company Logo -->
+    <div class="flex items-center gap-4 mb-4">
+      <div
+        class="w-16 h-16 rounded-xl bg-v4-background-color border border-v4-border-color flex items-center justify-center overflow-hidden"
+      >
+        @if (profilePic()) {
+          <img [src]="profilePic()" class="w-16 h-16 object-cover" alt="Logo" />
+        } @else {
+          <lucide-icon
+            name="building-2"
+            [size]="24"
+            class="text-v4-tertiary-text-color"
+          />
+        }
+      </div>
+      <div>
+        <label
+          class="inline-flex items-center gap-2 text-xs font-semibold text-v4-primary-brand-bold-color cursor-pointer hover:underline"
+        >
+          <lucide-icon name="upload" [size]="14" />
+          Upload Logo
+          <input
+            type="file"
+            class="hidden"
+            accept="image/*"
+            (change)="imgUpload($event)"
+          />
+        </label>
+        <p class="text-[12px] text-v4-tertiary-text-color mt-1">
+          Max 5MB. No SVG.
+        </p>
+      </div>
+    </div>
+
+    <!-- Business Legal Name -->
+    <app-common-input-v4
+      [fieldLabel]="'Business Legal Name'"
+      [placeholder]="'Enter company legal name'"
+      [maxLength]="60"
+      [control]="businessForm.controls.businessLegalName"
+      [formControl]="businessForm.controls.businessLegalName"
+    />
+
+    <!-- Address Section -->
+    <div class="space-y-5">
+      <h3 class="text-sm font-bold text-v4-main-text-color">Address</h3>
+
+      <!-- Address Line 1 (Google Autocomplete) -->
+      <div class="space-y-1.5">
+        <app-address-autocomplete-v4
+          [label]="'Address Line 1'"
+          [placeholder]="'Street address'"
+          [control]="businessForm.controls.businessAddress1"
+          [maxLength]="150"
+          [isFieldRequired]="false"
+          (addressSelected)="onAddressSelected($event)"
+        />
+      </div>
+
+      <!-- Address Line 2 -->
+      <div class="pt-0">
+        <app-common-input-v4
+          [fieldLabel]="'Address Line 2'"
+          [placeholder]="'Apt, suite, unit, etc. (optional)'"
+          [isFieldRequired]="false"
+          [control]="businessForm.controls.businessAddress2"
+          [formControl]="businessForm.controls.businessAddress2"
+        />
+      </div>
+
+      <!-- City & State row -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-common-input-v4
+          [fieldLabel]="'City'"
+          [placeholder]="'City'"
+          [isFieldRequired]="false"
+          [maxLength]="50"
+          [control]="businessForm.controls.city"
+          [formControl]="businessForm.controls.city"
+        />
+        <app-common-input-v4
+          [fieldLabel]="'State'"
+          [placeholder]="'State'"
+          [isFieldRequired]="false"
+          [control]="businessForm.controls.state"
+          [formControl]="businessForm.controls.state"
+        />
+      </div>
+
+      <!-- Zip & Country -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-common-input-v4
+          [fieldLabel]="'Zip'"
+          [placeholder]="'Zip code'"
+          [isFieldRequired]="false"
+          [control]="businessForm.controls.zip"
+          [formControl]="businessForm.controls.zip"
+        />
+        <div class="space-y-1.5">
+          <label
+            class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >Country</label
+          >
+          <app-common-country-dropdown-v4
+            [formControl]="businessForm.controls.country"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Business Details Section -->
+    @if (isEditMode) {
+      <div class="space-y-4">
+        <h3 class="text-sm font-bold text-v4-main-text-color">
+          Business Details
+        </h3>
+
+        <!-- Entity Type & DBA -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Entity Type</label
+            >
+            <app-v4-common-dropdown
+              [config]="entityTypeDropdownConfig"
+              [listData]="entityTypes"
+              [clearable]="false"
+              [searchable]="false"
+              [formControl]="businessForm.controls.entityType"
+              appendTo="body"
+            />
+          </div>
+          <app-common-input-v4
+            [fieldLabel]="'DBA'"
+            [placeholder]="'Doing Business As'"
+            [isFieldRequired]="false"
+            [control]="businessForm.controls.dba"
+            [formControl]="businessForm.controls.dba"
+          />
+        </div>
+
+        <!-- Formation Date & Industry Type -->
+        <div class="grid grid-cols-2 gap-4">
+          <app-common-input-v4
+            [fieldLabel]="'Formation Date'"
+            [placeholder]="'Select date'"
+            [isFieldRequired]="false"
+            [type]="'date'"
+            [maxDate]="nowDate"
+            [control]="businessForm.controls.date"
+            [formControl]="businessForm.controls.date"
+          />
+          <div class="space-y-1.5">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Industry Type</label
+            >
+            <app-v4-common-dropdown
+              [config]="industryTypeDropdownConfig"
+              [listData]="industryTypes"
+              [clearable]="false"
+              [searchable]="false"
+              [formControl]="businessForm.controls.industryType"
+              appendTo="body"
+            />
+          </div>
+        </div>
+
+        <!-- EIN -->
+        <div>
+          <app-common-input-v4
+            [fieldLabel]="'EIN'"
+            [placeholder]="'XX-XXXXXXX'"
+            [isFieldRequired]="false"
+            [control]="businessForm.controls.ein"
+            [formControl]="businessForm.controls.ein"
+            [customMask]="'00-0000000'"
+          />
+          <p class="text-xs text-v4-tertiary-text-color mt-1">
+            Employer Identification Number (optional)
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="sticky bottom-0 border-t border-v4-border-color px-4 md:px-6 pt-4 md:pt-5 pb-6 md:pb-8 bg-v4-secondary-background-color z-10"
+  >
+    <div class="flex gap-3">
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        [width]="'100%'"
+        (clickEvent)="close()"
+      />
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="isEditMode ? 'Update Company' : 'Create Company'"
+        [lucideIcon]="'check-circle-2'"
+        [lucideIconSize]="16"
+        [loading]="loading()"
+        [width]="'100%'"
+        (clickEvent)="submit()"
+      />
+    </div>
+  </div>
+</div>

@@ -25,6 +25,9 @@ export class V4MainPageCardComponent {
   iconBgColor = input<string>('var(--v4-primary-brand-color)');
   iconColor = input<string>('#ffffff');
   fontIcon = input<IconDefinition>();
+  badge = input<string>('');
+  badgeColor = input<string>('');
+  comingSoon = input(false);
 
   buttonClick = output();
 }

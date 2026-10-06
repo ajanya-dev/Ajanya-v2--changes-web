@@ -1,0 +1,302 @@
+<div class="w-full max-w-[920px] mx-auto lg:mx-0">
+  <!-- Title outside card -->
+  <h2 class="text-2xl font-bold text-v4-main-text-color font-funnel mb-4">
+    Personal Info
+  </h2>
+
+  <!-- Form Card -->
+  <div
+    class="border border-v4-border-color rounded-2xl bg-v4-secondary-background-color px-8 py-7"
+  >
+    <form [formGroup]="userForm">
+      <!-- Profile Picture + Name -->
+      <div class="flex items-center gap-4 mb-8">
+        <label class="cursor-pointer block relative">
+          <img
+            [src]="profilePic || 'assets/images/blank-profile-picture.png'"
+            class="w-16 h-16 object-cover rounded-full"
+            alt="Profile"
+          />
+          <div
+            class="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-v4-secondary-brand-color border-2 border-v4-secondary-background-color flex items-center justify-center"
+          >
+            <lucide-icon [img]="CameraIcon" [size]="12" color="black" />
+          </div>
+          <input
+            type="file"
+            onclick="this.value=null"
+            class="absolute hidden opacity-0"
+            (change)="openDialog($event)"
+            accept="image/png, image/jpeg"
+          />
+          @if (userService.isLoadingUserDetailsSignal() || loading()) {
+            <div
+              class="absolute inset-0 bg-v4-secondary-background-color/50 rounded-full flex items-center justify-center"
+            >
+              <lucide-icon
+                [img]="LoaderIcon"
+                [size]="18"
+                class="text-v4-primary-brand-color animate-spin"
+              />
+            </div>
+          }
+        </label>
+        <div class="flex flex-col min-w-0">
+          <h3
+            class="text-lg font-bold text-v4-main-text-color font-funnel cursor-pointer"
+            [class.truncate]="!isNameExpanded()"
+            [class.break-words]="isNameExpanded()"
+            [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+            role="button"
+            tabindex="0"
+            (click)="isNameExpanded.set(!isNameExpanded())"
+            (keydown.enter)="isNameExpanded.set(!isNameExpanded())"
+            (keydown.space)="isNameExpanded.set(!isNameExpanded())"
+          >
+            {{ userForm.controls.firstName.value || "Loading..." }}
+          </h3>
+          <span
+            class="text-sm text-v4-secondary-text-color font-peridot truncate"
+          >
+            {{ userForm.controls.email.value }}
+          </span>
+        </div>
+      </div>
+
+      <!--
+        Form Fields wrapper
+        ───────────────────
+        `personal-info-fields` is a marker class consumed by this
+        component's scss to collapse every row grid to a single column
+        between 1024px and 1100px viewport width. In that narrow band
+        the page layout (sidebar + tab nav + form card) leaves the
+        form area too tight for the default md:grid-cols-2 layout, so
+        Phone, Date of Birth, etc. start visibly clipping. Outside
+        that band the original responsive layout applies as-is.
+      -->
+      <div class="personal-info-fields flex flex-col gap-6">
+        <!-- Row 1: First Name, Last Name -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+        >
+          <app-common-input-v4
+            [fieldLabel]="'First Name'"
+            [placeholder]="'First Name'"
+            formControlName="firstName"
+            [control]="userForm.controls.firstName"
+            [isFieldRequired]="true"
+            [maxLength]="100"
+          />
+          <app-common-input-v4
+            [fieldLabel]="'Last Name'"
+            [placeholder]="'Last Name'"
+            formControlName="lastName"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.lastName"
+            [maxLength]="50"
+          />
+        </div>
+
+        <!-- Row 2: Display Name, Email -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+        >
+          <app-common-input-v4
+            [fieldLabel]="'Display Name'"
+            [placeholder]="'Display Name'"
+            formControlName="displayName"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.displayName"
+            [maxLength]="30"
+          />
+          <app-common-input-v4
+            [fieldLabel]="'Email'"
+            [placeholder]="'Email'"
+            formControlName="email"
+            [readOnly]="isEmailVerified"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.email"
+          />
+        </div>
+
+        <!-- Row 3: Phone, SSN -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+        >
+          <div class="relative">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >
+              Phone
+            </label>
+            <app-phone-input-v4
+              formControlName="phone"
+              [isReadOnly]="isPhoneVerified"
+              [control]="userForm.controls.phone"
+              (countryDropdown)="countryChange($event)"
+              (countryCodeEmit)="countryCodeChange($event)"
+            />
+          </div>
+          <div class="relative">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >
+              SSN
+            </label>
+            <input
+              type="text"
+              class="v4-input-style w-full rounded-lg pl-4 pr-10 py-3 border border-v4-input-border-color bg-v4-secondary-background-color text-base md:text-sm text-v4-main-text-color placeholder:text-v4-tertiary-text-color outline-none transition-colors focus:outline-none focus:ring-2 focus:ring-v4-brand-border-color focus:border-v4-brand-border-color shadow-sm font-peridot"
+              style="height: 44px"
+              maxlength="18"
+              placeholder="SSN"
+              formControlName="ssn"
+              [mask]="mask"
+              [patterns]="customPattern"
+              [hiddenInput]="true"
+              (copy)="(false)"
+              (cut)="(false)"
+            />
+            @if (userForm.controls.ssn.value) {
+              <button
+                type="button"
+                class="absolute right-3 top-[22px] h-11 flex items-center justify-center text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors z-10"
+                (click)="toggleSsnReveal()"
+                [attr.aria-label]="ssnRevealed ? 'Hide SSN' : 'Show SSN'"
+              >
+                <lucide-icon
+                  [img]="ssnRevealed ? EyeOffIcon : EyeIcon"
+                  [size]="16"
+                  aria-hidden="true"
+                ></lucide-icon>
+              </button>
+            }
+            <app-control-message-v4 [control]="userForm.controls.ssn" />
+          </div>
+        </div>
+
+        <!-- Row 4: Date of Birth, Address Line 1 -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+        >
+          <app-v4-date-picker
+            fieldLabel="Date of Birth"
+            placeholder="Date of Birth"
+            formControlName="date"
+            [maxDate]="maxDobDate"
+            [minDate]="minDobDate"
+            [hideTodayShortcut]="true"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.date"
+            [maskDisplay]="true"
+          />
+          <app-common-input-v4
+            [fieldLabel]="'Address Line 1'"
+            [placeholder]="'Address Line 1'"
+            formControlName="address1"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.address1"
+            [maxLength]="50"
+            (inputFocusEvent)="loadGoogleAddress($event)"
+          />
+        </div>
+
+        <!-- Row 5: Address Line 2, City -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+        >
+          <app-common-input-v4
+            [fieldLabel]="'Address Line 2'"
+            [placeholder]="'Address Line 2'"
+            formControlName="address2"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.address2"
+            [maxLength]="50"
+          />
+          <app-common-input-v4
+            [fieldLabel]="'City'"
+            [placeholder]="'City'"
+            formControlName="city"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.city"
+            [maxLength]="50"
+          />
+        </div>
+
+        <!-- Row 6: State, Postal Code, Country -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-3 gap-5"
+          [class.animate-pulse]="userService.isLoadingUserDetailsSignal()"
+        >
+          <app-common-input-v4
+            [fieldLabel]="'State'"
+            [placeholder]="'State'"
+            formControlName="state"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.state"
+            [maxLength]="50"
+          />
+          <app-common-input-v4
+            [fieldLabel]="
+              userForm.get('country')?.value === 'US' ||
+              userForm.get('country')?.value === ''
+                ? 'Zip'
+                : 'Postal Code'
+            "
+            [placeholder]="
+              userForm.get('country')?.value === 'US' ||
+              userForm.get('country')?.value === ''
+                ? 'Zip'
+                : 'Postal Code'
+            "
+            formControlName="zip"
+            [maxLength]="10"
+            [isFieldRequired]="false"
+            [control]="userForm.controls.zip"
+          />
+          <div>
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >
+              Country
+            </label>
+            <app-v4-common-dropdown
+              [config]="countryDropdownConfig"
+              [listData]="countryList"
+              [clearable]="false"
+              formControlName="country"
+            />
+            <!--
+              v3 parity: when the saved country can't be resolved
+              against the master list (e.g. backend returned junk),
+              normalizeCountry() sets unknownCountry on the control
+              and we surface "Invalid Country" the same way the v3
+              CommonCountryDropDownComponent did via its internal
+              `<p *ngIf="invalid">Invalid Country</p>`.
+            -->
+            <app-control-message-v4
+              [control]="userForm.controls.country"
+              [customMessages]="{ unknownCountry: 'Invalid Country' }"
+            />
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="flex justify-end gap-3 mt-2">
+          <app-common-button-v4
+            [type]="{ style: 'neon', name: 'main' }"
+            text="Update"
+            width="140px"
+            (clickEvent)="onSubmit()"
+            [disabled]="btnDisable"
+            [loading]="btnDisable"
+          />
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

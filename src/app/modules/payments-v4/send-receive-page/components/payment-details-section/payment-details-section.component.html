@@ -1,0 +1,663 @@
+<div class="flex flex-col gap-3">
+  @if (mode() ==="receive") {
+    @if (qrCodeDataUrl() || qrPaymentLink()) {
+      <app-payment-qr-code-panel
+        [payeeNameInput]="qrPayeeName()"
+        [bankNameInput]="qrBankName()"
+        [amountInput]="qrAmount()"
+        [qrCodeDataUrlInput]="qrCodeDataUrl()"
+        [paymentLinkInput]="qrPaymentLink()"
+        [paymentIdInput]="qrPaymentId()"
+      />
+    }
+
+    @if (payeeInfo(); as payee) {
+      <section
+        class="overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color shadow-sm"
+      >
+        <div class="flex items-center gap-1.5 p-4">
+          <span
+            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-v4-brand-tint text-[12px] font-semibold text-v4-primary-brand-bold-color"
+          >
+            {{ payeeInitial() }}
+          </span>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 justify-between">
+              <p
+                class="truncate text-[13px] font-semibold text-v4-main-text-color"
+              >
+                {{ payee.payee_name }}
+              </p>
+              <button
+                type="button"
+                (click)="editPayee()"
+                [disabled]="payeeEditDisabled()"
+                aria-label="Edit payee"
+                class="shrink-0 grid h-6 w-6 place-items-center rounded-md text-v4-tertiary-text-color transition-colors hover:bg-v4-brand-tint hover:text-v4-primary-brand-bold-color disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-v4-tertiary-text-color"
+              >
+                <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
+              </button>
+            </div>
+            <p class="truncate text-[12px] text-v4-tertiary-text-color">
+              {{ payee.payee_type_name || payee.payee_company_name }}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="togglePayee()"
+            [attr.aria-expanded]="payeeOpen()"
+            aria-label="Toggle payee details"
+            class="shrink-0 text-v4-tertiary-text-color"
+          >
+            <lucide-icon
+              [img]="payeeOpen() ? ChevronUpIcon : ChevronDownIcon"
+              [size]="16"
+            ></lucide-icon>
+          </button>
+        </div>
+
+        @if (payeeOpen()) {
+          <dl
+            class="flex flex-col gap-2.5 border-t border-v4-border-color px-4 py-4 text-[12px]"
+          >
+            @if (payee.payee_email) {
+              <div class="flex items-center justify-between gap-4">
+                <dt class="text-[12px] text-v4-tertiary-text-color">Email</dt>
+                <dd class="truncate font-medium text-v4-main-text-color">
+                  {{ payee.payee_email }}
+                </dd>
+              </div>
+            }
+
+            @if (payee.payee_phone) {
+              <div class="flex items-center justify-between gap-4">
+                <dt class="text-[12px] text-v4-tertiary-text-color">Phone</dt>
+                <dd class="font-medium text-v4-main-text-color">
+                  {{ payee.payee_phone }}
+                </dd>
+              </div>
+            }
+
+            @if (payee.payee_company_name) {
+              <div class="flex items-center justify-between gap-4">
+                <dt class="text-[12px] text-v4-tertiary-text-color">Company</dt>
+                <dd class="truncate font-medium text-v4-main-text-color">
+                  {{ payee.payee_company_name }}
+                </dd>
+              </div>
+            }
+
+            @if (payeeAddressLines().length) {
+              <div class="flex justify-between gap-4">
+                <dt class="shrink-0 text-[12px] text-v4-tertiary-text-color">Address</dt>
+                <dd class="text-right font-medium text-v4-main-text-color">
+                  @for (line of payeeAddressLines(); track line) {
+                    <span class="block">{{ line }}</span>
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+        }
+      </section>
+    } @else if (payeeLoading()) {
+      <section
+        class="overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color shadow-sm"
+      >
+        <div class="flex items-center gap-1.5 p-4 animate-pulse">
+          <span
+            class="h-6 w-6 shrink-0 rounded-md bg-v4-input-background-color"
+          ></span>
+          <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+            <div class="h-3 w-32 rounded bg-v4-input-background-color"></div>
+            <div class="h-2.5 w-20 rounded bg-v4-input-background-color"></div>
+          </div>
+        </div>
+      </section>
+    }
+  }
+
+  @if (mode() ==="pay") {
+    <!-- Other Payment Options — check-writing shortcuts; bank source or check flow, hidden once a non-check method is picked. -->
+    @if (showsOtherOptions()) {
+
+      <div
+        class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 shadow-sm"
+      >
+        <p
+          class="mb-3 font-semibold text-v4-main-text-color text-[13px]"
+        >
+          Other Payment Options
+        </p>
+        <div class="grid grid-cols-2 gap-2.5">
+          @for (opt of otherPaymentOptions; track opt.key) {
+            <button
+              type="button"
+              class="flex h-9 items-center justify-center rounded-[10px] border border-v4-brand-tint-strong bg-v4-brand-tint px-2.5 text-center font-semibold text-v4-primary-brand-bold-color transition-colors hover:border-v4-primary-brand-color text-[12px]"
+              [class.col-span-2]="opt.full"
+              (click)="onOtherPaymentOption(opt.key)"
+            >
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (showsProcessWithout()) {
+      <div
+        class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 shadow-sm"
+      >
+        <div
+          class="mb-3 flex w-fit cursor-pointer items-center gap-1.5"
+        >
+          <lucide-icon
+            [img]="CircleAlertIcon"
+            [size]="15"
+            matTooltip="Keep selected fields blank if you want to fill them in manually later"
+            matTooltipPosition="above"
+
+            class="text-v4-tertiary-text-color"
+          />
+          <span
+            class="font-semibold text-v4-main-text-color text-[13px]"
+            >Process Without</span
+          >
+        </div>
+        <div class="grid grid-cols-2 gap-x-3 gap-y-2">
+          @for (option of processWithout; track option.key) {
+            <label
+              class="flex cursor-pointer items-center gap-2 text-v4-main-text-color text-[12px] font-semibold tracking-[-0.01em]"
+            >
+              <input
+                type="checkbox"
+                class="v4-checkbox-sm"
+                [checked]="!!checkDetailsForm.controls[option.key].value"
+                (change)="
+                  checkDetailsForm.controls[option.key].setValue(
+                    $any($event.target).checked
+                  )"
+              />
+              {{
+                option.key ==="noPayee"
+                  ? ("Payee" | whiteLabel:"payeeName")
+                  : option.label
+              }}
+            </label>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Live"Payment details" summary card -->
+    @if (summaryVisible()) {
+      <div
+        class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 shadow-sm"
+      >
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <p class="font-semibold text-v4-main-text-color text-[13px]">
+            Payment details
+          </p>
+          @if (payeeInfo()) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 rounded-lg border border-v4-brand-border-color px-2 py-1 text-[12px] font-semibold text-v4-primary-brand-bold-color transition-colors hover:bg-v4-brand-tint disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+              [disabled]="payeeEditDisabled()"
+              (click)="editPayee()"
+            >
+              <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
+              Edit
+            </button>
+          }
+        </div>
+
+        @if (payeeLoading()) {
+          <div class="flex flex-col gap-1.5 animate-pulse">
+            <div class="h-3 w-full rounded bg-v4-input-background-color"></div>
+            <div class="h-2.5 w-24 self-end rounded bg-v4-input-background-color"></div>
+          </div>
+        } @else {
+          <!-- From / To: label column, left-aligned values -->
+          <dl class="grid grid-cols-[44px_minmax(0,1fr)] gap-x-2 gap-y-1 text-[12px]">
+            <dt class="text-v4-tertiary-text-color">From</dt>
+            <dd class="m-0 min-w-0 truncate font-medium text-v4-main-text-color">
+              {{ sourceAccountName() ||"—" }}
+            </dd>
+            <dt class="text-v4-tertiary-text-color">To</dt>
+            <dd class="m-0 min-w-0">
+              <span class="block truncate font-medium text-v4-main-text-color">
+                {{ payeeInfo()?.payee_name ||"—" }}
+              </span>
+              @if (payeeInfo()?.payee_email) {
+                <span class="block truncate text-v4-tertiary-text-color">
+                  {{ payeeInfo()?.payee_email }}
+                </span>
+              }
+              @if (payeeAddressLine()) {
+                <span class="block text-v4-tertiary-text-color">
+                  {{ payeeAddressLine() }}
+                </span>
+              }
+            </dd>
+          </dl>
+        }
+
+        <!-- Method + destination -->
+        @if (summaryMethodLabel()) {
+          <div
+            class="mt-2.5 border-t border-v4-border-color pt-2.5"
+          >
+            <div class="grid grid-cols-[44px_minmax(0,1fr)] gap-x-2 text-[12px]">
+              <span class="text-v4-tertiary-text-color">Via</span>
+              <span class="min-w-0 truncate font-medium text-v4-main-text-color">
+                {{ summaryMethodLabel() }}
+              </span>
+            </div>
+            @if (summaryDestination()) {
+              <div
+                class="mt-0.5 flex items-center gap-1 pl-[52px] text-v4-tertiary-text-color text-[12px]"
+              >
+                <span class="truncate">{{ summaryDestination() }}</span>
+                @if (payeeBank()?.verified === 1) {
+                  <lucide-icon
+                    [img]="CircleCheckBigIcon"
+                    [size]="12"
+                    class="shrink-0 text-v4-text-success"
+                    matTooltip="Bank account verified"
+                  ></lucide-icon>
+                }
+              </div>
+            }
+            @if (summaryTiming()) {
+              <div
+                class="mt-0.5 pl-[52px] text-v4-tertiary-text-color text-[12px]"
+              >
+                Est. arrival · {{ summaryTiming() }}
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Amount + fee/total -->
+        <div
+          class="mt-2.5 border-t border-v4-border-color pt-2.5"
+        >
+          <div
+            class="flex items-baseline justify-between gap-3 text-v4-main-text-color"
+          >
+            <span class="text-[12px] text-v4-tertiary-text-color">Amount</span>
+            <span class="font-funnel text-[20px] font-extrabold leading-none text-v4-primary-brand-bold-color">
+              {{ summaryAmount() | currency }}
+            </span>
+          </div>
+
+          @if (feeVisible()) {
+            @if (feeError()) {
+              <p class="mt-1 text-[12px] text-v4-common-red-color">
+                The fee could not be calculated.
+              </p>
+              <div
+                class="mt-1.5 flex items-center justify-between border-t border-v4-border-color pt-1.5 font-semibold text-v4-main-text-color text-[12px]"
+              >
+                <span>You pay</span>
+                <span class="text-v4-common-red-color">
+                  <lucide-icon
+                    [img]="TriangleAlertIcon"
+                    [size]="16"
+                    aria-label="The fee could not be calculated"
+                  ></lucide-icon>
+                </span>
+              </div>
+            } @else {
+              @if (showsFeeRow()) {
+                <div
+                  class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                >
+                  <span>{{ feeLabel() }}</span>
+                  @if (feeLoading()) {
+                    <span class="fee-skel h-3.5 w-14"></span>
+                  } @else if (feePending()) {
+                    <span class="text-right">{{ feePendingLabel() }}</span>
+                  } @else if (feeVariesByDelivery()) {
+                    <span class="text-right font-medium text-v4-main-text-color">
+                      Varies by delivery method
+                    </span>
+                  } @else if (processingFee() === 0) {
+                    <span class="font-semibold text-v4-text-success">Free</span>
+                  } @else {
+                    <span>{{ processingFee() | currency }}</span>
+                  }
+                </div>
+              }
+
+              @if (mailQuote(); as q) {
+                <div
+                  class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                >
+                  <span>{{ deliveryFeeLabel() }}</span>
+                  @if (feeQuoting()) {
+                    <span class="fee-skel h-3.5 w-14"></span>
+                  } @else if (mailingLineTotal() === 0) {
+                    <span class="font-semibold text-v4-text-success">Free</span>
+                  } @else {
+                    <span>{{ mailingLineTotal() | currency }}</span>
+                  }
+                </div>
+                @if (q.sms > 0) {
+                  <div
+                    class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                  >
+                    <span>Payee SMS</span>
+                    @if (feeQuoting()) {
+                      <span class="fee-skel h-3.5 w-14"></span>
+                    } @else {
+                      <span>{{ q.sms | currency }}</span>
+                    }
+                  </div>
+                }
+                @if (q.attachments > 0) {
+                  <div
+                    class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                  >
+                    <span>Attachment fee</span>
+                    @if (feeQuoting()) {
+                      <span class="fee-skel h-3.5 w-14"></span>
+                    } @else {
+                      <span>{{ q.attachments | currency }}</span>
+                    }
+                  </div>
+                }
+              }
+
+              @if (showsMailingFeeRow()) {
+                <div
+                  class="mt-1 flex items-center justify-between text-v4-tertiary-text-color text-[12px]"
+                >
+                  <span>Mailing fee</span>
+                  <span>{{ mailingFeeAmount() | currency }}</span>
+                </div>
+              }
+
+              @if (showsSameDayRow()) {
+                <div
+                  class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                >
+                  <span>{{ sameDayRowLabel() }}</span>
+                  @if (mailingFeePending()) {
+                    <span class="text-right">Depending on shipping type</span>
+                  } @else {
+                    <span>{{ sameDayRowAmount() | currency }}</span>
+                  }
+                </div>
+              }
+
+              @if (fee(); as f) {
+                @if (f.smsFee) {
+                  <div
+                    class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                  >
+                    <span>{{ f.smsFee.title }}</span>
+                    <span>{{ f.smsFee.fee | currency }}</span>
+                  </div>
+                }
+                @if (f.attachmentFee || attachmentFeeLoading()) {
+                  <div
+                    class="mt-1 flex items-center justify-between gap-4 text-v4-tertiary-text-color text-[12px]"
+                  >
+                    @if (attachmentFeeLoading()) {
+                      <span class="fee-skel h-3.5 w-24"></span>
+                      <span class="fee-skel h-3.5 w-14"></span>
+                    } @else {
+                      <span>{{ f.attachmentFee.title }}</span>
+                      <span>{{ f.attachmentFee.fee | currency }}</span>
+                    }
+                  </div>
+                }
+              }
+
+              <div
+                class="mt-1.5 flex items-center justify-between gap-4 border-t border-v4-border-color pt-1.5 font-semibold text-v4-main-text-color text-[12px]"
+              >
+                <span>You pay</span>
+                @if (feeLoading() || feeQuoting()) {
+                  <span class="fee-skel h-4 w-20"></span>
+                } @else if (feePending()) {
+                  <span class="text-right text-[12px] font-normal text-v4-tertiary-text-color">
+                    {{ feePendingLabel() }}
+                  </span>
+                } @else {
+                  <span>{{ fee()?.totalAmount | currency }}</span>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- International exchange-rate quote -->
+        @if (isInternational()) {
+          <div
+            class="mt-3 border-t border-v4-border-color pt-3"
+          >
+            <div
+              class="mb-2.5 flex items-center gap-2 rounded-lg bg-v4-surface-success px-2.5 py-1.5"
+            >
+              <lucide-icon
+                [img]="CircleCheckBigIcon"
+                [size]="14"
+                class="shrink-0 text-v4-text-success"
+              ></lucide-icon>
+              <div class="min-w-0">
+                <p
+                  class="font-semibold leading-tight text-v4-text-success text-[12px]"
+                >
+                  No Platform Fee
+                </p>
+                <p class="leading-tight text-v4-text-success text-[12px]">
+                  Save more with every international transfer
+                </p>
+              </div>
+            </div>
+
+            @if (intlQuoteLoading() && !intlQuote()) {
+              <div
+                class="animate-pulse rounded-lg border border-v4-border-color p-2.5"
+              >
+                <div class="mb-2 h-3.5 w-32 rounded bg-v4-border-color"></div>
+                <div class="mb-2 h-8 w-full rounded bg-v4-border-color"></div>
+                <div class="h-3 w-24 rounded bg-v4-border-color"></div>
+              </div>
+            } @else if (intlQuote()) {
+              @if (intlQuote(); as quote) {
+              <div class="mb-2 flex items-center justify-between">
+                <span
+                  class="font-semibold text-v4-main-text-color text-[12px]"
+                >
+                  1 USD =
+                  {{ quote.customer_exchange_rate | number:"1.2-4" }}
+                  {{ quote.receiving_currency_code }}
+                </span>
+                <span
+                  class="flex items-center gap-1 rounded-full bg-v4-badge-error-bg-color px-2 py-0.5"
+                >
+                  <span
+                    class="h-1.5 w-1.5 animate-pulse rounded-full bg-v4-common-red-color"
+                  ></span>
+                  <span class="font-semibold text-v4-common-red-color text-[12px]"
+                    >Live</span
+                  >
+                </span>
+              </div>
+
+              <div class="mb-2 flex items-center gap-1.5">
+                <div
+                  class="flex-1 rounded-lg bg-v4-primary-brand-color px-2 py-1.5 text-center"
+                >
+                  <p class="text-white/80 text-[12px]">You send</p>
+                  <p class="font-bold text-white text-[12px]">
+                    ${{ quote.sending_amount | number:"1.2-2" }}
+                  </p>
+                </div>
+                <lucide-icon
+                  [img]="ArrowRightIcon"
+                  [size]="12"
+                  class="shrink-0 text-v4-subtle-text-color"
+                ></lucide-icon>
+                <div
+                  class="flex-1 rounded-lg bg-v4-surface-success px-2 py-1.5 text-center"
+                >
+                  <p class="text-v4-text-success text-[12px]">They receive</p>
+                  <p class="font-bold text-v4-text-success text-[12px]">
+                    {{ intlCurrencySymbol(quote.receiving_currency_code)
+                    }}{{ quote.receiving_amount }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="flex items-center justify-between text-v4-tertiary-text-color text-[12px]"
+              >
+                <span>Transfer fee</span>
+                <span class="font-medium"
+                  >${{ quote.sending_fee ||"0" | number:"1.2-2" }}</span
+                >
+              </div>
+              }
+            } @else {
+              <div
+                class="flex items-center gap-2 rounded-lg border border-v4-border-color px-2.5 py-2"
+              >
+                <lucide-icon
+                  [img]="InfoIcon"
+                  [size]="13"
+                  class="shrink-0 text-v4-primary-brand-bold-color"
+                ></lucide-icon>
+                <p
+                  class="text-v4-tertiary-text-color text-[12px]"
+                >
+                  Select a destination currency to see exchange rates and transfer
+                  details.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        @if (missingPayeeFields().length) {
+          <div
+            class="mt-3 rounded-lg border border-v4-border-warning bg-v4-surface-warning p-2.5"
+          >
+            <div
+              class="flex items-center gap-1.5 font-semibold text-v4-text-warning text-[12px]"
+            >
+              <lucide-icon [img]="TriangleAlertIcon" [size]="13"></lucide-icon>
+              Missing details for this payment
+            </div>
+            @for (m of missingPayeeFields(); track m.key) {
+              <button
+                type="button"
+                class="mt-1 block font-semibold text-v4-primary-brand-bold-color underline text-[12px]"
+                (click)="openPayeeMissing(m.modalType)"
+              >
+                Add {{ m.label }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (promoCallout(); as promo) {
+          @for (p of [promo]; track p.title) {
+            <div
+              class="promo-callout mt-3 rounded-lg border border-v4-brand-tint-strong bg-v4-brand-tint p-2.5"
+            >
+              <div
+                class="flex items-center gap-1.5 font-semibold text-v4-primary-brand-bold-color text-[12px]"
+              >
+                <lucide-icon [img]="SparklesIcon" [size]="13"></lucide-icon>
+                {{ p.title }}
+              </div>
+              <div
+                class="mt-0.5 text-v4-secondary-text-color text-[12px]"
+              >
+                {{ p.sub }}
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+
+    <!-- The account has never mailed a cheque, so this one is on us. -->
+    @if (showsFirstMailFree()) {
+      <div
+        class="flex items-center gap-3 rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 shadow-sm"
+      >
+        <img
+          src="assets/images/check/check-mail-dark.svg"
+          alt=""
+          width="32"
+          height="36"
+          class="shrink-0"
+        />
+        <div class="flex flex-col gap-0.5">
+          <span
+            class="text-[12px] font-semibold uppercase text-v4-primary-brand-bold-color"
+            >First Check Mail is Free</span
+          >
+          <p class="m-0 text-[12px] text-v4-subtle-text-color">
+            First Class, No Charge
+          </p>
+        </div>
+      </div>
+    }
+
+    @if (showsFeeUpsell()) {
+      <div class="gradient-border">
+        <div
+          class="relative z-10 w-full rounded-2xl bg-v4-secondary-background-color p-4 flex flex-col gap-4"
+        >
+          @if (showsUpsellComparison()) {
+            <div
+              class="flex items-center justify-between gap-4 rounded-xl bg-v4-tertiary-background-color p-3"
+            >
+              <span class="text-xs font-semibold text-v4-main-text-color">
+                {{ sameDayRowLabel() }}
+              </span>
+              <span class="flex flex-col items-end">
+                <span
+                  class="text-xs text-v4-secondary-text-color line-through decoration-v4-common-red-color decoration-2"
+                >
+                  {{ sameDayRowAmount() | currency }}
+                </span>
+                <span
+                  class="relative text-lg font-semibold text-v4-common-green-color before:absolute before:-left-9 before:bottom-[3px] before:text-xs before:text-v4-secondary-text-color before:content-['upto']"
+                >
+                  {{ 1 | currency }}
+                </span>
+              </span>
+            </div>
+          }
+
+          <span class="text-sm font-semibold text-v4-main-text-color">
+            Get Your Delivery Fee Reduced upto $1!!
+          </span>
+
+          <span class="text-xs text-v4-secondary-text-color">
+            Get wire and check fee reduced upto $1 by subscribing to a
+            plan. Avail free credits to make payments and many more benefits.
+          </span>
+
+          <app-common-button-v4
+            [type]="{ style: 'filled', name: 'main' }"
+            [loading]="reduceMyFeeLoading()"
+            (clickEvent)="goToSubscription()"
+            width="100%"
+            text="Reduce My Fee"
+          />
+        </div>
+      </div>
+    }
+
+  }
+</div>

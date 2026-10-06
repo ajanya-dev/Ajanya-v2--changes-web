@@ -1,0 +1,1132 @@
+<div class="h-full flex flex-col">
+  <!-- ==================== ALL BANK ACCOUNTS (no bank selected) ==================== -->
+  @if (selectedTab === "all") {
+    @if (noAccounts && !bankDataService.accountLoadingSignal()) {
+      <!-- V4 Empty State -->
+      <div class="min-h-[calc(100dvh-220px)] flex flex-col justify-center items-center p-6">
+        <div
+          class="w-16 h-16 rounded-2xl bg-v4-badge-info-bg-color flex items-center justify-center mb-4"
+        >
+          <lucide-icon
+            name="building-2"
+            [size]="28"
+            class="text-v4-primary-brand-color"
+          ></lucide-icon>
+        </div>
+        <h3 class="text-lg font-semibold text-v4-main-text-color mb-1">
+          @if (!!bankDataService.searchInputSignal()) {
+            No search result found
+          } @else {
+            No bank accounts yet
+          }
+        </h3>
+        @if (!(!!bankDataService.searchInputSignal())) {
+          <p class="text-sm text-v4-secondary-text-color mb-5">
+            Add your first bank account to start sending payments
+          </p>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Add Bank Account'"
+            [lucideIcon]="'plus'"
+            [lucideIconSize]="16"
+            [textClasses]="'text-sm font-semibold'"
+            [customClasses]="'rounded-lg hover:bg-v4-primary-brand-color/90 px-5'"
+            (clickEvent)="onNew()"
+          />
+        }
+      </div>
+    } @else {
+      <!-- Compact summary strip: keeps the transactions table high on the page. -->
+      <div
+        class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg bg-v4-secondary-background-color px-5 py-4"
+      >
+        <div class="min-w-0 flex-1">
+          <h2 class="text-base font-semibold text-v4-main-text-color">All Bank Accounts</h2>
+          <div
+            class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-v4-secondary-text-color"
+          >
+            <span class="inline-flex items-center gap-1.5">
+              <lucide-icon name="building-2" [size]="14" class="text-v4-tertiary-text-color" />
+              @if (totalAccountsCount !== undefined) {
+                <span
+                  ><strong class="font-semibold text-v4-main-text-color">{{
+                    totalAccountsCount
+                  }}</strong>
+                  connected</span
+                >
+              } @else {
+                <span class="h-3 w-16 rounded skelton"></span>
+              }
+            </span>
+            <span aria-hidden="true" class="text-v4-tertiary-text-color">·</span>
+            <span class="inline-flex items-center gap-1.5">
+              <lucide-icon name="calendar" [size]="14" class="text-v4-tertiary-text-color" />
+              Last transaction
+              @if (bankDataV4Service.lastTransactionDate()) {
+                <strong class="font-semibold text-v4-main-text-color">{{
+                  bankDataV4Service.lastTransactionDate() | relativeTime
+                }}</strong>
+              } @else if (bankDataV4Service.lastTransactionFetched()) {
+                <span class="text-v4-main-text-color">none yet</span>
+              } @else {
+                <span class="h-3 w-14 rounded skelton"></span>
+              }
+            </span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        @if (!isLoading && !noAccounts) {
+          <div class="flex shrink-0 items-center gap-2">
+            <app-common-button-v4
+              [type]="{ style: 'neon', name: 'main' }"
+              [text]="'Send'"
+              [lucideIcon]="'send'"
+              [customHeight]="'36px'"
+              [customPadding]="'8px 16px'"
+              [toolTip]="'Send a payment from your bank account'"
+              (clickEvent)="goToPayments('pay')"
+            />
+            <app-common-button-v4
+              appWhiteLabel
+              hiddenIf="isCSNHCRequirement"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Receive'"
+              [lucideIcon]="'receipt'"
+              [customHeight]="'36px'"
+              [customPadding]="'8px 16px'"
+              [toolTip]="'Receive a payment into your bank account'"
+              (clickEvent)="goToPayments('receive')"
+            />
+            <app-common-button-v4
+              appWhiteLabel
+              hiddenIf="isCSNHCRequirement"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Transfer'"
+              [lucideIcon]="'arrow-left-right'"
+              [customHeight]="'36px'"
+              [customPadding]="'8px 16px'"
+              [toolTip]="'Move money between your accounts'"
+              (clickEvent)="transferFromBankAccount(bankDataService.selectedBankAccountSignal())"
+            />
+          </div>
+        }
+        @if (isLoading) {
+          <div class="flex shrink-0 items-center gap-2">
+            <div class="h-9 w-24 rounded-lg skelton"></div>
+            <div class="h-9 w-24 rounded-lg skelton"></div>
+            <div class="h-9 w-24 rounded-lg skelton"></div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ==================== INDIVIDUAL BANK SELECTED ==================== -->
+  @if (selectedTab !== "all") {
+    <!-- Tab Bar -->
+    <div class="px-6 pt-4 pb-2 bg-v4-secondary-background-color rounded-t-lg">
+      <div class="flex items-center justify-between gap-4 pb-2 border-b border-v4-border-color">
+        <!-- Left: Tabs (V4 underline variant) -->
+        <app-common-tab-v4
+          class="flex-1 tab-no-border"
+          [tabs]="[
+            { label: 'Account', value: 'account' },
+            { label: 'Info', value: 'info' },
+            { label: 'Audit Trail', value: 'audit-trail' }
+          ]"
+          [(activeTab)]="selectedTab"
+          [variant]="'underline'"
+          (tabChange)="onTabChange($event)"
+-        />
+
+        <!-- Right: Action Buttons (short labels below 1440px) -->
+        <div class="hidden md:flex min-[1440px]:hidden items-center gap-3 pb-3">
+          @if (!isLoading && !noAccounts) {
+            <app-common-button-v4
+              [type]="{ style: 'neon', name: 'main' }"
+              [text]="'Send'"
+              [lucideIcon]="'send'"
+              [lucideIconSize]="14"
+              [customHeight]="'38px'"
+              [customPadding]="'0 14px'"
+              [textClasses]="'text-[13px] font-semibold'"
+              [toolTip]="'Send a payment from your bank account'"
+              (clickEvent)="goToPayments('pay')"
+            />
+            <app-common-button-v4
+              appWhiteLabel
+              hiddenIf="isCSNHCRequirement"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Receive'"
+              [lucideIcon]="'receipt'"
+              [lucideIconSize]="14"
+              [customHeight]="'38px'"
+              [customPadding]="'0 14px'"
+              [textClasses]="'text-[13px] font-semibold'"
+              [toolTip]="'Receive a payment into your bank account'"
+              (clickEvent)="goToPayments('receive')"
+            />
+            <app-common-button-v4
+              appWhiteLabel
+              hiddenIf="isCSNHCRequirement"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Transfer'"
+              [lucideIcon]="'arrow-left-right'"
+              [lucideIconSize]="14"
+              [customHeight]="'38px'"
+              [customPadding]="'0 14px'"
+              [textClasses]="'text-[13px] font-semibold'"
+              [toolTip]="'Move money between your accounts'"
+              (clickEvent)="
+                transferFromBankAccount(
+                  bankDataService.selectedBankAccountSignal()
+                )
+              "
+            />
+          }
+        </div>
+        <!-- Right: Action Buttons (with text at 1440px+) -->
+        <div class="hidden min-[1440px]:flex items-center gap-3 pb-3">
+          @if (!isLoading && !noAccounts) {
+            <app-common-button-v4
+              [type]="{ style: 'neon', name: 'main' }"
+              [text]="'Send Payment'"
+              [lucideIcon]="'send'"
+              [lucideIconSize]="14"
+              [customHeight]="'44px'"
+              [customPadding]="'10px 20px'"
+              [textClasses]="'text-[14px] font-semibold'"
+              [toolTip]="'Send a payment from your bank account'"
+              (clickEvent)="goToPayments('pay')"
+            />
+            <app-common-button-v4
+              appWhiteLabel
+              hiddenIf="isCSNHCRequirement"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Receive Payment'"
+              [lucideIcon]="'receipt'"
+              [lucideIconSize]="14"
+              [customHeight]="'44px'"
+              [customPadding]="'10px 20px'"
+              [textClasses]="'text-[14px] font-semibold'"
+              [toolTip]="'Receive a payment into your bank account'"
+              (clickEvent)="goToPayments('receive')"
+            />
+            <app-common-button-v4
+              appWhiteLabel
+              hiddenIf="isCSNHCRequirement"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Transfer'"
+              [lucideIcon]="'arrow-left-right'"
+              [lucideIconSize]="14"
+              [customHeight]="'44px'"
+              [customPadding]="'10px 20px'"
+              [textClasses]="'text-[14px] font-semibold'"
+              [toolTip]="'Move money between your accounts'"
+              (clickEvent)="
+                transferFromBankAccount(
+                  bankDataService.selectedBankAccountSignal()
+                )
+              "
+            />
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ACCOUNT TAB ==================== -->
+      <div [hidden]="selectedTab !== 'account'" class="px-4 py-3 lg:px-5 lg:py-3 pb-6 overflow-auto flex-1 bg-v4-secondary-background-color rounded-b-lg border-b border-v4-border-color">
+        @if (!isLoading && !noAccounts) {
+          <div>
+            <!-- Top: Account Info + Check Design -->
+            <div class="grid grid-cols-[1fr_auto] lg:grid-cols-[1fr_220px] xl:grid-cols-[1fr_320px] gap-3 xl:gap-4">
+              <!-- Left: Account Info 2x2 Grid -->
+              <div class="flex flex-col gap-3">
+              <div class="grid grid-cols-2 gap-3 content-start text-sm font-semibold text-v4-main-text-color">
+                <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                  <div
+                    class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >
+                    Account Name
+                  </div>
+                  <div
+                    class="text-xs font-semibold text-v4-main-text-color mt-0.5 truncate"
+                    [matTooltip]="
+                      bankDataService.selectedBankAccountSignal()
+                        ?.bank_account_account_name ?? ''
+                    "
+                  >
+                    {{
+                      bankDataService.selectedBankAccountSignal()
+                        ?.bank_account_account_name
+                    }}
+                  </div>
+                </div>
+                <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                  <div
+                    class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >
+                    Account No.
+                  </div>
+                  <div
+                    class="text-xs font-semibold text-v4-main-text-color mt-0.5 flex items-center"
+                  >
+                    {{
+                      !bankDataService.accountNumberVisible
+                        ? utils.getMaskedAcNo2(
+                            bankDataService.selectedBankAccountSignal()
+                              ?.bank_account_account_number ?? ""
+                          )
+                        : bankDataService.selectedBankAccountSignal()
+                            ?.bank_account_account_number
+                    }}
+                    <lucide-icon
+                      [name]="bankDataService.accountNumberVisible ? 'eye-off' : 'eye'"
+                      [size]="14"
+                      class="ml-2 text-v4-primary-brand-bold-color hover:text-v4-primary-brand-bold-color/80 cursor-pointer transition-colors"
+                      (click)="displayAccountNumber()"
+                    ></lucide-icon>
+                  </div>
+                </div>
+                @if (bankAccountData?.bank_account_country === "USA") {
+                  <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                    <div
+                      class="text-[12px] font-medium text-v4-secondary-text-color"
+                    >
+                      Routing No.
+                    </div>
+                    <div
+                      class="text-xs font-semibold text-v4-main-text-color mt-0.5 truncate"
+                      [matTooltip]="
+                        bankDataService.selectedBankAccountSignal()
+                          ?.bank_routing_number ?? ''
+                      "
+                    >
+                      {{
+                        bankDataService.selectedBankAccountSignal()
+                          ?.bank_routing_number
+                      }}
+                    </div>
+                  </div>
+                }
+                <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                  <div
+                    class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >
+                    Nick Name
+                  </div>
+                  <div
+                    class="text-xs font-semibold text-v4-main-text-color mt-0.5 truncate"
+                  >
+                    {{
+                      bankDataService.selectedBankAccountSignal()
+                        ?.bank_account_nick_name !== ""
+                        ? bankDataService.selectedBankAccountSignal()
+                            ?.bank_account_nick_name
+                        : bankDataService.selectedBankAccountSignal()
+                            ?.bank_account_account_name
+                    }}
+                  </div>
+                </div>
+              </div>
+              <!-- Status & account actions sit under the details, so the column fills its height -->
+            <!-- Left: Action Buttons & Status Badges -->
+            <div class="flex items-center gap-2 lg:gap-3 flex-wrap">
+              <!-- ── Action Buttons ── -->
+
+              <!-- View Balance Button (inline) -->
+              @if (
+                !(
+                  (selectedBankAccount$ | async)?.bank_account_nature_type ===
+                    2 && (selectedBankAccount$ | async)?.verified_by === 13
+                )
+              ) {
+                @if (!bankData.bankAccountBalance) {
+                  <app-common-button-v4
+                    appWhiteLabel
+                    hiddenIf="isCSNHCRequirement"
+                    [type]="{ style: 'outline', name: 'main' }"
+                    [text]="'View Balance'"
+                    [lucideIcon]="'eye'"
+                    [lucideIconSize]="12"
+                    [customHeight]="'32px'"
+                    [textClasses]="'text-[12px] font-semibold'"
+                    [customClasses]="'h-8 flex items-center rounded-full min-w-fit'"
+                    [loading]="balanceFetching || mappingAccount"
+                    [disabled]="balanceFetching || mappingAccount"
+                    (clickEvent)="fetchBalance('balance')"
+                  />
+                } @else {
+                  <span
+                    appWhiteLabel
+                    hiddenIf="isCSNHCRequirement"
+                    class="flex items-center gap-2 text-sm font-semibold"
+                  >
+                    {{ bankData.bankAccountBalance | currency }}
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'main' }"
+                      [text]="''"
+                      [lucideIcon]="'refresh-cw'"
+                      [lucideIconSize]="14"
+                      [customHeight]="'32px'"
+                      [customClasses]="'h-7 min-w-7 rounded-md border-0 shadow-none text-v4-primary-brand-color hover:text-v4-primary-brand-color/80'"
+                      [toolTip]="'Last updated: ' + (bankData.lastUpdated | relativeTime)"
+                      [loading]="balanceFetching || mappingAccount"
+                      [disabled]="balanceFetching || mappingAccount"
+                      (clickEvent)="fetchBalance('balance')"
+                    />
+                  </span>
+                }
+              }
+              <!-- Vertical Divider -->
+              <div class="w-px h-6 bg-v4-border-color"></div>
+              <!-- Verify Now (unverified, not Canada) -->
+              @if (
+                (!bankDataService.selectedBankAccountSignal()
+                  ?.verified_by ||
+                  bankDataService.selectedBankAccountSignal()
+                    ?.verified_by === 88) &&
+                (bankDataService.selectedBankAccountSignal()
+                  ?.mark_as_verified === 0 ||
+                  !bankDataService.selectedBankAccountSignal()
+                    ?.mark_as_verified) &&
+                bankAccountData?.bank_account_country !== "Canada"
+              ) {
+                <app-common-button-v4
+                  appOcwPreventMultiClick
+                  [throttleTime]="3000"
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Verify Now'"
+                  [lucideIcon]="'circle-alert'"
+                  [lucideIconSize]="12"
+                  [customHeight]="'32px'"
+                  [textColorInput]="'var(--v4-common-yellow-color)'"
+                  [textClasses]="'text-[12px] font-semibold'"
+                  [customClasses]="'h-8 flex items-center hover:bg-v4-tertiary-background-color rounded-full min-w-fit'"
+                  (clickEvent)="
+                    bankDataV4Service.openBankVerifyModal(
+                      bankDataService.selectedBankAccountSignal()
+                    )
+                  "
+                />
+              }
+              <!-- Enable ACH (active - verified but no ACH) -->
+              @if (
+                !bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 0 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.mark_as_verified === 1 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <app-common-button-v4
+                  appWhiteLabel
+                  hiddenIf="isCSNHCRequirement"
+                  [type]="{ style: 'primary', name: 'main' }"
+                  [text]="fetchingDetails ? 'Please wait...' : 'Enable ACH'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-[12px] font-semibold text-v4-secondary-brand-color'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit cursor-pointer hover:bg-v4-primary-brand-color/90'"
+                  [disabled]="(personaResponse$ | async)?.loading"
+                  (clickEvent)="
+                    applyAchClick(
+                      bankDataService.selectedBankAccountSignal()
+                    )
+                  "
+                />
+              }
+              <!-- Re-Apply (ach_status 3 or 8) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status === 3 ||
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status === 8
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Your bank account verification was unsuccessful. Please review your details and try again.'"
+                  [disabled]="(personaResponse$ | async)?.loading"
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Re-Apply'"
+                  [lucideIcon]="'circle-check'"
+                  [lucideIconSize]="14"
+                  [customHeight]="'32px'"
+                  [textColorInput]="'var(--v4-common-yellow-color)'"
+                  [textClasses]="'text-[12px] font-semibold'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit hover:bg-v4-tertiary-background-color'"
+                  (clickEvent)="applyAchClick(bankDataService.selectedBankAccountSignal())"
+                />
+              }
+              <!-- Confirm Micro Deposit (verified_by 3, not verified) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  3 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.mark_as_verified !== 1
+              ) {
+                <app-common-button-v4
+                  appOcwPreventMultiClick
+                  [throttleTime]="3000"
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Confirm Micro Deposit'"
+                  [customHeight]="'32px'"
+                  [textColorInput]="'var(--v4-common-yellow-color)'"
+                  [textClasses]="'text-[12px] font-semibold'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit hover:bg-v4-tertiary-background-color'"
+                  (throttledClick)="microDeposit(bankDataService.selectedBankAccountSignal())"
+                />
+              }
+              <!-- Re-Apply (verified_by 10, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  10 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Your bank account verification was unsuccessful. Please review your details and try again.'"
+                  appOcwPreventMultiClick
+                  [throttleTime]="3000"
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Re-Apply'"
+                  [lucideIcon]="'circle-check'"
+                  [lucideIconSize]="14"
+                  [customHeight]="'32px'"
+                  [textColorInput]="'var(--v4-common-yellow-color)'"
+                  [textClasses]="'text-[12px] font-semibold'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit hover:bg-v4-tertiary-background-color'"
+                  (throttledClick)="openBankVerifyModal(bankDataService.selectedBankAccountSignal())"
+                />
+              }
+              <!-- Verify Instantly (verified_by 6, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  6 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Your verification request is rejected'"
+                  appOcwPreventMultiClick
+                  [throttleTime]="3000"
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Verify Instantly'"
+                  [lucideIcon]="'circle-alert'"
+                  [lucideIconSize]="14"
+                  [customHeight]="'32px'"
+                  [textColorInput]="'var(--v4-common-yellow-color)'"
+                  [textClasses]="'text-[12px] font-semibold'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit hover:bg-v4-tertiary-background-color'"
+                  (throttledClick)="bankDataV4Service.openBankVerifyModal(bankDataService.selectedBankAccountSignal())"
+                />
+              }
+              <!-- Verify Instantly (verified_by 12, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  12 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Your bank account verification is failed.'"
+                  appOcwPreventMultiClick
+                  [throttleTime]="3000"
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Verify Instantly'"
+                  [lucideIcon]="'circle-alert'"
+                  [lucideIconSize]="14"
+                  [customHeight]="'32px'"
+                  [textColorInput]="'var(--v4-common-yellow-color)'"
+                  [textClasses]="'text-[12px] font-semibold'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit hover:bg-v4-tertiary-background-color'"
+                  (throttledClick)="bankDataV4Service.openBankVerifyModal(bankDataService.selectedBankAccountSignal())"
+                />
+              }
+
+              <!-- ── Status Badges ── -->
+
+              <!-- Verified badge -->
+              @if (
+                bankDataService.selectedBankAccountSignal()
+                  ?.mark_as_verified === 1
+              ) {
+                <span
+                  class="inline-flex items-center gap-1 rounded-full border border-v4-common-green-color bg-v4-badge-success-bg-color px-3 py-1 text-[12px] font-semibold text-v4-badge-success-text-color cursor-default min-w-fit"
+                >
+                  <lucide-icon name="circle-check" [size]="14" />
+                  Verified
+                </span>
+              }
+              <!-- ACH Active (ach_status 1) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status === 1
+              ) {
+                <span
+                  class="inline-flex items-center gap-1 rounded-full border border-v4-common-green-color bg-v4-badge-success-bg-color px-3 py-1 text-[12px] font-semibold text-v4-badge-success-text-color cursor-default min-w-fit"
+                >
+                  <lucide-icon name="circle-check" [size]="14" />
+                  ACH Active
+                </span>
+              }
+              <!-- Evaluating Account (ach_status 0 or 7) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status === 0 ||
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status === 7
+              ) {
+                <span
+                  class="inline-flex items-center gap-1 rounded-full border border-v4-badge-warning-text-color bg-v4-badge-warning-bg-color px-3 py-1 text-[12px] font-semibold text-v4-badge-warning-text-color cursor-default min-w-fit"
+                >
+                  <lucide-icon name="circle-check" [size]="14" />
+                  Evaluating Account
+                </span>
+              }
+              <!-- ACH Document Required (ach_status 2) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status === 2
+              ) {
+                <span
+                  class="inline-flex items-center gap-1 rounded-full border border-v4-badge-warning-text-color bg-v4-badge-warning-bg-color px-3 py-1 text-[12px] font-semibold text-v4-badge-warning-text-color cursor-default min-w-fit"
+                >
+                  <lucide-icon name="circle-check" [size]="14" />
+                  ACH Document Required
+                </span>
+              }
+              <!-- Canada message -->
+              @if (bankAccountData?.bank_account_country === "Canada") {
+                <p class="text-xs text-v4-subtle-text-color font-normal">
+                  Verification for Canadian bank accounts is not permitted.
+                </p>
+              }
+              <!-- Micro deposit helper text (verified_by 3) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  3 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.mark_as_verified !== 1
+              ) {
+                <span class="text-xs text-v4-subtle-text-color font-normal">
+                  Confirm the 2 amounts deposited in your bank account.
+                </span>
+              }
+              <!-- Enable ACH disabled (unverified) -->
+              @if (
+                (!bankDataService.selectedBankAccountSignal()
+                  ?.verified_by ||
+                  bankDataService.selectedBankAccountSignal()
+                    ?.verified_by === 88) &&
+                (bankDataService.selectedBankAccountSignal()
+                  ?.mark_as_verified === 0 ||
+                  !bankDataService.selectedBankAccountSignal()
+                    ?.mark_as_verified) &&
+                !bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 0 &&
+                bankAccountData?.bank_account_country !== "Canada"
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Verify the bank account to unlock ACH Payment.'"
+                  appWhiteLabel
+                  hiddenIf="isCSNHCRequirement"
+                  [type]="{ style: 'primary', name: 'main' }"
+                  [text]="'Enable ACH'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-[12px] font-semibold text-v4-secondary-brand-color'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit cursor-not-allowed opacity-60'"
+                  [disabled]="true"
+                />
+              }
+              <!-- Enable ACH disabled (verified_by 6 or 10, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  6 ||
+                (bankDataService.selectedBankAccountSignal()
+                  ?.verified_by === 10 &&
+                  bankDataService.selectedBankAccountSignal()
+                    ?.ach_application_status !== 1)
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Verify the bank account to unlock ACH Payment.'"
+                  appWhiteLabel
+                  hiddenIf="isCSNHCRequirement"
+                  [type]="{ style: 'primary', name: 'main' }"
+                  [text]="'Enable ACH'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-[12px] font-semibold text-v4-secondary-brand-color'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit cursor-not-allowed opacity-60'"
+                  [disabled]="true"
+                />
+              }
+              <!-- Enable ACH disabled (verified_by 12, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  12 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Verify the bank account to unlock ACH Payment.'"
+                  appWhiteLabel
+                  hiddenIf="isCSNHCRequirement"
+                  [type]="{ style: 'primary', name: 'main' }"
+                  [text]="'Enable ACH'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-[12px] font-semibold text-v4-secondary-brand-color'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit cursor-not-allowed opacity-60'"
+                  [disabled]="true"
+                />
+              }
+              <!-- Enable ACH disabled (verified_by 4, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  4 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <app-common-button-v4
+                  [toolTip]="'Verify the bank account to unlock ACH Payment.'"
+                  appWhiteLabel
+                  hiddenIf="isCSNHCRequirement"
+                  [type]="{ style: 'primary', name: 'main' }"
+                  [text]="'Enable ACH'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-[12px] font-semibold text-v4-secondary-brand-color'"
+                  [customClasses]="'h-8 flex items-center rounded-full min-w-fit cursor-not-allowed opacity-60'"
+                  [disabled]="true"
+                />
+              }
+              <!-- Pending (verified_by 4, not ACH active) -->
+              @if (
+                bankDataService.selectedBankAccountSignal()?.verified_by ===
+                  4 &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.ach_application_status !== 1
+              ) {
+                <span
+                  matTooltip="Verification is in progress. The micro deposit is being transferred to the specified bank account."
+                  class="text-v4-badge-warning-text-color bg-v4-badge-warning-bg-color py-1.5 px-3 w-fit rounded-full min-w-fit flex items-center gap-1 text-xs"
+                >
+                  <lucide-icon name="circle-check" [size]="12" />
+                  Pending
+                </span>
+              }
+            </div>
+              </div>
+
+              <!-- Right: Check Design Canvas (image only) -->
+              @if (
+                !bankDataService.selectedBankAccountSignal()?.is_neo_bank &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.bank_account_nature_type !== 2
+              ) {
+                <div class="hidden lg:block">
+                  <div
+                    class="bg-white check-canvas w-full h-40 relative border border-v4-input-border-color rounded overflow-hidden"
+                    [ngClass]="{ skelton: isLoading }"
+                  >
+                    <canvas
+                      class="pointer-events-none translate-x-[-26%] translate-y-[-23%] scale-x-[0.48] scale-y-[0.54]"
+                      id="canvas"
+                      width="675"
+                      height="295"
+                    ></canvas>
+                  </div>
+                  <!-- Design actions live with the preview they act on -->
+                  <div class="mt-2">
+                <div class="flex items-center gap-2">
+                  <app-common-button-v4
+                    [type]="{ style: 'outline', name: 'main' }"
+                    [text]="'Edit design'"
+                    [lucideIcon]="'pencil'"
+                    [lucideIconSize]="13"
+                    [customHeight]="'34px'"
+                    [customPadding]="'0 12px'"
+                    [textClasses]="'text-[13px] font-semibold'"
+                    [toolTip]="'Edit and customize the check design.'"
+                    (clickEvent)="
+                      goToCheckDesign(
+                        bankDataService.selectedBankAccountSignal()
+                      )
+                    "
+                  />
+                  <app-common-button-v4
+                    [type]="{ style: 'primary', name: 'main' }"
+                    [text]="'Clone design'"
+                    [lucideIcon]="'copy'"
+                    [lucideIconSize]="13"
+                    [customHeight]="'34px'"
+                    [customPadding]="'0 12px'"
+                    [textClasses]="'text-[13px] font-semibold'"
+                    [toolTip]="'Clone the existing design.'"
+                    (clickEvent)="
+                      onCloneDesignRow(
+                        bankDataService.selectedBankAccountSignal()
+                      )
+                    "
+                  />
+                </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Bottom: design actions only below lg (the preview column is hidden there) -->
+            <div class="lg:hidden flex items-center justify-end flex-wrap gap-2 pt-3 mt-3 border-t border-v4-border-color">
+              <!-- Right: Edit/Clone design (below lg, where the check preview is hidden) -->
+              @if (
+                !bankDataService.selectedBankAccountSignal()?.is_neo_bank &&
+                bankDataService.selectedBankAccountSignal()
+                  ?.bank_account_nature_type !== 2
+              ) {
+                <div class="flex items-center gap-2 lg:hidden">
+                  <app-common-button-v4
+                    [type]="{ style: 'outline', name: 'main' }"
+                    [text]="'Edit design'"
+                    [lucideIcon]="'pencil'"
+                    [lucideIconSize]="13"
+                    [customHeight]="'34px'"
+                    [customPadding]="'0 12px'"
+                    [textClasses]="'text-[13px] font-semibold'"
+                    [toolTip]="'Edit and customize the check design.'"
+                    (clickEvent)="
+                      goToCheckDesign(
+                        bankDataService.selectedBankAccountSignal()
+                      )
+                    "
+                  />
+                  <app-common-button-v4
+                    [type]="{ style: 'primary', name: 'main' }"
+                    [text]="'Clone design'"
+                    [lucideIcon]="'copy'"
+                    [lucideIconSize]="13"
+                    [customHeight]="'34px'"
+                    [customPadding]="'0 12px'"
+                    [textClasses]="'text-[13px] font-semibold'"
+                    [toolTip]="'Clone the existing design.'"
+                    (clickEvent)="
+                      onCloneDesignRow(
+                        bankDataService.selectedBankAccountSignal()
+                      )
+                    "
+                  />
+                </div>
+              }
+            </div>
+          </div>
+        }
+        <!-- Account tab loading skeleton -->
+        @if (isLoading) {
+          <div class="space-y-4">
+            <div class="rounded-lg p-4 h-32 skelton"></div>
+            <div class="flex gap-2">
+              <div class="w-24 h-8 rounded skelton"></div>
+              <div class="w-24 h-8 rounded skelton"></div>
+            </div>
+          </div>
+        }
+      </div>
+
+    <!-- ==================== INFO TAB ==================== -->
+    @if (
+      selectedTab === "info" &&
+      !noAccounts &&
+      !bankDataService.accountLoadingSignal()
+    ) {
+      <div class="flex-1 overflow-auto p-4 lg:p-5 pb-6 bg-v4-secondary-background-color rounded-b-lg border-b border-v4-border-color">
+        <div
+          class="rounded-lg p-4 lg:p-5"
+          [ngClass]="{
+            'skelton h-80': bankDataService.checkNumberLoadingSignal()
+          }"
+        >
+          <!-- Header: Title + Edit button -->
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-v4-main-text-color">Account Information</h3>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="'Edit'"
+              [lucideIcon]="'pencil'"
+              [lucideIconSize]="13"
+              [customHeight]="'34px'"
+              [customPadding]="'0 14px'"
+              [textClasses]="'text-[13px] font-semibold'"
+              (clickEvent)="openEditBankAccountV4()"
+            />
+          </div>
+
+          <div
+            class="grid grid-cols-2 lg:grid-cols-3 gap-3 text-sm font-semibold text-v4-main-text-color"
+          >
+            <!-- Account Name -->
+            <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+              <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                >Account Name</span
+              >
+              <span class="mt-0.5 min-h-[16px]">{{
+                bankDataService.selectedBankAccountSignal()
+                  ?.bank_account_account_name || '-'
+              }}</span>
+            </div>
+            <!-- Account No. -->
+            <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+              <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                >Account No.</span
+              >
+              <span class="mt-0.5 min-h-[16px] flex items-center">
+                {{
+                  !bankDataService.accountNumberVisible
+                    ? utils.getMaskedAcNo2(
+                        bankDataService.selectedBankAccountSignal()
+                          ?.bank_account_account_number ?? ""
+                      )
+                    : bankDataService.selectedBankAccountSignal()
+                        ?.bank_account_account_number
+                }}
+                <lucide-icon
+                  [name]="bankDataService.accountNumberVisible ? 'eye-off' : 'eye'"
+                  [size]="14"
+                  class="ml-1 text-v4-primary-brand-bold-color hover:text-v4-primary-brand-bold-color/80 cursor-pointer transition-colors"
+                  (click)="displayAccountNumber()"
+                ></lucide-icon>
+              </span>
+            </div>
+            <!-- Canada: Transit & Financial Institution -->
+            @if (bankAccountData?.bank_account_country === "Canada") {
+              <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >Transit No.</span
+                >
+                <span class="mt-0.5 min-h-[16px]">{{ bankAccountCheckDesignData?.transitNo || '-' }}</span>
+              </div>
+              <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >Financial Institution No.</span
+                >
+                <span class="mt-0.5 min-h-[16px]">{{
+                  bankAccountCheckDesignData?.financialInstitutionNo || '-'
+                }}</span>
+              </div>
+            } @else {
+              <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >Routing No.</span
+                >
+                <span class="mt-0.5 min-h-[16px]">{{
+                  bankDataService.selectedBankAccountSignal()
+                    ?.bank_routing_number || '-'
+                }}</span>
+              </div>
+            }
+            <!-- Bank Name -->
+            <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+              <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                >Bank Name</span
+              >
+              <span class="mt-0.5 min-h-[16px]">{{
+                transFormData(
+                  bankDataService.selectedBankAccountSignal()?.bank_name
+                ) || '-'
+              }}</span>
+            </div>
+            <!-- Nick Name -->
+            <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+              <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                >Nick Name</span
+              >
+              <span class="mt-0.5 min-h-[16px]">{{
+                bankDataService.selectedBankAccountSignal()
+                  ?.bank_account_nick_name || '-'
+              }}</span>
+            </div>
+            <!-- Deferred fields (after check number loads) -->
+            @defer (when !bankDataService.checkNumberLoadingSignal()) {
+              <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >Starting Check No.</span
+                >
+                <span class="mt-0.5 min-h-[16px]">{{
+                  bankDataService.checkNumberSignal()?.nextCheckNumber || '-'
+                }}</span>
+              </div>
+              @if (bankDataService.checkNumberSignal()?.bankAccountPhone) {
+                <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                  <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                    >Phone No</span
+                  >
+                  <span class="mt-0.5 min-h-[16px]">{{
+                    bankDataService.checkNumberSignal()?.bankAccountPhone
+                  }}</span>
+                </div>
+              }
+              @if (bankDataService.checkNumberSignal()?.bankAccountEmail) {
+                <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                  <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                    >Email</span
+                  >
+                  <span class="mt-0.5 min-h-[16px]">{{
+                    bankDataService.checkNumberSignal()?.bankAccountEmail
+                  }}</span>
+                </div>
+              }
+              <div class="flex flex-col rounded-lg bg-v4-tertiary-background-color px-3 py-2">
+                <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                  >Fractional Number</span
+                >
+                <span class="mt-0.5 min-h-[16px]">{{
+                  bankDataService.selectedBankAccountSignal()?.fractional_no || '-'
+                }}</span>
+              </div>
+            }
+          </div>
+          <!-- Address (outside grid for full width) -->
+          @defer (when !bankDataService.checkNumberLoadingSignal()) {
+            <div
+              class="flex flex-col mt-3 rounded-lg bg-v4-tertiary-background-color px-3 py-2 text-sm font-semibold text-v4-main-text-color"
+            >
+              <span class="text-[12px] font-medium text-v4-secondary-text-color"
+                >Bank Account Holder Address</span
+              >
+              <div class="flex flex-col mt-0.5 min-h-[16px] leading-relaxed">
+                @if (
+                  bankDataService.checkNumberSignal()?.bankAccountAddressLine1 ||
+                  bankDataService.checkNumberSignal()?.bankAccountCity
+                ) {
+                  <span>
+                    {{
+                      bankDataService.checkNumberSignal()?.bankAccountAddressLine1
+                    }}
+                    {{
+                      bankDataService.checkNumberSignal()?.bankAccountAddressLine2
+                    }}
+                  </span>
+                  <span>
+                    {{ bankDataService.checkNumberSignal()?.bankAccountCity }}
+                    {{ bankDataService.checkNumberSignal()?.bankAccountState }}
+                    {{ bankDataService.checkNumberSignal()?.bankAccountZip }}
+                  </span>
+                  <span>{{
+                    bankDataService.checkNumberSignal()?.bankAccountCountry
+                  }}</span>
+                } @else {
+                  <span>-</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ==================== AUDIT TRAIL TAB ==================== -->
+    @if (selectedTab === "audit-trail") {
+      <div
+        class="flex-1 overflow-auto pt-4 px-6 pb-6 bg-v4-secondary-background-color rounded-b-lg border-b border-v4-border-color"
+        [ngClass]="{
+          hidden: noAccounts && !bankDataService.accountLoadingSignal()
+        }"
+      >
+        <div class="pb-3 text-base font-semibold text-v4-main-text-color">
+          Audit Trail
+        </div>
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <div class="max-h-[490px] overflow-y-auto">
+            <table class="v4-ocw-table w-full text-sm">
+              <thead>
+                <tr class="bg-v4-tertiary-background-color">
+                  <th
+                    class="text-left py-2 px-3 font-semibold text-v4-subtle-text-color text-xs"
+                  >
+                    Date
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-semibold text-v4-subtle-text-color text-xs"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-semibold text-v4-subtle-text-color text-xs"
+                  >
+                    By
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-semibold text-v4-subtle-text-color text-xs"
+                  >
+                    Device
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-semibold text-v4-subtle-text-color text-xs"
+                  >
+                    Notes
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (!bankDataService.auditTrailLoadingSignal()) {
+                  @if (!bankDataService.auditTrailSignal()?.length) {
+                    <tr>
+                      <td colspan="6" class="text-center py-16">
+                        <img
+                          class="mx-auto mb-3 w-24"
+                          ngSrc="assets/images/warning/empty-activity.svg"
+                          alt="Data not found"
+                        />
+                        <p class="text-v4-secondary-text-color">
+                          No audit trails found.
+                        </p>
+                      </td>
+                    </tr>
+                  }
+                  @for (
+                    item of bankDataService.auditTrailSignal();
+                    track item.formattedCreatedAt
+                  ) {
+                    <tr class="border-b border-v4-border-color">
+                      <td class="py-2 px-3 text-v4-main-text-color">
+                        {{ item.formattedCreatedAt }}
+                      </td>
+                      <td class="py-2 px-3 text-v4-main-text-color">{{ item.status }}</td>
+                      <td class="py-2 px-3 text-v4-main-text-color">{{ item.userName }}</td>
+                      <td class="py-2 px-3 text-v4-main-text-color">
+                        {{ item.deviceName }}
+                      </td>
+                      <td class="py-2 px-3 text-v4-main-text-color break-words">
+                        {{ item.note }}
+                      </td>
+                    </tr>
+                  }
+                } @else {
+                  @for (item of [].constructor(3); track $index) {
+                    <tr class="border-b border-v4-border-color">
+                      <td class="py-2 px-3">
+                        <div class="skelton w-20 h-4 rounded"></div>
+                      </td>
+                      <td class="py-2 px-3">
+                        <div class="skelton w-16 h-4 rounded"></div>
+                      </td>
+                      <td class="py-2 px-3">
+                        <div class="skelton w-20 h-4 rounded"></div>
+                      </td>
+                      <td class="py-2 px-3">
+                        <div class="skelton w-16 h-4 rounded"></div>
+                      </td>
+                      <td class="py-2 px-3">
+                        <div class="skelton w-24 h-4 rounded"></div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+</div>

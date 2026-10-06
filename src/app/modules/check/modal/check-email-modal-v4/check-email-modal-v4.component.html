@@ -1,0 +1,652 @@
+<div class="font-peridot flex flex-col max-h-[90vh]">
+  <!-- Header -->
+  <div
+    class="flex flex-wrap sm:flex-nowrap justify-between items-center px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 gap-2 sm:gap-0"
+  >
+    <div class="flex flex-col flex-1 min-w-0">
+      <h2
+        class="text-base sm:text-xl font-bold text-v4-main-text-color m-0 whitespace-nowrap"
+      >
+        Email Your Check (e-Check)
+      </h2>
+      <p class="text-sm text-v4-subtle-text-color font-peridot m-0">
+        Configure email delivery and scheduling
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      <div class="flex flex-col items-end">
+        <span
+          class="text-[12px] text-v4-tertiary-text-color uppercase whitespace-nowrap"
+          >MY CREDITS</span
+        >
+        <span
+          class="text-sm sm:text-lg font-bold text-v4-primary-brand-bold-color whitespace-nowrap"
+          >{{ currentCredit() | currency }}</span
+        >
+      </div>
+
+      <app-common-button-v4
+        [text]="'Recharge Now'"
+        [type]="{ style: 'neon', name: 'main' }"
+        (clickEvent)="openRechargeModal()"
+        [disabled]="isCreditLoading()"
+        [width]="'130px'"
+      ></app-common-button-v4>
+
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 flex items-center justify-center rounded-full border border-v4-border-color hover:bg-v4-secondary-background-color transition-colors cursor-pointer"
+      >
+        <lucide-icon
+          name="x"
+          [size]="16"
+          class="text-v4-secondary-text-color"
+        ></lucide-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error toast -->
+  @if (emailErrors().length > 0) {
+    <div
+      class="flex justify-center items-center absolute w-full gap-1 px-4 sm:px-6 opacity-0 [animation:slowmove_10s_linear_forwards_0.2s]"
+    >
+      <div
+        class="py-2 px-5 text-v4-main-text-color font-medium text-[13px] border-l-[3px] border-l-v4-common-red-color bg-v4-secondary-background-color rounded-lg flex items-center"
+      >
+        <span class="text-v4-common-red-color text-xs p-0.5 align-middle">
+          check numbers
+        </span>
+        @for (row of emailErrors(); track row) {
+          <span class="text-v4-common-red-color text-xs p-0.5 align-middle">
+            {{ row.cheque_serial_number }},
+          </span>
+        }
+        <span class="text-v4-common-red-color text-xs p-0.5 align-middle">
+          are not eligible for emailing !!!
+        </span>
+      </div>
+    </div>
+  }
+
+  <!-- Body -->
+  <div class="px-4 sm:px-6 mb-2 flex-1 min-h-0 flex flex-col">
+    <!-- Table + Summary wrapper -->
+    <div class="border border-v4-border-color rounded-lg flex flex-col min-h-0 overflow-hidden">
+      <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0">
+        <form [formGroup]="emailForm">
+          <table
+            class="w-full [border-collapse:separate] [border-spacing:0] table-fixed max-[1100px]:min-w-[1100px]"
+          >
+            <thead
+              class="text-xs font-semibold bg-v4-secondary-background-color text-v4-secondary-text-color uppercase tracking-wider sticky top-0 z-10"
+            >
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[3%]"
+              >
+                #
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[8%]"
+              >
+                PAY TO
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[8%]"
+              >
+                PAY FROM
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[16%]"
+              >
+                <span class="inline-flex items-center">
+                  <lucide-icon
+                    name="mail"
+                    [size]="16"
+                    class="text-v4-primary-brand-bold-color mr-1"
+                  ></lucide-icon>
+                  EMAIL
+                </span>
+              </td>
+              <td
+                class="px-1 py-3.5 align-middle text-center border-b border-v4-border-color w-[3%]"
+              >
+                <input
+                  type="checkbox"
+                  name="sms"
+                  [disabled]="isSendToOneAddress"
+                  [checked]="allSmsChecked()"
+                  (input)="checkAllSms($event)"
+                  class="v4-checkbox-sm"
+                />
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[21%]"
+              >
+                <span class="inline-flex items-center">
+                  <lucide-icon
+                    name="message-square"
+                    [size]="16"
+                    class="text-v4-common-green-color mr-1"
+                  ></lucide-icon>
+                  SMS
+                </span>
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[8%]"
+              >
+                <span class="inline-flex items-center">
+                  <lucide-icon
+                    name="file-text"
+                    [size]="16"
+                    class="text-v4-common-violet-color mr-1"
+                  ></lucide-icon>
+                  CHECK#
+                </span>
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[8%]"
+              >
+                <span class="inline-flex items-center">
+                  <lucide-icon
+                    name="circle-dollar-sign"
+                    [size]="16"
+                    class="text-v4-common-yellow-color mr-1"
+                  ></lucide-icon>
+                  AMOUNT
+                </span>
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[14%]"
+              >
+                <span class="inline-flex items-center">
+                  <lucide-icon
+                    name="paperclip"
+                    [size]="16"
+                    class="text-v4-common-violet-color mr-1"
+                  ></lucide-icon>
+                  ATTACHMENT
+                </span>
+              </td>
+              <td
+                class="px-2 py-3.5 whitespace-nowrap align-middle border-b border-v4-border-color w-[7%]"
+              >
+                <span class="inline-flex items-center">
+                  <lucide-icon
+                    name="circle-dollar-sign"
+                    [size]="16"
+                    class="text-v4-common-red-color mr-1"
+                  ></lucide-icon>
+                  COST
+                </span>
+              </td>
+            </thead>
+            <tbody class="[&_tr:last-child_td]:border-b-0">
+              <ng-container formArrayName="emails">
+                @for (item of fEmails.controls; let i = $index; track item) {
+                  <ng-container [formGroupName]="i">
+                    <tr class="hover:bg-transparent">
+                      <td
+                        class="px-2 py-3 text-sm text-v4-main-text-color whitespace-nowrap align-middle border-b border-v4-border-color"
+                      >
+                        {{ i + 1 }}
+                      </td>
+                      <td
+                        class="px-2 py-3 align-middle border-b border-v4-border-color overflow-hidden"
+                      >
+                        <p
+                          class="truncate text-sm text-v4-main-text-color m-0"
+                          [matTooltip]="
+                            item.value.payee_name.length > 34
+                              ? item.value.payee_name
+                              : ''
+                          "
+                        >
+                          {{ item.value.payee_name | truncate: 34 }}
+                        </p>
+                      </td>
+                      <td
+                        class="px-2 py-3 align-middle border-b border-v4-border-color overflow-hidden"
+                      >
+                        <p
+                          class="truncate text-sm text-v4-main-text-color m-0"
+                          [matTooltip]="
+                            item.value.bank_name.length > 34
+                              ? item.value.bank_name
+                              : ''
+                          "
+                        >
+                          {{ item.value.bank_name | truncate: 34 }}
+                        </p>
+                      </td>
+                      <td
+                        class="px-2 py-3 align-middle border-b border-v4-border-color"
+                      >
+                        <app-common-input-v4
+                          [placeholder]="'Email'"
+                          [type]="'email'"
+                          [inputId]="'email_' + i"
+                          [control]="item.controls.payee_email"
+                          formControlName="payee_email"
+                          [fieldHeight]="'32px'"
+                        ></app-common-input-v4>
+                      </td>
+                      <td
+                        class="px-1 py-3 align-middle text-center whitespace-nowrap border-b border-v4-border-color"
+                      >
+                        <input
+                          type="checkbox"
+                          name="sms_{{ i }}"
+                          id="sms_{{ i }}"
+                          [disabled]="isSendToOneAddress"
+                          formControlName="checked"
+                          class="v4-checkbox-sm"
+                          (change)="showPhoneNumWarning($event, i)"
+                        />
+                      </td>
+                      <td
+                        class="px-2 py-3 align-middle border-b border-v4-border-color"
+                      >
+                        <app-phone-input-v4
+                          formControlName="payee_phone"
+                          [control]="item.controls.payee_phone"
+                          [placeholder]="'Phone'"
+                          [isFieldRequired]="false"
+                          [fieldHeight]="'32px'"
+                          [dropdownWidth]="'267px'"
+                          (input)="phoneCheck(i)"
+                        ></app-phone-input-v4>
+                      </td>
+                      <td
+                        class="px-2 py-3 text-center text-sm text-v4-main-text-color whitespace-nowrap align-middle border-b border-v4-border-color"
+                      >
+                        <p
+                          class="m-0"
+                          [matTooltip]="
+                            item.value.cheque_serial_number.length > 15
+                              ? item.value.cheque_serial_number
+                              : ''
+                          "
+                        >
+                          {{ item.value.cheque_serial_number | truncate: 15 }}
+                        </p>
+                      </td>
+                      <td
+                        class="px-2 py-3 text-center text-sm text-v4-main-text-color whitespace-nowrap align-middle border-b border-v4-border-color"
+                      >
+                        $ {{ item.value.cheque_amount | number: "1.2-2" }}
+                      </td>
+                      <td
+                        class="px-2 py-3 whitespace-nowrap align-middle border-b border-v4-border-color"
+                      >
+                        <div class="flex gap-1.5 items-center">
+                          <app-common-button-v4
+                            [type]="{ style: 'outline', name: 'main' }"
+                            [text]="'Add'"
+                            [isAddIcon]="true"
+                            [customHeight]="'32px'"
+                            (clickEvent)="
+                              openAttachmentModal(item.value.checkId)
+                            "
+                          ></app-common-button-v4>
+
+                          <app-common-button-v4
+                            [type]="{ style: 'green', name: 'action' }"
+                            [text]="''"
+                            [isAddIcon]="true"
+                            [icon]="faComment"
+                            [width]="'36px'"
+                            [customHeight]="'32px'"
+                            (clickEvent)="openEmailMessage(item.value.checkId)"
+                          ></app-common-button-v4>
+                          @if (
+                            item.value.existingAttach &&
+                            !attachments[item.value.checkId]?.length > 0
+                          ) {
+                            <lucide-icon
+                              name="info"
+                              [size]="16"
+                              class="text-v4-tertiary-text-color"
+                              matTooltip="you have attachments with this check"
+                            ></lucide-icon>
+                          }
+                          @if (
+                            !attachments[item.value.checkId] &&
+                            item.value.added_attachments > 0
+                          ) {
+                            <span
+                              class="p-1 rounded-full border border-v4-common-green-color ml-1 w-5 h-5 flex justify-center items-center text-[12px] text-v4-main-text-color"
+                            >
+                              {{ item.value.added_attachments }}
+                            </span>
+                          } @else if (
+                            attachments[item.value.checkId]?.length > 0
+                          ) {
+                            <span
+                              class="p-1 rounded-full border border-v4-common-green-color ml-1 w-5 h-5 flex justify-center items-center text-[12px] text-v4-main-text-color"
+                            >
+                              {{ attachments[item.value.checkId]?.length }}
+                            </span>
+                          }
+                        </div>
+                      </td>
+                      <td
+                        class="px-2 py-3 text-center whitespace-nowrap align-middle border-b border-v4-border-color"
+                      >
+                        <span class="font-bold text-sm text-v4-main-text-color">
+                          $ {{ item.value.cost | number: "1.2-2" }}
+                        </span>
+                      </td>
+                    </tr>
+                  </ng-container>
+                }
+              </ng-container>
+            </tbody>
+          </table>
+        </form>
+      </div>
+
+      <!-- Summary bar below table -->
+      <div
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-v4-secondary-background-color px-3 sm:px-4 py-2.5 sm:py-3 border-t border-v4-border-color"
+      >
+        <div class="flex flex-col gap-1">
+          @if (autoAttachmentForCheckMail()) {
+            <p class="text-xs text-v4-tertiary-text-color m-0">
+              Note: To include attachments, click 'Add' before sending the
+              check.
+            </p>
+          }
+        </div>
+        <div class="flex items-center gap-2 whitespace-nowrap">
+          <span class="text-xs sm:text-sm font-semibold text-v4-main-text-color"
+            >TOTAL:</span
+          >
+          <span
+            class="text-lg sm:text-xl font-bold text-v4-primary-brand-bold-color"
+          >
+            $ {{ totalAmount() | number: "1.2-2" }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mail Type Selection -->
+    @if (!isSendToOneAddress) {
+      <div
+        class="flex w-full justify-start p-3 sm:p-4 border border-v4-border-color rounded-lg mt-3 sm:mt-4"
+      >
+        <div class="flex flex-col sm:flex-row gap-2">
+          <label
+            for="email-now"
+            class="flex items-center gap-2 whitespace-nowrap px-4 py-2.5 border border-v4-border-color rounded-lg cursor-pointer hover:bg-v4-secondary-background-color transition-colors"
+          >
+            <input
+              type="radio"
+              name="mail-type"
+              id="email-now"
+              value="email now"
+              (change)="mailTypeChange($event?.target?.value)"
+              [checked]="selectedType() === 'email now'"
+              class="v4-radio-md"
+            />
+            <span class="text-sm text-v4-main-text-color">Send Now</span>
+          </label>
+
+          <label
+            for="schedule"
+            class="flex items-center gap-2 whitespace-nowrap px-4 py-2.5 border border-v4-border-color rounded-lg cursor-pointer hover:bg-v4-secondary-background-color transition-colors"
+          >
+            <input
+              type="radio"
+              name="mail-type"
+              id="schedule"
+              value="schedule-it"
+              (change)="mailTypeChange($event?.target?.value)"
+              [checked]="selectedType() === 'schedule-it'"
+              class="v4-radio-md"
+            />
+            <span class="text-sm text-v4-main-text-color">Schedule Email</span>
+          </label>
+
+          <label
+            for="recurring"
+            class="flex items-center gap-2 whitespace-nowrap px-4 py-2.5 border border-v4-border-color rounded-lg cursor-pointer hover:bg-v4-secondary-background-color transition-colors"
+          >
+            <input
+              type="radio"
+              name="mail-type"
+              id="recurring"
+              value="recurring"
+              (change)="mailTypeChange($event?.target?.value)"
+              [checked]="selectedType() === 'recurring'"
+              class="v4-radio-md"
+            />
+            <span class="text-sm text-v4-main-text-color">Recurring Email</span>
+          </label>
+        </div>
+      </div>
+    }
+
+    <!-- Recurring Options -->
+    @if (!isSendToOneAddress && recurring()) {
+      <form [formGroup]="emailForm">
+        <div
+          class="w-full flex flex-wrap justify-between items-end border border-v4-border-color my-3 sm:my-4 rounded-lg p-3 sm:p-4"
+        >
+          <div class="flex w-full gap-3 sm:gap-5 flex-col sm:flex-row">
+            <div class="flex flex-col flex-1 min-w-[200px]">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >
+                Frequency
+              </label>
+              <app-v4-common-dropdown
+                [config]="frequencyDropdownConfig"
+                [listData]="frequencyOptions"
+                [clearable]="false"
+                formControlName="frequency"
+                appendTo="body"
+              ></app-v4-common-dropdown>
+            </div>
+            <div class="flex flex-col flex-1 min-w-[200px]">
+              <app-v4-date-picker
+                placeholder="Start Date"
+                fieldLabel="Start Date"
+                formControlName="start_date"
+                [minDate]="mindate"
+                [control]="emailForm.controls['start_date']"
+                [isFieldRequired]="false"
+              ></app-v4-date-picker>
+              @if (startdatevalid()) {
+                <span class="text-v4-common-red-color text-xs font-medium mt-1">
+                  Invalid Date
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 items-start mt-3 sm:mt-4">
+            <div class="flex items-center gap-3">
+              <input
+                type="radio"
+                name="recurring-types"
+                id="transaction_months"
+                checked
+                value="transaction"
+                (change)="Recurring($event)"
+                class="v4-radio-md"
+              />
+              <label
+                for="transaction_months"
+                class="text-sm cursor-pointer text-v4-main-text-color whitespace-nowrap min-w-[160px]"
+                >Number of occurrences</label
+              >
+              <app-common-input-v4
+                [placeholder]="'Count'"
+                [type]="'number'"
+                [inputId]="'transaction_count'"
+                [isNumberOnly]="true"
+                [isFieldRequired]="false"
+                formControlName="count"
+                class="w-[150px]"
+                [class.pointer-events-none]="emailForm.controls['count'].disabled"
+              ></app-common-input-v4>
+            </div>
+            <div class="flex items-center gap-3">
+              <input
+                type="radio"
+                name="recurring-types"
+                value="Specific-date"
+                (change)="Recurring($event)"
+                id="specific_date"
+                class="v4-radio-md"
+              />
+              <label
+                for="specific_date"
+                class="text-sm cursor-pointer text-v4-main-text-color whitespace-nowrap min-w-[160px]"
+              >
+                Specific Date (Until)
+              </label>
+              <app-v4-date-picker
+                placeholder="Until Date"
+                formControlName="until"
+                [minDate]="mindate"
+                [control]="emailForm.controls['until']"
+                [isFieldRequired]="false"
+                class="w-[150px]"
+                [class.pointer-events-none]="emailForm.controls['until'].disabled"
+              ></app-v4-date-picker>
+              @if (startdatevalid()) {
+                <span class="text-v4-common-red-color text-xs font-medium ml-2">
+                  Invalid Date
+                </span>
+              }
+            </div>
+            <div class="flex items-center gap-3">
+              <input
+                type="radio"
+                name="recurring-types"
+                value="until"
+                (change)="Recurring($event)"
+                id="until-i-cancel"
+                class="v4-radio-md"
+              />
+              <label
+                for="until-i-cancel"
+                class="text-sm cursor-pointer text-v4-main-text-color whitespace-nowrap min-w-[160px]"
+              >
+                Until Canceled
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+    }
+
+    <!-- Schedule Options -->
+    @if (!isSendToOneAddress && scheduleIt()) {
+      <form [formGroup]="emailForm">
+        <div
+          class="max-w-xs flex flex-col justify-start border border-v4-border-color rounded-lg my-3 sm:my-4 p-3 sm:p-4"
+        >
+          <app-v4-date-picker
+            placeholder="Schedule Date"
+            fieldLabel="Select Date"
+            formControlName="scheduleDate"
+            [minDate]="mindate"
+            [control]="emailForm.controls['scheduleDate']"
+            [isFieldRequired]="false"
+          ></app-v4-date-picker>
+        </div>
+      </form>
+    }
+  </div>
+
+  <!-- Send to Custom Email -->
+  <div class="flex flex-wrap items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3 pb-6">
+    <div class="v4-checkbox-violet flex items-center gap-2">
+      <input
+        type="checkbox"
+        [(ngModel)]="isSendToOneAddress"
+        (ngModelChange)="onSelectAddress(isSendToOneAddress)"
+        [ngModelOptions]="{ standalone: true }"
+        class="v4-checkbox-sm"
+      />
+      <span class="text-sm text-v4-main-text-color">
+        Send to Custom Email
+        <lucide-icon
+          name="circle-help"
+          [size]="16"
+          class="cursor-pointer text-v4-tertiary-text-color ml-1 inline-flex align-middle"
+          matTooltip="Select this option to send multiple e-checks to a single email address"
+        ></lucide-icon>
+      </span>
+    </div>
+    @if (isSendToOneAddress) {
+      <div class="w-full sm:w-[300px] sm:ml-2 h-8 overflow-visible">
+        <app-common-input-v4
+          [placeholder]="'Email'"
+          [type]="'email'"
+          [control]="sendToOneAddressEmail"
+          [formControl]="sendToOneAddressEmail"
+          [fieldHeight]="'32px'"
+        ></app-common-input-v4>
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-v4-border-color"
+  >
+    <div>
+      <mat-dialog-actions class="!p-0 !m-0 !min-h-0">
+        @if (skipprocess()) {
+          <app-common-button-v4
+            [type]="{ style: 'secondary', name: 'main' }"
+            [text]="'Skip'"
+            (clickEvent)="skip()"
+          ></app-common-button-v4>
+        }
+      </mat-dialog-actions>
+    </div>
+    <div>
+      <mat-dialog-actions class="!p-0 !m-0 !min-h-0">
+        @if (!recurring() && !scheduleIt()) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Send Email'"
+            (clickEvent)="onSubmit()"
+            [disabled]="submitting()"
+            [loading]="submitting()"
+            [width]="'140px'"
+          ></app-common-button-v4>
+        }
+
+        @if (scheduleIt()) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Schedule Email'"
+            (clickEvent)="onSubmit()"
+            [disabled]="submitting()"
+            [loading]="submitting()"
+            [width]="'160px'"
+          ></app-common-button-v4>
+        }
+
+        @if (recurring()) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Set Recurring Email'"
+            (clickEvent)="onSubmit()"
+            [disabled]="submitting()"
+            [loading]="submitting()"
+            [width]="'190px'"
+          ></app-common-button-v4>
+        }
+      </mat-dialog-actions>
+    </div>
+  </div>
+</div>

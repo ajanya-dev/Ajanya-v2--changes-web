@@ -1,0 +1,370 @@
+<div class="flex flex-col max-h-[95vh] font-peridot">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <div class="flex items-center gap-3">
+        <button
+          class="p-1 rounded-md text-v4-tertiary-text-color hover:text-v4-main-text-color hover:bg-v4-tertiary-background-color transition-colors"
+          (click)="onBack()"
+        >
+          <lucide-icon [img]="ArrowLeftIcon" [size]="20"></lucide-icon>
+        </button>
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          Add Your Banking Info
+        </h1>
+      </div>
+      <h2 class="text-xs text-v4-subtle-text-color mt-1">
+        Business and account details
+      </h2>
+    </div>
+    <div
+      (click)="onClose()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon
+        [img]="XIcon"
+        class="text-v4-subtle-text-color"
+      ></lucide-icon>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="flex-1 min-h-0 overflow-auto p-6 bg-v4-tertiary-background-color">
+    <!-- Info Banner -->
+    <div
+      class="flex items-start gap-2 mt-4 p-3 bg-v4-secondary-background-color rounded-lg"
+    >
+      <lucide-icon
+        [img]="InfoIcon"
+        [size]="18"
+        class="text-v4-primary-brand-color mt-0.5 flex-shrink-0"
+      ></lucide-icon>
+      <span class="text-sm text-v4-secondary-text-color">
+        Ensure that the information you provide is accurate.
+      </span>
+    </div>
+
+    <!-- Stepper: active state uses neon green -->
+    <div class="mt-5">
+      <app-stepper-v35
+        [numberOfStepperTabs]="2"
+        [currentStepperTabIndex]="step1Completed() ? 1 : 0"
+        [stepperHeaders]="['Business Details', 'Account Details']"
+        stepperWidth="flex-1"
+        selectedStepperColor="bg-v4-secondary-brand-color"
+      ></app-stepper-v35>
+    </div>
+
+    <form class="add-bank-info-form" [formGroup]="bankForm" (ngSubmit)="submit()">
+      <!-- =================== STEP 1: Business Details =================== -->
+      @if (!step2()) {
+        <!-- Country: v4 common tab (pill), full-width equal via wrapper styles in this modal only -->
+        <div class="country-tab-full-width mt-6">
+          <app-common-tab-v4
+            [tabs]="[
+              { label: 'USA', value: 'USA' },
+              { label: 'CANADA', value: 'CANADA' }
+            ]"
+            [activeTab]="country()"
+            [variant]="'pill'"
+            (tabChange)="onCountrySelect($event)"
+          />
+        </div>
+
+        <div class="mt-6 space-y-4">
+          <!-- Company Name -->
+          <app-common-input-v4
+            [fieldLabel]="'Company Name / Your Name'"
+            [placeholder]="'Company Name / Your Name'"
+            [control]="bankForm.controls.businessName"
+            formControlName="businessName"
+            [maxLength]="60"
+          />
+
+          <!-- Address Line 1 & 2 on same row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" (focusin)="showAddressFields.set(true)">
+            <app-address-autocomplete-v4
+              [label]="'Address Line 1'"
+              [placeholder]="'Address Line 1'"
+              [control]="$any(bankForm.controls.mainAddressLineOne)"
+              [allowedCountries]="country() === 'CANADA' ? ['ca'] : ['us']"
+              (addressSelected)="onCompanyAddressSelected($event)"
+            />
+            <app-common-input-v4
+              [fieldLabel]="'Address Line 2'"
+              [placeholder]="'Apt, Suite, etc.'"
+              [control]="bankForm.controls.mainAddressLineTwo"
+              formControlName="mainAddressLineTwo"
+              [isFieldRequired]="false"
+              [maxLength]="100"
+            />
+          </div>
+
+          <!-- City, State, Zip - shown after Address Line 1 is focused -->
+          <div [class.hidden]="!showAddressFields()">
+
+            <!-- City, State, Zip -->
+            <div class="grid grid-cols-3 gap-4 mt-4">
+              <app-common-input-v4
+                [fieldLabel]="'City'"
+                [placeholder]="'City'"
+                [control]="bankForm.controls.companyCity"
+                formControlName="companyCity"
+                [maxLength]="50"
+              />
+              <div>
+                <span class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5">
+                  State <span class="text-v4-common-red-color">*</span>
+                </span>
+                <app-common-state-select-v4
+                  formControlName="companyState"
+                  [country]="countryCode()"
+                  [isRequired]="true"
+                  dropdownPosition="top"
+                  placeholder="State"
+                ></app-common-state-select-v4>
+              </div>
+              <app-common-input-v4
+                [fieldLabel]="country() === 'CANADA' ? 'Postal Code' : 'Zip'"
+                [placeholder]="country() === 'CANADA' ? 'Postal Code' : 'Zip'"
+                [control]="bankForm.controls.companyZip"
+                formControlName="companyZip"
+                [maxLength]="11"
+              />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- =================== STEP 2: Account Details =================== -->
+      @if (step2()) {
+        <div class="mt-6 space-y-4">
+          <!-- USA: Routing + Account Number -->
+          @if (country() === "USA") {
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <app-common-input-v4
+                [fieldLabel]="'Routing Number'"
+                [placeholder]="'Routing Number'"
+                [control]="bankForm.controls.routingNumber"
+                formControlName="routingNumber"
+                [isNumberOnly]="true"
+                [maxLength]="9"
+                (inputEvent)="lookupRoutingNumber($event)"
+              />
+              <app-common-input-v4
+                [fieldLabel]="'Account Number'"
+                [placeholder]="'Account Number'"
+                [control]="bankForm.controls.accountNumber"
+                formControlName="accountNumber"
+                [isNumberOnly]="true"
+                [maxLength]="20"
+              />
+            </div>
+          }
+
+          <!-- CANADA: Account + Transit + Financial Inst -->
+          @if (country() === "CANADA") {
+            <div class="grid grid-cols-3 gap-4">
+              <app-common-input-v4
+                [fieldLabel]="'Account Number'"
+                [placeholder]="'Account Number'"
+                [control]="bankForm.controls.accountNumber"
+                formControlName="accountNumber"
+                [isNumberOnly]="true"
+                [isAllowHyphen]="true"
+              />
+              <app-common-input-v4
+                [fieldLabel]="'Transit Number'"
+                [placeholder]="'Transit Number'"
+                [control]="bankForm.controls.transitNumber"
+                formControlName="transitNumber"
+                [isNumberOnly]="true"
+                [maxLength]="5"
+              />
+              <app-common-input-v4
+                [fieldLabel]="'Financial Inst. No.'"
+                [placeholder]="'Financial Inst. No.'"
+                [control]="bankForm.controls.finantialInstNumber"
+                formControlName="finantialInstNumber"
+                [isNumberOnly]="true"
+                [maxLength]="3"
+              />
+            </div>
+          }
+
+          <!-- Bank Detail Section Header -->
+          <h3 class="text-sm font-semibold text-v4-main-text-color pt-2">
+            Bank Detail
+          </h3>
+
+          <!-- Nick Name + Account Type (top-aligned so labels and controls line up; error under Nick Name doesn't shift Account Type) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <app-common-input-v4
+              [fieldLabel]="'Nick Name'"
+              [placeholder]="'Nick Name'"
+              [control]="bankForm.controls.nickName"
+              formControlName="nickName"
+              [maxLength]="60"
+              [isNeedPreventKey]="true"
+              [preventCharacters]="['`']"
+            />
+            <div>
+              <span
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Account Type</span>
+              <app-v4-common-dropdown
+                [config]="accountTypeDropdownConfig"
+                [listData]="accountTypes"
+                [clearable]="false"
+                [appendTo]="'body'"
+                [searchable]="false"
+                formControlName="bankAccountType"
+              />
+            </div>
+          </div>
+
+          <!-- Bank Name (shown after routing number lookup or for Canada) -->
+          @if (bankFieldsShow() || country() === "CANADA") {
+            <div class="flex flex-col gap-4">
+              <div>
+                <app-common-input-v4
+                  [fieldLabel]="'Bank Name'"
+                  [placeholder]="'Bank Name'"
+                  [control]="bankForm.controls.bankAccountName"
+                  formControlName="bankAccountName"
+                  [maxLength]="60"
+                />
+              </div>
+
+              <!-- Bank Address -->
+              <app-address-autocomplete-v4
+                [label]="'Street Address'"
+                [placeholder]="'Street Address'"
+                [control]="$any(bankForm.controls.bankAddress)"
+                [allowedCountries]="country() === 'CANADA' ? ['ca'] : ['us']"
+                (addressSelected)="onBankAddressSelected($event)"
+              />
+
+              <!-- Bank City, State, Zip -->
+              <div class="grid grid-cols-3 gap-4">
+                <app-common-input-v4
+                  [fieldLabel]="'City'"
+                  [placeholder]="'City'"
+                  [control]="bankForm.controls.bankCity"
+                  formControlName="bankCity"
+                  [maxLength]="50"
+                />
+                <div>
+                  <span class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5">
+                    State <span class="text-v4-common-red-color">*</span>
+                  </span>
+                  <app-common-state-select-v4
+                    formControlName="bankState"
+                    [country]="countryCode()"
+                    [isRequired]="true"
+                    dropdownPosition="top"
+                    placeholder="State"
+                  ></app-common-state-select-v4>
+                </div>
+                <app-common-input-v4
+                  [fieldLabel]="country() === 'CANADA' ? 'Postal Code' : 'Zip'"
+                  [placeholder]="country() === 'CANADA' ? 'Postal Code' : 'Zip'"
+                  [control]="bankForm.controls.bankZip"
+                  formControlName="bankZip"
+                  [maxLength]="11"
+                />
+              </div>
+            </div>
+          }
+
+          <!-- Check Number + Fractional Number -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <app-common-input-v4
+              [fieldLabel]="'Check Number'"
+              [placeholder]="'Check Number'"
+              [control]="bankForm.controls.checkNumber"
+              formControlName="checkNumber"
+              [isFieldRequired]="false"
+              [isNumberOnly]="true"
+              [maxLength]="12"
+            />
+            <app-common-input-v4
+              [fieldLabel]="'Fractional Number'"
+              [placeholder]="'Fractional Number'"
+              [control]="bankForm.controls.fractionalNumber"
+              formControlName="fractionalNumber"
+              [isFieldRequired]="false"
+            />
+          </div>
+
+          <!-- Signature: same size as Fractional Number input, dashed design -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div></div>
+            <div
+              class="w-full min-h-[28px] py-1 px-4 rounded-[10px] border-2 border-dashed border-v4-input-border-color bg-v4-input-background-color flex items-center justify-center cursor-pointer hover:border-v4-primary-brand-color hover:bg-v4-secondary-background-color transition-colors relative"
+              (click)="openSignModal()"
+              (keydown.enter)="openSignModal()"
+              tabindex="0"
+            >
+              @if (signaturePadImg()) {
+                <button
+                  type="button"
+                  class="absolute top-1 right-1 p-0.5 rounded-full bg-v4-badge-error-bg-color text-v4-badge-error-text-color hover:opacity-80 transition-colors"
+                  (click)="$event.stopPropagation(); removeSign()"
+                >
+                  <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
+                </button>
+                <img
+                  [src]="signaturePadImg()"
+                  alt="Signature"
+                  class="max-h-[36px] object-contain"
+                />
+              } @else {
+                <div
+                  class="flex flex-col items-center gap-1 text-v4-tertiary-text-color"
+                >
+                  <lucide-icon [img]="PlusIcon" [size]="18"></lucide-icon>
+                  <span class="text-xs">Signature</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex-shrink-0 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    @if (!step2()) {
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Next'"
+        [width]="'100%'"
+        (clickEvent)="onNextClick()"
+      />
+    }
+    @if (step2()) {
+      <div class="grid grid-cols-2 gap-3 w-full">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Back'"
+          [width]="'100%'"
+          (clickEvent)="onBackToStep1()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="loading() ? 'Saving...' : 'Save Bank Account'"
+          [width]="'100%'"
+          [loading]="loading()"
+          [btnType]="'button'"
+          (clickEvent)="submit()"
+        />
+      </div>
+    }
+  </div>
+</div>

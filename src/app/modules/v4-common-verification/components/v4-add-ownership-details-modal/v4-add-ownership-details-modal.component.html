@@ -1,0 +1,246 @@
+<div class="font-peridot">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Add Ownership Details
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Enter the ownership information
+      </h2>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <form [formGroup]="businessForm">
+      <div class="flex flex-col gap-5">
+        <!-- First Name + Last Name -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'First Name'"
+              [placeholder]="'Enter first name'"
+              formControlName="firstName"
+              [control]="businessForm.controls.firstName"
+              [isFieldRequired]="true"
+              [maxLength]="30"
+            ></app-common-input-v4>
+          </div>
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'Last Name'"
+              [placeholder]="'Enter last name'"
+              formControlName="lastName"
+              [control]="businessForm.controls.lastName"
+              [isFieldRequired]="true"
+              [maxLength]="30"
+            ></app-common-input-v4>
+          </div>
+        </div>
+
+        <!-- Title + Email -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'Title'"
+              [placeholder]="'Enter title'"
+              formControlName="title"
+              [control]="businessForm.controls.title"
+              [isFieldRequired]="true"
+              [maxLength]="50"
+            ></app-common-input-v4>
+          </div>
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'Email'"
+              [placeholder]="'Enter email'"
+              formControlName="email"
+              [control]="businessForm.controls.email"
+              [isFieldRequired]="true"
+              [maxLength]="50"
+            ></app-common-input-v4>
+          </div>
+        </div>
+
+        <!-- SSN + Birth Date -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'Enter SSN number'"
+              [placeholder]="'SSN'"
+              formControlName="fullSsn"
+              [control]="businessForm.controls.fullSsn"
+              [isFieldRequired]="true"
+              [customMask]="mask"
+              [patterns]="customPattern"
+              [hiddenInput]="true"
+              [preventCopy]="true"
+              (inputFocusEvent)="onFocus()"
+              (inputFocusOutEvent)="onBlur()"
+            ></app-common-input-v4>
+          </div>
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'Birth Date'"
+              [placeholder]="'Select date'"
+              [type]="'date'"
+              formControlName="birthDate"
+              [control]="businessForm.controls.birthDate"
+              [isFieldRequired]="true"
+            ></app-common-input-v4>
+          </div>
+        </div>
+
+        <!-- Phone + Ownership Percentage -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="flex flex-col gap-1.5">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >
+              Phone <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-phone-input-v4
+              formControlName="phoneNumber"
+              [placeholder]="'Phone'"
+              [isFieldRequired]="true"
+            ></app-phone-input-v4>
+            <app-control-message-v4
+              [control]="businessForm.controls.phoneNumber"
+            ></app-control-message-v4>
+          </div>
+          <div>
+            <app-common-input-v4
+              [fieldLabel]="'Ownership Percentage'"
+              [placeholder]="'25-100'"
+              formControlName="ownershipPercentage"
+              [control]="businessForm.controls.ownershipPercentage"
+              [isFieldRequired]="true"
+              [customMask]="'000'"
+            ></app-common-input-v4>
+            @if (
+              businessForm.controls.ownershipPercentage.errors?.["isInvalid"] &&
+              !businessForm.controls.ownershipPercentage.errors?.["required"] &&
+              businessForm.controls.ownershipPercentage.touched
+            ) {
+              <small
+                class="flex items-center gap-1 text-v4-common-red-color pl-1 mt-1"
+              >
+                <fa-icon
+                  class="text-v4-common-red-color text-[12px]"
+                  [icon]="['fas', 'circle-exclamation']"
+                  animation="shake"
+                  size="lg"
+                ></fa-icon>
+                <p
+                  class="text-v4-common-red-color text-xs font-medium font-peridot"
+                >
+                  Percentage should be between 25 to 100
+                </p>
+              </small>
+            }
+          </div>
+        </div>
+
+        <!-- Address (full width) -->
+        <div>
+          <app-common-input-v4
+            [fieldLabel]="'Address'"
+            [placeholder]="'Enter address'"
+            formControlName="address"
+            [control]="businessForm.controls.address"
+            [isFieldRequired]="true"
+            (inputFocusEvent)="loadGoogleAddress($event)"
+          ></app-common-input-v4>
+        </div>
+
+        <!-- City + State (conditional) -->
+        @if (businessForm.controls.address.touched || editMode) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <app-common-input-v4
+                [fieldLabel]="'City'"
+                [placeholder]="'Enter city'"
+                formControlName="city"
+                [control]="businessForm.controls.city"
+                [isFieldRequired]="true"
+              ></app-common-input-v4>
+            </div>
+            <div>
+              <app-common-input-v4
+                [fieldLabel]="'State'"
+                [placeholder]="'Enter state'"
+                formControlName="state"
+                [control]="businessForm.controls.state"
+                [isFieldRequired]="true"
+              ></app-common-input-v4>
+            </div>
+          </div>
+
+          <!-- Zip + Country -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <app-common-input-v4
+                [fieldLabel]="'Zip'"
+                [placeholder]="'Enter zip'"
+                formControlName="zip"
+                [control]="businessForm.controls.zip"
+                [isFieldRequired]="true"
+              ></app-common-input-v4>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >
+                Country <span class="text-v4-common-red-color">*</span>
+              </label>
+              <app-v4-common-dropdown
+                formControlName="country"
+                [isRequired]="true"
+                [config]="{
+                  placeholder: 'Select country',
+                  displayField: 'value',
+                  outputField: 'key',
+                  style: { size: 0 }
+                }"
+                [listData]="countryList"
+                [clearable]="false"
+                [appendTo]="'body'"
+              ></app-v4-common-dropdown>
+              <app-control-message-v4
+                [control]="businessForm.controls.country"
+              ></app-control-message-v4>
+            </div>
+          </div>
+        }
+      </div>
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="editMode ? 'Update' : 'Submit'"
+      (clickEvent)="submit()"
+    />
+  </div>
+</div>

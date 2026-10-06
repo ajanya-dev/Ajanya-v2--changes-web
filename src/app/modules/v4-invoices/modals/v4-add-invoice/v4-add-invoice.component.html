@@ -1,0 +1,741 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden h-full">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        @if (datas?.isClone) {
+          Clone Invoice
+        } @else {
+          {{ !editMode ? "Add Invoice" : "Edit Invoice" }}
+        }
+      </h1>
+      <p class="text-xs text-v4-subtle-text-color font-peridot">
+        Fill in the invoice details below
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="p-6 bg-v4-tertiary-background-color overflow-y-auto flex-1 min-h-0"
+    [class.pointer-events-none]="isSending()"
+    [class.opacity-60]="isSending()"
+    [attr.aria-busy]="isSending() ? 'true' : null"
+    (scroll)="closeAllDropdowns()"
+  >
+    <form [formGroup]="invoice" method="POST">
+      <!-- Row 1 + Logo -->
+      <div class="flex flex-col lg:flex-row gap-4 mb-4">
+        <div class="flex flex-col gap-3 flex-1 min-w-0">
+          <!-- Row 1: Bank Account | Payee | Invoice No | PO# | ACC# -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-[2fr_2fr_1fr_1fr_1fr] [&>*]:min-w-0 items-start"
+          >
+            <!-- Bank Account -->
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Select Bank Account <span class="text-v4-common-red-color">*</span></label
+              >
+              <app-bank-ac-dropdown-v4
+                [formControl]="selectedBankAccountCtrl"
+                (ready)="autoPopulateBank($event)"
+                [enableAddNew]="true"
+                (clearEvent)="onClearBankAccount()"
+                [append]="'body'"
+                permissionContext="forInvoice"
+              />
+            </div>
+
+            <!-- Payee -->
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Select Your Payer <span class="text-v4-common-red-color">*</span></label
+              >
+              <app-payee-dropdown-v4
+                [formControl]="selectedPayeeCtrl"
+                (ready)="autoPopulatePayee($event)"
+                [enableAddNew]="true"
+                (clearEvent)="onClearPayee()"
+                [appendTo]="'body'"
+                [placeholder]="'Select Your Payer'"
+              />
+            </div>
+
+            <!-- Invoice No -->
+            <app-common-input-v4
+              [fieldLabel]="'Invoice No'"
+              placeholder="Invoice No"
+              formControlName="InvoiceNo"
+              [control]="invoice.controls['InvoiceNo']"
+              [isFieldRequired]="true"
+              [maxlength]="100"
+              [fieldHeight]="'44px'"
+            />
+
+            <!-- PO# -->
+            <app-common-input-v4
+              [fieldLabel]="'PO#'"
+              placeholder="PO#"
+              formControlName="poNo"
+              [isFieldRequired]="false"
+              [maxlength]="100"
+              [fieldHeight]="'44px'"
+              [showInfoIcon]="true"
+              [tooltip]="'Purchase Order Number'"
+            />
+
+            <!-- ACC# -->
+            <app-common-input-v4
+              [fieldLabel]="'ACC#'"
+              placeholder="ACC#"
+              formControlName="accountNumber"
+              [isFieldRequired]="false"
+              [maxlength]="100"
+              [fieldHeight]="'44px'"
+              [showInfoIcon]="true"
+              [tooltip]="'Payee\'s Account Number'"
+            />
+          </div>
+
+          <!-- Row 2: Category | Discount | Invoice Date | Due Date -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 [&>*]:min-w-0"
+          >
+            <!-- Category -->
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Category</label
+              >
+              <app-category-dropdown-v4
+                [formControl]="selectedCategoryCtrl"
+                (ready)="categoryReady = $event; autoPopulateCategory($event)"
+                [enableAddNew]="true"
+              />
+            </div>
+
+            <!-- Discount with $ / % selector -->
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Discount</label
+              >
+              <div class="flex items-center gap-2">
+                @if (
+                  invoice.get("discountType")?.value !== "1" &&
+                  invoice.get("discountType")?.value !== 1
+                ) {
+                  <div class="flex-1 min-w-0">
+                    <app-common-input-v4
+                      formControlName="discount"
+                      placeholder="0"
+                      [isFieldRequired]="false"
+                      [isNumberOnly]="true"
+                      [numberType]="'decimal'"
+                      [maxLength]="3"
+                      [fieldHeight]="'44px'"
+                      (inputEvent)="Totaldiscountval($event)"
+                    />
+                  </div>
+                } @else {
+                  <div class="flex-1 min-w-0">
+                    <app-common-amount-input-v4
+                      formControlName="discount"
+                      [height]="'44px'"
+                      [isRequired]="false"
+                      [maxLength]="14"
+                      (blurEvent)="grandTotal()"
+                    />
+                  </div>
+                }
+                <app-v4-common-dropdown
+                  class="w-16"
+                  [config]="{
+                    placeholder: '%',
+                    displayField: 'name',
+                    outputField: 'id',
+                    extraStyles: 'w-16 [&_.ng-select-container]:rounded-lg'
+                  }"
+                  [listData]="discountTypeOptions"
+                  [clearable]="false"
+                  [ngModel]="'' + invoice.get('discountType')?.value"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="itemtypechange($event, 'total', 'dropdown')"
+                />
+              </div>
+            </div>
+
+            <!-- Invoice Date -->
+            <app-v4-date-picker
+              fieldLabel="Invoice Date"
+              placeholder="Invoice Date"
+              formControlName="Date"
+              [control]="invoice.controls['Date']"
+              [isFieldRequired]="true"
+              [errorLabel]="'Invoice Date is required'"
+            />
+
+            <!-- Due Date -->
+            <app-v4-date-picker
+              fieldLabel="Due Date"
+              placeholder="Due Date"
+              formControlName="DueDate"
+              [isFieldRequired]="false"
+              [minDate]="invoice.controls['Date'].value"
+            />
+          </div>
+        </div>
+
+        <!-- Logo Box -->
+        <div class="flex-shrink-0 lg:w-36">
+          <label
+            class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5 lg:invisible"
+            >Logo</label
+          >
+          <div
+            class="border-2 border-dashed border-v4-border-color rounded-xl w-full h-32 lg:h-[calc(100%-1.75rem)] bg-v4-secondary-background-color relative overflow-hidden cursor-pointer"
+            role="presentation"
+            (click)="openLogoModal()"
+          >
+            @if (isLogoLoading()) {
+              <div class="flex items-center justify-center h-full w-full">
+                <lucide-icon
+                  [img]="LoaderCircleIcon"
+                  [size]="24"
+                  class="animate-spin text-v4-subtle-text-color"
+                />
+              </div>
+            } @else if (logoPreviewUrl) {
+              <div class="relative w-full h-full">
+                <div class="flex items-center justify-center w-full h-full p-2">
+                  <img
+                    [src]="logoPreviewUrl"
+                    alt="Logo"
+                    class="w-16 h-16 object-contain rounded"
+                  />
+                </div>
+                <div class="absolute top-1 right-1 flex gap-1">
+                  <button
+                    type="button"
+                    class="w-8 h-8 rounded-full bg-v4-secondary-background-color shadow flex items-center justify-center hover:bg-v4-tertiary-background-color"
+                    (click)="editLogo($event)"
+                    title="Edit Logo"
+                  >
+                    <lucide-icon
+                      [img]="PencilIcon"
+                      [size]="14"
+                      class="text-v4-main-text-color"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    class="w-8 h-8 rounded-full bg-v4-secondary-background-color shadow flex items-center justify-center hover:bg-v4-badge-error-bg-color"
+                    (click)="deleteLogo($event)"
+                    title="Delete Logo"
+                  >
+                    <lucide-icon
+                      [img]="Trash2Icon"
+                      [size]="14"
+                      class="text-v4-common-red-color"
+                    />
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="flex items-center justify-center h-full gap-1.5">
+                <lucide-icon
+                  [img]="PlusIcon"
+                  [size]="14"
+                  class="text-v4-subtle-text-color"
+                />
+                <span class="text-xs text-v4-subtle-text-color">Add Logo</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Items Section -->
+      <div class="my-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-semibold text-v4-main-text-color">
+            Invoice Items
+          </h3>
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Add Row"
+            lucideIcon="plus"
+            (clickEvent)="addNewRow()"
+          />
+        </div>
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <div class="max-h-[490px] overflow-y-auto">
+            <table
+              class="v4-ocw-table items-table-compact min-w-[920px]"
+            >
+              <thead>
+                <tr>
+                  <th class="text-center w-10 font-peridot">#</th>
+                  <th class="w-[120px] font-peridot">Item <span class="text-v4-common-red-color">*</span></th>
+                  <th class="w-[180px] font-peridot">Description</th>
+                  <th class="text-center w-16 font-peridot">QTY <span class="text-v4-common-red-color">*</span></th>
+                  <th class="w-28 font-peridot">Unit Cost</th>
+                  <th class="w-36 font-peridot">Discount</th>
+                  <th class="w-[72px] font-peridot">Total</th>
+                  <th class="w-[72px] font-peridot">Disc. Amt</th>
+                  <th class="w-[72px] font-peridot">Item Total</th>
+                  <th class="text-center w-10 font-peridot"></th>
+                </tr>
+              </thead>
+              <tbody formArrayName="item">
+                @for (
+                  credit of itemFormArray.controls;
+                  track i;
+                  let i = $index
+                ) {
+                  <tr [formGroupName]="i">
+                    <td class="text-center">
+                      <span class="text-xs text-v4-tertiary-text-color">{{
+                        i + 1
+                      }}</span>
+                    </td>
+                    <td>
+                      <app-v4-common-dropdown
+                        #itemDropdown
+                        class="block w-full"
+                        [config]="{
+                          placeholder: 'Select Item',
+                          displayField: 'name',
+                          outputField: 'id',
+                          enableAddNew: true,
+                          style: { size: 1 }
+                        }"
+                        [listData]="getRowFilteredItems(i)"
+                        [ngModel]="getItemValue(i)"
+                        [ngModelOptions]="{ standalone: true }"
+                        (ngModelChange)="onItemChange($event, i)"
+                        (scrollToEnd)="onScroll()"
+                        (searchEvent)="onSearch($event)"
+                        (selectClose)="onSelectClose()"
+                        (buttonClick)="openInvoiceItemModal(i)"
+                        appendTo="body"
+                      />
+                    </td>
+                    <td>
+                      <div [class.skelton]="itemDetailsLoading[i]">
+                        <app-common-input-v4
+                          formControlName="description"
+                          placeholder="Service Description"
+                          [isFieldRequired]="false"
+                          [maxlength]="100"
+                          [fieldHeight]="'32px'"
+                        />
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <app-common-input-v4
+                        formControlName="qty"
+                        placeholder="0"
+                        [isFieldRequired]="false"
+                        [isNumberOnly]="true"
+                        [numberType]="'decimal'"
+                        [fieldHeight]="'32px'"
+                        (inputEvent)="onQtyChanges($event, i, '')"
+                      />
+                    </td>
+                    <td>
+                      <div [class.skelton]="itemDetailsLoading[i]">
+                        <app-common-amount-input-v4
+                          formControlName="cost"
+                          [height]="'32px'"
+                          [isRequired]="false"
+                          [maxLength]="14"
+                          (blurEvent)="onQtyChanges($event, i, 'cost')"
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div class="flex items-center gap-1">
+                        @if (discountTypeArray[i]) {
+                          <div class="flex-1 min-w-0">
+                            <app-common-input-v4
+                              formControlName="itemDiscountApplied"
+                              placeholder="0"
+                              [isFieldRequired]="false"
+                              [isNumberOnly]="true"
+                              [numberType]="'decimal'"
+                              [maxLength]="3"
+                              [fieldHeight]="'32px'"
+                              (inputEvent)="onItemDiscountChange($event, i, '')"
+                            />
+                          </div>
+                        } @else {
+                          <div class="flex-1 min-w-0">
+                            <app-common-amount-input-v4
+                              formControlName="itemDiscountApplied"
+                              [height]="'32px'"
+                              [isRequired]="false"
+                              [maxLength]="14"
+                              (blurEvent)="onItemDiscountChange($event, i, '')"
+                            />
+                          </div>
+                        }
+                        <app-v4-common-dropdown
+                          class="w-16 shrink-0"
+                          [config]="{
+                            placeholder: '$',
+                            displayField: 'name',
+                            outputField: 'id',
+                            style: { size: 1 }
+                          }"
+                          [listData]="discountTypeOptions"
+                          [clearable]="false"
+                          [searchable]="false"
+                          [ngModel]="
+                            '' +
+                            itemFormArray.at(i).get('itemDiscountType')?.value
+                          "
+                          [ngModelOptions]="{ standalone: true }"
+                          (ngModelChange)="itemtypechange($event, i, '')"
+                          appendTo="body"
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div class="flex items-center w-full">
+                        <span class="text-xs text-v4-main-text-color px-1"
+                          >$</span
+                        >
+                        <input
+                          type="text"
+                          formControlName="total"
+                          [readonly]="true"
+                          mask="separator.2"
+                          thousandSeparator=","
+                          class="flex-1 py-1 h-7 text-sm text-v4-main-text-color bg-transparent border-none focus:outline-none"
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div class="flex items-center w-full">
+                        <span class="text-xs text-v4-main-text-color px-1"
+                          >$</span
+                        >
+                        <input
+                          type="text"
+                          formControlName="itemDiscount"
+                          [readonly]="true"
+                          mask="separator.2"
+                          thousandSeparator=","
+                          class="flex-1 py-1 h-7 text-sm text-v4-main-text-color bg-transparent border-none focus:outline-none"
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div class="flex items-center w-full px-1">
+                        <span
+                          class="text-sm py-1 font-peridot"
+                          [class.text-v4-common-red-color]="+(itemFormArray.at(i).get('rowTotal')?.value ?? 0) < 0"
+                          [class.text-v4-main-text-color]="+(itemFormArray.at(i).get('rowTotal')?.value ?? 0) >= 0"
+                        >
+                          {{ +(itemFormArray.at(i).get('rowTotal')?.value ?? 0) | currency }}
+                        </span>
+                        <input type="text" formControlName="rowTotal" class="hidden" />
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <button
+                        type="button"
+                        class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                        title="Remove row"
+                        (click)="removeRow(i, credit)"
+                      >
+                        <lucide-icon [img]="Trash2Icon" [size]="14" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes, Memo, Credits & Totals -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-4">
+        <!-- Left: Notes, Memo, Attachment -->
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Private Note</label
+            >
+            <textarea
+              formControlName="note"
+              rows="4"
+              maxlength="100"
+              placeholder="Private Notes (not visible to customer)"
+              class="w-full px-4 py-3 text-sm text-v4-main-text-color border border-v4-input-border-color rounded-[10px] shadow-sm resize-y focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color focus:border-v4-brand-focus-color placeholder:text-v4-subtle-text-color"
+              style="background-color: var(--v4-secondary-background-color)"
+            ></textarea>
+          </div>
+
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Memo</label
+            >
+            <textarea
+              formControlName="memo"
+              rows="4"
+              maxlength="150"
+              placeholder="Memo (visible to customer)"
+              class="w-full px-4 py-3 text-sm text-v4-main-text-color border border-v4-input-border-color rounded-[10px] shadow-sm resize-y focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color focus:border-v4-brand-focus-color placeholder:text-v4-subtle-text-color"
+              style="background-color: var(--v4-secondary-background-color)"
+            ></textarea>
+          </div>
+
+          <button
+            type="button"
+            class="flex items-center gap-2 text-sm font-medium text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity w-fit"
+            (click)="openAttachmentModal()"
+          >
+            <lucide-icon [img]="PaperclipIcon" [size]="14" />
+            Add Attachment
+            @if (createdExistingAttachments.length > 0) {
+              <span
+                class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-v4-badge-info-text-color text-white text-[12px] font-semibold leading-none"
+              >
+                {{ createdExistingAttachments.length }}
+              </span>
+            }
+          </button>
+        </div>
+
+        <!-- Right: Tax, Credit, Totals -->
+        <div class="flex flex-col gap-3">
+          <!-- Total Credits row -->
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-semibold text-v4-main-text-color"
+              >Total Credits</span
+            >
+            <span class="text-sm font-semibold text-v4-main-text-color">{{
+              creditbalance ? "$" + creditbalance : "$0.00"
+            }}</span>
+          </div>
+
+          <!-- Tax + Apply Credit -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Select Tax</label
+              >
+              <app-v4-common-dropdown
+                [config]="{
+                  placeholder: 'Select Tax',
+                  displayField: 'name',
+                  outputField: 'id',
+                  enableAddNew: true,
+                  addNewSubLabel: 'Add a new tax',
+                  customLabelTemplate: {
+                    enabled: true,
+                    primaryField: 'name',
+                    secondaryField: 'taxPercentage',
+                    separator: ' - ',
+                    secondaryFieldClass: 'text-v4-subtle-text-color'
+                  }
+                }"
+                [listData]="taxList"
+                [(ngModel)]="selectedTaxId"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="onSelectTax($event)"
+                (scrollToEnd)="onScrollTax()"
+                (buttonClick)="opentaxmodal()"
+                appendTo="body"
+              />
+            </div>
+
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1 mb-1.5">
+                <label
+                  class="block text-xs font-medium text-v4-secondary-text-color font-peridot tracking-wide"
+                  >Apply Credit</label
+                >
+                <span
+                  class="cursor-pointer text-v4-tertiary-text-color"
+                  [matTooltip]="
+                    'Use Apply Credit to reduce this invoice using the Payer\'s available credit balance.\nCommon reasons to apply credit:\n• Damaged goods\n• Vendor disputes\n• Refund adjustments\n• Future invoice credits'
+                  "
+                  matTooltipPosition="above"
+                  [matTooltipShowDelay]="300"
+                >
+                  <lucide-icon [img]="InfoIcon" [size]="14" />
+                </span>
+              </div>
+              <app-common-amount-input-v4
+                formControlName="creditMemoApplied"
+                [height]="'44px'"
+                [isRequired]="false"
+                [maxLength]="14"
+                (blurEvent)="ApplyCredit($event)"
+              />
+            </div>
+          </div>
+
+          @if (Applycredit) {
+            <p class="text-xs text-v4-common-red-color -mt-1">
+              Should not exceed Invoice Amount or available Credit.
+            </p>
+          }
+
+          <!-- Summary -->
+          <div
+            class="bg-v4-tertiary-background-color rounded-xl overflow-hidden border border-v4-border-color"
+          >
+            <!-- Summary rows: Sub Total / Discount / Tax -->
+            <div class="px-4 py-3 space-y-2.5">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Sub Total</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  subtotal().toFixed(2) | currency
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Discount Total</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  onDiscountChange() || 0 | currency
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Total Tax</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  taxAmount.toFixed(2) | currency
+                }}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-v4-border-color"></div>
+
+            <!-- Invoice Total / Applied Credits -->
+            <div class="px-4 py-3 space-y-2.5">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Invoice Total</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  invoiceTotal().toFixed(2) | currency
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Applied Credits</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">
+                  {{
+                    invoice.get("creditMemoApplied")?.value || 0 | currency
+                  }}
+                </span>
+              </div>
+            </div>
+
+            <div class="border-t border-v4-border-color"></div>
+            <div class="flex justify-between items-center px-4 py-3">
+              <span class="text-sm font-bold text-v4-primary-brand-bold-color font-peridot"
+                >Grand Total</span
+              >
+              <span
+                class="text-base font-bold text-v4-primary-brand-bold-color font-peridot"
+              >
+                {{ grandTotal().toFixed(2) | currency }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="close()"
+      [disabled]="Applycredit || isSubmitting() || isSending()"
+    />
+
+    @if (editMode) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Update"
+        (clickEvent)="update()"
+        [disabled]="Applycredit || isSubmitting()"
+        [loading]="isSubmitting()"
+      />
+    } @else {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Save"
+        (clickEvent)="submit()"
+        [disabled]="Applycredit || isSubmitting()"
+        [loading]="isSubmitting()"
+      />
+
+      @if (!clone) {
+        <!-- Send with dropdown -->
+        <div class="send-dropdown-wrapper">
+          <button
+            type="button"
+            class="flex items-center justify-center gap-1.5 w-[120px] h-[44px] rounded-lg bg-v4-primary-brand-color text-v4-secondary-brand-color font-peridot font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="Applycredit || isSending()"
+            (click)="toggleSendMenu($event)"
+          >
+            @if (isSending()) {
+              <lucide-icon
+                [img]="LoaderCircleIcon"
+                [size]="16"
+                class="animate-spin"
+              />
+            }
+            <span>Send</span>
+            <lucide-icon [img]="ChevronDownIcon" [size]="14" />
+          </button>
+
+          @if (isSendMenuOpen()) {
+            <div class="send-dropdown">
+              <button type="button" (click)="SaveEmail('mail')">Mail</button>
+              <button type="button" (click)="SaveEmail('email')">Email</button>
+              <button type="button" (click)="SaveEmail('paylink')">
+                Pay by Link
+              </button>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,784 @@
+<div class="bank-wrapper relative" [class.modal-mode]="isModalMode">
+  <!-- ============ MODAL MODE ============ -->
+  @if (isModalMode) {
+    <!-- Modal Header -->
+    <div class="modal-header-bar">
+      <h2 class="header-title">
+        {{
+          editMode
+            ? "Edit Bank Account (Receiver)"
+            : "Add Bank Account (Receiver)"
+        }}
+      </h2>
+      <button class="modal-close-btn" (click)="closeModal()">
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
+    </div>
+
+    <div
+      class="modal-body"
+      [formGroup]="payeeBankForm"
+      [class.bank-loading]="bankLoading()"
+    >
+      @if (bankLoading()) {
+        <div class="bank-skeleton">
+          @for (row of skeletonRows; track $index) {
+            <div class="skelton skeleton-field"></div>
+          }
+        </div>
+      }
+      <!-- Step 1: ACH Form -->
+      @if (modalStep() === "ach") {
+        <p class="modal-subtitle">
+          Choose one or more modes of transaction for this bank account.
+        </p>
+        <div class="modal-mode-checkboxes">
+          <label class="mode-checkbox">
+            <input type="checkbox" [checked]="isAchChecked" (click)="$event.preventDefault()" />
+            <span>ACH</span>
+          </label>
+          <label class="mode-checkbox">
+            <input
+              type="checkbox"
+              [checked]="isWireChecked"
+              [disabled]="legalNameEdit"
+              (change)="onWireToggle($any($event.target).checked)"
+            />
+            <span>WIRE/RTP</span>
+          </label>
+        </div>
+
+        <div class="modal-form-fields">
+          <div class="modal-form-field">
+            <app-common-input-v4
+              [placeholder]="'Account Holder Legal Name'"
+              [fieldLabel]="'Account Holder Legal Name'"
+              [isFieldRequired]="true"
+              formControlName="bankName"
+              [control]="payeeBankForm.controls.bankName"
+              [maxLength]="60"
+              [showInfoIcon]="true"
+              [tooltip]="legalNameInfo"
+              errorMarginTop="mt-2"
+            />
+          </div>
+          <div class="modal-form-field">
+            <app-common-input-v4
+              [placeholder]="'9-Digit Routing Number'"
+              [fieldLabel]="'9-Digit Routing Number'"
+              [isFieldRequired]="true"
+              formControlName="routingNumber"
+              [control]="payeeBankForm.controls.routingNumber"
+              [maxLength]="9"
+              [customMask]="'000000000'"
+              [patterns]="bankCustomPattern"
+              (inputEvent)="
+                lookupRoutingNumber(payeeBankForm.get('routingNumber')!.value)
+              "
+            />
+          </div>
+          <div class="modal-form-field">
+            <div class="relative">
+              <app-common-input-v4
+                [placeholder]="'Bank Account Number'"
+                [fieldLabel]="'Bank Account Number'"
+                [isFieldRequired]="true"
+                formControlName="accountNumber"
+                [control]="payeeBankForm.controls.accountNumber"
+                [hiddenInput]="isAccountNumberMasked"
+                [customMask]="'0000000000000000000000'"
+                [patterns]="bankCustomPattern"
+                [preventCopy]="true"
+                (inputFocusEvent)="isAccountNumberMasked = false"
+                (inputFocusOutEvent)="onAccountNumberBlur()"
+              />
+              <button
+                type="button"
+                (click)="toggleAccountNumber()"
+                class="absolute right-3 top-[26px] flex h-[34px] items-center text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+              >
+                <lucide-icon [img]="showAccountNumber ? EyeOffIcon : EyeIcon" [size]="16" />
+              </button>
+            </div>
+          </div>
+          <div class="modal-form-field">
+            <div class="relative">
+              <app-common-input-v4
+                [placeholder]="'Confirm Account Number'"
+                [fieldLabel]="'Confirm Account Number'"
+                [isFieldRequired]="true"
+                formControlName="confirmAccountNumber"
+                [control]="payeeBankForm.controls.confirmAccountNumber"
+                [hiddenInput]="isConfirmAccountNumberMasked"
+                [customMask]="'0000000000000000000000'"
+                [patterns]="bankCustomPattern"
+                [preventPaste]="true"
+                [preventCopy]="true"
+                (inputFocusEvent)="isConfirmAccountNumberMasked = false"
+                (inputFocusOutEvent)="onConfirmAccountNumberBlur()"
+              />
+              <button
+                type="button"
+                (click)="toggleConfirmAccountNumber()"
+                class="absolute right-3 top-[26px] flex h-[34px] items-center text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+              >
+                <lucide-icon [img]="showConfirmAccountNumber ? EyeOffIcon : EyeIcon" [size]="16" />
+              </button>
+            </div>
+          </div>
+          <div class="modal-form-field">
+            <label
+              for="modal-accountType"
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >Account Type <span class="text-v4-common-red-color">*</span></label>
+            <div class="angular-ocw-v4-ng-select-dropdown">
+              <ng-select
+                id="modal-accountType"
+                class="ng-dropdown-panel-v4 text-sm"
+                formControlName="accountType"
+                [items]="bankAccountTypes"
+                bindLabel="name"
+                bindValue="value"
+                placeholder="Select Account Type"
+                appendTo="body"
+                [clearable]="false"
+                [searchable]="false"
+              ></ng-select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-form-actions">
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="
+              legalNameEdit
+                ? 'Update'
+                : isWireChecked
+                  ? 'Next'
+                  : bankFormEditIndex !== null
+                    ? 'Update'
+                    : 'Add'
+            "
+            [width]="'100%'"
+            [loading]="isBankAddingOrUpdating"
+            [disabled]="isBankAddingOrUpdating"
+            (clickEvent)="submitBankForm()"
+          />
+        </div>
+      }
+
+      <!-- Step 2: Wire Beneficiary Details -->
+      @if (modalStep() === "wireBeneficiary") {
+        <h4 class="modal-step-title">Beneficiary Details</h4>
+        <div class="modal-form-fields">
+          <div class="modal-form-row">
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'First Name'"
+                [fieldLabel]="'First Name'"
+                [isFieldRequired]="true"
+                formControlName="bankAccountFirstName"
+                [control]="payeeBankForm.controls.bankAccountFirstName"
+              />
+            </div>
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'Last Name'"
+                [fieldLabel]="'Last Name'"
+                [isFieldRequired]="false"
+                formControlName="bankAccountLastName"
+                [control]="payeeBankForm.controls.bankAccountLastName"
+              />
+            </div>
+          </div>
+          <div class="modal-form-row">
+            <div class="modal-form-field">
+              <app-address-autocomplete-v4
+                [placeholder]="'Address Line 1'"
+                [label]="'Address Line 1'"
+                [isFieldRequired]="true"
+                [control]="payeeBankForm.controls.bankAccountAddress1"
+                (addressSelected)="onBeneficiaryAddressSelected($event)"
+              />
+            </div>
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'Address Line 2'"
+                [fieldLabel]="'Address Line 2'"
+                [isFieldRequired]="false"
+                formControlName="bankAccountAddress2"
+                [control]="payeeBankForm.controls.bankAccountAddress2"
+              />
+            </div>
+          </div>
+          <div class="modal-form-row">
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'City'"
+                [fieldLabel]="'City'"
+                [isFieldRequired]="true"
+                formControlName="bankAccountCity"
+                [control]="payeeBankForm.controls.bankAccountCity"
+              />
+            </div>
+            <div class="modal-form-field">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >
+                State <span class="text-v4-common-red-color">*</span>
+              </label>
+              <app-common-state-select-v4
+                formControlName="bankAccountState"
+                [country]="payeeBankForm.controls.bankAccountCountry.value"
+                [isRequired]="true"
+                placeholder="State"
+              ></app-common-state-select-v4>
+            </div>
+          </div>
+          <div class="modal-form-row">
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'Zip'"
+                [fieldLabel]="'Zip'"
+                [isFieldRequired]="true"
+                formControlName="bankAccountZip"
+                [control]="payeeBankForm.controls.bankAccountZip"
+              />
+            </div>
+            <div class="modal-form-field">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >
+                Country <span class="text-v4-common-red-color">*</span>
+              </label>
+              <app-common-country-select-v4
+                formControlName="bankAccountCountry"
+                [allowedCountries]="receiverCountries"
+                [isRequired]="true"
+                placeholder="Country"
+              ></app-common-country-select-v4>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-form-actions two-btn">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'Back'"
+            [width]="'100%'"
+            (clickEvent)="goBackWireStep()"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="isModalMode ? (bankFormEditIndex !== null ? 'Update' : 'Add') : 'Next'"
+            [width]="'100%'"
+            [loading]="isBankAddingOrUpdating"
+            [disabled]="isBankAddingOrUpdating"
+            (clickEvent)="submitBankForm()"
+          />
+        </div>
+      }
+
+      <!-- Step 3: Wire Bank Details -->
+      @if (modalStep() === "wireBank") {
+        <h4 class="modal-step-title">Beneficiary Bank Details</h4>
+        <div class="modal-form-fields">
+          <div class="modal-form-field">
+            <app-common-input-v4
+              [placeholder]="'Bank Name'"
+              [fieldLabel]="'Bank Name'"
+              [isFieldRequired]="true"
+              formControlName="bankingInstituteName"
+              [control]="payeeBankForm.controls.bankingInstituteName"
+            />
+          </div>
+          <div class="modal-form-field">
+            <app-address-autocomplete-v4
+              [placeholder]="'Address Line 1'"
+              [label]="'Address Line 1'"
+              [isFieldRequired]="true"
+              [control]="payeeBankForm.controls.bankingInstituteAddressLine1"
+              (addressSelected)="onBeneficiaryBankAddressSelected($event)"
+            />
+          </div>
+          <div class="modal-form-field">
+            <app-common-input-v4
+              [placeholder]="'Address Line 2'"
+              [fieldLabel]="'Address Line 2'"
+              [isFieldRequired]="false"
+              formControlName="bankingInstituteAddressLine2"
+              [control]="payeeBankForm.controls.bankingInstituteAddressLine2"
+            />
+          </div>
+          <div class="modal-form-row">
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'City'"
+                [fieldLabel]="'City'"
+                [isFieldRequired]="true"
+                formControlName="bankingInstituteCity"
+                [control]="payeeBankForm.controls.bankingInstituteCity"
+              />
+            </div>
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'State'"
+                [fieldLabel]="'State'"
+                [isFieldRequired]="true"
+                formControlName="bankingInstituteState"
+                [control]="payeeBankForm.controls.bankingInstituteState"
+              />
+            </div>
+          </div>
+          <div class="modal-form-row">
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'Zip'"
+                [fieldLabel]="'Zip'"
+                [isFieldRequired]="true"
+                formControlName="bankingInstituteZip"
+                [control]="payeeBankForm.controls.bankingInstituteZip"
+              />
+            </div>
+            <div class="modal-form-field">
+              <app-common-input-v4
+                [placeholder]="'Country'"
+                [fieldLabel]="'Country'"
+                [isFieldRequired]="true"
+                formControlName="bankingInstituteCountry"
+                [control]="payeeBankForm.controls.bankingInstituteCountry"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-form-actions two-btn">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'Back'"
+            [width]="'100%'"
+            (clickEvent)="goBackWireStep()"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="bankFormEditIndex !== null ? 'Update' : 'Add'"
+            [width]="'100%'"
+            [loading]="isBankAddingOrUpdating"
+            [disabled]="isBankAddingOrUpdating"
+            (clickEvent)="submitBankForm()"
+          />
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- ============ EMBEDDED MODE (unchanged) ============ -->
+
+    <!-- Header -->
+    @if (showHeader()) {
+      <div class="bank-header">
+        <div class="header-with-back">
+          <button class="back-btn" (click)="backbutton()">
+            <lucide-icon name="arrow-left" [size]="18"></lucide-icon>
+          </button>
+          <h2 class="header-title">
+            {{ editMode ? "Edit Bank Account" : "Add Bank Account" }}
+          </h2>
+        </div>
+      </div>
+    }
+
+    <!-- Bank List (always shown when banks exist) -->
+    @if (payeeBankDetailsSignal().length > 0) {
+      <div class="bank-list-section">
+        @if (!newBankAcc && !editMode) {
+          <app-common-button-v4
+            [type]="{ style: 'active', name: 'v4-toggle' }"
+            [text]="'New'"
+            (clickEvent)="NewBankAcc()"
+          />
+        }
+        <div class="bank-list">
+          @for (
+            bank of payeeBankDetailsSignal();
+            track trackByIndex($index);
+            let i = $index
+          ) {
+            <div
+              class="bank-item-row"
+              [class.is-default]="defaultAccountIndex() === i"
+            >
+              <div class="bank-item-info">
+                <input
+                  type="radio"
+                  name="defaultBank"
+                  class="default-radio"
+                  [checked]="defaultAccountIndex() === i"
+                  (change)="setDefaultAccount(i)"
+                  matTooltip="Set as default"
+                />
+                <lucide-icon name="building-2" [size]="16"></lucide-icon>
+                <span>{{ bank.bankName || "Bank Account " + (i + 1) }}</span>
+                <span class="bank-item-detail"
+                  >&bull;&bull;&bull;&bull;
+                  {{ bank.accountNumber?.slice(-4) }}</span
+                >
+                @if (defaultAccountIndex() === i) {
+                  <span class="default-badge">Default</span>
+                }
+              </div>
+              <div class="bank-item-actions">
+                <button
+                  class="icon-btn"
+                  (click)="editBankAccount(bank, i)"
+                  matTooltip="Edit"
+                >
+                  <lucide-icon name="pencil" [size]="14"></lucide-icon>
+                </button>
+                <button
+                  class="icon-btn icon-btn-destructive"
+                  (click)="deleteBankAccount(bank, i)"
+                  matTooltip="Delete"
+                >
+                  <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Form View -->
+    @if (payeeBankDetailsSignal().length === 0 || newBankAcc || editMode) {
+      <div [formGroup]="payeeBankForm">
+        <!-- ACH Fields -->
+        <div class="form-grid">
+          <div class="form-field">
+            <app-common-input-v4
+              [placeholder]="'Account Holder Legal Name'"
+              [fieldLabel]="'Account Holder Legal Name'"
+              [errorLabel]="'Account Holder Legal Name'"
+              [customMessages]="{ required: 'Account Holder Legal Name is required' }"
+              formControlName="bankName"
+              [control]="payeeBankForm.controls.bankName"
+              [maxLength]="60"
+              [isFieldRequired]="true"
+              [showInfoIcon]="true"
+              [tooltip]="legalNameInfo"
+              errorMarginTop="mt-2"
+            />
+          </div>
+          <div class="form-field">
+            <app-common-input-v4
+              [placeholder]="'Routing Number'"
+              [fieldLabel]="'Routing Number'"
+              [errorLabel]="'Routing Number'"
+              [customMessages]="{ required: 'Routing Number is required' }"
+              formControlName="routingNumber"
+              [control]="payeeBankForm.controls.routingNumber"
+              [maxLength]="9"
+              [customMask]="'000000000'"
+              [patterns]="bankCustomPattern"
+              [isFieldRequired]="true"
+              (inputEvent)="
+                lookupRoutingNumber(payeeBankForm.get('routingNumber')!.value)
+              "
+            />
+          </div>
+          <div class="form-field">
+            <div class="relative">
+              <app-common-input-v4
+                [placeholder]="'Account Number'"
+                [fieldLabel]="'Account Number'"
+                [errorLabel]="'Account Number'"
+                [customMessages]="{ required: 'Account Number is required' }"
+                formControlName="accountNumber"
+                [control]="payeeBankForm.controls.accountNumber"
+                [isFieldRequired]="true"
+                [hiddenInput]="isAccountNumberMasked"
+                [customMask]="'0000000000000000000000'"
+                [patterns]="bankCustomPattern"
+                [preventCopy]="true"
+                (inputFocusEvent)="isAccountNumberMasked = false"
+                (inputFocusOutEvent)="onAccountNumberBlur()"
+              />
+              <button
+                type="button"
+                (click)="toggleAccountNumber()"
+                class="absolute right-3 top-[26px] flex h-[34px] items-center text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+              >
+                <lucide-icon [img]="showAccountNumber ? EyeOffIcon : EyeIcon" [size]="16" />
+              </button>
+            </div>
+          </div>
+          <div class="form-field">
+            <div class="relative">
+              <app-common-input-v4
+                [placeholder]="'Confirm Account Number'"
+                [fieldLabel]="'Confirm Account Number'"
+                [errorLabel]="'Confirm Account Number'"
+                [customMessages]="{ required: 'Confirm Account Number is required' }"
+                formControlName="confirmAccountNumber"
+                [control]="payeeBankForm.controls.confirmAccountNumber"
+                [isFieldRequired]="true"
+                [hiddenInput]="isConfirmAccountNumberMasked"
+                [customMask]="'0000000000000000000000'"
+                [patterns]="bankCustomPattern"
+                [preventPaste]="true"
+                [preventCopy]="true"
+                (inputFocusEvent)="isConfirmAccountNumberMasked = false"
+                (inputFocusOutEvent)="onConfirmAccountNumberBlur()"
+              />
+              <button
+                type="button"
+                (click)="toggleConfirmAccountNumber()"
+                class="absolute right-3 top-[26px] flex h-[34px] items-center text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+              >
+                <lucide-icon [img]="showConfirmAccountNumber ? EyeOffIcon : EyeIcon" [size]="16" />
+              </button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label
+              for="accountType"
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Account Type
+              <span class="text-v4-common-red-color">*</span></label
+            >
+            <div class="angular-ocw-v4-ng-select-dropdown">
+              <ng-select
+                class="ng-dropdown-panel-v4 text-sm"
+                formControlName="accountType"
+                [items]="bankAccountTypes"
+                bindLabel="name"
+                bindValue="value"
+                placeholder="Select Account Type"
+                appendTo="body"
+                [clearable]="false"
+                [searchable]="false"
+              ></ng-select>
+            </div>
+            <app-control-message-v4
+              [control]="payeeBankForm.controls['accountType']"
+              [label]="'Account Type'"
+              [customMessages]="{ required: 'Account Type is required' }"
+            ></app-control-message-v4>
+          </div>
+        </div>
+
+        <!-- Wire Toggle -->
+        <div class="wire-toggle-row">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [checked]="isWireChecked"
+              (change)="onWireToggle($any($event.target).checked)"
+            />
+            <span>Enable Wire Transfer</span>
+          </label>
+        </div>
+
+        <!-- Wire Beneficiary Details -->
+        @if (isWireChecked && wireUserDetailsVisible) {
+          <div class="wire-section">
+            <h5 class="wire-section-label">Beneficiary Details</h5>
+            <div class="form-grid">
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'First Name'"
+                  [fieldLabel]="'First Name'"
+                  formControlName="bankAccountFirstName"
+                  [control]="payeeBankForm.controls.bankAccountFirstName"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'Last Name'"
+                  [fieldLabel]="'Last Name'"
+                  formControlName="bankAccountLastName"
+                  [control]="payeeBankForm.controls.bankAccountLastName"
+                  [isFieldRequired]="false"
+                />
+              </div>
+              <div class="form-field full-width">
+                <app-address-autocomplete-v4
+                  [placeholder]="'Address Line 1'"
+                  [label]="'Address Line 1'"
+                  [control]="payeeBankForm.controls.bankAccountAddress1"
+                  [isFieldRequired]="true"
+                  (addressSelected)="onBeneficiaryAddressSelected($event)"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'Address Line 2'"
+                  [fieldLabel]="'Address Line 2'"
+                  formControlName="bankAccountAddress2"
+                  [control]="payeeBankForm.controls.bankAccountAddress2"
+                  [isFieldRequired]="false"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'City'"
+                  [fieldLabel]="'City'"
+                  formControlName="bankAccountCity"
+                  [control]="payeeBankForm.controls.bankAccountCity"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field">
+                <label
+                  class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >
+                  State <span class="text-v4-common-red-color">*</span>
+                </label>
+                <app-common-state-select-v4
+                  formControlName="bankAccountState"
+                  [country]="payeeBankForm.controls.bankAccountCountry.value"
+                  [isRequired]="true"
+                  placeholder="State"
+                ></app-common-state-select-v4>
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'Zip'"
+                  [fieldLabel]="'Zip'"
+                  formControlName="bankAccountZip"
+                  [control]="payeeBankForm.controls.bankAccountZip"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field">
+                <label
+                  class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >
+                  Country <span class="text-v4-common-red-color">*</span>
+                </label>
+                <app-common-country-select-v4
+                  formControlName="bankAccountCountry"
+                  [allowedCountries]="receiverCountries"
+                  [isRequired]="true"
+                  placeholder="Country"
+                ></app-common-country-select-v4>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Wire Bank Details -->
+        @if (
+          isWireChecked && wireUserDetailsVisible && wireBankDetailsVisible
+        ) {
+          <div class="wire-section">
+            <h5 class="wire-section-label">Beneficiary Bank Details</h5>
+            <div class="form-grid">
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'Bank Name'"
+                  [fieldLabel]="'Bank Name'"
+                  formControlName="bankingInstituteName"
+                  [control]="payeeBankForm.controls.bankingInstituteName"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field full-width">
+                <app-address-autocomplete-v4
+                  [placeholder]="'Address'"
+                  [label]="'Address'"
+                  [control]="
+                    payeeBankForm.controls.bankingInstituteAddressLine1
+                  "
+                  [isFieldRequired]="true"
+                  (addressSelected)="onBeneficiaryBankAddressSelected($event)"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'Address Line 2'"
+                  [fieldLabel]="'Address Line 2'"
+                  formControlName="bankingInstituteAddressLine2"
+                  [control]="
+                    payeeBankForm.controls.bankingInstituteAddressLine2
+                  "
+                  [isFieldRequired]="false"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'City'"
+                  [fieldLabel]="'City'"
+                  formControlName="bankingInstituteCity"
+                  [control]="payeeBankForm.controls.bankingInstituteCity"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'State'"
+                  [fieldLabel]="'State'"
+                  formControlName="bankingInstituteState"
+                  [control]="payeeBankForm.controls.bankingInstituteState"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-input-v4
+                  [placeholder]="'Zip'"
+                  [fieldLabel]="'Zip'"
+                  formControlName="bankingInstituteZip"
+                  [control]="payeeBankForm.controls.bankingInstituteZip"
+                  [isFieldRequired]="true"
+                />
+              </div>
+              <div class="form-field">
+                <app-common-country-dropdown-v4
+                  formControlName="bankingInstituteCountry"
+                  [fieldLabel]="'Country'"
+                  [isFieldRequired]="true"
+                ></app-common-country-dropdown-v4>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Form Actions -->
+        <div class="inline-form-actions">
+          @if (
+            isWireChecked && (wireUserDetailsVisible || wireBankDetailsVisible)
+          ) {
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              width="120px"
+              [text]="'Back'"
+              [customHeight]="'36px'"
+              (clickEvent)="goBackWireStep()"
+            />
+          }
+          @if (
+            !(isWireChecked && (wireUserDetailsVisible || wireBankDetailsVisible))
+          ) {
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              width="120px"
+              [text]="'Cancel'"
+              [customHeight]="'36px'"
+              (clickEvent)="backbutton()"
+            />
+          }
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            width="120px"
+            [text]="getBankSubmitLabel()"
+            [loading]="isBankAddingOrUpdating"
+            [disabled]="isBankAddingOrUpdating"
+            [customHeight]="'36px'"
+            (clickEvent)="submitBankForm()"
+          />
+        </div>
+      </div>
+    }
+  }
+</div>

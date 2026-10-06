@@ -1,0 +1,247 @@
+@if (fieldLabel()) {
+  <label
+    class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+    [attr.for]="triggerId"
+  >
+    {{ fieldLabel() }}
+    @if (isFieldRequired()) {
+      <span class="text-v4-common-red-color">*</span>
+    }
+    @if (showInfoIcon()) {
+      <i-lucide
+        [img]="InfoIcon"
+        [size]="14"
+        class="ml-1 inline text-v4-tertiary-text-color cursor-help"
+        [matTooltip]="tooltip()"
+      ></i-lucide>
+    }
+  </label>
+}
+<div class="relative">
+  <!-- Input trigger (native button so <label for> is valid) -->
+  <button
+    type="button"
+    [id]="triggerId"
+    class="date-picker-trigger w-full flex items-center cursor-pointer pl-4 pr-10 border border-input-border-color text-v4-main-text-color shadow-sm transition-colors text-left font-inherit"
+    [class.!pr-16]="maskDisplay() && displayValue"
+    [style.border-radius]="'10px'"
+    [style.height]="fieldHeight()"
+    [class.focus-ring]="isOpen"
+    [class.!opacity-50]="disabled()"
+    [disabled]="disabled()"
+    (click)="toggleCalendar()"
+    cdkOverlayOrigin
+    #trigger="cdkOverlayOrigin"
+  >
+    <span
+      class="flex-1 text-base md:text-sm truncate"
+      [class.text-v4-subtle-text-color]="!displayValue"
+    >
+      {{ shownValue || placeholder() }}
+    </span>
+  </button>
+  <div
+    class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2.5 pointer-events-none"
+  >
+    @if (maskDisplay() && displayValue) {
+      <button
+        type="button"
+        class="flex items-center text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors z-10 pointer-events-auto"
+        (click)="toggleReveal()"
+        [attr.aria-label]="revealed() ? 'Hide date' : 'Show date'"
+      >
+        <lucide-icon
+          [img]="revealed() ? EyeOffIcon : EyeIcon"
+          [size]="16"
+          aria-hidden="true"
+        />
+      </button>
+    }
+    <lucide-icon
+      [img]="CalendarDaysIcon"
+      [size]="16"
+      class="text-v4-subtle-text-color flex-shrink-0 pointer-events-none"
+    />
+  </div>
+</div>
+
+<!-- Calendar overlay -->
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="trigger"
+  [cdkConnectedOverlayOpen]="isOpen"
+  [cdkConnectedOverlayOffsetY]="6"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  [cdkConnectedOverlayBackdropClass]="'cdk-overlay-transparent-backdrop'"
+  (backdropClick)="closeCalendar()"
+  (detach)="closeCalendar()"
+>
+  <div
+    class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl shadow-lg p-4 w-[280px]"
+    tabindex="-1"
+    (keydown.escape)="closeCalendar()"
+  >
+    <!-- Header: month navigation -->
+    <div class="flex items-center justify-between mb-3">
+      <button
+        type="button"
+        class="p-1 rounded-lg hover:bg-v4-tertiary-background-color transition-colors"
+        (click)="prevMonth()"
+      >
+        <lucide-icon
+          [img]="ChevronLeftIcon"
+          [size]="18"
+          class="text-v4-secondary-text-color"
+        />
+      </button>
+      @if (viewMode === "days") {
+        <div
+          class="flex items-center gap-1 text-sm font-medium text-v4-main-text-color font-peridot"
+        >
+          <button
+            type="button"
+            class="px-1.5 py-0.5 rounded hover:bg-v4-tertiary-background-color transition-colors"
+            (click)="showMonthPicker()"
+          >
+            {{ monthNames[currentMonth] }}
+          </button>
+          <button
+            type="button"
+            class="px-1.5 py-0.5 rounded hover:bg-v4-tertiary-background-color transition-colors"
+            (click)="showYearPicker()"
+          >
+            {{ currentYear }}
+          </button>
+        </div>
+      } @else if (viewMode === "months") {
+        <button
+          type="button"
+          class="px-1.5 py-0.5 rounded text-sm font-medium text-v4-main-text-color font-peridot hover:bg-v4-tertiary-background-color transition-colors"
+          (click)="showYearPicker()"
+        >
+          {{ currentYear }}
+        </button>
+      } @else {
+        <span class="text-sm font-medium text-v4-main-text-color font-peridot">
+          {{ yearRange[0] }} - {{ yearRange[yearRange.length - 1] }}
+        </span>
+      }
+      <button
+        type="button"
+        class="p-1 rounded-lg hover:bg-v4-tertiary-background-color transition-colors"
+        (click)="nextMonth()"
+      >
+        <lucide-icon
+          [img]="ChevronRightIcon"
+          [size]="18"
+          class="text-v4-secondary-text-color"
+        />
+      </button>
+    </div>
+
+    @if (viewMode === "days") {
+      <!-- Weekday headers -->
+      <div class="grid grid-cols-7 mb-1">
+        @for (day of weekDays; track day) {
+          <div
+            class="text-center text-xs font-medium text-v4-main-text-color py-1 font-peridot"
+          >
+            {{ day }}
+          </div>
+        }
+      </div>
+
+      <!-- Calendar grid -->
+      <div class="grid grid-cols-7 gap-y-1">
+        @for (day of calendarDays; track $index) {
+          <button
+            type="button"
+            class="h-8 w-8 flex items-center justify-center text-sm rounded-lg transition-colors mx-auto"
+            [class.text-v4-main-text-color]="
+              day.isCurrentMonth && !day.isSelected && !day.isToday
+            "
+            [class.text-v4-subtle-text-color]="
+              !day.isCurrentMonth && !day.isSelected && !day.isToday
+            "
+            [class.bg-v4-primary-brand-color]="day.isSelected || day.isToday"
+            [class.text-white]="day.isSelected || day.isToday"
+            [class.font-semibold]="day.isToday && !day.isSelected"
+            [class.hover:bg-v4-tertiary-background-color]="
+              !day.isSelected && !day.isToday && !day.isDisabled
+            "
+            [class.opacity-40]="day.isDisabled"
+            [class.cursor-not-allowed]="day.isDisabled"
+            [disabled]="day.isDisabled"
+            (click)="selectDate(day)"
+          >
+            {{ day.day }}
+          </button>
+        }
+      </div>
+    } @else if (viewMode === "months") {
+      <!-- Month picker grid -->
+      <div class="grid grid-cols-3 gap-2">
+        @for (name of monthShortNames; track $index; let monthIdx = $index) {
+          <button
+            type="button"
+            class="py-2 text-sm rounded-lg transition-colors"
+            [class.bg-v4-primary-brand-color]="monthIdx === currentMonth"
+            [class.text-white]="monthIdx === currentMonth"
+            [class.text-v4-main-text-color]="monthIdx !== currentMonth"
+            [class.hover:bg-v4-tertiary-background-color]="
+              monthIdx !== currentMonth && !isMonthDisabled(monthIdx)
+            "
+            [class.opacity-40]="isMonthDisabled(monthIdx)"
+            [class.cursor-not-allowed]="isMonthDisabled(monthIdx)"
+            [disabled]="isMonthDisabled(monthIdx)"
+            (click)="selectMonthFromPicker(monthIdx)"
+          >
+            {{ name }}
+          </button>
+        }
+      </div>
+    } @else {
+      <!-- Year picker grid -->
+      <div class="grid grid-cols-3 gap-2">
+        @for (year of yearRange; track year) {
+          <button
+            type="button"
+            class="py-2 text-sm rounded-lg transition-colors"
+            [class.bg-v4-primary-brand-color]="year === currentYear"
+            [class.text-white]="year === currentYear"
+            [class.text-v4-main-text-color]="year !== currentYear"
+            [class.hover:bg-v4-tertiary-background-color]="
+              year !== currentYear && !isYearDisabled(year)
+            "
+            [class.opacity-40]="isYearDisabled(year)"
+            [class.cursor-not-allowed]="isYearDisabled(year)"
+            [disabled]="isYearDisabled(year)"
+            (click)="selectYearFromPicker(year)"
+          >
+            {{ year }}
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Today shortcut -->
+    @if (!hideTodayShortcut()) {
+      <div class="mt-3 text-center border-t border-v4-border-color pt-3">
+        <button
+          type="button"
+          class="text-sm font-medium text-v4-primary-brand-bold-color hover:underline font-peridot"
+          (click)="selectToday()"
+        >
+          Today
+        </button>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<app-control-message-v4
+  [control]="control()"
+  [label]="errorLabel()"
+  [isMarginTopEnabled]="false"
+  [marginTopOverride]="'mt-1'"
+></app-control-message-v4>

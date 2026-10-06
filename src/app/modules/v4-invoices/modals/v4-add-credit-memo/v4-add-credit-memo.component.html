@@ -1,0 +1,309 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden h-full">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      {{ editMode ? "Edit Credit Memo" : "Add Credit Memo" }}
+    </h1>
+    <button
+      type="button"
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- modal body -->
+  <div class="p-6 bg-v4-tertiary-background-color overflow-y-auto flex-1 min-h-0" [formGroup]="creditmemo" (scroll)="closeAllDropdowns()">
+    <!-- Row 1: Bank Account | Payee -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div class="flex flex-col">
+        <label
+          class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+        >
+          Select Bank Account <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-bank-ac-dropdown-v4
+          [formControl]="selectedBankAccountCtrl"
+          (ready)="autoPopulateBank($event)"
+          [enableAddNew]="true"
+          [append]="'body'"
+          permissionContext="forCreditMemo"
+        />
+      </div>
+
+      <div class="flex flex-col">
+        <label
+          class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+        >
+          Select Your Payee (Customer)
+          <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-payee-dropdown-v4
+          [formControl]="selectedPayeeCtrl"
+          (ready)="autoPopulatePayee($event)"
+          [enableAddNew]="true"
+          [appendTo]="'body'"
+        />
+      </div>
+    </div>
+
+    <!-- Row 2: Date | Credit Memo No -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <app-v4-date-picker
+        fieldLabel="Date"
+        placeholder="Date"
+        formControlName="creditMemoDate"
+        [isFieldRequired]="true"
+      />
+
+      <div class="flex flex-col">
+        <app-common-input-v4
+          [fieldLabel]="'Credit Memo No'"
+          placeholder="Credit Memo Number"
+          formControlName="creditMemoNo"
+          [control]="creditmemo.controls['creditMemoNo']"
+          [isFieldRequired]="true"
+          [maxLength]="20"
+          [fieldHeight]="'44px'"
+          (keypress)="utils.prevantSpecialChar($event)"
+          (paste)="utils.preventInvalidPaste($event)"
+        />
+      </div>
+    </div>
+
+    <!-- Row 3: PO# | Acc# -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <app-common-input-v4
+        [fieldLabel]="'PO #'"
+        placeholder="Purchase Order Number"
+        formControlName="poNo"
+        [isFieldRequired]="false"
+        [maxLength]="10"
+        [fieldHeight]="'44px'"
+      />
+      <app-common-input-v4
+        [fieldLabel]="'Acc#'"
+        placeholder="Account Number"
+        formControlName="accountNumber"
+        [isFieldRequired]="false"
+        [maxLength]="20"
+        [fieldHeight]="'44px'"
+      />
+    </div>
+
+    <!-- Row 4: Private Note | Memo -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+      <app-common-input-v4
+        [fieldLabel]="'Private Note'"
+        placeholder="Private Note (internal use only)"
+        formControlName="note"
+        [isFieldRequired]="false"
+        [maxLength]="150"
+        [fieldHeight]="'44px'"
+      />
+      <app-common-input-v4
+        [fieldLabel]="'Memo'"
+        placeholder="Memo (visible to customer)"
+        formControlName="memo"
+        [isFieldRequired]="false"
+        [maxLength]="150"
+        [fieldHeight]="'44px'"
+      />
+    </div>
+
+    <!-- Line Items Section -->
+    <div class="mb-4">
+      <div class="flex justify-between items-center mb-3">
+        <span class="text-sm font-semibold text-v4-main-text-color"
+          >Line Items</span
+        >
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Add Row"
+          lucideIcon="plus"
+          (clickEvent)="addNewRow()"
+        />
+      </div>
+
+      <div class="border border-v4-border-color rounded-xl overflow-x-auto">
+        <table class="v4-ocw-table w-full table-fixed min-w-[830px]">
+          <thead>
+            <tr>
+              <th class="w-10 font-peridot">S.N</th>
+              <th class="w-[240px] font-peridot">Item <span class="text-v4-common-red-color">*</span></th>
+              <th class="w-[160px] font-peridot">Description</th>
+              <th class="w-24 font-peridot">Quantity <span class="text-v4-common-red-color">*</span></th>
+              <th class="w-32 font-peridot">Unit Cost</th>
+              <th class="w-28 font-peridot">Total</th>
+              <th class="w-10 font-peridot"></th>
+            </tr>
+          </thead>
+          <tbody formArrayName="item">
+            @for (credit of itemFormArray.controls; track i; let i = $index) {
+              <tr [formGroupName]="i">
+                <td class="align-middle">
+                  <span class="text-xs text-v4-tertiary-text-color">{{
+                    i + 1
+                  }}</span>
+                </td>
+                <td class="align-middle">
+                  <app-v4-common-dropdown
+                    class="block w-full"
+                    [config]="{
+                      placeholder: 'Select Item',
+                      displayField: 'name',
+                      outputField: 'id',
+                      enableAddNew: true,
+                      style: { size: 1 }
+                    }"
+                    [listData]="filteredItemsList"
+                    [ngModel]="itemName[i]"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="onItemChange($event, i)"
+                    (scrollToEnd)="onScroll()"
+                    (searchEvent)="onSearch($event)"
+                    (buttonClick)="openInvoiceItemModal(i)"
+                    appendTo="body"
+                  />
+                </td>
+                <td class="align-middle">
+                  <app-common-input-v4
+                    formControlName="description"
+                    placeholder="Description"
+                    [isFieldRequired]="false"
+                    [maxLength]="100"
+                    [fieldHeight]="'32px'"
+                  />
+                </td>
+                <td class="align-middle">
+                  <app-common-input-v4
+                    formControlName="qty"
+                    placeholder="0"
+                    [isFieldRequired]="false"
+                    [isNumberOnly]="true"
+                    [numberType]="'numeric'"
+                    [maxLength]="5"
+                    [fieldHeight]="'32px'"
+                    (inputEvent)="onQtyChange($event, i)"
+                  />
+                </td>
+                <td class="align-middle">
+                  <app-common-amount-input-v4
+                    formControlName="cost"
+                    [height]="'32px'"
+                    [isRequired]="false"
+                    [maxLength]="11"
+                    (blurEvent)="onCostChange($event, i)"
+                  />
+                </td>
+                <td class="align-middle">
+                  <span
+                    class="text-xs font-medium text-v4-main-text-color font-peridot tracking-wide"
+                  >
+                    {{ credit.get("total")?.value || 0 | currency }}
+                  </span>
+                </td>
+                <td class="align-middle">
+                  <button
+                    type="button"
+                    class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                    (click)="removeRow(i)"
+                  >
+                    <lucide-icon [img]="Trash2Icon" [size]="14" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tax + Totals -->
+    <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+      <!-- Tax selector -->
+      <div class="flex flex-col gap-1.5 min-w-[220px]">
+        <label
+          class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+          >Tax</label
+        >
+        <app-v4-common-dropdown
+          [config]="{
+            placeholder: 'Select Tax',
+            displayField: 'name',
+            displaySubField: 'taxPercentageLabel',
+            outputField: 'id',
+            enableAddNew: true,
+            addNewSubLabel: 'Add a new tax',
+            customLabelTemplate: {
+              enabled: true,
+              primaryField: 'name',
+              secondaryField: 'taxPercentage',
+              separator: ' - '
+            }
+          }"
+          [listData]="taxListForDropdown"
+          [(ngModel)]="selectedTaxId"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="onSelectTax($event)"
+          (scrollToEnd)="onScrollTax()"
+          (buttonClick)="opentaxmodal()"
+          appendTo="body"
+        />
+      </div>
+
+      <!-- Totals -->
+      <div class="w-full sm:w-72 shrink-0 bg-v4-tertiary-background-color rounded-xl overflow-hidden border border-v4-border-color">
+        <div class="px-4 py-3 space-y-2.5">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-v4-secondary-text-color font-peridot">Sub Total</span>
+            <span class="text-sm text-v4-main-text-color font-peridot">{{ invoiceTotal | currency }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-v4-secondary-text-color font-peridot">Tax Total</span>
+            <span class="text-sm text-v4-main-text-color font-peridot">{{ taxAmount | currency }}</span>
+          </div>
+        </div>
+        <div class="border-t border-v4-border-color"></div>
+        <div class="flex justify-between items-center px-4 py-3">
+          <span class="text-sm font-bold text-v4-primary-brand-bold-color font-peridot">Grand Total</span>
+          <span class="text-base font-bold text-v4-primary-brand-bold-color font-peridot">{{ grandTotal() | currency }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Close"
+      (clickEvent)="close()"
+    />
+    @if (editMode) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Update"
+        (clickEvent)="update()"
+        [disabled]="isProcessing"
+        [loading]="isProcessing"
+      />
+    } @else {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Add"
+        (clickEvent)="submit()"
+        [disabled]="isProcessing"
+        [loading]="isProcessing"
+      />
+    }
+  </div>
+</div>

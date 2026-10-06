@@ -1,0 +1,757 @@
+<div class="w-full px-3 md:px-6">
+  <div class="max-w-[720px] mx-auto py-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <button
+          class="flex items-center gap-2 text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color transition-colors mb-2"
+          (click)="onBackStep(1)"
+        >
+          <lucide-angular name="arrow-left" [size]="18" />
+          <span class="text-sm font-peridot font-medium">Back to Dashboard</span>
+        </button>
+        <h1 class="text-xl font-funnel font-semibold text-v4-main-text-color">
+          Single Mail
+        </h1>
+        <p class="text-sm text-v4-secondary-text-color font-peridot mt-0.5">
+          Send a check via mail to a payee
+        </p>
+      </div>
+      @if (currentStep() === 1) {
+        <app-common-button-v4
+          text="History"
+          lucideIcon="clock"
+          [type]="{ style: 'outline', name: 'main' }"
+          toolTip="View Single Mail History"
+          (clickEvent)="navigateToHistory()"
+        />
+      }
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="flex gap-3 mb-8">
+      @for (step of stepperSteps; track step.key; let idx = $index) {
+        <div class="flex-1">
+          <div
+            class="h-1.5 rounded-full mb-2 transition-all duration-300"
+            [class.bg-v4-secondary-brand-color]="idx <= currentStepIndex()"
+            [class.bg-v4-tertiary-background-color]="idx > currentStepIndex()"
+          ></div>
+          <span
+            class="text-xs font-peridot"
+            [class.text-v4-main-text-color]="idx === currentStepIndex()"
+            [class.font-semibold]="idx === currentStepIndex()"
+            [class.text-v4-secondary-text-color]="idx < currentStepIndex() && idx !== currentStepIndex()"
+            [class.text-v4-tertiary-text-color]="idx > currentStepIndex()"
+          >
+            {{ step.label }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <div #cardArea>
+    <!-- ==================== STEP 1: SELECT BANK & PAYEE ==================== -->
+    @if (currentStep() === 1) {
+      <div class="step-card">
+        <h2 class="text-base font-funnel font-semibold text-v4-main-text-color mb-5">
+          Select Bank & Payee
+        </h2>
+
+        <form [formGroup]="mailingForm" class="space-y-4">
+          <!-- Bank Account -->
+          <div>
+            <label class="field-label">
+              Bank Account <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-bank-ac-dropdown-v4
+              formControlName="bankAc"
+              customHeight="0"
+            />
+            <app-control-message-v4
+              [control]="mailingForm.controls.bankAc"
+              label="Bank Account"
+              [customMessages]="{ required: 'This field is required.' }"
+            />
+          </div>
+
+          <!-- Payee -->
+          <div>
+            <label class="field-label">
+              Payee <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-payee-dropdown-v4
+              formControlName="payee"
+              customHeight="0"
+            />
+            <app-control-message-v4
+              [control]="mailingForm.controls.payee"
+              label="Payee"
+              [customMessages]="{ required: 'This field is required.' }"
+            />
+          </div>
+
+          <!-- Where to Mail Checks -->
+          <div>
+            <div class="flex items-center gap-1.5 mb-2">
+              <label class="field-label !mb-0">Where to Mail Check</label>
+              <lucide-angular
+                name="info"
+                [size]="14"
+                class="text-v4-primary-brand-bold-color cursor-pointer"
+                matTooltip="Mail check to your payee's known address or a custom address."
+              />
+            </div>
+            <div class="border border-v4-border-color rounded-xl p-4">
+              <app-v4-radio-group
+                [options]="shippingAddressOptions"
+                [value]="shippingAddress()"
+                (selectionChange)="onShippingAddressChange($event)"
+              />
+
+              <!-- Custom Address Fields -->
+              @if (shippingAddress() === 'to-custom-address') {
+                <div class="mt-4 space-y-3 pt-3 border-t border-v4-border-color">
+                  <div>
+                    <label class="field-label-sm">Mail From</label>
+                    <div class="flex items-center gap-2">
+                      <div class="flex-1 min-w-0 relative dropdown-with-tooltip">
+                        <app-v4-common-dropdown
+                          [config]="{
+                            placeholder: 'Select From Address',
+                            displayField: 'name',
+                            style: { size: '0', enableLabelIcon: false }
+                          }"
+                          [listData]="shippingAddressFromList()"
+                          appendTo="body"
+                          formControlName="shippingAddressFrom"
+                        />
+                        @if (!mailingForm.controls.shippingAddressFrom.value) {
+                          <lucide-icon
+                            name="circle-help"
+                            [size]="14"
+                            class="dropdown-tooltip-icon text-v4-subtle-text-color cursor-pointer"
+                            matTooltip="Choose your saved from address."
+                          />
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        class="shrink-0 p-2 self-stretch flex items-center justify-center rounded-lg border border-v4-border-color hover:bg-v4-tertiary-background-color text-v4-primary-brand-bold-color transition-colors"
+                        (click)="openAddMailAddressModal('mail-from')"
+                        [matTooltip]="mailingForm.controls.shippingAddressFrom.value ? 'Edit Address' : 'Add Address'"
+                      >
+                        <lucide-angular
+                          [name]="mailingForm.controls.shippingAddressFrom.value ? 'pencil' : 'plus'"
+                          [size]="16"
+                        />
+                      </button>
+                    </div>
+                    <app-control-message-v4
+                      [control]="mailingForm.controls.shippingAddressFrom"
+                      label="Mail From"
+                      [customMessages]="{ required: 'This field is required.' }"
+                    />
+                  </div>
+                  <div>
+                    <label class="field-label-sm">Mail To</label>
+                    <div class="flex items-center gap-2">
+                      <div class="flex-1 min-w-0 relative dropdown-with-tooltip">
+                        <app-v4-common-dropdown
+                          [config]="{
+                            placeholder: 'Select Address',
+                            displayField: 'name',
+                            displaySubField: 'countryName',
+                            subTextPosition: 'below',
+                            style: { size: '0', enableLabelIcon: false }
+                          }"
+                          [listData]="shippingAddressToList()"
+                          appendTo="body"
+                          formControlName="shippingAddressTo"
+                        />
+                        @if (!mailingForm.controls.shippingAddressTo.value) {
+                          <lucide-icon
+                            name="circle-help"
+                            [size]="14"
+                            class="dropdown-tooltip-icon text-v4-subtle-text-color cursor-pointer"
+                            matTooltip="Choose your saved shipping address."
+                          />
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        class="shrink-0 p-2 self-stretch flex items-center justify-center rounded-lg border border-v4-border-color hover:bg-v4-tertiary-background-color text-v4-primary-brand-bold-color transition-colors"
+                        (click)="openAddMailAddressModal('mail-to')"
+                        [matTooltip]="mailingForm.controls.shippingAddressTo.value ? 'Edit Address' : 'Add Address'"
+                      >
+                        <lucide-angular
+                          [name]="mailingForm.controls.shippingAddressTo.value ? 'pencil' : 'plus'"
+                          [size]="16"
+                        />
+                      </button>
+                    </div>
+                    <app-control-message-v4
+                      [control]="mailingForm.controls.shippingAddressTo"
+                      label="Mail To"
+                      [customMessages]="{ required: 'This field is required.' }"
+                    />
+                  </div>
+                  <div>
+                    <label class="field-label-sm">Shipping Type</label>
+                    <app-v4-common-dropdown
+                      [config]="{
+                        placeholder: 'Select shipping type',
+                        displayField: 'name',
+                        style: { size: '0', enableLabelIcon: false }
+                      }"
+                      [listData]="customShippingTypeList()"
+                      [loading]="isShippingTypesLoading()"
+                      appendTo="body"
+                      formControlName="customShippingType"
+                    />
+                    <app-control-message-v4
+                      [control]="mailingForm.controls.customShippingType"
+                      label="Shipping Type"
+                      [customMessages]="{ required: 'This field is required.' }"
+                    />
+                  </div>
+                </div>
+              } @else {
+                <!-- Payee Address Shipping Type -->
+                <div class="mt-4 pt-3 border-t border-v4-border-color">
+                  <label class="field-label-sm">Shipping Type</label>
+                  <app-v4-common-dropdown
+                    [config]="{
+                      placeholder: 'Select shipping type',
+                      displayField: 'name',
+                      style: { size: '0', enableLabelIcon: false }
+                    }"
+                    [listData]="shippingList()"
+                    [loading]="isShippingTypesLoading()"
+                    appendTo="body"
+                    formControlName="shippingType"
+                  />
+                  <app-control-message-v4
+                    [control]="mailingForm.controls.shippingType"
+                    label="Shipping Type"
+                    [customMessages]="{ required: 'This field is required.' }"
+                  />
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Step 1 Buttons -->
+          <div class="flex gap-3 justify-end pt-4">
+            <app-common-button-v4
+              text="Next"
+              width="120px"
+              [type]="{ style: 'primary', name: 'main' }"
+              (clickEvent)="onNextStep1()"
+            />
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ==================== STEP 2: PAYMENT INFORMATION ==================== -->
+    @if (currentStep() === 2) {
+      <div class="step-card">
+        <h2 class="text-base font-funnel font-semibold text-v4-main-text-color mb-5">
+          Payment Information
+        </h2>
+
+        <form [formGroup]="mailingForm" class="space-y-5">
+          <!-- Amount & Invoice Number -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <app-common-amount-input-v4
+                fieldLabel="Amount"
+                formControlName="amount"
+              />
+              <app-control-message-v4
+                [control]="mailingForm.controls.amount"
+                label="Amount"
+                [isMarginTopEnabled]="false"
+                [customMessages]="{ required: 'This field is required.', min: 'This field is required.' }"
+              />
+            </div>
+            <div>
+              <app-common-input-v4
+                fieldLabel="Invoice Number"
+                placeholder="Invoice Number"
+                formControlName="invoiceNumber"
+                [isFieldRequired]="false"
+              />
+            </div>
+          </div>
+
+          <!-- Check Number & Date -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <app-common-input-v4
+                fieldLabel="Check Number"
+                placeholder="Check Number"
+                formControlName="checkNumber"
+                maxlength="12"
+                [isNumberOnly]="true"
+                numberType="numeric"
+              />
+              <app-control-message-v4
+                [control]="mailingForm.controls.checkNumber"
+                label="Check Number"
+                [customMessages]="{ required: 'This field is required.' }"
+              />
+            </div>
+            <div>
+              <app-v4-date-picker
+                fieldLabel="Date of Issue"
+                placeholder="Date of Issue"
+                formControlName="issueDate"
+              />
+              <app-control-message-v4
+                [control]="mailingForm.controls.issueDate"
+                label="Date of Issue"
+                [customMessages]="{ required: 'This field is required.' }"
+              />
+            </div>
+          </div>
+
+          <!-- Memo -->
+          <div class="single_input">
+            <label
+              for="single-mail-memo"
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >
+              Memo
+            </label>
+            <textarea
+              id="single-mail-memo"
+              class="w-full border border-v4-input-border-color rounded-[10px] px-4 py-3 text-sm font-peridot text-v4-main-text-color !bg-v4-secondary-background-color shadow-sm focus:outline-none focus:ring-2 focus:ring-v4-brand-border-color focus:border-v4-brand-border-color resize-none"
+              formControlName="memo"
+              [maxLength]="150"
+              [rows]="3"
+              placeholder="Memo (optional)"
+            ></textarea>
+          </div>
+
+          <!-- Attachment & Custom Fields -->
+          <div class="flex gap-3 items-center justify-end">
+            <button
+              class="attachment-btn h-10 w-10 border border-v4-border-color rounded-full flex items-center justify-center hover:border-v4-primary-brand-bold-color transition-colors text-v4-primary-brand-bold-color bg-v4-secondary-background-color relative"
+              (click)="openAddAttachment()"
+              matTooltip="Add Attachment"
+              [matBadge]="attachmentCount"
+              matBadgeSize="small"
+              [matBadgeHidden]="attachmentCount < 1"
+            >
+              <lucide-angular name="paperclip" [size]="16" />
+            </button>
+            @if (!IsCustom && customFieldFlag) {
+              <app-common-button-v4
+                text="Custom fields"
+                lucideIcon="plus"
+                [type]="{ style: 'outline', name: 'main' }"
+                (clickEvent)="toggleCustomFields(true)"
+              />
+            }
+          </div>
+
+          <!-- Custom Fields Section -->
+          @if (IsCustom) {
+            <div class="border border-v4-border-color rounded-xl p-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-peridot font-medium text-v4-main-text-color">Custom Fields</span>
+                <button
+                  class="text-v4-secondary-text-color hover:text-v4-common-red-color transition-colors"
+                  (click)="toggleCustomFields(false)"
+                >
+                  <lucide-angular name="x" [size]="16" />
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                @for (ele of custom_elements; track ele; let i = $index) {
+                  <app-common-input-v4
+                    [placeholder]="ele.custom_element"
+                    [(ngModel)]="customElementGroup[i][ele.custom_element]"
+                    maxlength="150"
+                    [ngModelOptions]="{ standalone: true }"
+                    [isFieldRequired]="false"
+                  />
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Step 2 Buttons -->
+          <div class="flex gap-3 justify-end pt-2">
+            <app-common-button-v4
+              text="Back"
+              width="120px"
+              [type]="{ style: 'outline', name: 'main' }"
+              (clickEvent)="onBackStep(2)"
+            />
+            <app-common-button-v4
+              text="Next"
+              width="120px"
+              [type]="{ style: 'primary', name: 'main' }"
+              (clickEvent)="onNextStep2()"
+              [loading]="isCreateCheckLoading()"
+              [disabled]="isCreateCheckLoading()"
+            />
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ==================== STEP 3: REVIEW & SUBMIT ==================== -->
+    @if (currentStep() === 3) {
+      @if (isLoading()) {
+        <!-- Skeleton Loading -->
+        <div class="step-card">
+          <div class="flex justify-between items-center mb-6">
+            <div class="h-6 bg-v4-tertiary-background-color rounded w-40 animate-pulse"></div>
+          </div>
+          <div class="mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-12 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-28 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-36 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-40 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-20 animate-pulse"></div>
+              </div>
+              <div class="space-y-2">
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-8 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-28 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-36 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-40 animate-pulse"></div>
+                <div class="h-4 bg-v4-tertiary-background-color rounded w-20 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mb-6 space-y-2">
+            <div class="h-4 bg-v4-tertiary-background-color rounded w-32 animate-pulse"></div>
+            <div class="h-10 bg-v4-tertiary-background-color rounded w-full animate-pulse"></div>
+          </div>
+          <div class="mb-6 space-y-2">
+            <div class="h-4 bg-v4-tertiary-background-color rounded w-36 animate-pulse"></div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="h-4 bg-v4-tertiary-background-color rounded w-20 animate-pulse"></div>
+              <div class="h-4 bg-v4-tertiary-background-color rounded w-16 animate-pulse"></div>
+            </div>
+          </div>
+          <div class="rounded-xl p-4 bg-v4-tertiary-background-color animate-pulse h-24 mb-6"></div>
+          <div class="flex justify-end gap-3">
+            <div class="h-10 bg-v4-tertiary-background-color rounded w-24 animate-pulse"></div>
+            <div class="h-10 bg-v4-tertiary-background-color rounded w-32 animate-pulse"></div>
+          </div>
+        </div>
+      } @else if (formData()) {
+        <div class="space-y-4">
+          <!-- Addresses Card -->
+          <div class="step-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-funnel font-semibold text-v4-main-text-color">
+                Addresses
+              </h2>
+              <button
+                class="flex items-center gap-1 text-xs text-v4-primary-brand-bold-color font-peridot font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                [disabled]="isEditPayeeLoading()"
+                matTooltip="Edit Payee Address"
+                (click)="openEditPayeeAddress()"
+              >
+                @if (isEditPayeeLoading()) {
+                  <lucide-angular name="loader-2" [size]="12" class="animate-spin" />
+                } @else {
+                  <lucide-angular name="pencil" [size]="12" />
+                }
+                Edit
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- From -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-xs font-peridot font-semibold text-v4-secondary-text-color">
+                    From
+                  </h3>
+                  <div class="flex items-center gap-2">
+                    @if (isInvalidBank()) {
+                      <span class="text-xs font-peridot text-v4-common-red-color bg-v4-common-red-color/10 rounded-md px-2 py-0.5">
+                        Invalid From Address
+                      </span>
+                      <button
+                        class="text-v4-primary-brand-bold-color text-sm font-peridot font-medium hover:underline"
+                        matTooltip="Edit Bank Address"
+                        (click)="openEditBankAddress()"
+                      >
+                        Edit
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div class="p-3 bg-v4-tertiary-background-color border border-v4-border-color rounded-lg space-y-0.5 text-sm font-peridot">
+                  <div class="font-medium text-v4-main-text-color">
+                    {{ formData()?.bankAc?.bankName ?? formData()?.bankAc?.address?.bank_account_account_name }}
+                  </div>
+                  <div class="text-v4-secondary-text-color">
+                    {{ formatAccountNumber(formData()?.bankAc?.fullAccountNumber) }}
+                  </div>
+                  <div class="text-v4-secondary-text-color">
+                    {{ formData()?.bankAc?.address?.bank_account_address_line_1 }}
+                  </div>
+                  @if (formData()?.bankAc?.address?.bank_account_address_line_2) {
+                    <div class="text-v4-secondary-text-color">
+                      {{ formData()?.bankAc?.address?.bank_account_address_line_2 }}
+                    </div>
+                  }
+                  <div class="text-v4-secondary-text-color">
+                    {{ formData()?.bankAc?.address?.bank_account_city }}
+                    {{ formData()?.bankAc?.address?.bank_account_state }}
+                    {{ formData()?.bankAc?.address?.bank_account_zip }}
+                  </div>
+                  <div class="text-v4-secondary-text-color">
+                    {{ formData()?.bankAc?.address?.bank_account_country }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- To -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-xs font-peridot font-semibold text-v4-secondary-text-color">
+                    To
+                  </h3>
+                  <div class="flex items-center gap-2">
+                    @if (isInvalidPayee()) {
+                      <span class="text-xs font-peridot text-v4-common-red-color bg-v4-common-red-color/10 rounded-md px-2 py-0.5">
+                        Invalid To Address
+                      </span>
+                    }
+                  </div>
+                </div>
+                <div class="p-3 bg-v4-tertiary-background-color border border-v4-border-color rounded-lg space-y-0.5 text-sm font-peridot">
+                  <div class="font-medium text-v4-main-text-color">
+                    {{ formData()?.payee?.name }}
+                  </div>
+                  @if (formData()?.payee?.company) {
+                    <div class="text-v4-secondary-text-color">
+                      {{ formData()?.payee?.company }}
+                    </div>
+                  }
+                  <div class="text-v4-secondary-text-color">
+                    {{ formData()?.payee?.addressLine1 }}
+                  </div>
+                  <div class="text-v4-secondary-text-color">
+                    {{ formData()?.payee?.city }}
+                    {{ formData()?.payee?.state }}
+                    {{ formData()?.payee?.zip }}
+                  </div>
+                  <div class="text-v4-secondary-text-color">
+                    {{ formData()?.payee?.country }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shipping Details Card -->
+          <div class="step-card">
+            <h2 class="text-base font-funnel font-semibold text-v4-main-text-color mb-4">
+              Shipping Details
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-3">
+                @if (formData()?.shippingAddressOption === 'to-custom-address') {
+                  <div>
+                    <label class="field-label-sm">From</label>
+                    <div class="text-sm font-peridot font-medium text-v4-main-text-color">
+                      {{ formData()?.shippingAddressFrom?.name || '—' }}
+                    </div>
+                  </div>
+                }
+                @if (formData()?.shippingAddressOption === 'to-custom-address') {
+                  <div>
+                    <label class="field-label-sm">Shipping Type</label>
+                    <div class="text-sm font-peridot font-medium text-v4-main-text-color">
+                      {{ formData()?.customShippingType?.name || '—' }}
+                    </div>
+                  </div>
+                } @else {
+                  <div>
+                    <label class="field-label-sm">Shipping Type</label>
+                    <app-v4-common-dropdown
+                      [config]="{
+                        placeholder: 'Select shipping type',
+                        displayField: 'name',
+                        style: { size: '0', enableLabelIcon: false }
+                      }"
+                      [listData]="sortedShippingList()"
+                      [formControl]="selectedShippingType"
+                    />
+                  </div>
+                }
+              </div>
+              <div class="space-y-3">
+                @if (formData()?.shippingAddressOption === 'to-custom-address') {
+                  <div>
+                    <label class="field-label-sm">To</label>
+                    <div class="text-sm font-peridot font-medium text-v4-main-text-color">
+                      {{ formData()?.shippingAddressTo?.name || '—' }}
+                    </div>
+                  </div>
+                }
+                <div>
+                  <label class="field-label-sm">Shipping Cost</label>
+                  @if (formData()?.shippingAddressOption === 'to-custom-address') {
+                    <div class="text-sm font-peridot font-semibold text-v4-primary-brand-bold-color">
+                      ${{ shippingCalculation()?.group_shipping_fee || '0.00' | number: '1.2-2' }}
+                    </div>
+                  } @else {
+                    <div class="text-sm font-peridot font-semibold text-v4-primary-brand-bold-color">
+                      ${{ shippingCalculation()?.subtotal || '0.00' | number: '1.2-2' }}
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Information Card -->
+          <div class="step-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-funnel font-semibold text-v4-main-text-color">
+                Payment Information
+              </h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+              <div>
+                <label class="field-label-sm">Amount</label>
+                <div class="text-sm font-peridot font-medium text-v4-main-text-color">
+                  ${{ getPaymentAmount() | number: '1.2-2' }}
+                </div>
+              </div>
+              <div>
+                <label class="field-label-sm">Check Number</label>
+                <div class="text-sm font-peridot text-v4-main-text-color">
+                  {{ checkDetailsResponse()?.datas?.[0]?.cheque_serial_number }}
+                </div>
+              </div>
+              <div>
+                <label class="field-label-sm">Date of Issue</label>
+                <div class="text-sm font-peridot text-v4-main-text-color">
+                  {{ checkDetailsResponse()?.datas?.[0]?.cheque_issue_date | date: 'MM/dd/yyyy' }}
+                </div>
+              </div>
+              @if (formData()?.invoiceNumber) {
+                <div class="min-w-0">
+                  <label class="field-label-sm">Invoice Number</label>
+                  <div class="text-sm font-peridot text-v4-main-text-color break-all">
+                    {{ formData()?.invoiceNumber }}
+                  </div>
+                </div>
+              }
+              @if (formData()?.memo) {
+                <div class="col-span-2 min-w-0">
+                  <label class="field-label-sm">Memo</label>
+                  <div class="text-sm font-peridot text-v4-main-text-color break-words">
+                    {{ formData()?.memo }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Attachments -->
+          @if (attachments().length > 0) {
+            <div class="step-card">
+              <h2 class="text-base font-funnel font-semibold text-v4-main-text-color mb-3">
+                Attachments
+              </h2>
+              @for (attachment of attachments(); track attachment.id) {
+                <div class="bg-v4-tertiary-background-color border border-v4-border-color rounded-lg p-3 mb-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 bg-v4-primary-brand-bold-color/10 rounded-full flex items-center justify-center">
+                        <lucide-angular name="paperclip" [size]="14" class="text-v4-primary-brand-bold-color" />
+                      </div>
+                      <span
+                        class="text-sm font-peridot text-v4-main-text-color"
+                        [matTooltip]="attachment.fileName?.length > 50 ? attachment.fileName : ''"
+                      >
+                        {{ attachment.fileName | truncate: 50 }}
+                      </span>
+                    </div>
+                    <div>
+                      @if (isAttachmentLoading()[attachment.id]) {
+                        <lucide-angular name="loader-circle" [size]="16" class="text-v4-primary-brand-bold-color animate-spin" />
+                      } @else {
+                        <button
+                          class="text-v4-primary-brand-bold-color hover:text-v4-primary-brand-bold-color/80 transition-colors"
+                          (click)="openAttachment(attachment.id)"
+                          matTooltip="View Attachment"
+                        >
+                          <lucide-angular name="external-link" [size]="16" />
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Total Cost Card -->
+          <div class="total-cost-card rounded-xl p-5">
+            <h2 class="text-sm font-funnel font-bold text-v4-main-text-color mb-4">
+              Total Cost
+            </h2>
+            <div class="text-sm font-peridot">
+              <div class="flex justify-between items-center py-2">
+                <span class="text-v4-secondary-text-color">
+                  Sub Total
+                  @if (formData()?.shippingAddressOption === 'to-custom-address') {
+                    (Shipping)
+                  }
+                </span>
+                <span class="font-semibold text-v4-main-text-color">${{ shippingCalculation()?.subtotal || '0.00' | number: '1.2-2' }}</span>
+              </div>
+              @if (formData()?.shippingAddressOption === 'to-custom-address') {
+                <div class="flex justify-between items-center py-2">
+                  <span class="text-v4-secondary-text-color">Shipping Cost</span>
+                  <span class="font-semibold text-v4-main-text-color">${{ shippingCalculation()?.group_shipping_fee || '0.00' | number: '1.2-2' }}</span>
+                </div>
+              }
+              <hr class="total-cost-divider my-1" />
+              <div class="flex justify-between items-center py-2">
+                <span class="font-bold text-v4-main-text-color">Total</span>
+                <span class="text-lg font-bold text-v4-insight-card-main-number-blue">${{ shippingCalculation()?.total || '0.00' | number: '1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 Buttons -->
+          <div class="flex gap-3 justify-end pt-2">
+            <app-common-button-v4
+              text="Back"
+              width="120px"
+              [type]="{ style: 'outline', name: 'main' }"
+              (clickEvent)="onBackStep(3)"
+            />
+            <app-common-button-v4
+              text="Submit Mail"
+              width="150px"
+              [type]="{ style: 'primary', name: 'main' }"
+              (clickEvent)="sendMail()"
+              [loading]="isSendingMail()"
+              [disabled]="isSendingMail()"
+            />
+          </div>
+        </div>
+      }
+    }
+    </div>
+  </div>
+</div>

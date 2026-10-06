@@ -1,0 +1,344 @@
+<div class="p-6 font-peridot">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h3 class="text-lg font-bold text-v4-main-text-color">
+      Edit Bank Account Information
+    </h3>
+    <button
+      class="p-2 hover:bg-v4-input-background-color rounded-lg transition-colors cursor-pointer"
+      (click)="close()"
+    >
+      <lucide-angular
+        [img]="X"
+        [size]="20"
+        class="text-v4-tertiary-text-color"
+      ></lucide-angular>
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <!-- Loading Skeleton -->
+    <div class="grid grid-cols-2 gap-4">
+      @for (_ of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]; track $index) {
+        <div class="flex flex-col gap-1.5">
+          <div class="skelton h-3.5 w-24 rounded"></div>
+          <div class="skelton h-[44px] w-full rounded-[10px]"></div>
+        </div>
+      }
+      <div class="col-span-2 flex flex-col gap-1.5">
+        <div class="skelton h-3.5 w-40 rounded"></div>
+        <div class="skelton h-[44px] w-full rounded-[10px]"></div>
+      </div>
+    </div>
+    <div class="pt-6">
+      <div class="skelton h-[44px] w-full rounded-lg"></div>
+    </div>
+  } @else {
+    <!-- Form -->
+    <div [formGroup]="bankForm">
+      <div class="grid grid-cols-2 gap-4">
+        <p class="col-span-2 m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-v4-tertiary-text-color">
+          Account
+        </p>
+        <div>
+          <app-common-input-v4
+            placeholder="Bank Account Holder Name"
+            fieldLabel="Account Holder Name"
+            formControlName="accHolderName"
+            [maxLength]="60"
+            [isNeedPreventKey]="true"
+            [preventCharacters]="['`']"
+            [control]="bankForm.controls.accHolderName"
+          />
+          @if (isMatchHolderName()) {
+            <div class="flex items-center gap-1.5 mt-1 pl-1">
+              <lucide-angular
+                [img]="AlertCircle"
+                [size]="12"
+                class="text-v4-badge-error-text-color"
+              ></lucide-angular>
+              <p class="text-v4-badge-error-text-color text-xs font-medium m-0">
+                Must match the business name
+              </p>
+            </div>
+          }
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Account Nick Name"
+            fieldLabel="Account Nick Name"
+            formControlName="AccountNickName"
+            [maxLength]="60"
+            [minLength]="3"
+            [isNeedPreventKey]="true"
+            [preventCharacters]="['`']"
+            [control]="bankForm.controls.AccountNickName"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Account Number"
+            fieldLabel="Account Number"
+            formControlName="AccountNumber"
+            [maxLength]="20"
+            [isNumberOnly]="true"
+            [isAllowHyphen]="isCanadianBank()"
+            [readOnly]="isVerifiedBank()"
+            [control]="bankForm.controls.AccountNumber"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Confirm Account Number"
+            fieldLabel="Confirm Account Number"
+            formControlName="ConfirmAccountNumber"
+            [maxLength]="20"
+            [isNumberOnly]="true"
+            [isAllowHyphen]="isCanadianBank()"
+            [readOnly]="isVerifiedBank()"
+            [control]="bankForm.controls.ConfirmAccountNumber"
+          />
+        </div>
+        @if (hasSplitCanadianFields()) {
+          <div>
+            <app-common-input-v4
+              placeholder="Transit Number"
+              fieldLabel="Transit Number"
+              formControlName="transitNumber"
+              [maxLength]="5"
+              [isNumberOnly]="true"
+              [readOnly]="isVerifiedBank()"
+              [control]="bankForm.controls.transitNumber"
+              [customMessages]="{ pattern: 'Transit Number must be 5 digits' }"
+            />
+          </div>
+          <div>
+            <app-common-input-v4
+              placeholder="Financial Institute No."
+              fieldLabel="Financial Institute No."
+              formControlName="financialInstituteNumber"
+              [maxLength]="3"
+              [isNumberOnly]="true"
+              [readOnly]="isVerifiedBank()"
+              [control]="bankForm.controls.financialInstituteNumber"
+              [customMessages]="{ pattern: 'Financial Institute Number must be 3 digits' }"
+            />
+          </div>
+        } @else {
+          <div>
+            <app-common-input-v4
+              placeholder="Routing Number"
+              fieldLabel="Routing Number"
+              formControlName="routingNumber"
+              [maxLength]="9"
+              [isNumberOnly]="true"
+              [readOnly]="isVerifiedBank()"
+              (inputEvent)="lookupRoutingNumber($event.value, false)"
+              [control]="bankForm.controls.routingNumber"
+            />
+          </div>
+        }
+        <div>
+          <span
+            class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >Bank Account Type</span
+          >
+          <app-v4-common-dropdown
+            [config]="accountTypeDropdownConfig"
+            [listData]="accountTypeList"
+            [clearable]="false"
+            [appendTo]="'body'"
+            formControlName="bankAccountType"
+          />
+        </div>
+        <p class="col-span-2 m-0 mt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-v4-tertiary-text-color">
+          Contact &amp; address
+        </p>
+        <div>
+          <app-common-input-v4
+            placeholder="Phone"
+            fieldLabel="Phone"
+            formControlName="phone"
+            [isNumberOnly]="true"
+            [customMask]="'(000) 000-0000'"
+            [isFieldRequired]="false"
+            [control]="bankForm.controls.phone"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Address Line 1"
+            fieldLabel="Address Line 1"
+            formControlName="AccountAddressLine1"
+            [maxLength]="150"
+            (inputFocusEvent)="loadGoogleAddress($event)"
+            [control]="bankForm.controls.AccountAddressLine1"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Address Line 2"
+            fieldLabel="Address Line 2"
+            formControlName="AccountAddressLine2"
+            [maxLength]="100"
+            [isFieldRequired]="false"
+            [control]="bankForm.controls.AccountAddressLine2"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="City"
+            fieldLabel="City"
+            formControlName="city"
+            [maxLength]="50"
+            [isFieldRequired]="false"
+            [control]="bankForm.controls.city"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="State"
+            fieldLabel="State"
+            formControlName="state"
+            [maxLength]="100"
+            [isFieldRequired]="false"
+            [control]="bankForm.controls.state"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Zip"
+            fieldLabel="Zip"
+            formControlName="zip"
+            [maxLength]="10"
+            [isFieldRequired]="false"
+            [control]="bankForm.controls.zip"
+          />
+        </div>
+        <div>
+          <span
+            class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >Country</span
+          >
+          <app-common-country-select-v4
+            formControlName="country"
+            bindValue="name"
+            placeholder="Country"
+            [allowedCountries]="countryOptions"
+            [isRequired]="true"
+            [isDisabled]="isVerifiedBank() && !isCountryMissing()"
+            [customMessages]="countryMismatchMessage"
+            (countryChange)="onCountryChange($event?.name ?? '')"
+          />
+        </div>
+        <div>
+          <app-common-input-v4
+            placeholder="Email"
+            fieldLabel="Email"
+            formControlName="email"
+            [isFieldRequired]="false"
+            [control]="bankForm.controls.email"
+          />
+        </div>
+        <!-- Canadian split fields add an extra column, so this pairs with Email
+             instead of spanning a row of its own. -->
+        <p class="col-span-2 m-0 mt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-v4-tertiary-text-color">
+          Checks
+        </p>
+        <div [class.col-span-2]="!hasSplitCanadianFields()">
+          <app-common-input-v4
+            placeholder="Next Check Starting Number"
+            fieldLabel="Next Check Starting Number"
+            formControlName="nextCheckStartNo"
+            [isFieldRequired]="false"
+            [isNumberOnly]="true"
+            [control]="bankForm.controls.nextCheckStartNo"
+          />
+        </div>
+      </div>
+
+      @if (
+        !isRoutingNumberInitiallyChecked() && bankForm.controls.bankName.value
+      ) {
+        <div class="grid grid-cols-2 gap-4 pt-4">
+          <div>
+            <app-common-input-v4
+              placeholder="Bank Name"
+              fieldLabel="Bank Name"
+              formControlName="bankName"
+              [maxLength]="50"
+              [isNeedPreventKey]="true"
+              [preventCharacters]="['`']"
+              [readOnly]="isVerifiedBank()"
+              [inputWidth]="'100%'"
+              [control]="bankForm.controls.bankName"
+            />
+          </div>
+          <div>
+            <app-common-input-v4
+              placeholder="Street Address"
+              fieldLabel="Street Address"
+              formControlName="bankAddress1"
+              [maxLength]="150"
+              [readOnly]="isVerifiedBank()"
+              [inputWidth]="'100%'"
+              [control]="bankForm.controls.bankAddress1"
+            />
+          </div>
+          <div>
+            <app-common-input-v4
+              placeholder="City"
+              fieldLabel="City"
+              formControlName="bankCity"
+              [maxLength]="50"
+              [readOnly]="isVerifiedBank()"
+              [inputWidth]="'100%'"
+              [control]="bankForm.controls.bankCity"
+            />
+          </div>
+          <div>
+            <app-common-input-v4
+              placeholder="State"
+              fieldLabel="State"
+              formControlName="bankState"
+              [maxLength]="100"
+              [readOnly]="isVerifiedBank()"
+              [inputWidth]="'100%'"
+              [control]="bankForm.controls.bankState"
+            />
+          </div>
+          <div>
+            <app-common-input-v4
+              placeholder="Zip"
+              fieldLabel="Zip"
+              formControlName="bankZip"
+              [maxLength]="10"
+              [readOnly]="isVerifiedBank()"
+              [inputWidth]="'100%'"
+              [control]="bankForm.controls.bankZip"
+            />
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Buttons at the bottom -->
+    <div class="pt-6 flex justify-end gap-4">
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Cancel'"
+        [minWidth]="'120px'"
+        [disabled]="isSubmit()"
+        (clickEvent)="close()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Update'"
+        [minWidth]="'120px'"
+        [disabled]="isSubmit() || isLoading()"
+        [loading]="isSubmit()"
+        (clickEvent)="submit()"
+      />
+    </div>
+  }
+</div>

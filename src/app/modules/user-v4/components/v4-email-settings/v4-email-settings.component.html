@@ -1,0 +1,349 @@
+<div class="w-full max-w-[900px]">
+  <!-- Title -->
+  <h2 class="text-2xl font-bold text-v4-main-text-color font-funnel mb-1">
+    Email Settings
+  </h2>
+  <p class="text-sm text-v4-secondary-text-color font-peridot mb-5">
+    Configure email templates and delivery options
+  </p>
+
+  <!-- Customize Your Template Card -->
+  <div
+    class="border border-v4-border-color rounded-2xl bg-v4-secondary-background-color px-8 py-7 mb-5"
+  >
+    <h3 class="text-sm font-semibold text-v4-main-text-color font-peridot mb-4">
+      Customize Your Template
+    </h3>
+    @if (isTemplateLoading) {
+      <div class="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        @for (skeleton of templateSkeletons; track skeleton) {
+          <div
+            class="h-[60px] rounded-lg bg-v4-border-color animate-pulse"
+          ></div>
+        }
+      </div>
+    } @else {
+      <div
+        class="grid grid-cols-2 gap-3"
+        [ngClass]="
+          hasLetVendorDecideTemplate ? 'xl:grid-cols-5' : 'xl:grid-cols-4'
+        "
+      >
+        <button
+          (click)="openTemp('echeck')"
+          class="py-3 px-4 rounded-lg bg-v4-primary-brand-color text-white text-sm font-semibold font-peridot hover:opacity-90 transition-opacity cursor-pointer"
+        >
+          e-Check
+        </button>
+        <button
+          (click)="openTemp('physical_mail')"
+          class="py-3 px-4 rounded-lg bg-v4-primary-brand-color text-white text-sm font-semibold font-peridot hover:opacity-90 transition-opacity cursor-pointer"
+        >
+          Physical Mail
+        </button>
+        <button
+          (click)="openTemp('direct_deposit')"
+          class="py-3 px-4 rounded-lg bg-v4-primary-brand-color text-white text-sm font-semibold font-peridot hover:opacity-90 transition-opacity cursor-pointer flex flex-col items-center"
+        >
+          <span>Direct Deposit</span>
+          <span class="text-xs opacity-80">(No Action Required)</span>
+        </button>
+        <button
+          (click)="openTemp('direct_deposit_action_required')"
+          class="py-3 px-4 rounded-lg bg-v4-primary-brand-color text-white text-sm font-semibold font-peridot hover:opacity-90 transition-opacity cursor-pointer flex flex-col items-center"
+        >
+          <span>Direct Deposit</span>
+          <span class="text-xs opacity-80">(Action Required)</span>
+        </button>
+        @if (hasLetVendorDecideTemplate) {
+          <button
+            (click)="openTemp('let_vendor_decide')"
+            class="py-3 px-4 rounded-lg bg-v4-primary-brand-color text-white text-sm font-semibold font-peridot hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            Let Vendor Decide
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Mail Options Card -->
+  <div
+    class="border border-v4-border-color rounded-2xl bg-v4-secondary-background-color px-8 py-7 mb-5"
+  >
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <!-- Instant or Queue -->
+      <div class="flex flex-col gap-3">
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-peridot">
+          Use Instant or Queued Mails
+        </h3>
+        <mat-radio-group
+          [value]="getString(templateData?.QueueEnable)"
+          (change)="changeOption($event, 1)"
+          class="flex items-center gap-5"
+        >
+          <mat-radio-button
+            value="0"
+            class="v4-radio font-peridot text-sm text-v4-main-text-color"
+          >
+            Instant
+          </mat-radio-button>
+          <mat-radio-button
+            value="1"
+            class="v4-radio font-peridot text-sm text-v4-main-text-color"
+          >
+            Queue
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Send Email Using -->
+      <div class="flex flex-col gap-3">
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-peridot">
+          Send Email Using
+        </h3>
+        <mat-radio-group
+          [value]="getString(templateData?.SMTPEnable)"
+          (change)="changeOption($event, 2)"
+          class="flex items-center gap-5"
+        >
+          <mat-radio-button
+            class="v4-radio font-peridot text-sm text-v4-main-text-color"
+            value="0"
+          >
+            Zil Money Server
+          </mat-radio-button>
+          <mat-radio-button
+            class="v4-radio font-peridot text-sm text-v4-main-text-color"
+            value="1"
+          >
+            My own SMTP Server
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMTP Section (conditional) -->
+  @if (templateData?.SMTPEnable === 1 || templateData?.SMTPEnable === "1") {
+    <div
+      class="border border-v4-border-color rounded-2xl bg-v4-secondary-background-color px-8 py-7 mb-5"
+    >
+      @if (templateData?.isSMTP) {
+        @if (templateData?.smtpSettings.length !== 0) {
+          <div class="w-full overflow-x-auto">
+            <mat-radio-group (change)="changeOption($event, 3)">
+              <table class="w-full text-sm font-peridot">
+                <thead>
+                  <tr
+                    class="text-xs font-semibold uppercase text-v4-secondary-text-color bg-v4-tertiary-background-color"
+                  >
+                    <th class="p-2.5 text-left rounded-tl-lg">Host</th>
+                    <th class="p-2.5 text-left">Port</th>
+                    <th class="p-2.5 text-left">From Name</th>
+                    <th class="p-2.5 text-left">From Address</th>
+                    <th class="p-2.5 text-left">Encryption</th>
+                    <th class="p-2.5 text-left">Username</th>
+                    <th class="p-2.5 text-center">Select</th>
+                    <th class="p-2.5 text-center rounded-tr-lg">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-v4-border-color">
+                  @for (
+                    item of templateData?.smtpSettings;
+                    track item;
+                    let i = $index
+                  ) {
+                    <tr
+                      [ngClass]="{
+                        'bg-blue-50': item.isDefault === 1
+                      }"
+                      class="cursor-pointer text-v4-main-text-color"
+                    >
+                      <td (click)="clickToRow(i)" class="p-2.5">
+                        {{ item.host }}
+                      </td>
+                      <td (click)="clickToRow(i)" class="p-2.5">
+                        {{ item.port }}
+                      </td>
+                      <td (click)="clickToRow(i)" class="p-2.5">
+                        {{ item.fromName }}
+                      </td>
+                      <td (click)="clickToRow(i)" class="p-2.5">
+                        {{ item.fromAddress }}
+                      </td>
+                      <td (click)="clickToRow(i)" class="p-2.5">
+                        {{ item.encryptionType }}
+                      </td>
+                      <td (click)="clickToRow(i)" class="p-2.5">
+                        {{ item.username }}
+                      </td>
+                      <td (click)="clickToRow(i)" class="p-2.5 text-center">
+                        <mat-radio-button
+                          [value]="item.id"
+                          [checked]="item.isDefault === 1"
+                          class="v4-radio"
+                        ></mat-radio-button>
+                      </td>
+                      <td class="p-2.5">
+                        <div class="flex items-center justify-center gap-2">
+                          <button
+                            class="text-v4-secondary-text-color hover:text-v4-primary-brand-color transition-colors cursor-pointer"
+                            (click)="openServerForm('E', i, item)"
+                          >
+                            <lucide-icon
+                              [img]="EditIcon"
+                              [size]="16"
+                            ></lucide-icon>
+                          </button>
+                          <button
+                            class="text-v4-secondary-text-color hover:text-v4-common-red-color transition-colors cursor-pointer"
+                            (click)="deleteSMTPserver(i, item.id)"
+                          >
+                            <lucide-icon
+                              [img]="TrashIcon"
+                              [size]="16"
+                            ></lucide-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </mat-radio-group>
+          </div>
+        }
+
+        <div class="flex text-sm pt-4 pb-4 items-baseline gap-2">
+          <app-common-button-v4
+            (clickEvent)="openServerForm('A')"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Click here to add new SMTP server"
+          />
+        </div>
+      }
+
+      @if (editOrCreateServer) {
+        <form
+          class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4"
+          [formGroup]="smtpServerForm"
+        >
+          <app-common-input-v4
+            fieldLabel="Host"
+            placeholder="Host"
+            [control]="smtpServerForm.controls.host"
+          />
+
+          <app-common-input-v4
+            fieldLabel="Port"
+            placeholder="Port"
+            [control]="smtpServerForm.controls.port"
+          />
+
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >
+              Encryption Type
+            </label>
+            <app-v4-common-dropdown
+              [listData]="encryptionTypes"
+              [config]="{
+                placeholder: 'Select Encryption Type',
+                displayField: 'name',
+                outputField: 'value'
+              }"
+              [clearable]="false"
+              [searchable]="false"
+              formControlName="encryptionType"
+            />
+          </div>
+
+          <app-common-input-v4
+            fieldLabel="From Email Address"
+            placeholder="From Email Address"
+            [control]="smtpServerForm.controls.fromAddress"
+          />
+
+          <app-common-input-v4
+            fieldLabel="From Name"
+            placeholder="From Name"
+            [control]="smtpServerForm.controls.fromName"
+          />
+
+          <app-common-input-v4
+            fieldLabel="Reply To"
+            placeholder="Reply To"
+            [control]="smtpServerForm.controls.replyToAddress"
+          />
+
+          <app-common-input-v4
+            fieldLabel="Username"
+            placeholder="Username"
+            [control]="smtpServerForm.controls.username"
+          />
+
+          <app-common-input-v4
+            fieldLabel="Password"
+            placeholder="Password"
+            type="password"
+            [control]="smtpServerForm.controls.password"
+          />
+        </form>
+
+        <div class="pt-4 flex justify-end gap-3">
+          <app-common-button-v4
+            (clickEvent)="testSMTPsettings()"
+            [disabled]="btnDisable"
+            [loading]="btnDisable"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Test SMTP Settings"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'neon', name: 'main' }"
+            [text]="mode === 'A' ? 'ADD' : 'UPDATE'"
+            (clickEvent)="addNewSMTPserver()"
+            [disabled]="isAddLoad"
+            [loading]="isAddLoad"
+            width="120px"
+          />
+        </div>
+      }
+
+      @if (!templateData?.isSMTP) {
+        <div class="flex justify-between gap-4 items-center">
+          <div class="flex flex-col gap-1">
+            <h4
+              class="text-v4-common-red-color font-peridot font-medium text-sm"
+            >
+              Contact the customer support to enable your own SMTP server
+            </h4>
+            <p class="text-v4-secondary-text-color text-xs font-peridot">
+              You can also send from your own email, please contact customer
+              support to enable this feature
+            </p>
+          </div>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Connect with Support"
+            (clickEvent)="openSupportChat()"
+          />
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Update Button -->
+  <div class="flex justify-end mt-5">
+    <app-common-button-v4
+      [type]="{ style: 'neon', name: 'main' }"
+      [text]="'Update Settings'"
+      [textClasses]="'!font-bold'"
+      [loading]="isLoad"
+      [disabled]="isLoad"
+      [width]="'180px'"
+      (clickEvent)="updateEmailSettings()"
+    />
+  </div>
+</div>

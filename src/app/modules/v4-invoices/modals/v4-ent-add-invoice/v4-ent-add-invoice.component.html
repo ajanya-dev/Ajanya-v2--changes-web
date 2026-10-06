@@ -1,0 +1,526 @@
+<div class="flex flex-col font-peridot rounded-2xl overflow-hidden h-full">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        @if (datas?.isClone) {
+          Clone Invoice
+        } @else {
+          {{ !editMode ? "Add Invoice" : "Edit Invoice" }}
+        }
+      </h1>
+      <p class="text-xs text-v4-subtle-text-color font-peridot">
+        Fill in the invoice details below
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="p-6 bg-v4-tertiary-background-color overflow-y-auto flex-1 min-h-0"
+    (scroll)="closeAllDropdowns()"
+  >
+    <form [formGroup]="invoice" method="POST">
+      <div class="flex flex-col gap-3 mb-4">
+        <!-- Row 1: Bank Account | Payee | Invoice No | PO# | ACC# -->
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-[2fr_2fr_1fr_1fr_1fr] [&>*]:min-w-0 items-start"
+        >
+          <!-- Bank Account -->
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Select Bank Account</label
+            >
+            <app-bank-ac-dropdown-v4
+              [formControl]="selectedBankAccountCtrl"
+              (ready)="autoPopulateBank($event)"
+              [enableAddNew]="true"
+              (clearEvent)="onClearBankAccount()"
+              [append]="'body'"
+              permissionContext="forInvoice"
+            />
+          </div>
+
+          <!-- Payee -->
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Select Your Customer</label
+            >
+            <app-payee-dropdown-v4
+              [formControl]="selectedPayeeCtrl"
+              (ready)="autoPopulatePayee($event)"
+              [enableAddNew]="true"
+              (clearEvent)="onClearPayee()"
+              [appendTo]="'body'"
+              [placeholder]="'Select Your Customer'"
+            />
+          </div>
+
+          <!-- Invoice No -->
+          <app-common-input-v4
+            [fieldLabel]="'Invoice No'"
+            placeholder="Invoice No"
+            formControlName="InvoiceNo"
+            [control]="invoice.controls['InvoiceNo']"
+            [isFieldRequired]="true"
+            [maxlength]="100"
+            [fieldHeight]="'44px'"
+          />
+
+          <!-- PO# -->
+          <app-common-input-v4
+            [fieldLabel]="'PO#'"
+            placeholder="PO#"
+            formControlName="poNo"
+            [isFieldRequired]="false"
+            [maxlength]="100"
+            [fieldHeight]="'44px'"
+          />
+
+          <!-- ACC# -->
+          <app-common-input-v4
+            [fieldLabel]="'ACC#'"
+            placeholder="ACC#"
+            formControlName="accountNumber"
+            [isFieldRequired]="false"
+            [maxlength]="100"
+            [fieldHeight]="'44px'"
+          />
+        </div>
+
+        <!-- Row 2: User | Invoice Date | Due Date -->
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-3 [&>*]:min-w-0"
+        >
+          <!-- User -->
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Select User</label
+            >
+            <app-v4-common-dropdown
+              [config]="{
+                placeholder: isUserLoading() ? 'Loading...' : 'Select User',
+                displayField: 'client_name',
+                outputField: 'client_id'
+              }"
+              [listData]="usersList()"
+              [(ngModel)]="selectedUserId"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="onChangeUser($event)"
+              (searchEvent)="onSearchUser($event)"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Invoice Date -->
+          <app-v4-date-picker
+            fieldLabel="Invoice Date"
+            placeholder="Invoice Date"
+            formControlName="Date"
+            [control]="invoice.controls['Date']"
+            [isFieldRequired]="true"
+            [errorLabel]="'Invoice Date is required'"
+          />
+
+          <!-- Due Date -->
+          <app-v4-date-picker
+            fieldLabel="Due Date"
+            placeholder="Due Date"
+            formControlName="DueDate"
+            [isFieldRequired]="false"
+            [minDate]="invoice.controls['Date'].value"
+          />
+        </div>
+      </div>
+
+      <!-- Invoice Items Section -->
+      <div class="my-4">
+        <h3 class="text-sm font-semibold text-v4-main-text-color mb-3">
+          Invoice Items
+        </h3>
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <div class="max-h-[490px] overflow-y-auto">
+            <table
+              class="v4-ocw-table items-table-compact min-w-[500px] lg:min-w-[700px]"
+            >
+              <thead>
+                <tr>
+                  <th class="text-center w-6 lg:w-10 font-peridot">#</th>
+                  <th class="w-[120px] lg:w-[180px] font-peridot">Item</th>
+                  <th class="font-peridot">Description</th>
+                  <th class="text-center w-10 lg:w-16 font-peridot">QTY</th>
+                  <th class="w-[88px] lg:w-28 font-peridot">Unit Cost</th>
+                  <th class="w-[80px] lg:w-28 font-peridot">Total</th>
+                  <th class="text-center w-6 lg:w-10 font-peridot"></th>
+                </tr>
+              </thead>
+              <tbody formArrayName="item">
+                @for (
+                  credit of itemFormArray.controls;
+                  track i;
+                  let i = $index
+                ) {
+                  <tr [formGroupName]="i">
+                    <td class="text-center">
+                      <span class="text-xs text-v4-tertiary-text-color">{{
+                        i + 1
+                      }}</span>
+                    </td>
+                    <td>
+                      <app-v4-common-dropdown
+                        #itemDropdown
+                        class="block w-full"
+                        [config]="{
+                          placeholder: 'Select Item',
+                          displayField: 'name',
+                          outputField: 'id',
+                          enableAddNew: true,
+                          style: { size: 1 }
+                        }"
+                        [listData]="getRowFilteredItems(i)"
+                        [ngModel]="getItemValue(i)"
+                        [ngModelOptions]="{ standalone: true }"
+                        (ngModelChange)="onItemChange($event, i)"
+                        (scrollToEnd)="onScroll()"
+                        (searchEvent)="onSearch($event)"
+                        (selectClose)="onSelectClose()"
+                        (buttonClick)="openInvoiceItemModal(i)"
+                        appendTo="body"
+                      />
+                    </td>
+                    <td>
+                      <app-common-input-v4
+                        formControlName="description"
+                        placeholder="Service description"
+                        [isFieldRequired]="false"
+                        [maxlength]="100"
+                        [fieldHeight]="'32px'"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <app-common-input-v4
+                        formControlName="qty"
+                        placeholder="0"
+                        [isFieldRequired]="false"
+                        [isNumberOnly]="true"
+                        [numberType]="'decimal'"
+                        [fieldHeight]="'32px'"
+                        (inputEvent)="onQtyChanges($event, i, '')"
+                      />
+                    </td>
+                    <td>
+                      <app-common-amount-input-v4
+                        formControlName="cost"
+                        [height]="'32px'"
+                        [isRequired]="false"
+                        (blurEvent)="onQtyChanges($event, i, 'cost')"
+                      />
+                    </td>
+                    <td>
+                      <div class="flex items-center w-full">
+                        <span class="text-xs text-v4-main-text-color px-1"
+                          >$</span
+                        >
+                        <input
+                          type="text"
+                          formControlName="total"
+                          [readonly]="true"
+                          mask="separator.2"
+                          thousandSeparator=","
+                          class="flex-1 py-1 h-8 text-sm text-v4-main-text-color bg-transparent border-none focus:outline-none"
+                        />
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <button
+                        type="button"
+                        class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                        matTooltip="Remove row"
+                        (click)="removeRow(i, credit)"
+                      >
+                        <lucide-icon [img]="Trash2Icon" [size]="14" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="flex items-center gap-1.5 mt-2 text-sm font-medium text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity"
+          (click)="addNewRow()"
+        >
+          <lucide-icon
+            [img]="PlusIcon"
+            [size]="14"
+            class="text-v4-common-green-color"
+          />
+          Add Row
+        </button>
+      </div>
+
+      <!-- Notes, Memo, Credits & Totals -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-4">
+        <!-- Left: Notes, Memo, Attachment -->
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Private Note</label
+            >
+            <textarea
+              formControlName="note"
+              rows="4"
+              maxlength="100"
+              placeholder="Private notes (not visible to customer)"
+              class="w-full px-4 py-3 text-sm text-v4-main-text-color border border-v4-input-border-color rounded-[10px] shadow-sm resize-y focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color focus:border-v4-brand-focus-color placeholder:text-v4-subtle-text-color"
+              style="background-color: var(--v4-secondary-background-color)"
+            ></textarea>
+          </div>
+
+          <div class="flex flex-col">
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+              >Memo</label
+            >
+            <textarea
+              formControlName="memo"
+              rows="4"
+              maxlength="150"
+              placeholder="Memo (visible to customer)"
+              class="w-full px-4 py-3 text-sm text-v4-main-text-color border border-v4-input-border-color rounded-[10px] shadow-sm resize-y focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color focus:border-v4-brand-focus-color placeholder:text-v4-subtle-text-color"
+              style="background-color: var(--v4-secondary-background-color)"
+            ></textarea>
+          </div>
+
+          <button
+            type="button"
+            class="flex items-center gap-2 text-sm font-medium text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity w-fit"
+            (click)="openAttachmentModal()"
+          >
+            <lucide-icon [img]="PaperclipIcon" [size]="14" />
+            Add Attachment
+            @if (createdExistingAttachments.length > 0) {
+              <span
+                class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-v4-badge-info-text-color text-white text-[12px] font-semibold leading-none"
+              >
+                {{ createdExistingAttachments.length }}
+              </span>
+            }
+          </button>
+        </div>
+
+        <!-- Right: Tax, Credit, Totals -->
+        <div class="flex flex-col gap-3">
+          <!-- Total Credits row -->
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-semibold text-v4-main-text-color"
+              >Total Credits</span
+            >
+            <span class="text-sm font-semibold text-v4-main-text-color">{{
+              creditbalance ? "$" + creditbalance : "$0.00"
+            }}</span>
+          </div>
+
+          <!-- Tax + Apply Credit -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Select Tax</label
+              >
+              <app-v4-common-dropdown
+                [config]="{
+                  placeholder: 'Select Tax',
+                  displayField: 'name',
+                  outputField: 'id',
+                  enableAddNew: true,
+                  customLabelTemplate: {
+                    enabled: true,
+                    primaryField: 'name',
+                    secondaryField: 'taxPercentage',
+                    separator: ' - ',
+                    secondaryFieldClass: 'text-v4-subtle-text-color'
+                  }
+                }"
+                [listData]="taxList"
+                [(ngModel)]="selectedTaxId"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="onSelectTax($event)"
+                (scrollToEnd)="onScrollTax()"
+                (buttonClick)="opentaxmodal()"
+                appendTo="body"
+              />
+            </div>
+
+            <div class="flex flex-col">
+              <label
+                class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                >Apply Credit</label
+              >
+              <app-common-amount-input-v4
+                formControlName="creditMemoApplied"
+                [height]="'44px'"
+                [isRequired]="false"
+                (blurEvent)="ApplyCredit($event)"
+              />
+            </div>
+          </div>
+
+          @if (Applycredit) {
+            <p class="text-xs text-v4-common-red-color -mt-1">
+              Should not exceed Invoice Amount or available Credit.
+            </p>
+          }
+
+          <!-- Summary -->
+          <div
+            class="bg-v4-tertiary-background-color rounded-xl overflow-hidden border border-v4-border-color"
+          >
+            <div class="px-4 py-3 space-y-2.5">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Sub Total</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  subtotal().toFixed(2) | currency
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Total Tax</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  taxAmount.toFixed(2) | currency
+                }}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-v4-border-color"></div>
+
+            <div class="px-4 py-3 space-y-2.5">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Invoice Total</span
+                >
+                <span class="text-sm text-v4-main-text-color font-peridot">{{
+                  invoiceTotal().toFixed(2) | currency
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-v4-secondary-text-color font-peridot"
+                  >Applied Credits</span
+                >
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-v4-main-text-color font-peridot">
+                    {{
+                      invoice.get("creditMemoApplied")?.value || 0 | currency
+                    }}
+                  </span>
+                  @if (editMode && invoice.get("creditMemoApplied")?.value) {
+                    <button
+                      type="button"
+                      class="p-0.5 rounded hover:bg-v4-badge-error-bg-color text-v4-common-red-color transition-colors"
+                      (click)="deleteApplied()"
+                      matTooltip="Remove applied credit"
+                    >
+                      <lucide-icon [img]="Trash2Icon" [size]="12" />
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-v4-border-color"></div>
+            <div class="flex justify-between items-center px-4 py-3">
+              <span class="text-sm font-bold text-v4-primary-brand-bold-color font-peridot"
+                >Grand Total</span
+              >
+              <span
+                class="text-base font-bold text-v4-primary-brand-bold-color font-peridot"
+              >
+                {{ grandTotal().toFixed(2) | currency }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'secondary', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="close()"
+      [disabled]="Applycredit || isSubmitting() || isSending()"
+    />
+
+    @if (editMode) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Update"
+        (clickEvent)="update()"
+        [disabled]="Applycredit || isSubmitting()"
+        [loading]="isSubmitting()"
+      />
+    } @else {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Save"
+        (clickEvent)="submit()"
+        [disabled]="Applycredit || isSubmitting()"
+        [loading]="isSubmitting()"
+      />
+
+      @if (!clone) {
+        <div class="send-dropdown-wrapper">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-4 h-[44px] rounded-lg bg-v4-primary-brand-color text-v4-secondary-brand-color font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="Applycredit || isSending()"
+            (click)="toggleSendMenu($event)"
+          >
+            @if (isSending()) {
+              <lucide-icon
+                [img]="LoaderCircleIcon"
+                [size]="16"
+                class="animate-spin"
+              />
+            }
+            <span>Send</span>
+            <lucide-icon [img]="ChevronDownIcon" [size]="14" />
+          </button>
+
+          @if (isSendMenuOpen()) {
+            <div class="send-dropdown">
+              <button type="button" (click)="SaveEmail('mail')">Mail</button>
+              <button type="button" (click)="SaveEmail('email')">Email</button>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>
