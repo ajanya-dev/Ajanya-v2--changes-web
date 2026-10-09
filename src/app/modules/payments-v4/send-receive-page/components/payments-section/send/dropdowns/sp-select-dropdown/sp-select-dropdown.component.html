@@ -1,0 +1,149 @@
+<app-sp-dropdown-shell
+  [label]="label()"
+  [tooltip]="tooltip()"
+  [required]="required()"
+  [disabled]="disabled()"
+  [disabledHint]="disabledHint()"
+  [(open)]="open"
+  [searchable]="searchable()"
+  [searchPlaceholder]="searchPlaceholder()"
+  [dropUp]="dropUp()"
+  [searchTerm]="term()"
+  (searchTermChange)="term.set($event)"
+  (cleared)="clearSelection()"
+>
+  <ng-container trigger>
+    @if (showIcon()) {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon
+          [img]="icon() === 'bank' ? BankIcon : ListIcon"
+          [size]="16"
+        />
+      </span>
+    }
+    @if (selectedItem(); as item) {
+      <span class="min-w-0 flex-1 text-left">
+        <span
+          appEllipsisActive
+          #triggerTitle="ellipsisElement"
+          [matTooltip]="titleOf(item)"
+          [matTooltipDisabled]="!triggerTitle.ellipsisActive"
+          matTooltipPosition="above"
+          class="block truncate font-bold leading-tight text-v4-main-text-color text-[13px]"
+          >{{ titleOf(item) }}</span
+        >
+        @if (subtitleOf(item)) {
+          <span
+            appEllipsisActive
+            #triggerSubtitle="ellipsisElement"
+            [matTooltip]="subtitleOf(item)"
+            [matTooltipDisabled]="!triggerSubtitle.ellipsisActive"
+            matTooltipPosition="above"
+            class="block truncate text-v4-tertiary-text-color text-[12px]"
+            >{{ subtitleOf(item) }}</span
+          >
+        }
+      </span>
+    } @else {
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholder() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel>
+    @if (enableAddNew()) {
+      <button
+        type="button"
+        class="mb-2 flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-dashed border-v4-border-success p-2 text-left transition-colors hover:bg-v4-surface-success"
+        (click)="onAddNew()"
+      >
+        <span
+          class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-surface-success-bold text-v4-text-success"
+        >
+          <lucide-icon [img]="PlusIcon" [size]="15" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block font-bold text-v4-text-success text-[13px]">{{
+            addNewLabel()
+          }}</span>
+          @if (addNewHint()) {
+            <span class="block truncate text-v4-text-success text-[12px]">{{
+              addNewHint()
+            }}</span>
+          }
+        </span>
+      </button>
+    }
+
+    <div class="flex max-h-[280px] flex-col gap-[3px] overflow-y-auto">
+      @if (loading()) {
+        @for (row of skeletonRows; track row) {
+          <div class="flex animate-pulse items-center gap-2.5 rounded-[9px] p-2">
+            <span
+              class="h-7 w-7 shrink-0 rounded-[10px] bg-v4-brand-tint"
+            ></span>
+            <span class="min-w-0 flex-1">
+              <span
+                class="block h-3 w-3/4 rounded bg-v4-brand-tint"
+              ></span>
+            </span>
+          </div>
+        }
+      } @else {
+        @for (item of filteredItems(); track trackItem($index, item)) {
+          <button
+            type="button"
+            class="flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-transparent p-2 text-left transition-colors hover:bg-v4-main-background-color"
+            [ngClass]="{ 'bg-v4-brand-tint': isSelected(item), '!border-v4-brand-tint-strong': isSelected(item) }"
+            (click)="onSelect(item)"
+          >
+            @if (showIcon()) {
+              <span
+                class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] transition-colors"
+                [class.bg-v4-primary-brand-color]="isSelected(item)"
+                [class.text-white]="isSelected(item)"
+                [ngClass]="{ 'bg-v4-brand-tint': !isSelected(item) }"
+                [class.text-v4-brand-border-color]="!isSelected(item)"
+              >
+                <lucide-icon
+                  [img]="icon() === 'bank' ? BankIcon : ListIcon"
+                  [size]="15"
+                />
+              </span>
+            }
+            <span class="min-w-0 flex-1">
+              <span
+                appEllipsisActive
+                #rowTitle="ellipsisElement"
+                [matTooltip]="titleOf(item)"
+                [matTooltipDisabled]="!rowTitle.ellipsisActive"
+                matTooltipPosition="above"
+                class="block truncate font-bold text-v4-main-text-color text-[13px]"
+                >{{ titleOf(item) }}</span
+              >
+              @if (subtitleOf(item)) {
+                <span
+                  appEllipsisActive
+                  #rowSubtitle="ellipsisElement"
+                  [matTooltip]="subtitleOf(item)"
+                  [matTooltipDisabled]="!rowSubtitle.ellipsisActive"
+                  matTooltipPosition="above"
+                  class="block truncate text-v4-tertiary-text-color text-[12px]"
+                  >{{ subtitleOf(item) }}</span
+                >
+              }
+            </span>
+          </button>
+        } @empty {
+          <p class="py-4 text-center text-v4-tertiary-text-color text-[12px]">
+            {{ emptyText() }}
+          </p>
+        }
+      }
+    </div>
+  </div>
+</app-sp-dropdown-shell>

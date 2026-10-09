@@ -1,0 +1,494 @@
+@if (isAPILoaded && getFormControl().controls.length > 0) {
+  <div class="font-peridot mb-4">
+    <!-- Section header -->
+    <div
+      role="presentation"
+      class="flex items-center justify-between px-4 py-3 bg-v4-secondary-background-color rounded-t-xl border border-v4-border-color cursor-pointer"
+      (click)="isCollapsed = !isCollapsed"
+    >
+      <div class="flex items-center gap-2">
+        <lucide-icon
+          [img]="MailIcon"
+          [size]="18"
+          class="text-v4-common-blue-color"
+        />
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-funnel">
+          Check Mail from Bank
+        </h3>
+        <span class="text-xs text-v4-tertiary-text-color"
+          >({{ getFormControl().controls.length }})</span
+        >
+      </div>
+      <lucide-icon
+        [img]="ChevronDownIcon"
+        [size]="18"
+        class="text-v4-subtle-text-color transition-transform"
+        [class.rotate-180]="!isCollapsed"
+      />
+    </div>
+
+    <!-- Table -->
+    @if (!isCollapsed) {
+      <div
+        class="overflow-x-auto border border-t-0 border-v4-border-color rounded-b-xl [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar-thumb]:rounded"
+      >
+        <table class="v4-ocw-table" [formGroup]="dynamicForm">
+          <thead>
+            <tr>
+              <th class="!text-center w-8">#</th>
+              <th>Bank</th>
+              <th>Payee</th>
+              <th>Amount</th>
+              <th class="min-w-[240px]">Shipping Type</th>
+              <th class="min-w-[208px] w-[208px]">Email</th>
+              <th class="min-w-[208px]">SMS</th>
+              <th>Check No</th>
+              <th>Cost</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="checkMailFormArray">
+            @for (
+              data of getFormControl().controls;
+              track data;
+              let i = $index
+            ) {
+              <tr [formGroupName]="i">
+                <!-- # -->
+                <td class="!text-center w-8">
+                  <span class="text-xs text-v4-tertiary-text-color">{{
+                    i + 1
+                  }}</span>
+                </td>
+
+                <!-- Bank icon -->
+                <td>
+                  <lucide-icon
+                    [img]="LandmarkIcon"
+                    [size]="16"
+                    class="text-v4-common-blue-color"
+                    [matTooltip]="data?.value?.accountName || ''"
+                  />
+                </td>
+
+                <!-- Payee with clickable invalid address labels -->
+                <td class="relative">
+                  <div class="flex flex-col">
+                    <span
+                      class="text-xs font-medium text-v4-main-text-color whitespace-nowrap truncate max-w-[180px] inline-block"
+                    >
+                      {{ data?.value?.payee }}
+                    </span>
+                    <div class="flex items-center gap-x-2 whitespace-nowrap">
+                      @if (!customAddress && !data?.value?.toAddressValidity?.success) {
+                        <span
+                          role="presentation"
+                          class="text-[12px] text-v4-common-red-color cursor-pointer hover:underline inline-flex items-center gap-0.5 whitespace-nowrap bg-v4-badge-error-bg-color rounded px-1.5 py-0.5"
+                          (click)="
+                            openEditPayeeAddress(
+                              data?.value?.enc_payee_id,
+                              data?.value?.checkNo,
+                              data?.value?.enc_id
+                            )
+                          "
+                        >
+                          Invalid To Address
+                          <lucide-icon [img]="PencilIcon" [size]="10" />
+                        </span>
+                      }
+                      @if (!customAddress && !data?.value?.fromAddressValidity?.success) {
+                        <span
+                          role="presentation"
+                          class="text-[12px] text-v4-common-red-color cursor-pointer hover:underline inline-flex items-center gap-0.5 whitespace-nowrap bg-v4-badge-error-bg-color rounded px-1.5 py-0.5"
+                          (click)="
+                            openEditBankAddress(
+                              data?.value?.enc_bank_account_id,
+                              data?.value?.checkNo
+                            )
+                          "
+                        >
+                          Invalid From Address
+                          <lucide-icon [img]="PencilIcon" [size]="10" />
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Amount -->
+                <td>
+                  <span
+                    class="text-xs font-medium text-v4-main-text-color whitespace-nowrap"
+                  >
+                    ${{ data?.value?.amount }}
+                  </span>
+                </td>
+
+                <!-- Shipping Type -->
+                <td>
+                  <div class="w-[240px] angular-ocw-v4-ng-select-dropdown">
+                    <ng-select
+                      class="height-1 ng-dropdown-panel-v4 text-sm"
+                      [class.v4-dropdown-invalid]="
+                        data.get('shippingType')?.invalid &&
+                        data.get('shippingType')?.touched
+                      "
+                      [clearable]="true"
+                      [searchable]="!data.get('shippingType')?.value"
+                      formControlName="shippingType"
+                      placeholder="Select Shipping"
+                      (change)="onShippingTypeChange(i)"
+                      appendTo="body"
+                    >
+                      @for (
+                        type of sortedOption(data?.value?.country);
+                        track type
+                      ) {
+                        <ng-option [value]="type.id">
+                          <div
+                            class="w-full flex items-center gap-2 font-funnel"
+                          >
+                            <div class="flex-shrink-0 w-10">
+                              <img
+                                [src]="
+                                  type.carrier_id === 2
+                                    ? 'assets/images/fedex.svg'
+                                    : 'assets/images/usps-logo.png'
+                                "
+                                class="w-8 h-6 object-contain"
+                                alt=""
+                              />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                              <span class="text-v4-main-text-color text-xs">{{
+                                type.name
+                              }}</span>
+                            </div>
+                            <!-- <div class="flex-shrink-0 font-semibold text-v4-common-green-color text-xs">
+                              ${{ type.amount }}
+                            </div> -->
+                          </div>
+                        </ng-option>
+                      }
+                    </ng-select>
+                  </div>
+                </td>
+
+                <!-- Email with validation on checkbox -->
+                <td class="min-w-[208px]">
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      class="v4-checkbox-sm flex-shrink-0"
+                      formControlName="informed_payee_email"
+                      (change)="onEmailToggle(i)"
+                    />
+                    <app-common-input-v4
+                      [placeholder]="'Email'"
+                      [type]="'email'"
+                      [control]="data?.value?.payee_email"
+                      formControlName="payee_email"
+                      fieldHeight="32px"
+                    />
+                  </div>
+                </td>
+
+                <!-- SMS with validation -->
+                <td class="w-52">
+                  <div class="relative">
+                    <div class="flex items-center gap-2 min-w-[214px]">
+                      <input
+                        type="checkbox"
+                        class="v4-checkbox-sm"
+                        formControlName="send_sms"
+                        (change)="onSmsToggle(i)"
+                      />
+                      <div
+                        class="flex-1 rounded-xl"
+                        [class.!border]="
+                          data?.get('payee_phone')?.invalid &&
+                          data?.get('payee_phone')?.touched
+                        "
+                        [class.!border-v4-common-red-color]="
+                          data?.get('payee_phone')?.invalid &&
+                          data?.get('payee_phone')?.touched
+                        "
+                      >
+                        <app-phone-input-v4
+                          formControlName="payee_phone"
+                          [fieldHeight]="'32px'"
+                          [isFieldRequired]="false"
+                        ></app-phone-input-v4>
+                      </div>
+                    </div>
+                    @if (isPhoneNumberRequired[i]) {
+                      <span class="text-[12px] text-v4-common-red-color mt-0.5">
+                        Phone number is required for FedEx shipping.
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Check No -->
+                <td>
+                  <span
+                    class="text-xs text-v4-secondary-text-color whitespace-nowrap"
+                  >
+                    {{ data?.value?.checkNo || "--" }}
+                  </span>
+                </td>
+
+                <!-- Cost -->
+                <td>
+                  <span
+                    class="text-xs font-medium text-v4-main-text-color whitespace-nowrap"
+                  >
+                    @if (shippingCalculation) {
+                      ${{
+                        +(
+                          shippingCalculation?.single_items[
+                            data?.value?.enc_id
+                          ] || 0
+                        ) | number: "1.2-2"
+                      }}
+                    } @else {
+                      $0.00
+                    }
+                  </span>
+                </td>
+
+                <!-- Action (Attachments) -->
+                <td class="text-center">
+                  <button aria-label="Attachments"
+                    type="button"
+                    class="p-1 rounded hover:bg-v4-tertiary-background-color text-v4-subtle-text-color relative"
+                    [matBadge]="getAttachmentCount(data?.value?.enc_id)"
+                    matBadgeSize="small"
+                    matBadgeOverlap="true"
+                    [matBadgeHidden]="
+                      getAttachmentCount(data?.value?.enc_id) < 1
+                    "
+                    matTooltip="Attachments"
+                    (click)="openAttachmentModal(data?.value?.enc_id, i)"
+                  >
+                    <lucide-icon [img]="PaperclipIcon" [size]="16" />
+                  </button>
+                </td>
+              </tr>
+            }
+
+            @if (getFormControl().controls.length === 0) {
+              <tr>
+                <td [attr.colspan]="10" class="text-center !py-8">
+                  <span class="text-sm text-v4-subtle-text-color"
+                    >No check mail payments</span
+                  >
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <!-- Custom Address Shipping Section -->
+        <div
+          class="px-4 py-3 border-t border-v4-border-color bg-v4-secondary-background-color"
+        >
+          <div class="flex flex-wrap items-center gap-4">
+            <!-- Radio: Ship to payee address -->
+            <label
+              class="flex items-center gap-1.5 cursor-pointer text-xs text-v4-main-text-color"
+            >
+              <input
+                type="radio"
+                name="payee-address"
+                class="v4-radio-sm"
+                [checked]="!customAddress"
+                (change)="onShippingAddressChange('payee')"
+              />
+              Ship to payee address
+            </label>
+
+            <!-- Radio: Ship to custom address -->
+            <label
+              class="flex items-center gap-1.5 cursor-pointer text-xs text-v4-main-text-color"
+            >
+              <input
+                type="radio"
+                name="payee-address"
+                class="v4-radio-sm"
+                [checked]="customAddress"
+                (change)="onShippingAddressChange('custom')"
+              />
+              Ship to custom address
+              <lucide-icon
+                [img]="CircleHelpIcon"
+                [size]="14"
+                class="text-v4-subtle-text-color cursor-pointer"
+                matTooltip="Select this option to send multiple checks to a single address"
+              />
+            </label>
+
+            <!-- Individual Envelope checkbox (shown when custom address) -->
+            @if (customAddress) {
+              <label
+                class="flex items-center gap-1.5 cursor-pointer text-xs text-v4-main-text-color"
+              >
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-sm"
+                  [(ngModel)]="isEnvelopeChecked"
+                  [ngModelOptions]="{ standalone: true }"
+                  (change)="onChangeEnvelope()"
+                />
+                Individual Envelope
+                <lucide-icon
+                  [img]="CircleHelpIcon"
+                  [size]="14"
+                  class="text-v4-subtle-text-color cursor-pointer"
+                  matTooltip="We will put each check inside individual envelopes, costing you an extra $0.8 per envelope."
+                />
+              </label>
+            }
+          </div>
+
+          <!-- Custom Address Options (Mail From / Mail To / Shipping Type) -->
+          @if (customAddress) {
+            <div class="flex flex-wrap items-end gap-4 mt-3">
+              <!-- Mail From -->
+              <div class="flex flex-col gap-1">
+                <label
+                  class="text-[12px] font-semibold text-v4-tertiary-text-color uppercase tracking-wide"
+                  for="mail-from"
+                  >Mail From</label
+                >
+                <div class="flex items-center gap-1">
+                  <div class="w-44 angular-ocw-v4-ng-select-dropdown">
+                    <ng-select
+                      class="height-1"
+                      [clearable]="false"
+                      [(ngModel)]="currentMailFrom"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="Select"
+                      (change)="onMailFromChange()"
+                      appendTo="body"
+                    >
+                      <ng-option value=" ">Select</ng-option>
+                      @for (addr of shippingAddressFrom; track addr) {
+                        <ng-option [value]="addr.id">{{ addr.name }}</ng-option>
+                      }
+                    </ng-select>
+                  </div>
+                  <button attr.aria-label="{{ isMailFromEditable ? 'Edit Address' : 'Add Address' }}"
+                    type="button"
+                    class="p-1.5 rounded border border-v4-border-color hover:bg-v4-tertiary-background-color text-v4-subtle-text-color"
+                    (click)="openAddMailAddressModal('mail-from')"
+                    matTooltip="{{
+                      isMailFromEditable ? 'Edit Address' : 'Add Address'
+                    }}"
+                  >
+                    <lucide-icon
+                      [img]="isMailFromEditable ? PencilIcon : PlusIcon"
+                      [size]="14"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mail To -->
+              <div class="flex flex-col gap-1">
+                <label
+                  class="text-[12px] font-semibold text-v4-tertiary-text-color uppercase tracking-wide"
+                  for="mail-to"
+                  >Mail To</label
+                >
+                <div class="flex items-center gap-1">
+                  <div class="w-44 angular-ocw-v4-ng-select-dropdown">
+                    <ng-select
+                      class="height-1"
+                      [clearable]="false"
+                      [(ngModel)]="currentMailTo"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="Select"
+                      (change)="onMailToChange()"
+                      appendTo="body"
+                    >
+                      <ng-option value=" ">Select</ng-option>
+                      @for (addr of shippingAddressTo; track addr) {
+                        <ng-option [value]="addr.id">{{ addr.name }}</ng-option>
+                      }
+                    </ng-select>
+                  </div>
+                  <button attr.aria-label="{{ isMailToEditable ? 'Edit Address' : 'Add Address' }}"
+                    type="button"
+                    class="p-1.5 rounded border border-v4-border-color hover:bg-v4-tertiary-background-color text-v4-subtle-text-color"
+                    (click)="openAddMailAddressModal('mail-to')"
+                    matTooltip="{{
+                      isMailToEditable ? 'Edit Address' : 'Add Address'
+                    }}"
+                  >
+                    <lucide-icon
+                      [img]="isMailToEditable ? PencilIcon : PlusIcon"
+                      [size]="14"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Shipping Type (for custom address) -->
+              <div class="flex flex-col gap-1">
+                <label
+                  class="text-[12px] font-semibold text-v4-tertiary-text-color uppercase tracking-wide"
+                  for="shipping-type"
+                  >Shipping Type</label
+                >
+                <div class="w-[340px] angular-ocw-v4-ng-select-dropdown">
+                  <ng-select
+                    class="height-1"
+                    [clearable]="false"
+                    [(ngModel)]="costCalculation.custom_address_shipping_type"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Select"
+                    (change)="onCustomShippingTypeChange()"
+                    appendTo="body"
+                  >
+                    @for (type of shippingVar; track type) {
+                      <ng-option [value]="type.id">
+                        <div class="w-full flex items-center gap-2 font-funnel">
+                          <div class="flex-shrink-0 w-10">
+                            <img
+                              [src]="
+                                type.carrier_id === 2
+                                  ? 'assets/images/fedex.svg'
+                                  : 'assets/images/usps-logo.png'
+                              "
+                              class="w-8 h-6 object-contain"
+                              alt=""
+                            />
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <span class="text-v4-main-text-color text-xs">{{
+                              type.name
+                            }}</span>
+                          </div>
+                        </div>
+                      </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Total shipping fee footer -->
+        <div
+          class="flex justify-end px-4 py-2 border-t border-v4-border-color bg-v4-secondary-background-color"
+        >
+          <span class="text-xs font-semibold text-v4-main-text-color">
+            Shipping Fee: ${{ +(totalShippingFee || 0) | number: "1.2-2" }}
+          </span>
+        </div>
+      </div>
+    }
+  </div>
+}

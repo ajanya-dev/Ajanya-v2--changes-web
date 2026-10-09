@@ -1,0 +1,195 @@
+<div class="v4-common-dropdown compact relative w-full font-peridot px-[1px]">
+  <button
+    type="button"
+    cdkOverlayOrigin
+    #trigger="cdkOverlayOrigin"
+    #triggerEl
+    (click)="toggleDropdown()"
+    [disabled]="!optionResult"
+    class="flex items-center w-full disabled:opacity-50"
+    [ngClass]="
+      hasSelection
+        ? 'border-v4-primary-brand-color text-v4-primary-brand-color'
+        : ''
+    "
+  >
+    <span
+      class="flex-1 text-left truncate"
+      [ngClass]="
+        hasSelection ? 'text-v4-main-text-color' : 'text-v4-subtle-text-color'
+      "
+    >
+      {{ displayLabel || allLabel }}
+    </span>
+    @if (hasSelection) {
+      <span
+        role="button"
+        tabindex="0"
+        (click)="clearSelection($event)"
+        (keydown.enter)="clearSelection($event)"
+        (keydown.space)="clearSelection($event); $event.preventDefault()"
+        class="p-0.5 hover:bg-v4-tertiary-background-color rounded mr-1 cursor-pointer"
+      >
+        <lucide-icon
+          name="x"
+          [size]="10"
+          class="text-v4-subtle-text-color"
+        ></lucide-icon>
+      </span>
+    }
+    <lucide-icon
+      name="chevron-down"
+      [size]="14"
+      class="text-v4-subtle-text-color transition-transform"
+      [ngClass]="isOpen ? 'rotate-180' : ''"
+    ></lucide-icon>
+  </button>
+
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="trigger"
+    [cdkConnectedOverlayOpen]="isOpen"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+    (backdropClick)="closeDropdown()"
+    [cdkConnectedOverlayPositions]="overlayPositions"
+    [cdkConnectedOverlayMinWidth]="overlayWidth || 100"
+    [cdkConnectedOverlayWidth]="overlayWidth || 100"
+  >
+    <div
+      class="v4-common-dropdown-panel compact flex flex-col max-h-[200px] w-full box-border"
+    >
+      <!-- Search input -->
+      @if (searchable) {
+        <div class="p-2 border-b border-v4-border-color">
+          <div class="relative">
+            <lucide-icon
+              name="search"
+              [size]="12"
+              class="absolute left-2 top-1/2 -translate-y-1/2 text-v4-subtle-text-color"
+            ></lucide-icon>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search..."
+              class="w-full pl-7 pr-2 py-1 text-xs border border-v4-input-border-color rounded focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color bg-v4-secondary-background-color text-v4-main-text-color"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Options list -->
+      <div class="overflow-y-auto flex-1">
+        <!-- All option -->
+        <div
+          role="button"
+          tabindex="0"
+          class="v4-dropdown-item gap-2"
+          [class.selected]="!hasSelection"
+          (click)="selectOption(null)"
+          (keydown.enter)="selectOption(null)"
+          (keydown.space)="selectOption(null); $event.preventDefault()"
+        >
+          <span class="truncate">{{ allLabel }}</span>
+          @if (!hasSelection) {
+            <lucide-icon name="check" [size]="12" class="ml-auto"></lucide-icon>
+          }
+        </div>
+
+        <!-- Normal options -->
+        @for (option of filteredOptions; track option.name) {
+          <div
+            role="button"
+            tabindex="0"
+            class="v4-dropdown-item gap-2"
+            [class.selected]="isSelected(option)"
+            (click)="selectOption(option)"
+            (keydown.enter)="selectOption(option)"
+            (keydown.space)="selectOption(option); $event.preventDefault()"
+          >
+            @if (multiSelect) {
+              <div
+                class="w-4 h-4 border rounded flex items-center justify-center"
+                [ngClass]="
+                  isSelected(option)
+                    ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                    : 'border-v4-border-color'
+                "
+              >
+                @if (isSelected(option)) {
+                  <lucide-icon
+                    name="check"
+                    [size]="10"
+                    class="text-white"
+                  ></lucide-icon>
+                }
+              </div>
+            }
+            <span
+              appEllipsisActive
+              #optionLabel="ellipsisElement"
+              class="truncate"
+              [matTooltip]="option.name"
+              [matTooltipDisabled]="!optionLabel.ellipsisActive"
+              >{{ option.name }}</span
+            >
+            @if (!multiSelect && isSelected(option)) {
+              <lucide-icon
+                name="check"
+                [size]="12"
+                class="ml-auto"
+              ></lucide-icon>
+            }
+          </div>
+        }
+
+        <!-- Check status group -->
+        @if (checkStatus.length > 0) {
+          <div
+            class="px-2 py-1.5 text-[12px] font-bold text-v4-tertiary-text-color uppercase tracking-wide bg-v4-tertiary-background-color border-t border-v4-border-color"
+          >
+            Check
+          </div>
+          @for (option of filteredCheckStatus; track option.name) {
+            <div
+              role="button"
+              tabindex="0"
+              class="v4-dropdown-item gap-2 pl-4"
+              [class.selected]="isCheckSelected(option)"
+              (click)="selectCheckOption(option)"
+              (keydown.enter)="selectCheckOption(option)"
+              (keydown.space)="
+                selectCheckOption(option); $event.preventDefault()
+              "
+            >
+              <span
+                appEllipsisActive
+                #optionLabel="ellipsisElement"
+                class="truncate"
+                [matTooltip]="option.name"
+                [matTooltipDisabled]="!optionLabel.ellipsisActive"
+                >{{ option.name }}</span
+              >
+              @if (isCheckSelected(option)) {
+                <lucide-icon
+                  name="check"
+                  [size]="12"
+                  class="ml-auto"
+                ></lucide-icon>
+              }
+            </div>
+          }
+        }
+
+        <!-- No results -->
+        @if (filteredOptions.length === 0 && filteredCheckStatus.length === 0) {
+          <div
+            class="px-2 py-3 text-xs text-v4-tertiary-text-color text-center"
+          >
+            No options found
+          </div>
+        }
+      </div>
+    </div>
+  </ng-template>
+</div>

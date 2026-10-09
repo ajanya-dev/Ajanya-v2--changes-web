@@ -1,0 +1,377 @@
+<div class="relative max-w-[550px]">
+  <!-- Page 1: FAQ Selection -->
+  @if (currentStep() === "faq-selection") {
+    <div class="pb-4">
+      <!-- Header with close button -->
+      <div class="relative mb-6">
+        <!-- Close button - absolute top right -->
+        <div
+          role="presentation"
+          (click)="onClose()"
+          class="absolute top-0 right-0 cursor-pointer p-1 z-10"
+        >
+          <fa-icon
+            class="text-secondary-text-color hover:text-main-text-color text-xl"
+            [icon]="faXmark"
+          ></fa-icon>
+        </div>
+        <!-- Title centered -->
+        <div class="text-center pr-8">
+          <h2 class="text-2xl font-bold text-main-text-color mb-2">
+            Tell us what you need from this integration
+          </h2>
+          <p class="text-sm text-secondary-text-color">
+            Select the challenges you face with <span class="font-semibold">{{ appName() }}</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- FAQ List -->
+      <div class="max-h-[400px] overflow-y-auto space-y-3">
+        @if (loadingFaqs()) {
+          <div class="flex justify-center py-8">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-common-blue-color"
+            ></div>
+          </div>
+        } @else {
+          @for (faq of faqs(); track faq.id) {
+            <div
+              class="border rounded-lg transition-all duration-200"
+              [ngClass]="{
+                'border-common-blue-color bg-common-secondary-blue-color':
+                  isFaqSelected(faq.id),
+                'border-input-border-color': !isFaqSelected(faq.id)
+              }"
+            >
+              <!-- FAQ Header -->
+              <div
+                class="flex items-center gap-3 p-4 cursor-pointer"
+                role="presentation"
+                (click)="toggleFaqSelection(faq.id)"
+              >
+                <!-- Checkbox -->
+                <div
+                  class="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors "
+                  [ngClass]="{
+                    'border-common-blue-color bg-common-blue-color':
+                      isFaqSelected(faq.id),
+                    'border-input-border-color': !isFaqSelected(faq.id)
+                  }"
+                >
+                  @if (isFaqSelected(faq.id)) {
+                    <fa-icon
+                      class="text-white text-[12px]"
+                      [icon]="faCheck"
+                    ></fa-icon>
+                  }
+                </div>
+
+                <!-- Question -->
+                <span
+                  class="flex-1 text-sm text-main-text-color font-medium break-words"
+                >
+                  {{ faq.question }}
+                </span>
+
+                <!-- Expand/Collapse Icon -->
+                <fa-icon
+                  class="text-secondary-text-color cursor-pointer"
+                  [icon]="isFaqExpanded(faq.id) ? faChevronUp : faChevronDown"
+                  (click)="toggleFaqExpansion(faq.id); $event.stopPropagation()"
+                ></fa-icon>
+              </div>
+
+              <!-- Answer (Expandable) -->
+              @if (isFaqExpanded(faq.id)) {
+                <div class="px-4 pb-4 pl-12 ">
+                  <p class="text-sm border-t border-input-border-color pt-4">
+                    <span class="text-common-blue-color font-semibold"
+                      >Solution:
+                    </span>
+                    <span class="text-secondary-text-color">{{
+                      faq.answer
+                    }}</span>
+                  </p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (faqs().length === 0 && !loadingFaqs()) {
+            <div class="text-center py-8 text-secondary-text-color mr-2">
+              No FAQs available for this integration.
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="flex justify-end items-center gap-4 pt-6">
+        <span class="text-sm text-secondary-text-color">
+          {{ selectedCount }} selected
+        </span>
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Continue"
+          (clickEvent)="goToRequirements()"
+          [width]="'120px'"
+        ></app-common-button-v35>
+      </div>
+    </div>
+  }
+
+  <!-- Page 2: Requirements Form -->
+  @if (currentStep() === "requirements") {
+    <form [formGroup]="requirementsForm" (ngSubmit)="onSubmit()">
+      <div class="flex justify-between items-start">
+        <!-- Close button -->
+        <!-- Logo Header -->
+        <div class="flex justify-center items-start gap-2 mb-4">
+          <img
+            ngSrc="assets/images/ocw_powered_by_zilmoney_logo.svg"
+            alt="OnlineCheckWriter powered by Zil Money"
+            width="150"
+            height="30"
+            priority
+          />
+        </div>
+
+        <div role="presentation" (click)="onClose()" class="cursor-pointer p-1">
+          <fa-icon
+            class="text-secondary-text-color hover:text-main-text-color text-xl"
+            [icon]="faXmark"
+          ></fa-icon>
+        </div>
+      </div>
+
+      <div class="pb-4 relative">
+        <!-- Handshake Icon -->
+        <div class="flex justify-center mb-4">
+          <img
+            ngSrc="assets/images/handshake.svg"
+            alt="Handshake"
+            width="100"
+            height="100"
+            priority
+          />
+        </div>
+
+        <!-- Title -->
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-main-text-color mb-2">
+            Tell Us Your Requirements
+          </h2>
+          <p class="text-sm text-secondary-text-color max-w-md mx-auto">
+            Based on your selections, help us understand how you want this
+            {{ appName() }} integration to work for your team.
+          </p>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="space-y-5">
+          <!-- Name -->
+          <div class="relative">
+            <label
+              for="name"
+              class="block text-sm font-semibold text-main-text-color mb-2"
+            >
+              Contact Name
+              <span class="text-common-red-color font-semibold">*</span>
+            </label>
+            <!-- <app-common-input-field
+              id="name"
+              formControlName="contactPersonName"
+              placeholder="Enter contact person name"
+            /> -->
+            <input
+              id="name"
+              type="text"
+              formControlName="contactName"
+              placeholder="Enter contact name"
+              class="w-full px-3 py-2 border border-input-border-color rounded-md text-main-text-color bg-main-background-color focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent"
+            />
+            <app-control-message-v35 [control]="requirementsForm.get('contactName')!" />
+          </div>
+          <!-- Email -->
+          <div class="relative">
+            <label
+              for="email"
+              class="block text-sm font-semibold text-main-text-color mb-2"
+            >
+              Contact Email
+              <span class="text-common-red-color font-semibold">*</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              formControlName="contactEmail"
+              placeholder="Enter contact email"
+              class="w-full px-3 py-2 border border-input-border-color rounded-md text-main-text-color bg-main-background-color focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent"
+            />
+            <app-control-message-v35 [control]="requirementsForm.get('contactEmail')!" />
+          </div>
+          <!-- Phone -->
+          <div class="relative">
+            <label
+              for="phone"
+              class="block text-sm font-semibold text-main-text-color mb-2"
+            >
+              Contact Phone
+              <span class="text-common-red-color font-semibold">*</span>
+            </label>
+            <app-new-phone-input
+              id="phone"
+              formControlName="contactPhone"
+              (countryDropdown)="countryChange($event)"
+              (countryCodeEmit)="countryCodeChange($event)"
+              dropdownWidth="250px"
+            />
+            <app-control-message-v35 [control]="requirementsForm.get('contactPhone')!" />
+          </div>
+          <!-- Additional Details (Optional) -->
+          <div class="relative">
+            <label
+              for="additionalDetails"
+              class="block text-sm font-semibold text-main-text-color mb-2"
+            >
+              Anything else you'd like to share? (Optional)
+            </label>
+            <textarea
+              id="additionalDetails"
+              formControlName="additionalDetails"
+              placeholder="Share any additional details or specific requirements..."
+              class="w-full px-3 py-2 border border-input-border-color rounded-md text-main-text-color bg-main-background-color resize-none focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent min-h-[100px]"
+              rows="4"
+            ></textarea>
+            <p class="text-xs text-secondary-text-color mt-1">
+              Feel free to share any additional details that would help us
+              understand your needs better.
+            </p>
+          </div>
+
+          <!-- Desired Date (Required) -->
+          <div class="relative">
+            <label
+              for="desiredDate"
+              class="block text-sm font-semibold text-main-text-color mb-2"
+            >
+              When do you need this?
+              <span class="text-common-red-color font-semibold">*</span>
+            </label>
+            <div class="relative">
+              <input
+                id="desiredDate"
+                type="date"
+                formControlName="desiredDate"
+                class="w-full px-3 py-2 border border-input-border-color rounded-md text-main-text-color bg-main-background-color focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent"
+                [min]="minDate"
+                (keydown)="$event.preventDefault()"
+              />
+            </div>
+            <app-control-message-v35
+              [control]="requirementsForm.get('desiredDate')!"
+              [customMessages]="{
+                required: 'Please select when you need this integration'
+              }"
+            ></app-control-message-v35>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-between gap-3 pt-6">
+          <app-common-button-v35
+            [type]="{ style: 'bordered', name: 'main' }"
+            text="Back"
+            (clickEvent)="goBackToFaqSelection()"
+            [width]="'80px'"
+          ></app-common-button-v35>
+          <app-common-button-v35
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Submit Request"
+            (clickEvent)="onSubmit()"
+            [width]="'140px'"
+            [loading]="loading()"
+          ></app-common-button-v35>
+        </div>
+      </div>
+    </form>
+  }
+
+  <!-- Page 3: Success -->
+  @if (currentStep() === "success") {
+    <div class="pb-4 text-center relative max-w-[440px]">
+      <!-- Close button -->
+      <div
+        role="presentation"
+        (click)="onClose()"
+        class="absolute -top-1 right-0 cursor-pointer p-1"
+      >
+        <fa-icon
+          class="text-secondary-text-color hover:text-main-text-color text-xl"
+          [icon]="faXmark"
+        ></fa-icon>
+      </div>
+      <!-- Success Icon -->
+      <div class="flex justify-center mb-6 pt-4">
+        <div
+          class="w-16 h-16 rounded-full bg-common-blue-color flex items-center justify-center"
+        >
+          <fa-icon class="text-white text-3xl" [icon]="faCircleCheck"></fa-icon>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-2xl font-bold text-main-text-color mb-2">
+        Request Submitted Successfully!
+      </h2>
+      <p class="text-sm text-secondary-text-color mb-6 max-w-md mx-auto">
+        Thank you for your interest in the {{ appName() }} integration. Our team
+        will review your request and reach out within 4 hours.
+      </p>
+
+      <!-- Selected Needs Box -->
+      @if (getSelectedFaqs().length > 0) {
+        <div
+          class="bg-common-secondary-blue-color rounded-lg p-4 text-left mb-4 border border-common-blue-color"
+        >
+          <p class="text-sm font-semibold text-main-text-color mb-2">
+            Your selected needs:
+          </p>
+          <ul class="space-y-2">
+            @for (faq of getSelectedFaqs(); track faq.id) {
+              <li
+                class="flex items-start gap-2 text-sm text-secondary-text-color"
+              >
+                <fa-icon
+                  class="text-common-blue-color mt-0.5 flex-shrink-0"
+                  [icon]="faCircleCheck"
+                ></fa-icon>
+                <span>{{ faq.question }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <!-- Next Steps Box -->
+      <div class="bg-common-secondary-blue-color rounded-lg p-4 text-left mb-6 border border-common-blue-color">
+        <p class="text-sm">
+          <span class="font-semibold text-main-text-color">Next Steps: </span>
+          <span class="text-secondary-text-color">
+            We'll contact you to discuss your integration needs and timeline.
+            Our team will reach out within 4 hours.
+          </span>
+        </p>
+      </div>
+
+      <!-- Done Button -->
+      <app-common-button-v35
+        [type]="{ style: 'filled', name: 'main' }"
+        text="Done"
+        (clickEvent)="onDone()"
+        [width]="'100%'"
+      ></app-common-button-v35>
+    </div>
+  }
+</div>

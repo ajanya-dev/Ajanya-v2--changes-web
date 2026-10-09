@@ -1,0 +1,290 @@
+<div class="flex h-full flex-col">
+  <!-- Scrollable content -->
+  <div class="flex-1 overflow-y-auto">
+    <div
+      class="panel-body panel-body--surface panel-body--capped"
+      [class.panel-body--expanded]="expanded()"
+      [ngClass]="
+        expanded() && !loading()
+          ? '!grid-cols-1 grid-rows-[auto_1fr] [&>.pd-card]:!max-h-none'
+          : ''
+      "
+    >
+      @if (loading()) {
+        <app-pd-skeleton
+          [rows]="3"
+          [tiles]="0"
+          [timeline]="2"
+          [party]="false"
+        />
+      } @else {
+        <!-- Ticket -->
+        <div class="pd-card flex min-w-0 flex-col gap-2.5">
+          <p
+            class="m-0 font-peridot text-sm font-bold text-v4-main-text-color [overflow-wrap:anywhere]"
+          >
+            {{ row()?.subject }}
+          </p>
+
+          @if (firstMessage) {
+            <div class="flex flex-wrap items-start gap-6">
+              <div class="flex items-start gap-1.5">
+                <lucide-icon
+                  name="user"
+                  [size]="13"
+                  [strokeWidth]="1.75"
+                  class="mt-0.5 shrink-0 text-v4-tertiary-text-color"
+                />
+                <div class="flex flex-col font-peridot leading-[1.4]">
+                  <span class="text-[12px] text-v4-tertiary-text-color"
+                    >Created by</span
+                  >
+                  <span class="text-[12px] font-semibold text-v4-main-text-color">{{
+                    firstMessage.userName
+                  }}</span>
+                </div>
+              </div>
+              <div class="flex items-start gap-1.5">
+                <lucide-icon
+                  name="calendar"
+                  [size]="13"
+                  [strokeWidth]="1.75"
+                  class="mt-0.5 shrink-0 text-v4-tertiary-text-color"
+                />
+                <div class="flex flex-col font-peridot leading-[1.4]">
+                  <span class="text-[12px] text-v4-tertiary-text-color"
+                    >Created</span
+                  >
+                  <span
+                    class="text-[12px] font-semibold tabular-nums text-v4-main-text-color"
+                    >{{ toMonthFirst(firstMessage.createdAt) }}</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Initial message -->
+            <div
+              class="rounded-[12px] border border-v4-border-subtle-color bg-v4-tertiary-background-color p-3 font-peridot text-[12px] leading-[1.55] text-v4-main-text-color [overflow-wrap:anywhere]"
+            >
+              {{ firstMessage.message }}
+            </div>
+
+            <!-- First message attachments -->
+            @if (firstMessage.attachments?.length > 0) {
+              <div class="flex flex-col gap-1.5">
+                @for (att of firstMessage.attachments; track att.id) {
+                  <ng-container
+                    [ngTemplateOutlet]="fileChip"
+                    [ngTemplateOutletContext]="{ $implicit: att }"
+                  />
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Conversation -->
+        <div class="pd-card flex min-h-[320px] min-w-0 flex-1 flex-col">
+          <div
+            class="mb-2.5 flex items-center justify-between border-b border-v4-border-subtle-color pb-2.5 font-peridot"
+          >
+            <span class="text-xs font-bold text-v4-main-text-color"
+              >Conversation ({{ conversationCount }})</span
+            >
+            <span class="text-[12px] font-medium text-v4-tertiary-text-color">{{
+              lastReply
+            }}</span>
+          </div>
+
+          <div class="flex flex-1 flex-col gap-2.5 overflow-auto">
+            @for (msg of conversationMessages; track $index) {
+              <!-- Support replies sit left, the customer's own replies right. -->
+              <div
+                class="flex max-w-[88%] flex-col gap-1.5 border px-3 py-2.5"
+                [ngClass]="
+                  msg.senderType === 2
+                    ? 'self-start rounded-[12px_12px_12px_4px] border-v4-border-color bg-v4-tertiary-background-color'
+                    : 'self-end rounded-[12px_12px_4px_12px] border-[color-mix(in_srgb,var(--v4-primary-brand-color)_28%,transparent)] bg-[color-mix(in_srgb,var(--v4-primary-brand-color)_8%,var(--v4-secondary-background-color))]'
+                "
+              >
+                <div class="flex items-center gap-2 font-peridot">
+                  <span
+                    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
+                    [ngClass]="
+                      msg.senderType === 2
+                        ? 'bg-v4-badge-neutral-bg-color text-v4-badge-neutral-text-color'
+                        : 'bg-v4-primary-brand-color text-white'
+                    "
+                  >
+                    {{ getInitial(msg.userName) }}
+                  </span>
+                  <span
+                    class="min-w-0 truncate text-[12px] font-semibold text-v4-main-text-color"
+                    [matTooltip]="msg.userName"
+                    >{{ msg.userName }}</span
+                  >
+                  @if (msg.senderType === 2) {
+                    <span
+                      class="inline-flex shrink-0 items-center rounded-[12px] bg-v4-badge-info-bg-color px-1.5 py-px text-[12px] font-bold leading-[1.4] text-v4-badge-info-text-color"
+                      >Support</span
+                    >
+                  }
+                  <span class="flex-1"></span>
+                  <span
+                    class="shrink-0 whitespace-nowrap text-[12px] tabular-nums text-v4-tertiary-text-color"
+                    >{{ toMonthFirst(msg.createdAt) }}</span
+                  >
+                </div>
+                <p
+                  class="m-0 pl-8 font-peridot text-[12px] leading-[1.55] text-v4-main-text-color [overflow-wrap:anywhere]"
+                >
+                  {{ msg.message }}
+                </p>
+
+                <!-- Message attachments -->
+                @for (att of msg.attachments; track att.id) {
+                  <div class="ml-8">
+                    <ng-container
+                      [ngTemplateOutlet]="fileChip"
+                      [ngTemplateOutletContext]="{ $implicit: att }"
+                    />
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Reply area (sticky bottom, only when ticket is Open) -->
+  @if (isOpen) {
+    <div
+      class="flex shrink-0 flex-col gap-1 border-t border-v4-border-subtle-color bg-v4-secondary-background-color px-4 pb-3 pt-2.5"
+    >
+      <!-- Pending attachments -->
+      @if (attachArray().length > 0) {
+        <div class="flex flex-wrap gap-1.5">
+          @for (item of attachArray(); track item.id; let i = $index) {
+            <div
+              class="flex h-8 max-w-[220px] items-center gap-2 rounded-[8px] border border-v4-border-color bg-v4-secondary-background-color pl-2.5 pr-1.5 font-peridot"
+            >
+              <lucide-icon
+                [img]="FileIcon"
+                [size]="13"
+                class="shrink-0 text-v4-badge-error-text-color"
+              />
+              <span
+                class="min-w-0 flex-1 truncate text-[12px] font-semibold text-v4-main-text-color"
+                [matTooltip]="item.imageName"
+                >{{ item.imageName }}</span
+              >
+              <button
+                type="button"
+                class="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-none bg-transparent text-v4-secondary-text-color hover:bg-v4-list-hover-color"
+                (click)="removeAttachment(item.id, i)"
+                matTooltip="Delete attachment"
+                aria-label="Delete attachment"
+              >
+                <lucide-icon name="x" [size]="13" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Input row -->
+      <div class="flex gap-1.5">
+        <input
+          type="text"
+          class="h-8 min-w-0 flex-1 rounded-[8px] border bg-v4-secondary-background-color px-2.5 font-peridot text-[12px] text-v4-main-text-color outline-none placeholder:text-v4-tertiary-text-color"
+          [ngClass]="
+            replyError()
+              ? 'border-v4-badge-error-text-color'
+              : 'border-v4-input-border-color'
+          "
+          placeholder="Type your reply…"
+          [(ngModel)]="messageText"
+          (ngModelChange)="replyError.set(false)"
+          (keydown.enter)="sendMessage()"
+        />
+
+        <!-- Attachment button -->
+        <label
+          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-v4-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:bg-v4-list-hover-color"
+          [class.pointer-events-none]="uploading()"
+          matTooltip="Attach file"
+        >
+          @if (uploading()) {
+            <lucide-icon name="loader-circle" [size]="14" class="animate-spin" />
+          } @else {
+            <lucide-icon name="paperclip" [size]="14" />
+          }
+          <input
+            type="file"
+            class="hidden"
+            accept=".pdf,.jpg,.png"
+            [disabled]="attachArray().length >= 3"
+            (change)="uploadFile($event)"
+          />
+        </label>
+
+        <!-- Send button -->
+        <button
+          type="button"
+          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-v4-primary-brand-color bg-v4-primary-brand-color text-white hover:brightness-110"
+          [disabled]="sending()"
+          matTooltip="Send reply"
+          aria-label="Send reply"
+          (click)="sendMessage()"
+        >
+          @if (sending()) {
+            <lucide-icon name="loader-circle" [size]="14" class="animate-spin" />
+          } @else {
+            <lucide-icon name="send" [size]="14" />
+          }
+        </button>
+      </div>
+
+      @if (replyError()) {
+        <span
+          class="flex items-center gap-1 font-peridot text-[12px] font-semibold text-v4-badge-error-text-color"
+        >
+          <lucide-icon name="circle-alert" [size]="12" />
+          Enter a reply before sending.
+        </span>
+      }
+    </div>
+  }
+</div>
+
+<!-- File chip: red file icon, name, download. -->
+<ng-template #fileChip let-att>
+  <div
+    class="flex h-8 cursor-pointer items-center gap-2 rounded-[8px] border border-v4-border-color bg-v4-secondary-background-color pl-2.5 pr-1.5 font-peridot hover:bg-v4-list-hover-color"
+    role="presentation"
+    (click)="viewAttachment(att.type, att.id)"
+  >
+    <lucide-icon
+      [img]="FileIcon"
+      [size]="13"
+      class="shrink-0 text-v4-badge-error-text-color"
+    />
+    <span
+      class="min-w-0 flex-1 truncate text-[12px] font-semibold text-v4-main-text-color"
+      [matTooltip]="getAttachmentName(att)"
+      >{{ getAttachmentName(att) }}</span
+    >
+    <button
+      type="button"
+      class="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-none bg-transparent text-v4-secondary-text-color hover:bg-v4-list-hover-color"
+      matTooltip="Download"
+      aria-label="Download attachment"
+      (click)="downloadAttachment($event, att)"
+    >
+      <lucide-icon name="download" [size]="13" />
+    </button>
+  </div>
+</ng-template>

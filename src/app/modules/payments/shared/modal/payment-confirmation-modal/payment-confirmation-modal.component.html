@@ -1,0 +1,190 @@
+<div class="w-full pb-3 flex justify-start items-center gap-2">
+  <div class="w-2/3 text-lg font-semibold">Payment Confirmation</div>
+  <div class="w-1/3 flex justify-end pt-0" mat-dialog-close>
+    <fa-icon
+      [icon]="faCross"
+      class="text-sm text-secondary-text-color cursor-pointer"
+    ></fa-icon>
+  </div>
+</div>
+
+<div
+  class="w-full p-2.5 mt-3 flex flex-col justify-center items-center rounded-xl text-xs font-semibold text-secondary-text-color bg-common-secondary-blue-color"
+>
+  <div>Total Amount</div>
+  <div class="text-2xl font-semibold text-common-blue-color">
+    ${{ data.amount }}
+  </div>
+</div>
+
+<div class="flex flex-col justify-start py-3 p-2">
+  <div
+    class="w-full flex justify-start gap-2 p-2.5 border-b border-secondary-background-color"
+  >
+    @if (data.type === "cloud") {
+      <img
+        src="../../../../../../assets/icon/zill.svg"
+        class="w-4 h-4 object-contain !text-common-blue-color"
+        alt=""
+      />
+    } @else {
+      <fa-icon
+        [icon]="iconType"
+        class="text-sm text-common-blue-color"
+      ></fa-icon>
+    }
+    <div class="w-1/2 text-secondary-text-color text-sm">
+      {{ paymentTypeLabel }}
+    </div>
+    <div class="w-1/2 text-main-text-color text-sm text-right font-semibold">
+      {{ data.bankName }} {{ data.accNumber }}
+    </div>
+  </div>
+  <div
+    class="w-full flex justify-start gap-2 p-2.5 border-b border-secondary-background-color"
+  >
+    <fa-icon
+      [icon]="faUser"
+      class="w-5 h-5 text-sm text-common-blue-color"
+    ></fa-icon>
+    <div class="w-1/2 text-secondary-text-color text-sm">Recipient/Payee</div>
+    <div class="w-1/2 text-main-text-color text-right text-sm font-semibold">
+      {{ data.payeeName }}
+    </div>
+  </div>
+  <div class="w-full flex justify-start gap-2 p-2.5">
+    <img
+      src="../../../../../../assets/icon/money 1 1.svg"
+      class="w-5 h-5 object-contain !text-common-blue-color"
+      alt=""
+    />
+    <div class="w-1/2 text-secondary-text-color text-sm">Payment Method</div>
+    <div class="w-1/2 text-main-text-color text-right text-sm font-semibold">
+      @if (data.paymentMethod === 'RTP') {
+        Real Time Instant Payment
+      } @else {
+        {{ data.paymentMethod }}
+      }
+      @if (data.shippingType) {
+        <br />
+        <span class="text-[12px]">{{ shippingType }}</span>
+      }
+    </div>
+  </div>
+
+  <div
+    class="w-full p-1.5 px-2.5 mt-2 flex border border-common-secondary-blue-color justify-start gap-3 items-center rounded-xl"
+  >
+    <div>
+      <fa-icon
+        [icon]="faClock"
+        class="text-sm text-common-blue-color"
+      ></fa-icon>
+    </div>
+    <div class="text-sm items-center">
+      <div class="text-secondary-text-color">
+        Processing Time:
+        <span class="font-semibold text-sm text-main-text-color">
+          @if (
+            data.type === "wallet" &&
+            data.paymentMethod === "ACH / Direct Deposit"
+          ) {
+            1-3 business days
+          } @else {
+            {{
+              estimatedTime
+                ? estimatedTime
+                : "1 - 5 business days approximately"
+            }}
+          }
+        </span>
+      </div>
+    </div>
+  </div>
+
+  @if (showAchWireMaintenanceNotice) {
+    <div
+      class="w-full mt-2 flex justify-start gap-3 p-2.5 rounded-xl border border-common-yellow-color bg-common-secondary-yellow-color"
+      role="alert"
+    >
+      <fa-icon
+        [icon]="faWarning"
+        class="text-sm text-common-yellow-color mt-0.5 shrink-0"
+      ></fa-icon>
+      <div class="text-xs leading-relaxed text-main-text-color">
+        <span class="block font-semibold mb-0.5">Notice</span>
+        ACH and Wire transfers will be temporarily unavailable from
+        <span class="font-semibold">June 23 to June 25</span> due to scheduled maintenance. We apologize for the inconvenience and appreciate your patience.
+      </div>
+    </div>
+  }
+
+  @if (showUnverifiedBankWarning) {
+    <div
+      class="w-full p-1.5 px-2.5 mt-2 flex border border-common-yellow-color bg-common-secondary-yellow-color justify-start gap-3 items-center rounded-xl"
+    >
+      <div>
+        <fa-icon
+          [icon]="faWarning"
+          class="text-sm text-common-yellow-color"
+        ></fa-icon>
+      </div>
+      <div class="text-xs text-main-text-color">
+        <strong>Almost there!</strong> The payee just needs to verify their bank account before this transaction can be completed.
+      </div>
+    </div>
+  }
+
+  @if (hasRecurringDetails) {
+    <div
+      class="w-full p-1.5 px-2.5 mt-2 flex border border-common-secondary-blue-color justify-start gap-3 items-center rounded-xl"
+    >
+      <div>
+        <fa-icon
+          [icon]="faRepeat"
+          class="text-sm text-common-blue-color"
+        ></fa-icon>
+      </div>
+      <div class="text-xs items-center w-full">
+        <div class="text-secondary-text-color text-sm mb-1">Recurring Payment Details</div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between">
+            <span class="text-secondary-text-color">Frequency:</span>
+            <span class="font-semibold text-main-text-color">
+              {{ formattedFrequency }}
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-secondary-text-color">Start Date:</span>
+            <span class="font-semibold text-main-text-color">
+              {{ formattedStartDate }}
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-secondary-text-color">Pay Until:</span>
+            <span class="font-semibold text-main-text-color">
+              {{ formattedPayUntil ? formattedPayUntil : 'Cancelled' }} 
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="w-full flex justify-between gap-3 py-3 px-2 pb-0 text-sm">
+  <app-common-button-v35
+    mat-dialog-close
+    type=""
+    text="Cancel"
+    width="100%"
+    customClasses="text-common-blue-color border border-input-border-color !px-2.5 !w-44 !h-10 !rounded-md"
+  ></app-common-button-v35>
+  <app-common-button-v35
+    type="submit"
+    (clickEvent)="onConfirm()"
+    text="Confirm Payment"
+    width="100%"
+    customClasses="text-[#FFFFFF] bg-common-blue-color !px-2.5 !w-44 !h-10 !rounded-md"
+  ></app-common-button-v35>
+</div>

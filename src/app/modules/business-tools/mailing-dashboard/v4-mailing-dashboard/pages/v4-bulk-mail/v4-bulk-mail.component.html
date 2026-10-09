@@ -1,0 +1,594 @@
+<div
+  class="bg-v4-main-background-color w-full relative"
+>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <button
+          type="button"
+          class="flex items-center gap-2 text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color transition-colors mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          (click)="goBack()"
+          [disabled]="isProcessPaymentsLoading()"
+        >
+          <lucide-angular name="arrow-left" [size]="18" />
+          <span class="text-sm font-peridot font-medium">Back to Dashboard</span>
+        </button>
+        <h1 class="text-xl font-funnel font-semibold text-v4-main-text-color">
+          Bulk Mailing System
+        </h1>
+        <p class="text-sm text-v4-secondary-text-color font-peridot mt-0.5">
+          Create and manage bulk mailings with ease
+        </p>
+      </div>
+      <app-common-button-v4
+        text="History"
+        lucideIcon="clock"
+        [type]="{ style: 'outline', name: 'main' }"
+        toolTip="View Bulk Mail History"
+        (clickEvent)="goToHistory()"
+        [disabled]="isProcessPaymentsLoading()"
+      />
+    </div>
+
+    <!-- Stepper -->
+    <div class="flex gap-3 mb-6">
+      <div class="flex-1">
+        <div class="h-1.5 rounded-full mb-2 bg-v4-secondary-brand-color"></div>
+        <span class="text-xs font-peridot font-semibold text-v4-main-text-color">
+          Group Details
+        </span>
+      </div>
+      <div class="flex-1">
+        <div class="h-1.5 rounded-full mb-2 bg-v4-tertiary-background-color"></div>
+        <span class="text-xs font-peridot text-v4-subtle-text-color">
+          Review &amp; Submit
+        </span>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="step-card">
+      <!-- Group + Address Row -->
+      <div [formGroup]="shippingForm" class="flex flex-col gap-4">
+        <div>
+          <div class="field-label-row">
+            <label class="field-label">
+              Group Name <span class="text-v4-common-red-color">*</span>
+            </label>
+            <lucide-angular
+              name="info"
+              [size]="13"
+              class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+              matTooltip="A group name to identify this mailing group later"
+            />
+          </div>
+          <app-common-input-v4
+            placeholder="Enter group name"
+            formControlName="groupName"
+            [isFieldRequired]="false"
+            [maxLength]="75"
+          />
+          <app-control-message-v4
+            [control]="shippingForm.controls.groupName"
+            label="Group Name"
+            [customMessages]="{
+              required: 'This field is required.',
+              maxlength: 'Group name must be 75 characters or less.'
+            }"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <div class="field-label-row">
+              <label class="field-label">Where to send?</label>
+              <lucide-angular
+                name="info"
+                [size]="13"
+                class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                matTooltip="Select destination address"
+              />
+            </div>
+            <div class="flex gap-2 items-stretch">
+              <div class="flex-1 min-w-0">
+                <app-v4-common-dropdown
+                  [config]="{
+                    placeholder: 'Select Address',
+                    displayField: 'name',
+                    enableAddNew: true,
+                    addNewLabel: 'New Address',
+                    addNewSubLabel: 'Add a new destination address',
+                    style: { size: '0', enableLabelIcon: false }
+                  }"
+                  [listData]="shippingAddressToList()"
+                  appendTo="body"
+                  formControlName="shippingAddressTo"
+                  (buttonClick)="onAddNewToAddress()"
+                />
+              </div>
+              @if (selectedToAddress()?.id) {
+                <button aria-label="Edit address"
+                  type="button"
+                  class="address-edit-btn"
+                  matTooltip="Edit address"
+                  (click)="onEditToAddress()"
+                  [disabled]="isProcessPaymentsLoading()"
+                >
+                  <lucide-angular name="square-pen" [size]="16" />
+                </button>
+              }
+            </div>
+            <app-control-message-v4
+              [control]="shippingForm.controls.shippingAddressTo"
+              label="Address"
+              [customMessages]="{ required: 'This field is required.' }"
+            />
+          </div>
+          <div>
+            <div class="field-label-row">
+              <label class="field-label">Sending From</label>
+              <lucide-angular
+                name="info"
+                [size]="13"
+                class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                matTooltip="Select origin address"
+              />
+            </div>
+            <div class="flex gap-2 items-stretch">
+              <div class="flex-1 min-w-0">
+                <app-v4-common-dropdown
+                  [config]="{
+                    placeholder: 'Select From Address',
+                    displayField: 'name',
+                    enableAddNew: true,
+                    addNewLabel: 'New Address',
+                    addNewSubLabel: 'Add a new origin address',
+                    style: { size: '0', enableLabelIcon: false }
+                  }"
+                  [listData]="shippingAddressFromList()"
+                  appendTo="body"
+                  formControlName="shippingAddressFrom"
+                  (buttonClick)="onAddNewFromAddress()"
+                />
+              </div>
+              @if (selectedFromAddress()?.id) {
+                <button aria-label="Edit address"
+                  type="button"
+                  class="address-edit-btn"
+                  matTooltip="Edit address"
+                  (click)="onEditFromAddress()"
+                  [disabled]="isProcessPaymentsLoading()"
+                >
+                  <lucide-angular name="square-pen" [size]="16" />
+                </button>
+              }
+            </div>
+            <app-control-message-v4
+              [control]="shippingForm.controls.shippingAddressFrom"
+              label="From Address"
+              [customMessages]="{ required: 'This field is required.' }"
+            />
+          </div>
+          <div>
+            <label class="field-label">Shipping Type</label>
+            <app-v4-common-dropdown
+              [config]="{
+                placeholder: 'Select Type',
+                displayField: 'name',
+                style: { size: '0', enableLabelIcon: false }
+              }"
+              [listData]="customShippingTypeList()"
+              [loading]="isShippingTypesLoading()"
+              appendTo="body"
+              formControlName="shippingType"
+            />
+            <app-control-message-v4
+              [control]="shippingForm.controls.shippingType"
+              label="Shipping Type"
+              [customMessages]="{ required: 'This field is required.' }"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Hide Default Settings link -->
+      <div class="flex justify-end mt-3">
+        <button
+          type="button"
+          class="flex items-center gap-1 text-sm font-peridot font-medium text-v4-primary-brand-bold-color hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          (click)="hideDefaultSettings.set(!hideDefaultSettings())"
+          [disabled]="isProcessPaymentsLoading()"
+        >
+          <lucide-angular
+            [name]="hideDefaultSettings() ? 'chevron-down' : 'chevron-up'"
+            [size]="14"
+          />
+          {{ hideDefaultSettings() ? 'Show Default Settings' : 'Hide Default Settings' }}
+        </button>
+      </div>
+
+      <!-- Default Settings -->
+      @if (!hideDefaultSettings()) {
+        <fieldset class="default-settings-box mt-2">
+          <legend class="default-settings-legend">
+            Default Settings (Applied to New Rows)
+          </legend>
+          <div
+            class="grid grid-cols-2 md:grid-cols-3 min-[1350px]:[grid-template-columns:repeat(5,minmax(0,1fr))_auto] gap-3 px-4 pb-4 pt-1"
+            [formGroup]="basePaymentForm"
+          >
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs">Bank Account</label>
+                <lucide-angular
+                  name="info"
+                  [size]="12"
+                  class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                  matTooltip="Select payment source"
+                />
+              </div>
+              <app-bank-ac-dropdown-v4
+                formControlName="paymentSource"
+                customHeight="0"
+                append="ng-select"
+              />
+            </div>
+<!-- Invoice section temporarily commented out from default settings
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs">Invoice</label>
+                <lucide-angular
+                  name="info"
+                  [size]="12"
+                  class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                  matTooltip="Invoice number"
+                />
+              </div>
+              <app-common-input-v4
+                placeholder="Invoice"
+                formControlName="invoiceNumber"
+                [isFieldRequired]="false"
+                maxlength="150"
+              />
+            </div>
+-->
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs" for="">Amount</label>
+              </div>
+              <app-common-amount-input-v4 formControlName="amount" />
+            </div>
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs">Date</label>
+                <lucide-angular
+                  name="info"
+                  [size]="12"
+                  class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                  matTooltip="The check issue date, which is applicable solely for check payments."
+                />
+              </div>
+              <app-v4-date-picker
+                placeholder="Select date"
+                formControlName="date"
+              />
+            </div>
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs">Category</label>
+                <lucide-angular
+                  name="info"
+                  [size]="12"
+                  class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                  matTooltip="Payment category"
+                />
+              </div>
+              <app-category-dropdown-v4
+                formControlName="category"
+                [enableAddNew]="true"
+              />
+            </div>
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs" for="">Memo</label>
+                <lucide-angular
+                name="info"
+                [size]="12"
+                class="text-v4-tertiary-text-color cursor-pointer shrink-0"
+                matTooltip="Brief note about this payment. Example: 'Office rent' or 'Supplies'."
+              />
+              </div>
+              <app-common-input-v4
+                placeholder="Memo"
+                formControlName="memo"
+                [isFieldRequired]="false"
+                [maxLength]="150"
+              />
+            </div>
+            <div class="flex flex-col gap-0">
+              <div class="field-label-row">
+                <label class="field-label-xs">Attachment</label>
+              </div>
+              <button aria-label="Upload one file that will be automatically attached to every mailing in this group"
+                type="button"
+                [matBadge]="attachmentCount"
+                matBadgeSize="small"
+                [matBadgeHidden]="attachmentCount < 1"
+                matTooltip="Upload one file that will be automatically attached to every mailing in this group"
+                class="border border-v4-border-color bg-v4-secondary-background-color h-[40px] w-[40px] rounded-lg flex items-center justify-center hover:border-v4-primary-brand-bold-color transition-colors text-v4-primary-brand-bold-color relative shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                (click)="openAddAttachment()"
+                [disabled]="isProcessPaymentsLoading()"
+              >
+                <lucide-angular name="paperclip" [size]="16" />
+              </button>
+            </div>
+          </div>
+        </fieldset>
+      }
+
+      <!-- Payment Details -->
+      <div class="mt-5">
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3"
+        >
+          <div class="flex items-center gap-4">
+            <span class="text-base font-funnel font-semibold text-v4-main-text-color">
+              Payment Details
+            </span>
+            <div class="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                class="cursor-pointer w-4 h-4 accent-v4-primary-brand-bold-color disabled:opacity-50 disabled:cursor-not-allowed"
+                id="individual-envelope"
+                [(ngModel)]="isEnvelopeChecked"
+                [disabled]="isProcessPaymentsLoading()"
+              />
+              <label
+                for="individual-envelope"
+                class="cursor-pointer font-peridot font-normal text-v4-main-text-color text-sm"
+              >
+                Send Each Individually
+              </label>
+              <lucide-angular
+                name="info"
+                [size]="13"
+                class="text-v4-tertiary-text-color cursor-pointer"
+                matTooltip="For privacy, we seal each check in separate envelopes, then combine them into one envelope."
+              />
+            </div>
+          </div>
+          <app-common-button-v4
+            text="Add"
+            lucideIcon="plus"
+            [type]="{ style: 'outline', name: 'main' }"
+            (clickEvent)="pushFormToPaymentsArrayAndUpdateValues()"
+            [disabled]="isProcessPaymentsLoading()"
+          />
+        </div>
+
+        <div class="w-full overflow-x-auto">
+          <div class="form-table">
+            <div
+              class="grid items-center bg-v4-tertiary-background-color border-b border-v4-border-color text-[12px] font-funnel font-semibold uppercase tracking-wide text-v4-secondary-text-color"
+              [style.grid-template-columns]="gridTemplateColumns()"
+            >
+              <div class="px-2 py-2 text-center">#</div>
+              @for (col of resizableColumns(); track col.key; let i = $index) {
+                <div class="px-2 py-2 relative select-none">
+                  <div class="flex items-center gap-1">
+                    {{ col.name }}
+                  </div>
+                  <span
+                    class="resize-handle"
+                    (mousedown)="onResizeStart($event, i)"
+                    matTooltip="Drag to resize"
+                  >
+                    <lucide-angular name="grip-vertical" [size]="12" />
+                  </span>
+                </div>
+              }
+              <div class="px-2 py-2 text-center text-v4-primary-brand-bold-color">
+                <lucide-angular name="paperclip" [size]="12" />
+              </div>
+              <div class="px-2 py-2"></div>
+            </div>
+            <div>
+              @for (
+                paymentForm of paymentsFormArray.controls;
+                track paymentForm;
+                let i = $index
+              ) {
+                <ng-container [formGroup]="paymentForm">
+                  <div
+                    class="grid items-center border-b border-v4-border-color body-row"
+                    [style.grid-template-columns]="gridTemplateColumns()"
+                  >
+                    <div
+                      class="text-sm text-v4-secondary-text-color text-center font-peridot font-medium"
+                    >
+                      {{ i + 1 }}
+                    </div>
+                    <div
+                      class="cell-fixed"
+                      [matTooltip]="
+                        paymentForm.untouched && paymentForm.controls.paymentSource.valid
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.paymentSource
+                      "
+                    >
+                      <app-bank-ac-dropdown-v4
+                        formControlName="paymentSource"
+                        (ready)="
+                          setDropDownAPIAndBindId(
+                            paymentFormsArrayHelpers[i].paymentSourceDropDown,
+                            $event
+                          )
+                        "
+                        [customHeight]="'1'"
+                        [labelIconNeeded]="false"
+                        [dropdownIconNeeded]="false"
+                        [isInvalid]="paymentForm.touched && paymentForm.controls.paymentSource.invalid"
+                        append="ng-select"
+                      />
+                    </div>
+                    <div
+                      class="cell-fixed"
+                      [matTooltip]="
+                        paymentForm.untouched && paymentForm.controls.payee.valid
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.payee
+                      "
+                    >
+                      <app-payee-dropdown-v4
+                        formControlName="payee"
+                        (ready)="
+                          setDropDownAPIAndBindId(
+                            paymentFormsArrayHelpers[i].payeeDropDown,
+                            $event
+                          )
+                        "
+                        [customHeight]="'1'"
+                        [labelIconNeeded]="false"
+                        [dropdownIconNeeded]="false"
+                        [isInvalid]="paymentForm.touched && paymentForm.controls.payee.invalid"
+                        appendTo="ng-select"
+                      />
+                    </div>
+                    <div
+                      [matTooltip]="
+                        paymentForm.untouched
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.invoiceNumber
+                      "
+                    >
+                      <input
+                        type="text"
+                        class="v4-row-input"
+                        placeholder="Invoice"
+                        [class.input-invalid]="paymentForm.touched && paymentForm.controls.invoiceNumber.invalid"
+                        maxlength="30"
+                        formControlName="invoiceNumber"
+                      />
+                    </div>
+                    <div
+                      [matTooltip]="
+                        paymentForm.untouched
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.date
+                      "
+                    >
+                      <app-v4-date-picker
+                        placeholder="Select"
+                        formControlName="date"
+                        [fieldHeight]="'32px'"
+                      />
+                    </div>
+                    <div
+                      class="cell-fixed"
+                      [matTooltip]="
+                        paymentForm.untouched
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.category
+                      "
+                    >
+                      <app-category-dropdown-v4
+                        formControlName="category"
+                        (ready)="
+                          setDropDownAPIAndBindId(
+                            paymentFormsArrayHelpers[i].categoryDropDown,
+                            $event
+                          )
+                        "
+                        [customHeight]="'1'"
+                        [showInfoIcon]="false"
+                        [enableAddNew]="true"
+                        appendTo="body"
+                        dropdownPosition="top"
+                        [zIndex]="paymentsFormArray.controls.length - i + 100"
+                      />
+                    </div>
+                    <div
+                      [matTooltip]="
+                        paymentForm.untouched && paymentForm.controls.amount.valid
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.amount
+                      "
+                    >
+                      <app-common-amount-input-v4
+                        formControlName="amount"
+                        [height]="'32px'"
+                        [customClass]="
+                          paymentForm.touched && paymentForm.controls.amount.invalid
+                            ? '!border-v4-common-red-color'
+                            : ''
+                        "
+                      />
+                    </div>
+                    <div
+                      [matTooltip]="
+                        paymentForm.untouched
+                          ? undefined
+                          : paymentFormValidityStatus.validityStatusArray[i]?.memo
+                      "
+                    >
+                      <input
+                        type="text"
+                        class="v4-row-input"
+                        placeholder="Memo"
+                        [class.input-invalid]="paymentForm.touched && paymentForm.controls.memo.invalid"
+                        maxlength="150"
+                        formControlName="memo"
+                      />
+                    </div>
+                    <div class="flex justify-center items-center">
+                      <button [attr.aria-label]="getAttachmentCount(i) > 0
+                            ? 'Manage attachments for this payment'
+                            : 'Add attachments for this payment'"
+                        type="button"
+                        [matBadge]="getAttachmentCount(i)"
+                        matBadgeSize="small"
+                        [matBadgeHidden]="getAttachmentCount(i) < 1"
+                        [matTooltip]="
+                          getAttachmentCount(i) > 0
+                            ? 'Manage attachments for this payment'
+                            : 'Add attachments for this payment'
+                        "
+                        class="text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity relative disabled:opacity-50 disabled:cursor-not-allowed"
+                        (click)="openAddAttachmentForRow(i)"
+                        [disabled]="isProcessPaymentsLoading()"
+                      >
+                        <lucide-angular name="paperclip" [size]="16" />
+                      </button>
+                    </div>
+                    <div class="flex justify-center items-center">
+                      <button aria-label="Remove row"
+                        type="button"
+                        class="text-v4-common-red-color hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        (click)="removeFormFromPaymentsArray(i)"
+                        matTooltip="Remove row"
+                        [disabled]="isProcessPaymentsLoading()"
+                      >
+                        <lucide-angular name="trash-2" [size]="16" />
+                      </button>
+                    </div>
+                  </div>
+                </ng-container>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Continue button -->
+      <div class="mt-6 flex justify-end">
+        <app-common-button-v4
+          text="Preview & Continue"
+          customPadding="0px 32px"
+          [type]="{ style: 'primary', name: 'main' }"
+          (clickEvent)="processPayments()"
+          [loading]="isProcessPaymentsLoading()"
+          [disabled]="isProcessPaymentsLoading()"
+        />
+      </div>
+    </div>
+</div>

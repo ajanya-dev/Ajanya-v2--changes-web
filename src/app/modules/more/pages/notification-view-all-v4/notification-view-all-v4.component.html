@@ -1,0 +1,235 @@
+<!-- Loading State -->
+@if (initialLoad) {
+  <div class="flex items-center justify-center py-20">
+    <lucide-icon
+      [img]="icons['loader2']"
+      [size]="28"
+      class="text-v4-primary-brand-color animate-spin"
+    ></lucide-icon>
+  </div>
+} @else {
+  <div class="font-peridot">
+    <!-- Page Header -->
+    <app-v4-page-header
+      class="block mb-6"
+      [title]="'Notifications'"
+      [subtitle]="
+        unreadCount > 0
+          ? unreadCount + ' unread notification' + (unreadCount > 1 ? 's' : '')
+          : 'All caught up! · ' + totalNotifications + ' total'
+      "
+      [showBackButton]="true"
+      [backButtonType]="'takeEvent'"
+      (backEvent)="goBack()"
+    >
+      <div headerActions class="flex items-center gap-2">
+        <!-- Refresh -->
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-v4-border-color bg-v4-secondary-background-color text-sm font-medium text-v4-main-text-color hover:bg-v4-tertiary-background-color transition-all cursor-pointer"
+          (click)="refreshNotifications()"
+        >
+          <lucide-icon
+            [img]="icons['refresh-cw']"
+            [size]="14"
+            [class.animate-spin]="isRefreshing"
+          ></lucide-icon>
+          Refresh
+        </button>
+        <!-- Mark all as read -->
+        @if (unreadCount > 0) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-v4-primary-brand-color text-sm font-medium text-v4-secondary-brand-color hover:opacity-90 transition-all cursor-pointer"
+            (click)="markAllRead()"
+          >
+            <lucide-icon [img]="icons['circle-check']" [size]="14"></lucide-icon>
+            Mark all as read
+          </button>
+        }
+      </div>
+    </app-v4-page-header>
+
+    <!-- Tabs -->
+    <div class="mb-4">
+      <app-common-tab-v4
+        [tabs]="tabs"
+        [(activeTab)]="activeTab"
+        [variant]="'toggle'"
+        (tabChange)="onTabChange($event)"
+      />
+    </div>
+
+    <!-- Notification List -->
+    @if (groupedNotifications.length > 0) {
+      <div class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden">
+        @for (group of groupedNotifications; track group.day) {
+          <!-- Day Group Header -->
+          <div
+            class="sticky top-0 z-10 px-4 py-2.5 bg-v4-main-background-color border-b border-v4-border-color"
+          >
+            <div class="flex items-center gap-2">
+              <lucide-icon
+                [img]="icons['clock']"
+                [size]="14"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+              <span class="text-xs font-semibold text-v4-tertiary-text-color uppercase tracking-wide">
+                {{ group.day }} &middot; {{ group.date }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Notification Items -->
+          @for (item of group.notifications; track item.id) {
+            <div
+              class="flex items-start gap-3 px-4 py-3 border-b border-v4-border-color last:border-b-0 transition-all hover:bg-v4-tertiary-background-color"
+            >
+              <!-- Unread Dot -->
+              <div class="w-2 flex-shrink-0 pt-3.5">
+                @if (!item.readAt) {
+                  <span class="block w-2 h-2 rounded-full bg-v4-primary-brand-color"></span>
+                }
+              </div>
+
+              <!-- Icon Circle -->
+              <div
+                class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
+                [style.background-color]="getIconBgColor(item.notification?.icon)"
+              >
+                <lucide-icon
+                  [img]="icons[getNotificationIconInfo(item.notification?.icon).name]"
+                  [size]="16"
+                  [class]="getNotificationIconInfo(item.notification?.icon).color"
+                ></lucide-icon>
+              </div>
+
+              <!-- Content -->
+              <div
+                class="flex-1 min-w-0 cursor-pointer"
+                (click)="goToActionLink(item)"
+              >
+                <p
+                  class="text-sm text-v4-main-text-color"
+                  [class.font-semibold]="!item.readAt"
+                >
+                  {{ item.notification?.title }}
+                </p>
+                @if (item.notification?.discription) {
+                  <p class="text-xs text-v4-tertiary-text-color mt-0.5 line-clamp-2">
+                    {{ item.notification.discription }}
+                  </p>
+                }
+                <span class="text-[12px] text-v4-tertiary-text-color mt-1 inline-block">
+                  {{ item.notification?.time || item.createdAt }}
+                </span>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-1 flex-shrink-0 pt-1">
+                @if (item.notification?.notification_type === 'Requested Attachment') {
+                  <button aria-label="Upload attachment"
+                    type="button"
+                    class="p-1.5 rounded-lg hover:bg-v4-tertiary-background-color transition-all cursor-pointer"
+                    matTooltip="Upload attachment"
+                    (click)="openUploadModal(item)"
+                  >
+                    <lucide-icon
+                      [img]="icons['upload']"
+                      [size]="14"
+                      class="text-v4-tertiary-text-color"
+                    ></lucide-icon>
+                  </button>
+                }
+                <button [attr.aria-label]="(item.readAt ? 'Mark as unread' : 'Mark as read') || null"
+                  type="button"
+                  class="p-1.5 rounded-lg hover:bg-v4-tertiary-background-color transition-all cursor-pointer"
+                  [matTooltip]="item.readAt ? 'Mark as unread' : 'Mark as read'"
+                  (click)="markAsRead(item)"
+                >
+                  <lucide-icon
+                    [img]="item.readAt ? icons['mail'] : icons['mail-open']"
+                    [size]="14"
+                    class="text-v4-tertiary-text-color"
+                  ></lucide-icon>
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPage > 1) {
+        <div class="flex items-center justify-center gap-2 mt-6">
+          <button
+            type="button"
+            class="px-3 py-2 rounded-lg border border-v4-border-color bg-v4-secondary-background-color text-sm text-v4-main-text-color hover:bg-v4-tertiary-background-color transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            [disabled]="initialPage <= 1"
+            (click)="onPrevious()"
+          >
+            <lucide-icon [img]="icons['chevron-left']" [size]="16"></lucide-icon>
+          </button>
+
+          @for (page of pageArr; track $index) {
+            @if (page === '...') {
+              <span class="px-2 text-sm text-v4-tertiary-text-color">...</span>
+            } @else {
+              <button
+                type="button"
+                class="min-w-[36px] h-9 rounded-lg text-sm font-medium transition-all cursor-pointer"
+                [class]="initialPage === page
+                  ? 'bg-v4-primary-brand-color text-v4-secondary-brand-color'
+                  : 'border border-v4-border-color bg-v4-secondary-background-color text-v4-main-text-color hover:bg-v4-tertiary-background-color'"
+                (click)="gotoPage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+          }
+
+          <button
+            type="button"
+            class="px-3 py-2 rounded-lg border border-v4-border-color bg-v4-secondary-background-color text-sm text-v4-main-text-color hover:bg-v4-tertiary-background-color transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            [disabled]="initialPage >= totalPage"
+            (click)="onNext()"
+          >
+            <lucide-icon [img]="icons['chevron-right']" [size]="16"></lucide-icon>
+          </button>
+        </div>
+      }
+    } @else {
+      <!-- Empty State -->
+      <div class="flex flex-col items-center justify-center py-16 text-center">
+        <div
+          class="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+          style="background-color: color-mix(in srgb, var(--v4-primary-brand-color) 10%, transparent)"
+        >
+          <lucide-icon
+            [img]="icons['bell']"
+            [size]="28"
+            class="text-v4-primary-brand-color"
+          ></lucide-icon>
+        </div>
+        @switch (activeTab) {
+          @case ('1') {
+            <p class="text-sm font-medium text-v4-main-text-color">No notifications today</p>
+            <p class="text-xs text-v4-tertiary-text-color mt-1">Check back later for new updates</p>
+          }
+          @case ('2') {
+            <p class="text-sm font-medium text-v4-main-text-color">All caught up!</p>
+            <p class="text-xs text-v4-tertiary-text-color mt-1">You have no unread notifications</p>
+          }
+          @case ('3') {
+            <p class="text-sm font-medium text-v4-main-text-color">No read notifications</p>
+            <p class="text-xs text-v4-tertiary-text-color mt-1">Notifications you've read will appear here</p>
+          }
+          @default {
+            <p class="text-sm font-medium text-v4-main-text-color">No notifications yet</p>
+            <p class="text-xs text-v4-tertiary-text-color mt-1">When you get notifications, they'll show up here</p>
+          }
+        }
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,1573 @@
+@if (isLoading) {
+  <div class="w-full absolute top-0 z-[9999] header-progress-bar">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+}
+<div>
+  <div class="w-full z-[9999] bg-main-background-color sticky top-0">
+    <div
+      class="w-full flex py-2.5 h-14 px-2.5 justify-between border-b border-solid border-b-secondary-background-color"
+    >
+      <div
+        class="flex gap-2"
+        appOutsideClick
+        (clickOutSide)="isQuickNavigationMenuShown = false"
+      >
+        <fa-icon
+          [icon]="faBars"
+          class="text-main-text-color cursor-pointer lg:hidden text-[26px]"
+          (click)="showMobileMenus()"
+        />
+        <button
+          appWhiteLabel hiddenIf="isCSNHCRequirement"
+          class="flex items-center justify-center w-9 h-9 rounded bg-common-secondary-blue-color cursor-pointer"
+          (click)="onCreateNew()"
+          [matTooltip]="!isQuickNavigationMenuShown ? 'Favorites and quick actions' : 'Close'"
+        >
+          <fa-icon
+            [icon]="isQuickNavigationMenuShown ? faStarSolid : faStar"
+            [ngClass]="isQuickNavigationMenuShown ? 'text-common-yellow-color' : 'text-main-text-color'"
+            class="text-sm pointer-events-none"
+            role="presentation"
+          ></fa-icon>
+        </button>
+
+
+        <!-- favorite buttons-->
+        <!-- Desktop: Horizontal layout -->
+        <div class="hidden 2xl:flex items-center gap-2">
+        @for(button of fouritButtons; track button.id; let i = $index){
+          <li
+          role="presentation"
+          class="single_list flex flex-col !p-0 text-center cursor-pointer "
+          [routerLink]="button.routerLink"
+          (click)="
+            onQuickNavigationButtonClick(button.onClick)
+          "
+        >
+          <div
+            [ngClass]="[
+              button.iconBackground
+                ? button.iconBackground
+                : '',
+              !button?.faIcon &&
+              button?.icon
+                ? ' hover:shadow-md'
+                : 'hover:!bg-common-dark-blue-color hover:!text-white'
+            ]"
+            class="group file-icon w-10 h-10 flex items-center justify-center rounded-lg"
+            [matTooltip]="button.title"
+          >
+            @if (
+              !button?.faIcon &&
+              button?.icon
+            ) {
+              <img
+                width="24"
+                height="24"
+                ngSrc="{{ button.icon }}"
+                alt=""
+                class="!w-6 !h-6"
+              />
+            }
+            @if (button?.faIcon) {
+              <fa-icon
+                [ngClass]="
+                  button.iconColor
+                    ? button.iconColor
+                    : ''
+                "
+                [icon]="button?.faIcon"
+              ></fa-icon>
+            }
+          </div>
+        </li>
+        }
+        </div>
+
+        <!-- Mobile: Toggleable vertical layout -->
+        @if (fouritButtons.length > 0) {
+          <div class="2xl:hidden relative"
+               appOutsideClick
+               (clickOutSide)="isFavoriteButtonsExpanded = false">
+            <!-- Toggle button -->
+            <button
+              class="flex items-center justify-center w-9 h-9 rounded bg-common-secondary-blue-color cursor-pointer"
+              (click)="onFavoriteButtonClick($event)"
+              (keydown.enter)="toggleFavoriteButtons()"
+              (keydown.space)="toggleFavoriteButtons()"
+              [matTooltip]="isFavoriteButtonsExpanded ? 'Hide Favorites' : 'Show Favorites'"
+              tabindex="0"
+            >
+              <fa-icon
+                [icon]="faStarSolid"
+                class="text-common-yellow-color text-sm"
+                role="presentation"
+              ></fa-icon>
+            </button>
+            
+            <!-- Dropdown menu -->
+            @if (isFavoriteButtonsExpanded) {
+              <div class="absolute top-12 left-0 z-[9999] bg-main-background-color shadow-common-box-shadow rounded-md border border-input-border-color min-w-[200px]">
+                <div class="p-2">
+                  @for(button of fouritButtons; track button.id; let i = $index){
+                    <div
+                      class="flex items-center gap-3 p-2 rounded hover:bg-secondary-background-color cursor-pointer"
+                      [routerLink]="button.routerLink"
+                      (click)="
+                        onQuickNavigationButtonClick(button.onClick);
+                        isFavoriteButtonsExpanded = false;
+                      "
+                      (keydown.enter)="
+                        onQuickNavigationButtonClick(button.onClick);
+                        isFavoriteButtonsExpanded = false;
+                      "
+                      tabindex="0"
+                      role="button"
+                    >
+                      <div
+                        [ngClass]="[
+                          button.iconBackground
+                            ? button.iconBackground
+                            : '',
+                          !button?.faIcon &&
+                          button?.icon
+                            ? ' hover:shadow-md'
+                            : 'hover:!bg-common-dark-blue-color hover:!text-white'
+                        ]"
+                        class="group file-icon w-8 h-8 flex items-center justify-center rounded-lg"
+                      >
+                        @if (
+                          !button?.faIcon &&
+                          button?.icon
+                        ) {
+                          <img
+                            width="20"
+                            height="20"
+                            ngSrc="{{ button.icon }}"
+                            alt=""
+                            class="!w-5 !h-5"
+                          />
+                        }
+                        @if (button?.faIcon) {
+                          <fa-icon
+                            [ngClass]="
+                              button.iconColor
+                                ? button.iconColor
+                                : ''
+                            "
+                            [icon]="button?.faIcon"
+                            class="text-sm"
+                          ></fa-icon>
+                        }
+                      </div>
+                      <span class="text-sm text-main-text-color">{{ button.title }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Action needed: consolidates the trial/subscription + verification alerts into one dropdown (placed at end of favorites) -->
+        @if (showActionNeeded) {
+          <div
+            class="action-needed-wrapper relative"
+            appOutsideClick
+            (clickOutSide)="isActionNeededExpanded = false"
+          >
+            <button
+              type="button"
+              (click)="toggleActionNeeded($event)"
+              matTooltip="Action needed"
+              [matTooltipDisabled]="screenWidth >= 1130"
+              class="action-needed-btn flex items-center gap-2 h-9 py-2 px-3 rounded-md cursor-pointer border border-common-yellow-color bg-common-secondary-yellow-color"
+            >
+              <fa-icon
+                [icon]="['fas', 'triangle-exclamation']"
+                class="text-common-yellow-color text-sm"
+              ></fa-icon>
+              <span
+                class="text-xs font-semibold text-common-yellow-color whitespace-nowrap font-inter hidden min-[1130px]:inline"
+              >
+                Action needed
+              </span>
+              <span
+                class="w-5 h-5 rounded-full bg-common-red-color text-white text-[12px] font-semibold flex items-center justify-center"
+              >
+                {{ actionNeededCount }}
+              </span>
+            </button>
+
+            @if (isActionNeededExpanded) {
+              <div
+                class="action-needed-panel absolute top-12 left-0 z-[9999] w-[320px] bg-main-background-color shadow-common-box-shadow rounded-lg border border-input-border-color p-3"
+              >
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-sm font-semibold text-main-text-color">
+                    Action needed
+                  </span>
+                  <span class="text-xs text-common-blue-color">
+                    {{ actionNeededCount }} items
+                  </span>
+                </div>
+
+                @if (isSubscriptionAlertVisible) {
+                  <div
+                    class="bg-common-secondary-yellow-color rounded-lg p-3 mb-2"
+                  >
+                    <div class="flex items-center gap-2">
+                      <fa-icon
+                        [icon]="
+                          isSubscribedEnd === 1 || Trialend === 0
+                            ? faCircleExclamation
+                            : faClock
+                        "
+                        class="text-common-yellow-color"
+                      ></fa-icon>
+                      <span class="text-sm font-semibold text-main-text-color">
+                        {{
+                          isSubscribedEnd === 1
+                            ? "Subscription expired"
+                            : Trialend === 0
+                              ? "Your free trial has ended"
+                              : "Trial period ends in " + Trialend + " days"
+                        }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-secondary-text-color mt-1 mb-2">
+                      {{
+                        isSubscribedEnd === 1
+                          ? "Renew now to keep sending checks and payments — your account is paused until you do."
+                          : "Upgrade now to keep sending checks and payments without missing a beat."
+                      }}
+                    </p>
+                    @if (isSubscribedEnd === 1 && subscribedEndDate !== "") {
+                      <p
+                        class="text-xs font-medium text-common-yellow-color mb-2"
+                      >
+                        Expired on {{ subscribedEndDate }}
+                      </p>
+                    }
+                    @if (
+                      isSubscribedEnd !== 1 &&
+                      Trialend !== 0 &&
+                      trialPeriodEndDate !== ""
+                    ) {
+                      <p class="text-xs text-secondary-text-color mb-2">
+                        Trial ends {{ trialPeriodEndDate }}
+                      </p>
+                    }
+                    <button
+                      class="bg-main-background-color border border-common-yellow-color text-common-yellow-color text-xs font-semibold py-1.5 px-3 rounded cursor-pointer flex items-center gap-1"
+                      (click)="onActionUpgrade()"
+                    >
+                      {{
+                        isSubscribedEnd === 1 ? "Renew plan" : "Upgrade plan"
+                      }}
+                    </button>
+                  </div>
+                }
+
+                @if (showVerificationAction) {
+                  <div class="bg-common-secondary-yellow-color rounded-lg p-3">
+                    <div class="flex items-center gap-2">
+                      <fa-icon
+                        [icon]="['fas', 'shield-check']"
+                        class="text-common-yellow-color"
+                      ></fa-icon>
+                      <span class="text-sm font-semibold text-main-text-color">
+                        {{ verificationActionTitle }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-secondary-text-color mt-1 mb-2">
+                      {{ verificationActionMessage }}
+                    </p>
+                    <p class="text-xs text-secondary-text-color mb-2">
+                      {{ verificationActionDuration }}
+                    </p>
+                    <button
+                      class="bg-main-background-color border border-common-yellow-color text-common-yellow-color text-xs font-semibold py-1.5 px-3 rounded cursor-pointer"
+                      (click)="onActionVerify()"
+                    >
+                      {{ verificationActionCta }}
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Single-section fallback: when only the trial/subscription alert is
+             pending (no verification action), show it standalone instead of the
+             "Action needed" dropdown. -->
+        @if (
+          !showVerificationAction &&
+          staticWhiteLabelConditions?.subscriptionVisible &&
+          this.personalInfo?.isLegalEnabled !== 1 &&
+          !createNewPlugIn
+        ) {
+          @if (
+            isSubscribed === 0 &&
+            isShowTrailPeriod === 1 &&
+            isSubscribedEnd === 0 &&
+            adpMarketPlaceUser !== 1
+          ) {
+            <div
+              class="alert-area flex items-center text-common-red-color bg-common-secondary-red-color py-1 px-2.5 rounded laptop:gap-1 laptop:px-3.5 laptop:py-2"
+              [matTooltip]="trialBannerTooltip"
+              matTooltipClass="trial-banner-tooltip"
+            >
+              <fa-icon
+                [icon]="faClock"
+                class="cursor-pointer"
+                (click)="gtagScript(); goToSubscription()"
+                role="presentation"
+              ></fa-icon>
+              @if (Trialend !== 0) {
+                <div class="hidden xl:block">
+                  <p class="text-xs font-semibold">
+                    Your trial period ends in {{ Trialend }} days.
+                  </p>
+                </div>
+              }
+              @if (Trialend === 0) {
+                <div class="hidden xl:block">
+                  <p class="text-xs font-semibold">
+                    Oops! Your trial period has ended.
+                  </p>
+                </div>
+              }
+              <button
+                class="text-common-blue-color underline text-xs font-semibold cursor-pointer min-[1120px]:block hidden"
+                (click)="gtagScript(); goToSubscription()"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          }
+
+          @if (subscribedEndDate !== "" && isSubscribedEnd === 1) {
+            <div
+              class="alert-area flex items-center text-common-red-color bg-common-secondary-red-color py-1 px-2.5 rounded laptop:gap-1 laptop:px-3.5 laptop:py-2"
+              [matTooltip]="subscriptionExpiredTooltip"
+              [matTooltipDisabled]="screenWidth >= 1420"
+              matTooltipClass="trial-banner-tooltip"
+            >
+              <fa-icon
+                [icon]="faClock"
+                class="cursor-pointer sm:cursor-default"
+                (click)="gtagScript(); goToSubscription()"
+                role="presentation"
+              ></fa-icon>
+              <p class="text-xs font-semibold" role="presentation">
+                Your subscription expired {{ subscribedEndDate }},
+              </p>
+              <span
+                role="presentation"
+                class="text-common-blue-color underline text-xs font-semibold cursor-pointer min-[1120px]:block hidden hover:cursor-pointer hover:underline"
+                (click)="gtagScript(); goToSubscription('renew')"
+              >
+                Please renew
+              </span>
+            </div>
+          }
+        }
+        @if (whatsNew >= 1 && !whatsNewView) {
+          <button
+            (click)="openWhatsNewModal()"
+            class="items-center justify-center w-10 h-9 rounded bg-common-secondary-blue-color cursor-pointer hidden sm:flex animate-pulse"
+          >
+            <div>
+              <span class="text-sm font-semibold text-common-blue-color"
+                >New</span
+              >
+            </div>
+          </button>
+        }
+        @if (isQuickNavigationMenuShown) {
+          <div
+            id="z"
+            class="ocw_menu_wrapper quick-navigation-menu !z-[9999] !bg-main-background-color !shadow-common-box-shadow opacity-50 !p-4 max-w-[380px] w-full fixed overflow-y-auto !top-14 flex flex-col gap-5"
+          >
+            <div class="flex !text-white w-full gap-2 p-2">
+              <app-common-button-v35
+                class="flex-1"
+                text="Pay"
+                [type]="{ style: 'filled', name: 'main' }"
+                width="100%"
+                textColorInput="white"
+                (clickEvent)="onQuickNavigationButtonClick('newPayment')"
+              ></app-common-button-v35>
+              <app-common-button-v35
+                class="mr-2 flex-1"
+                text="Request"
+                [type]="{ style: 'filled', name: 'main' }"
+                width="100%"
+                backGroundInput="var(--common-green-color)"
+                textColorInput="white"
+                (clickEvent)="onQuickNavigationButtonClick('requestPayment')"
+              ></app-common-button-v35>
+            </div>
+            <div class="relative">
+              <input
+                type="text"
+                [(ngModel)]="searchValue"
+                class="!h-9 border border-input-border-color rounded-md w-[330px] pl-4"
+                placeholder="Search.."
+                (click)="isQuickAccessOpenedJustNow = true"
+              />
+              <div
+                class="absolute bottom-[1px] w-9 h-[33px] right-6 bg-secondary-background-color rounded-md flex text-center justify-center"
+              >
+                <fa-icon
+                  class="text-[18px] !text-main-text-color pt-1"
+                  [icon]="faMagnifyingGlass"
+                ></fa-icon>
+              </div>
+            </div>
+            <ul class="grid grid-cols-4 gap-y-5 gap-x-2.5">
+              @for (
+                quickNavigationButton of quickNavigationMenu
+                  | searchFilter: searchValue : "title";
+                track quickNavigationButton.id;
+                let i = $index
+              ) {
+                <li
+                  role="presentation"
+                  class="single_list flex flex-col !p-0 text-center hover:bg-common-green-color relative group"
+                  [routerLink]="quickNavigationButton.routerLink"
+                  (click)="
+                    onQuickNavigationButtonClick(quickNavigationButton.onClick)
+                  "
+                >
+                  <button 
+                    class="absolute top-[-10px] right-[16px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10
+                    "
+                    [ngClass]="isFavorite(quickNavigationButton.id) ? 'opacity-100' : 'opacity-0'"
+                    (click)="toggleFavorite(quickNavigationButton, $event)"
+                    [matTooltip]="isFavorite(quickNavigationButton.id) ? 'Remove from favorites' : 'Add to favorites'"
+                  >
+                    <fa-icon 
+                      [icon]="isFavorite(quickNavigationButton.id) ? faStarSolid : faStar"
+                      class="text-common-yellow-color"
+                    ></fa-icon>
+                  </button>
+                  <div
+                    [ngClass]="[
+                      quickNavigationButton.iconBackground
+                        ? quickNavigationButton.iconBackground
+                        : '',
+                      !quickNavigationButton?.faIcon &&
+                      quickNavigationButton?.icon
+                        ? '!bg-common-secondary-green-color hover:shadow-md'
+                        : 'hover:!bg-common-dark-blue-color hover:!text-white'
+                    ]"
+                    class="group file-icon w-10 h-10 flex items-center justify-center rounded-full"
+                  >
+                    @if (
+                      !quickNavigationButton?.faIcon &&
+                      quickNavigationButton?.icon
+                    ) {
+                      <img
+                        width="24"
+                        height="24"
+                        ngSrc="{{ quickNavigationButton.icon }}"
+                        alt=""
+                        class="!w-6 !h-6"
+                      />
+                    }
+                    @if (quickNavigationButton?.faIcon) {
+                      <fa-icon
+                        [ngClass]="
+                          quickNavigationButton.iconColor
+                            ? quickNavigationButton.iconColor
+                            : ''
+                        "
+                        [icon]="quickNavigationButton?.faIcon"
+                      ></fa-icon>
+                    }
+                  </div>
+                  <span
+                    class="!text-xs !whitespace-pre-wrap !text-main-text-color"
+                    >{{ quickNavigationButton.title }}</span
+                  >
+                </li>
+              }
+            </ul>
+            @if (
+              (quickNavigationMenu
+                | searchFilter: searchValue : "title"
+                | json) === "[]"
+            ) {
+              <div class="center-sorry-image">
+                <div
+                  class="on-blank flex flex-col justify-center text-center items-center"
+                >
+                  <img
+                    ngSrc="assets/icon/svg/hour-glass.svg"
+                    alt="Sorry, No Image Found"
+                    width="20"
+                    height="20"
+                  />
+                  <h1 class="text-xl font-semibold text-main-text-color">
+                    Sorry!
+                  </h1>
+                  <h3 class="text-sm font-normal text-main-text-color">
+                    No result found!.
+                  </h3>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        <div
+          class="gap-1.5 items-center py-1.5 px-3 rounded p-2 cursor-pointer bg-common-secondary-green-color hidden sm:flex"
+          *ngIf="this.personalInfo?.isLegalEnabled === 1"
+          routerLink="/manage/cheque/multi_import/txt-to-check1"
+          matTooltip="Import Checks"
+        >
+          <div class="logo w-auto">
+            <fa-icon
+              [icon]="['fas', 'arrow-down-to-line']"
+              class="text-main-text-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="font-semibold text-sm text-main-text-color xl:block hidden"
+          >
+            Import Checks
+          </div>
+          <div class="xl:hidden text-main-text-color h-5 w-auto">
+            <fa-icon [icon]="['fas', 'money-check-dollar']"></fa-icon>
+          </div>
+        </div>
+        <div
+          class="gap-1.5 items-center py-1.5 px-3 rounded p-2 cursor-pointer bg-common-secondary-green-color hidden sm:flex"
+          *ngIf="isEnabledPlugins"
+          routerLink="/manage/cheque/multi_import_eq/step1"
+          matTooltip="Import Checks"
+        >
+          <div class="logo w-auto">
+            <fa-icon
+              [icon]="['fas', 'arrow-down-to-line']"
+              class="text-main-text-color"
+            ></fa-icon>
+          </div>
+
+          <div
+            class="text-main-text-color font-semibold text-sm xl:block hidden"
+          >
+            Import Checks
+          </div>
+          <div class="xl:hidden text-main-text-color h-5 w-auto">
+            <fa-icon [icon]="['fas', 'money-check-dollar']"></fa-icon>
+          </div>
+        </div>
+        @if (
+          isEnableHaloPlugins ||
+          isEnabledhamaspikPlugins ||
+          isEnableSpectrumPlugins ||
+          isEnableMilwaukeePlugins ||
+          isEnableSalesForceplugins ||
+          isEnableBeazleyPlugin
+        ) {
+          <div role="presentation"
+            class="gap-1.5 items-center py-1.5 px-3 rounded p-2 cursor-pointer bg-common-secondary-green-color hidden sm:flex"
+            (click)="getImportChecksRoute()"
+            matTooltip="Import Checks"
+          >
+            <div class="w-auto">
+              <fa-icon
+                [icon]="['fas', 'arrow-down-to-line']"
+                class="text-main-text-color"
+              ></fa-icon>
+            </div>
+
+            <div
+              class="text-main-text-color font-semibold text-sm xl:block hidden"
+            >
+              Import Checks
+            </div>
+            <div class="xl:hidden text-main-text-color h-5 w-auto">
+              <fa-icon [icon]="['fas', 'money-check-dollar']"></fa-icon>
+            </div>
+          </div>
+        }
+
+        <div
+          class="gap-1.5 items-center py-1.5 px-3 rounded p-2 cursor-pointer bg-common-secondary-green-color hidden sm:flex"
+          *ngIf="isEnableYoungwilliamsPlugins"
+          routerLink="/manage/cheque/multi_import/txt-to-check1"
+          matTooltip="Import Checks"
+        >
+          <div class="w-auto">
+            <fa-icon
+              [icon]="['fas', 'arrow-down-to-line']"
+              class="text-main-text-color"
+            ></fa-icon>
+          </div>
+
+          <div
+            class="text-main-text-color font-semibold text-sm xl:block hidden"
+          >
+            Import Checks
+          </div>
+          <div class="xl:hidden text-main-text-color h-5 w-auto">
+            <fa-icon [icon]="['fas', 'money-check-dollar']"></fa-icon>
+          </div>
+        </div>
+
+        @if (
+          staticWhiteLabelConditions?.subscriptionVisible &&
+          this.personalInfo?.isLegalEnabled !== 1 &&
+          !createNewPlugIn
+        ) {
+          @if (isSubscribed === 1 && showUpgradeBtn) {
+            <button
+              class="text-sm font-semibold cursor-pointer laptop:block hidden py-1 px-2.5 rounded laptop:gap-1 laptop:px-3.5 laptop:py-2 hover:shadow-common-button bg-common-blue-color text-white ocw-btn"
+              (click)="gtagScript(); goToSubscription()"
+            >
+              Upgrade Plan
+            </button>
+          }
+        }
+        <div
+          class="hidden sm:flex gap-1.5 items-center bg-secondary-background-color rounded p-2 cursor-pointer"
+          routerLink="/manage/thirdparty_app/adp/adp-view"
+          *ngIf="adpMarketPlaceUser === 1"
+        >
+          <div class="logo">
+            <img
+              width="20"
+              height="20"
+              alt="image"
+              ngSrc="/assets/images/integration/adp-logo1.png"
+            />
+          </div>
+          <div class="font-semibold text-sm">ADP Integration</div>
+        </div>
+      </div>
+      <div class="flex gap-2 relative">
+        @if (showReferAndEarn) {
+        <div
+          appWhiteLabel
+          role="presentation"
+          class="cursor-pointer flex items-center bg-common-secondary-green-color p-4 rounded mr-1 blink-shadow refer-btn-blink"
+          routerLink="/manage/affiliate/index"
+          hiddenIf="hideReferAndEarn"
+        >
+          <p
+            class="v35-labels !text-[12px] laptop:!text-sm !text-common-green-color font-inter underline"
+          >
+            Refer & Earn
+          </p>
+        </div>
+      }
+
+        <!-- Single-section fallback: when only a verification action is pending
+           (no trial/subscription alert), show it standalone instead of the
+           "Action needed" dropdown. -->
+        @if (!isSubscriptionAlertVisible && rerunKybShowSignal()) {
+          <div
+            appWhiteLabel
+            role="presentation"
+            class="cursor-pointer flex items-center bg-common-secondary-red-color p-4 rounded mr-1 blink-shadow refer-btn-blink"
+            (click)="openRerunKybModal('kyb')"
+            matTooltip="Re Verification Required"
+            [matTooltipDisabled]="screenWidth >= 810"
+          >
+            <p
+              class="v35-labels !text-[12px] laptop:!text-sm !text-common-red-color font-inter underline"
+            >
+              <span class="hidden min-[810px]:inline"
+                >Re Verification Required</span
+              >
+              <fa-icon [icon]="faRedo"></fa-icon>
+            </p>
+          </div>
+        }
+
+        @if (!isSubscriptionAlertVisible && eddTriggerStatus()) {
+          <div
+            appWhiteLabel
+            role="presentation"
+            class="cursor-pointer flex items-center bg-common-secondary-red-color p-4 rounded mr-1 blink-shadow rerun-edd-btn-blink"
+            (click)="openRerunKybModal('edd')"
+          >
+            <p
+              class="v35-labels !text-[12px] laptop:!text-sm !text-common-red-color font-inter underline"
+            >
+              Additional Verification Required
+              <fa-icon [icon]="faRedo"></fa-icon>
+            </p>
+          </div>
+        }
+
+        @if (!isSubscriptionAlertVisible && kybPersonaVerificationShowSignal()) {
+          <div
+            appWhiteLabel
+            role="presentation"
+            class="cursor-pointer flex items-center bg-common-secondary-red-color p-4 rounded mr-1 blink-shadow"
+            (click)="openKybPersonaVerificationModal()"
+            matTooltip="Reverification Required"
+            [matTooltipDisabled]="screenWidth >= 810"
+          >
+            <p
+              class="v35-labels !text-[12px] laptop:!text-sm !text-common-red-color font-inter underline"
+            >
+              <span class="hidden min-[810px]:inline">Reverification Required</span>
+              <fa-icon [icon]="faRedo"></fa-icon>
+            </p>
+          </div>
+        }
+
+        @if (
+          isSubscribed === 1 && !rerunKybShowSignal() && !eddTriggerStatus()
+         && !kybPersonaVerificationShowSignal() && !bypassHeaderDemoButtonUser) {
+          <div
+            appWhiteLabel
+            hiddenIf="hideDemoButton"
+            role="presentation"
+            class="cursor-pointer flex items-center bg-common-secondary-blue-color py-4 px-2 rounded mr-3 blink-shadow"
+            (click)="openDemoModal()"
+            matTooltip="Book a Free Demo"
+            [matTooltipDisabled]="screenWidth >= 860"
+          >
+            <fa-icon
+              [icon]="faCalendarDay"
+              class="!text-common-blue-color text-sm min-[860px]:mr-2"
+            ></fa-icon>
+            <p
+              class="v35-labels !text-[12px] laptop:!text-sm underline hidden min-[860px]:block"
+            >
+              Book a Free Demo
+            </p>
+          </div>
+        }
+        @if (
+          isSubscribed === 0 && !rerunKybShowSignal() && !eddTriggerStatus()
+         && !kybPersonaVerificationShowSignal() && !bypassHeaderDemoButtonUser) {
+          <div
+            appWhiteLabel
+            hiddenIf="hideDemoButton"
+            class="box__link button-animation cursor-pointer"
+            (click)="openDemoModal()"
+            role="presentation"
+            matTooltip="Book a Free Demo"
+            [matTooltipDisabled]="screenWidth >= 860"
+          >
+            <fa-icon [icon]="faCalendarDay" class="min-[860px]:mr-2"></fa-icon>
+            <label class="cursor-pointer hidden min-[860px]:inline"
+              >Book a Free Demo</label
+            >
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        }
+
+        <div
+          role="presentation"
+          class="issue-visa-card-btn cursor-pointer flex items-center bg-common-secondary-yellow-color p-4 rounded mr-1 blink-shadow issue-visa-card-btn-blink"
+          routerLink="/manage/virtual-card"
+          appWhiteLabel
+          hiddenIf="hideVirtualCard"
+        >
+          <p
+            class="issue-visa-card-label v35-labels !text-[12px] laptop:!text-sm !text-common-yellow-color font-inter underline"
+          >
+            Issue Visa Card
+          </p>
+          <fa-icon
+            [icon]="['fas', 'credit-card']"
+            class="issue-visa-card-icon !text-common-yellow-color text-base"
+            matTooltip="Issue Visa Card"
+          ></fa-icon>
+        </div>
+
+        @if (showVersionSwitcher()) {
+          <div
+            class="version-switch-wrapper relative hidden sm:block mr-1"
+            [class.alert-active]="isSubscriptionAlertVisible"
+          >
+            <button
+              type="button"
+              (click)="switchToNewVersion()"
+              aria-describedby="version-switch-tooltip"
+              class="version-switch-badge blink-shadow flex items-center gap-2 py-2 px-3 laptop:px-3.5 rounded-lg cursor-pointer border border-common-blue-color bg-main-background-color transition-all hover:shadow-common-button"
+            >
+              <fa-icon
+                [icon]="faRepeat"
+                class="version-switch-icon text-common-blue-color text-sm"
+              ></fa-icon>
+              <span
+                class="version-switch-label text-xs laptop:text-sm font-semibold text-common-blue-color whitespace-nowrap font-inter"
+              >
+                Switch to the new version
+              </span>
+              <span class="version-switch-beta-badge font-inter">BETA</span>
+            </button>
+            <div
+              id="version-switch-tooltip"
+              role="tooltip"
+              class="version-switch-tooltip font-inter"
+            >
+              <p class="version-switch-tooltip-title">
+                Try Version 2.0 &middot; Beta
+              </p>
+              <p class="version-switch-tooltip-text">
+                A faster, redesigned experience. Your data stays exactly the
+                same &mdash; and you can switch back anytime.
+              </p>
+            </div>
+          </div>
+        }
+
+        <div class="flex items-center gap-1 pr-2.5 sm:gap-5">
+          <button
+            class="text-common-dark-blue-color hidden sm:block"
+            id="theme-id"
+            (click)="toggleDarkMode()"
+          >
+            <fa-icon
+              [icon]="['fas', isDarkMode ? 'brightness' : 'moon']"
+              [matTooltip]="
+                isDarkMode
+                  ? 'View with a light background'
+                  : 'View with a dark background'
+              "
+              [ngClass]="isDarkMode ? 'text-common-yellow-color' : ''"
+            ></fa-icon>
+          </button>
+          <app-common-help-button></app-common-help-button>
+          <div
+            appWhiteLabel hiddenIf="isCSNHCRequirement"
+            class="text-common-dark-blue-color cursor-pointer hidden sm:block"
+            routerLink="/manage/search"
+            matTooltip="Quick Access"
+          >
+            <fa-icon [icon]="['fas', 'magnifying-glass']"></fa-icon>
+          </div>
+          <div class="relative">
+            @if (notifications?.length) {
+              <div
+                role="presentation"
+                class="text-common-dark-blue-color cursor-pointer"
+                matTooltip="Notifications"
+                mat-icon-button
+                [matMenuTriggerFor]="notiDropdown"
+                #notificationMenu="matMenuTrigger"
+                (click)="dismissNewNotificationPanel()"
+              >
+                <div class="relative py-2.5">
+                  <fa-icon
+                    [icon]="['fas', 'bell']"
+                    [ngClass]="{ 'bell-shake': showNewNotificationPanel }"
+                  ></fa-icon>
+                  @if (notificationCount > 0) {
+                    <div
+                      class="w-4 h-4 rounded-full text-white bg-common-red-color text-[12px] text-center pt-[1px] absolute top-1.5 left-2"
+                    >
+                      <span>{{
+                        notificationCount <= 99 ? notificationCount : "99+"
+                      }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div
+                role="presentation"
+                class="text-common-dark-blue-color cursor-pointer"
+                matTooltip="Notifications"
+              >
+                <div class="relative py-2.5">
+                  <fa-icon
+                    [routerLink]="['/manage/more/notification/show']"
+                    [icon]="['fas', 'bell']"
+                  ></fa-icon>
+                </div>
+              </div>
+            }
+
+            @if (showNewNotificationPanel) {
+              <div
+                class="new-noti-tooltip absolute top-[80%] -right-4 z-20 mt-1.5 w-max bg-common-blue-color shadow-common-box-shadow rounded-lg"
+                role="status"
+                aria-live="polite"
+              >
+                <!-- caret pointing up to the notification bell -->
+                <span
+                  class="absolute -top-1 right-5 w-2 h-2 rotate-45 bg-common-blue-color"
+                ></span>
+                <div class="flex items-center gap-1.5 pl-2 pr-1 py-1">
+                  <!-- bell with a live pulse dot -->
+                  <span class="relative flex items-center shrink-0">
+                    <fa-icon
+                      [icon]="['fas', 'bell']"
+                      class="text-white text-[12px]"
+                    ></fa-icon>
+                    <span
+                      class="absolute -top-0.5 -right-1 flex h-1.5 w-1.5"
+                    >
+                      <span
+                        class="absolute inline-flex h-full w-full rounded-full bg-common-red-color opacity-75 animate-ping"
+                      ></span>
+                      <span
+                        class="relative inline-flex h-1.5 w-1.5 rounded-full bg-common-red-color"
+                      ></span>
+                    </span>
+                  </span>
+
+                  <!-- message -->
+                  <span
+                    class="text-[12px] font-semibold text-white whitespace-nowrap"
+                  >
+                    {{ newNotificationCount }} new notification{{
+                      newNotificationCount === 1 ? "" : "s"
+                    }}
+                  </span>
+
+                  <!-- dismiss -->
+                  <button
+                    type="button"
+                    class="flex items-center justify-center w-4 h-4 rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors shrink-0"
+                    aria-label="Dismiss new notification alert"
+                    (click)="dismissNewNotificationPanel(); $event.stopPropagation()"
+                  >
+                    <fa-icon [icon]="faXmark" class="text-[12px]"></fa-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <mat-menu
+            #notiDropdown="matMenu"
+            class="notification-bar !shadow-common-box-shadow"
+          >
+            <div
+              class="bg-main-background-color rounded-md w-[299px] overflow-hidden"
+            >
+              <div class="max-h-[405px]">
+                <div class="w-full flex justify-center h-12">
+                  <div class="mt-0.5">
+                    <span
+                      class="!text-main-text-color !font-inter font-semibold"
+                      >{{
+                        notifications?.length
+                          ? "Notifications"
+                          : "No notifications"
+                      }}</span
+                    >
+                  </div>
+                </div>
+                <div class="max-h-[317px] overflow-y-scroll overflow-x-hidden">
+                  @for (
+                    notification of groupedNotifications;
+                    track notification
+                  ) {
+                    <div class="flex justify-between mt-[9px]">
+                      <div class="pl-3 text-sm font-medium">
+                        {{ notification.day }}
+                      </div>
+                      <div class="pr-3 text-sm">{{ notification.date }}</div>
+                    </div>
+                    @for (item of notification.notifications; track item) {
+                      <div
+                        class="flex w-[270px] mx-3 h-14 bg-secondary-background-color mb-[1px] rounded-[4px] cursor-pointer"
+                        (click)="redirectToPage(item)"
+                        role="presentation"
+                      >
+                        <div class="flex-3 items-center relative">
+                          @if (!item.readAt) {
+                            <span
+                              class="w-2 h-2 rounded-full absolute left-9 top-[11px] bg-common-blue-color"
+                            ></span>
+                          }
+                          <div
+                            class="w-[36px] h-[36px] m-[11px] flex items-center justify-center rounded-full"
+                            [ngClass]="{
+                              '!bg-common-secondary-blue-color':
+                                'fa fa-bank' === item?.notification?.icon,
+                              '!bg-common-secondary-violet-color':
+                                'fa fa-envelope-o fs-18 text-info' ===
+                                item?.notification?.icon,
+                              'bg-common-secondary-green-color':
+                                'fa fa-money' === item?.notification?.icon ||
+                                'fa fa-truck' === item?.notification?.icon,
+                              'bg-common-secondary-yellow-color':
+                                'fa fa-file' === item?.notification?.icon ||
+                                'fa fa-upload fs-18 text-info' ===
+                                  item?.notification?.icon,
+                              'bg-common-secondary-red-color':
+                                'fa fa-exclamation-triangle fs-18 text-info' ===
+                                item?.notification?.icon
+                            }"
+                          >
+                            <i
+                              [ngClass]="{
+                                'text-common-blue-color':
+                                  'fa fa-bank' === item?.notification?.icon,
+                                '!text-common-violet-color':
+                                  'fa fa-envelope-o fs-18 text-info' ===
+                                  item?.notification?.icon,
+                                'text-common-green-color':
+                                  'fa fa-money' === item?.notification?.icon ||
+                                  'fa fa-truck' === item?.notification?.icon,
+                                'text-common-yellow-color':
+                                  'fa fa-file' === item?.notification?.icon ||
+                                  'fa fa-upload fs-18 text-info' ===
+                                    item?.notification?.icon,
+                                'text-common-red-color':
+                                  'fa fa-exclamation-triangle fs-18 text-info' ===
+                                  item?.notification?.icon
+                              }"
+                              class="{{ item?.notification?.icon }}"
+                            ></i>
+                          </div>
+                        </div>
+
+                        <div class="flex-7 pt-[10px] relative">
+                          <h6
+                            class="text-[12px] font-medium w-48 whitespace-nowrap text-ellipsis overflow-hidden"
+                            [ngClass]="{
+                              underline: item?.notification?.action_link
+                            }"
+                            [matTooltip]="item?.notification?.title"
+                          >
+                            {{ item?.notification?.title }}
+                          </h6>
+                          <span
+                            class="text-secondary-text-color text-xs absolute top-[28px]"
+                            >{{ item?.dateDuaration }}</span
+                          >
+                        </div>
+                      </div>
+                    }
+                  }
+                </div>
+                @if (notifications.length) {
+                  <div class="w-full flex justify-center p-2">
+                    <app-common-button-v35
+                      class="whitespace-nowrap"
+                      text="View All"
+                      [type]="{ name: 'list', style: 'blue' }"
+                      [disableHoverEffect]="false"
+                      customClasses="font-extralight p-0"
+                      backGroundInput="transparent"
+                      routerLink="/manage/more/notification/show"
+                    ></app-common-button-v35>
+                  </div>
+                }
+              </div>
+            </div>
+          </mat-menu>
+        </div>
+        <div
+          class="company-switcher border border-solid border-input-border-color rounded max-w-xs flex cursor-pointer"
+          [class.alert-active]="isSubscriptionAlertVisible"
+          [matMenuTriggerFor]="
+            env.env_id === 'compass' ? null : companyDropdowns
+          "
+          [ngClass]="{ '!cursor-default': env.env_id === 'compass' }"
+        >
+          <span
+            class="label text-[12px] text-secondary-text-color bg-main-background-color absolute bottom-[26px] px-1 ml-1"
+          >
+            <span class="sm:block hidden">{{
+              env.env_id === "compass" ? "Company" : "Switch Companies"
+            }}</span>
+            <span class="sm:hidden block">Company</span>
+          </span>
+          <div class="company-name flex items-center h-full px-3">
+            <span class="company-name-inner flex justify-between min-w-[67px]"
+              ><span
+                class="company-name-text text-sm font-medium whitespace-nowrap text-ellipsis text-main-text-color font-roboto overflow-hidden leading-6 min-w-[35px] sm:max-w-[18ch] max-w-[5ch]"
+                >{{ companyName }}</span
+              >
+              <span class="pl-1" appWhiteLabel hiddenIf="isCompassRequirement"
+                ><fa-icon [icon]="['fas', 'caret-down']"></fa-icon></span
+            ></span>
+          </div>
+          <div
+            class="company-logo border-l border-solid border-l-input-border-color rounded w-10"
+          >
+            @if (activeComapanyLogo) {
+              <img
+                class="w-full h-full object-cover rounded"
+                width="20"
+                height="20"
+                [ngSrc]="activeComapanyLogo"
+                alt="company logo"
+              />
+            }
+            <span
+              class="flex items-center justify-center h-full"
+              *ngIf="!activeComapanyLogo"
+              ><fa-icon
+                [icon]="['fas', 'buildings']"
+                class="text-secondary-text-color text-xl"
+              ></fa-icon
+            ></span>
+          </div>
+        </div>
+        <mat-menu #companyDropdowns="matMenu" class="!mt-4">
+          <div class="bg-main-background-color">
+            <div
+              class="pt-0.5 py-4 pb-2 font-roboto text-sm text-center font-medium border-b border-b-input-border-color text-common-dark-blue-color"
+            >
+              <h3>Choose Your Company</h3>
+            </div>
+
+            <div class="company_list overflow-y-auto max-h-80">
+              <app-header-company-drop-down-list
+                [allCompanies]="allCompanies"
+                (selectedCompany)="onSelectCompany($event)"
+              ></app-header-company-drop-down-list>
+            </div>
+
+            <button
+              class="add_company w-full hover:underline flex justify-center mt-2 items-center text-sm font-medium bg-common-secondary-blue-color text-common-dark-blue-color gap-2 cursor-pointer pt-3 px-6 pb-2"
+              (click)="managePage()"
+            >
+              <fa-icon [icon]="['fas', 'user-plus']"></fa-icon>
+              <p class="text-xs uppercase">add or manage companies</p>
+            </button>
+          </div>
+        </mat-menu>
+        <div class="flex rounded border border-input-border-color border-solid">
+          <div
+            appWhiteLabel
+            hiddenIf="hidePaymentTableFilter"
+            *ngIf="
+              kycKybStatus.kybStatus === null || kycKybStatus.kybStatus === 3
+            "
+            (mouseover)="showStatus = true"
+            (mouseleave)="showStatus = false"
+            (focus)="showStatus = true"
+            (blur)="showStatus = false"
+            class="relative w-10 border-l border-solid border-l-input-border-color rounded flex justify-center items-center"
+            role="presentation"
+            (click)="goToGettingStarted()"
+          >
+            <span
+              class="bg-common-secondary-yellow-color pt-[2px] pb-[1px] pl-[7.5px] pr-[9.5px] rounded cursor-pointer"
+            >
+              <fa-icon
+                [icon]="['fas', 'circle-exclamation']"
+                class="text-common-yellow-color"
+              ></fa-icon>
+            </span>
+            <div
+              *ngIf="showStatus"
+              class="absolute top-10 -right-10 p-2 shadow-common-box-shadow flex flex-col gap-2 items-start bg-main-background-color text-xs font-semibold font-inter text-main-text-color w-40 h-14 overflow-hidden border border-common-yellow-color rounded"
+            >
+              <div class="mx-auto">
+                <div class="flex justify-center py-2.5">
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] text-center text-[14px] flex justify-center items-center"
+                    [ngClass]="
+                      isUserVerified?.phone_verified === 1
+                        ? 'bg-common-secondary-green-color'
+                        : 'bg-common-secondary-yellow-color'
+                    "
+                  >
+                    <fa-icon
+                      [ngClass]="
+                        isUserVerified?.phone_verified === 1
+                          ? 'text-common-green-color'
+                          : 'text-common-yellow-color'
+                      "
+                      [icon]="
+                        isUserVerified?.phone_verified === 1 ? faCheck : faLoack
+                      "
+                    />
+                  </div>
+
+                  <div
+                    class="w-5 h-[3px] my-auto bg-input-border-color"
+                    [ngClass]="{
+                      '!bg-common-blue-color':
+                        isUserVerified?.phone_verified === 1
+                    }"
+                  ></div>
+
+                  <!-- <div
+                    class="w-[25px] h-[25px] rounded-[50%] text-center text-[14px] flex justify-center items-center"
+                    [ngClass]="
+                      kycKybStatus.kycStatus !== null
+                        ? 'bg-common-secondary-green-color'
+                        : 'bg-common-secondary-yellow-color'
+                    "
+                  >
+                    <fa-icon
+                      [ngClass]="
+                        kycKybStatus.kycStatus !== null
+                          ? 'text-common-green-color'
+                          : 'text-common-yellow-color'
+                      "
+                      [icon]="
+                        kycKybStatus.kycStatus !== null ? faCheck : faLoack
+                      "
+                    />
+                  </div> -->
+
+                  <!-- <div
+                    class="w-5 h-[3px] my-auto bg-input-border-color"
+                    [ngClass]="{
+                      '!bg-common-blue-color': kycKybStatus.kycStatus !== null
+                    }"
+                  ></div> -->
+
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] text-center text-[14px] flex justify-center items-center"
+                    [ngClass]="
+                      kycKybStatus.kybStatus !== null
+                        ? 'bg-common-secondary-green-color'
+                        : 'bg-common-secondary-yellow-color'
+                    "
+                  >
+                    <fa-icon
+                      [ngClass]="
+                        kycKybStatus.kybStatus !== null
+                          ? 'text-common-green-color'
+                          : 'text-common-yellow-color'
+                      "
+                      [icon]="
+                        kycKybStatus.kybStatus !== null ? faCheck : faLoack
+                      "
+                    />
+                  </div>
+
+                  <div
+                    class="w-5 h-[3px] my-auto bg-input-border-color"
+                    [ngClass]="{
+                      '!bg-common-blue-color': kycKybStatus.kybStatus !== null
+                    }"
+                  ></div>
+
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] bg-common-blue-color text-center text-[14px] flex justify-center items-center"
+                  >
+                    <fa-icon
+                      class="text-common-yellow-color pt-[1px]"
+                      [icon]="faCrown"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="cursor-pointer w-12 hidden text-sm sm:flex justify-center items-center text-main-text-color font-roboto"
+            #profileDropMenu="matMenuTrigger"
+            [matMenuTriggerFor]="profileMenu"
+          >
+            <p class="name text-lg font-semibold">
+              {{ personalName | uppercase }}
+            </p>
+          </div>
+          <div
+            class="relative w-10 border-l border-solid border-l-input-border-color rounded flex justify-center items-center"
+          >
+            @if (profilePic) {
+              <img
+                class="h-full w-full cursor-pointer object-cover rounded"
+                width="20"
+                height="20"
+                [ngSrc]="profilePic"
+                loading="lazy"
+                alt="user image"
+                title="User image"
+                #profileDropMenu="matMenuTrigger"
+                [matMenuTriggerFor]="
+                  isUserVerified?.email_verified === 1 &&
+                  isUserVerified?.phone_verified === 1
+                    ? profileMenu
+                    : ''
+                "
+              />
+            }
+            <span
+              class="flex items-center justify-center h-full cursor-pointer"
+              *ngIf="!profilePic"
+              #profileDropMenu="matMenuTrigger"
+              [matMenuTriggerFor]="profileMenu"
+              ><fa-icon
+                [icon]="['fas', 'user-tie-hair']"
+                class="text-secondary-text-color text-xl"
+              ></fa-icon
+            ></span>
+          </div>
+        </div>
+        <mat-menu
+          #profileMenu="matMenu"
+          class="absolute right-3 top-[1px] ocw-meterial-menu w-52"
+        >
+          <div class="profile_dropdown cursor-pointer">
+            <li
+              class="cursor-default font-semi-bold text-common-dark-blue-color text-xs w-full text-ellipsis py-2.5 px-3.5 overflow-x-hidden inline-block whitespace-nowrap"
+            >
+              {{ personalInfo?.email }}
+            </li>
+            <li
+              class="font-normal text-common-dark-blue-color text-sm w-full items-center py-2.5 px-3.5 flex gap-2 hover:bg-common-secondary-blue-color"
+              routerLink="/manage/user-profile/index"
+            >
+              <fa-icon [icon]="['fas', 'user']"></fa-icon>
+              <p>My Profile</p>
+            </li>
+            <li
+              class="font-normal text-common-dark-blue-color text-sm w-full items-center py-2.5 px-3.5 flex gap-2 hover:bg-common-secondary-blue-color"
+              routerLink="/manage/user-profile/changepassword"
+            >
+              <fa-icon [icon]="['fas', 'lock']"></fa-icon>
+              <p>Change Password</p>
+            </li>
+            <li
+              role="presentation"
+              class="font-normal text-common-dark-blue-color items-center text-sm w-full py-2.5 px-3.5 flex gap-2 hover:bg-common-secondary-blue-color"
+              (click)="onLogout()"
+            >
+              <fa-icon [icon]="['fas', 'sign-out']"></fa-icon>
+              <p>Logout</p>
+            </li>
+          </div>
+        </mat-menu>
+      </div>
+    </div>
+  </div>
+  <div [ngClass]="{ '!h-[0px] !hidden': isHidden }">
+    <div
+      class="sub-header"
+      [ngClass]="
+        isHidden
+          ? 'hideSubHeader'
+          : !isHidden && animation
+            ? 'display-header'
+            : ''
+      "
+    >
+      <app-dynamic-header-v35></app-dynamic-header-v35>
+    </div>
+  </div>
+  @if (isOffline) {
+    <div
+      class="fixed translate-x-1/2 top-24 text-sm font-medium whitespace-nowrap text-common-red-color bg-main-background-color rounded p-4 shadow-common-box-shadow"
+      id="offline_toast"
+    >
+      <div class="flex items-center gap-2">
+        <fa-icon [icon]="['fas', 'wifi-slash']"></fa-icon> You're offline. Check
+        your connection.
+      </div>
+    </div>
+  }
+  <div
+    cdkDrag
+    cdkDragBoundary="body"
+    id="payment-status"
+    class="flex-column cursor-move fixed top-16 left-[43%] z-50 bg-main-background-color border border-solid border-input-border-color shadow-common-box-shadow rounded-md font-inter"
+    *ngIf="isShowPaymentSummary"
+  >
+    <div class="w-[400px] h-[80px] p-2 px-[14px]">
+      <ng-container *ngIf="isBulkPaymentProcessing; else complete">
+        <div
+          class="notification-top flex justify-center font-light items-center gap-5"
+        >
+          <p class="font-normal text-xs text-main-text-color pb-1">
+            Processing
+          </p>
+          <div class="dot-flashing"></div>
+        </div>
+        <div
+          class="notification-middle bg-secondary-background-color rounded-lg relative"
+        >
+          <span
+            class="h-2.5 block rounded-lg bg-common-green-color relative overflow-hidden"
+            [style.width]="
+              (bulkPaymentCount === 0 ? 0 : (width / bulkPaymentCount) * 100) +
+              '%'
+            "
+          ></span>
+        </div>
+        <div class="notification-bottom flex justify-between">
+          <p class="font-medium text-sm">{{ width }} completed</p>
+          <p class="balance-payments font-medium text-sm">
+            {{ bulkPaymentCount }}
+            {{
+              v3BulkPaymentService.isAbcEntCustomer() ? "checks" : "payments"
+            }}
+          </p>
+        </div>
+      </ng-container>
+      <ng-template #complete>
+        <div class="flex gap-4 items-center h-full">
+          <div class="complete-icon">
+            <span
+              ><fa-icon
+                [icon]="['fas', 'circle-check']"
+                class="text-common-green-color text-2xl"
+              ></fa-icon
+            ></span>
+          </div>
+          <div
+            class="payment-info flex gap-1.5"
+            [ngClass]="{ 'w-full': v3BulkPaymentService.isAbcEntCustomer() }"
+          >
+            @if (abcEnterpriseCheckPrintStatus?.total > 0) {
+              <div
+                class="info"
+                [ngClass]="{
+                  'w-full': v3BulkPaymentService.isAbcEntCustomer()
+                }"
+              >
+                <span class="text-base text-main-text-color font-medium"
+                  >Check Printing Completed</span
+                >
+                <div class="flex gap-1">
+                  @if (abcEnterpriseCheckPrintStatus?.success > 0) {
+                    <p class="text-common-green-color font-normal text-sm">
+                      Success: {{ abcEnterpriseCheckPrintStatus?.success }}
+                    </p>
+                  }
+                  @if (abcEnterpriseCheckPrintStatus?.fail > 0) {
+                    <p class="text-common-red-color font-normal text-sm">
+                      Failed: {{ abcEnterpriseCheckPrintStatus?.fail }}
+                    </p>
+                  }
+                  @if (abcEnterpriseCheckPrintStatus?.canceled > 0) {
+                    <p class="text-main-text-color font-normal text-sm">
+                      Canceled: {{ abcEnterpriseCheckPrintStatus?.canceled }}
+                    </p>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="info">
+                <span class="text-base text-main-text-color font-medium"
+                  >Payments Completed</span
+                >
+                @if (countOfFailedPayment) {
+                  <p
+                    class="info-fail text-common-red-color font-normal text-sm"
+                  >
+                    {{ countOfFailedPayment }} Failed
+                  </p>
+                } @else if (!countOfFailedPayment) {
+                  <p
+                    class="info-success text-common-green-color font-normal text-sm"
+                  >
+                    Success
+                  </p>
+                }
+              </div>
+            }
+            <div class="flex gap-9">
+              @if (!v3BulkPaymentService.abcEntCheckPrintCountSignal()) {
+                <div class="summary-btn text-common-blue-color">
+                  <button
+                    class="text-base font-medium underline cursor-pointer"
+                    (click)="openPaymentSummary()"
+                  >
+                    View Summary
+                  </button>
+                </div>
+              }
+              <button
+                (click)="close()"
+                class="cursor-pointer flex items-center"
+              >
+                <i class="fa-sharp fa-regular fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+<div class="w-full flex justify-center absolute top-14">
+  <div
+    class="!min-w-[300px] bg-main-background-color shadow-common-box-shadow transition-all ease-in-out duration-500 overflow-hidden z-10 rounded-md border-common-blue-color"
+    [ngClass]="isNotiFication ? 'max-h-[80px] border  ' : '!max-h-0'"
+  >
+    <div class="w-[300px] h-[10px] flex justify-between px-2 rounded-md">
+      <div>
+        <span class="text-main-text-color font-inter text-xs">New</span>
+      </div>
+      <div>
+        <fa-icon
+          class="text-main-text-color font-inter text-xs cursor-pointer"
+          (click)="closeNotification()"
+          [icon]="faXmark"
+        ></fa-icon>
+      </div>
+    </div>
+    <div class="w-[300px] h-[70px] flex">
+      <div
+        class="flex w-full h-14 my-2 mb-[1px] rounded-[4px] cursor-pointer"
+        role="presentation"
+      >
+        <div class="flex-3 items-center relative">
+          <span
+            class="w-2 h-2 rounded-full absolute left-9 top-[11px] bg-common-blue-color"
+          ></span>
+          <div
+            class="w-[36px] h-[36px] m-[11px] flex items-center justify-center rounded-full !bg-common-secondary-blue-color"
+            role="presentation"
+            (click)="redirectToPageOnNotification(newNotification)"
+            [ngClass]="{
+              '!bg-common-secondary-blue-color':
+                'fa fa-bank' === newNotification?.icon,
+              '!bg-common-secondary-violet-color':
+                'fa fa-envelope-o fs-18 text-info' === newNotification?.icon,
+              'bg-common-secondary-green-color':
+                'fa fa-money' === newNotification?.icon,
+              'bg-common-secondary-yellow-color':
+                'fa fa-file' === newNotification?.icon ||
+                'fa fa-upload fs-18 text-info' === newNotification?.icon ||
+                'fa fa-redo' === newNotification?.icon,
+              'bg-common-secondary-red-color':
+                'fa fa-exclamation-triangle fs-18 text-info' ===
+                newNotification?.icon
+            }"
+          >
+            <i
+              [ngClass]="{
+                'text-common-blue-color':
+                  'fa fa-bank' === newNotification?.icon,
+                '!text-common-violet-color':
+                  'fa fa-envelope-o fs-18 text-info' === newNotification?.icon,
+                'text-common-green-color':
+                  'fa fa-money' === newNotification?.icon,
+                'text-common-yellow-color':
+                  'fa fa-file' === newNotification?.icon ||
+                  'fa fa-upload fs-18 text-info' === newNotification?.icon ||
+                  'fa fa-redo' === newNotification?.icon,
+                'text-common-red-color':
+                  'fa fa-exclamation-triangle fs-18 text-info' ===
+                  newNotification?.icon
+              }"
+              class="{{ newNotification?.icon }}"
+            ></i>
+          </div>
+        </div>
+
+        <div class="flex-7 pt-[10px] relative">
+          <h6
+            class="text-[12px] font-medium w-48 whitespace-nowrap text-ellipsis overflow-hidden"
+          >
+            {{ newNotification?.title }}
+          </h6>
+          <span class="text-secondary-text-color text-xs absolute top-[28px]"
+            >Now</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

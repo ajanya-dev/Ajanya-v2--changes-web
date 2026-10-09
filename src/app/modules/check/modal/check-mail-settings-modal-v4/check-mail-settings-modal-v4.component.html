@@ -1,0 +1,260 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1
+        class="text-xl font-semibold text-v4-main-text-color font-funnel flex items-center gap-1.5"
+      >
+        {{
+          selectShippingTypeForAll()
+            ? "Select your preferred shipping method"
+            : "Settings"
+        }}
+        @if (!selectShippingTypeForAll()) {
+          <fa-icon
+            [icon]="faInfo"
+            class="cursor-pointer text-v4-subtle-text-color text-sm"
+            matTooltip="If you set a default shipping type option, the selected option will be used as the default mailing type when sending checks via mail."
+          ></fa-icon>
+        }
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Configure your mail shipping preferences
+      </h2>
+    </div>
+    <div
+      [matDialogClose]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <fa-icon [icon]="faXmark" class="text-v4-subtle-text-color"></fa-icon>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="px-6 py-5 bg-v4-tertiary-background-color">
+    <!-- Default Shipping Type (US) -->
+    <div
+      class="flex items-center justify-between py-4 border-b border-v4-border-color"
+    >
+      <span
+        class="text-sm text-v4-main-text-color whitespace-nowrap flex-shrink-0 w-[140px]"
+      >
+        {{
+          selectShippingTypeForAll()
+            ? "Shipping Method"
+            : "Default Shipping Type (US)"
+        }}
+      </span>
+      <div class="max-w-[260px] w-full">
+        @if (isLoadingDefaultType()) {
+          <div
+            class="w-full h-9 rounded-lg bg-v4-input-background-color animate-pulse"
+          ></div>
+        } @else if (!selectShippingTypeForAll()) {
+          <app-v4-common-dropdown
+            [(ngModel)]="usDefaultShippingName"
+            [config]="{
+              placeholder: 'Select Shipping Type',
+              displayField: 'name',
+              outputField: 'name'
+            }"
+            [listData]="usShippingTypes()"
+            [clearable]="false"
+            [appendTo]="'body'"
+          />
+        } @else if (selectShippingTypeForAll()) {
+          <app-v4-common-dropdown
+            [ngModel]="usShippingNameForAll()"
+            (ngModelChange)="updateShippingTypeForAll($event)"
+            [config]="{
+              placeholder: 'Select Shipping Method',
+              displayField: 'name',
+              outputField: 'name'
+            }"
+            [listData]="usShippingTypes()"
+            [clearable]="false"
+            [appendTo]="'body'"
+          />
+          @if (!usShippingNameForAll() && isRequired()) {
+            <div
+              class="flex items-center gap-1 mt-1 text-v4-common-red-color text-xs font-semibold"
+            >
+              <fa-icon [icon]="faRequired" class="text-[12px]"></fa-icon>
+              This field is required.
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Default Shipping Type (CA) -->
+    @if (!selectShippingTypeForAll()) {
+      <div
+        class="flex items-center justify-between py-4 border-b border-v4-border-color"
+      >
+        <span
+          class="text-sm text-v4-main-text-color whitespace-nowrap flex-shrink-0 w-[140px]"
+        >
+          Default Shipping Type (CA)
+        </span>
+        <div class="max-w-[260px] w-full">
+          @if (isLoadingDefaultType()) {
+            <div
+              class="w-full h-9 rounded-lg bg-v4-input-background-color animate-pulse"
+            ></div>
+          } @else {
+            <app-v4-common-dropdown
+              [(ngModel)]="caDefaultShippingName"
+              [config]="{
+                placeholder: 'Select Shipping Type',
+                displayField: 'name',
+                outputField: 'name'
+              }"
+              [listData]="caShippingTypes()"
+              [clearable]="false"
+              [appendTo]="'body'"
+            />
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Activities -->
+    <div class="pt-4">
+      @if (auditLog()?.length && !selectShippingTypeForAll()) {
+        <span
+          class="text-v4-primary-brand-bold-color cursor-pointer text-sm font-medium hover:underline"
+          role="presentation"
+          (click)="showActivity.set(!showActivity())"
+          >Activities</span
+        >
+      }
+      <div
+        class="overflow-hidden transition-all duration-300 ease-in-out"
+        [class]="
+          showActivity() ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+        "
+      >
+        <div class="pt-3 overflow-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-v4-input-background-color">
+                <th
+                  class="text-[12px] font-bold text-v4-subtle-text-color uppercase tracking-wider px-3 py-2 text-left"
+                >
+                  User
+                </th>
+                <th
+                  class="text-[12px] font-bold text-v4-subtle-text-color uppercase tracking-wider px-3 py-2 text-left"
+                >
+                  Status
+                </th>
+                <th
+                  class="text-[12px] font-bold text-v4-subtle-text-color uppercase tracking-wider px-3 py-2 text-left"
+                >
+                  Created At
+                </th>
+                <th
+                  class="text-[12px] font-bold text-v4-subtle-text-color uppercase tracking-wider px-3 py-2 text-left"
+                >
+                  IP Address
+                </th>
+                <th
+                  class="text-[12px] font-bold text-v4-subtle-text-color uppercase tracking-wider px-3 py-2 text-left"
+                >
+                  Note
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of auditLog(); track $index) {
+                <tr
+                  class="border-t border-v4-border-color hover:bg-v4-input-background-color transition-colors"
+                >
+                  <td class="text-xs text-v4-main-text-color px-3 py-2.5">
+                    {{ item.userName }}
+                  </td>
+                  <td class="text-xs text-v4-main-text-color px-3 py-2.5">
+                    {{ item.status }}
+                  </td>
+                  <td class="text-xs text-v4-main-text-color px-3 py-2.5">
+                    {{ item.formattedCreatedAt }}
+                  </td>
+                  <td class="text-xs text-v4-main-text-color px-3 py-2.5">
+                    {{ item.ip_address }}
+                  </td>
+                  <td class="text-xs text-v4-main-text-color px-3 py-2.5">
+                    {{ item.note }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (totalPage > 1 && auditLog().length) {
+            <div class="py-3 flex items-center justify-end">
+              <nav
+                class="inline-flex items-center gap-1"
+                aria-label="Pagination"
+              >
+                <a
+                  (click)="onPrevious()"
+                  role="presentation"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-v4-border-color text-v4-subtle-text-color hover:bg-v4-input-background-color cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faAngleLeft" class="text-xs"></fa-icon>
+                </a>
+                @for (item of pageArr; let i = $index; track item) {
+                  <a
+                    aria-current="page"
+                    (click)="gotoPage(item)"
+                    role="presentation"
+                    class="inline-flex items-center justify-center min-w-[32px] h-8 px-2 text-xs font-medium cursor-pointer rounded-lg transition-colors"
+                    [ngClass]="{
+                      'border border-v4-border-color text-v4-main-text-color hover:bg-v4-input-background-color':
+                        item !== '...' && paginationPage !== item,
+                      'bg-v4-primary-brand-color text-white':
+                        paginationPage === item,
+                      'text-v4-subtle-text-color': item === '...'
+                    }"
+                  >
+                    {{ item ? item : "..." }}
+                  </a>
+                }
+                <a
+                  (click)="onNext()"
+                  role="presentation"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-v4-border-color text-v4-subtle-text-color hover:bg-v4-input-background-color cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faAngleRight" class="text-xs"></fa-icon>
+                </a>
+              </nav>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close
+      [type]="{ style: 'outline', name: 'main' }"
+      [text]="'Cancel'"
+      width="125px"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="selectShippingTypeForAll() ? 'Submit' : 'Save'"
+      width="125px"
+      [disabled]="isSubmit()"
+      [loading]="isSubmit()"
+      (clickEvent)="submit()"
+    />
+  </div>
+</div>

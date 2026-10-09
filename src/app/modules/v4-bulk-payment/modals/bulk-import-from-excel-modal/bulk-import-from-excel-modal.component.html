@@ -1,0 +1,404 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex items-center justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-subtle-color"
+  >
+    <div class="flex items-center gap-3">
+      @if (step().step === 2) {
+        <button
+          type="button"
+          class="w-8 h-8 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center border-none bg-transparent"
+          (click)="step().step > 1 ? back() : dialogRef.close(false)"
+        >
+          <lucide-icon
+            [img]="ChevronLeftIcon"
+            [size]="18"
+            class="text-v4-subtle-text-color"
+          ></lucide-icon>
+        </button>
+      }
+      <h1 class="font-funnel text-base font-bold text-v4-main-text-color">
+        Import payments from Excel file
+      </h1>
+    </div>
+    <button
+      type="button"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border-none bg-transparent cursor-pointer p-0 text-v4-tertiary-text-color hover:bg-v4-list-hover-color"
+      (click)="step().step === 3 ? closeWithSuccess() : dialogRef.close(false)"
+    >
+      <lucide-icon [img]="XIcon" [size]="18"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Step 1: File Upload -->
+  @if (step().step === 1) {
+    <div
+      class="px-6 pb-5 pt-4 bg-v4-secondary-background-color overflow-y-auto max-h-[540px] w-[500px] max-w-full"
+    >
+      <form [formGroup]="form">
+        <!-- Select File -->
+        <label
+          for="fileInput"
+          class="mb-1.5 block font-peridot text-xs font-semibold text-v4-main-text-color"
+        >
+          Select file <span class="text-v4-badge-error-text-color">*</span>
+        </label>
+
+        @if (form.controls.file.value; as selectedFile) {
+          <div class="mb-4 flex items-center gap-2.5">
+            <div
+              class="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-v4-input-border-color px-3.5"
+            >
+              <lucide-icon
+                [img]="FileSpreadsheetIcon"
+                [size]="16"
+                class="shrink-0 text-v4-primary-brand-bold-color"
+              ></lucide-icon>
+              <span
+                class="truncate font-peridot text-[13px] font-semibold text-v4-main-text-color"
+                >{{ selectedFile.name }}</span
+              >
+              <span
+                class="shrink-0 font-peridot text-[12px] text-v4-tertiary-text-color"
+                >{{ formatFileSize(selectedFile.size) }}</span
+              >
+              <button
+                type="button"
+                class="ml-auto shrink-0 flex items-center border-none bg-transparent cursor-pointer p-0 text-v4-tertiary-text-color hover:text-v4-main-text-color"
+                (click)="removeFile(); fileInput.value = ''"
+              >
+                <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
+              </button>
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Browse'"
+              [lucideIcon]="'upload'"
+              [lucideIconSize]="16"
+              [customClasses]="'!text-xs !font-bold !px-4 whitespace-nowrap'"
+              (clickEvent)="fileInput.click()"
+            ></app-common-button-v4>
+          </div>
+        } @else {
+          <button
+            type="button"
+            class="import-drop-zone mb-4 flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed py-5"
+            [class.is-drag-over]="isDragOver"
+            (click)="fileInput.click()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            <span
+              class="import-drop-zone-icon flex h-9 w-9 items-center justify-center rounded-full"
+            >
+              <lucide-icon
+                [img]="FileUpIcon"
+                [size]="19"
+                class="text-v4-primary-brand-bold-color"
+              ></lucide-icon>
+            </span>
+            <span class="font-peridot text-[13px] text-v4-main-text-color">
+              Drag and drop your file here, or
+              <span
+                class="font-semibold text-v4-primary-brand-bold-color underline"
+                >browse</span
+              >
+            </span>
+            <span class="font-peridot text-[12px] text-v4-tertiary-text-color">
+              csv or xlsx &middot; dates as mm/dd/yyyy or mm/dd/yy
+            </span>
+          </button>
+        }
+
+        <input
+          #fileInput
+          type="file"
+          class="hidden"
+          [accept]="fts.join(',')"
+          (change)="onFileUpload($event)"
+        />
+
+        @if (form.controls.file.touched && form.controls.file.invalid) {
+          <span
+            class="-mt-3 mb-3 block font-peridot text-[12px] text-v4-badge-error-text-color"
+            >Please select a file</span
+          >
+        }
+
+        <!-- Include Column Heading Lines -->
+        <label
+          for="includeHeader"
+          class="mb-1.5 block font-peridot text-xs font-semibold text-v4-main-text-color"
+        >
+          Include column heading lines
+          <span class="text-v4-badge-error-text-color">*</span>
+        </label>
+        <app-v4-common-dropdown
+          [config]="{
+            placeholder: 'Select',
+            displayField: 'label',
+            outputField: 'value'
+          }"
+          [listData]="includeHeaderOptions"
+          formControlName="includeHeader"
+          [clearable]="false"
+          [searchable]="false"
+        ></app-v4-common-dropdown>
+      </form>
+
+      <!-- How To Prepare Your File -->
+      <div class="mt-3 overflow-hidden rounded-xl border border-v4-border-color">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 px-3.5 py-3 border-none cursor-pointer text-left bg-v4-tertiary-background-color hover:bg-v4-list-hover-color"
+          (click)="togglePrepareGuide()"
+        >
+          <lucide-icon
+            [img]="BookOpenIcon"
+            [size]="17"
+            class="shrink-0 text-v4-primary-brand-bold-color"
+          ></lucide-icon>
+          <span class="flex min-w-0 flex-1 flex-col">
+            <span class="font-peridot text-xs font-bold text-v4-main-text-color"
+              >How to prepare your file</span
+            >
+            <span class="font-peridot text-[12px] text-v4-tertiary-text-color"
+              >Each payment method needs its own columns &mdash; check yours
+              before importing</span
+            >
+          </span>
+          <lucide-icon
+            [img]="ChevronDownIcon"
+            [size]="18"
+            class="shrink-0 text-v4-tertiary-text-color transition-transform duration-200"
+            [class.rotate-180]="showPrepareGuide()"
+          ></lucide-icon>
+        </button>
+
+        @if (showPrepareGuide()) {
+          <div
+            class="max-h-[185px] overflow-y-auto border-t border-v4-border-subtle-color px-3.5 pb-2 pt-1"
+          >
+            @for (group of prepareGuide; track group.sourceType) {
+              <div
+                class="pb-1 pt-2 font-peridot text-[12px] font-bold uppercase tracking-[0.12em] text-v4-subtle-text-color"
+              >
+                {{ group.sourceLabel }}
+              </div>
+              @for (method of group.methods; track method.key) {
+                <div
+                  class="flex items-start gap-3 border-b border-v4-border-subtle-color py-2"
+                >
+                  <div class="flex w-[118px] shrink-0 flex-col">
+                    <span
+                      class="font-peridot text-xs font-semibold text-v4-main-text-color"
+                      >{{ method.transferLabel }}</span
+                    >
+                    <span
+                      class="font-peridot text-[12px] text-v4-tertiary-text-color"
+                      >min {{ method.minColumns }} columns</span
+                    >
+                  </div>
+                  <div class="flex min-w-0 flex-1 flex-wrap gap-1 pt-0.5">
+                    @for (field of method.fieldLabels; track field) {
+                      <span
+                        class="rounded-md bg-v4-hover-tint px-1.5 py-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                        >{{ field }}</span
+                      >
+                    }
+                  </div>
+                </div>
+              }
+            }
+            <div
+              class="flex items-center gap-1.5 pt-2 font-peridot text-[12px] text-v4-tertiary-text-color"
+            >
+              <lucide-icon
+                [img]="InfoIcon"
+                [size]="12"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                >Column order doesn&rsquo;t matter when heading lines are
+                included &middot; amounts as numbers, no currency symbol</span
+              >
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Download Sample / Import Footer -->
+    <div
+      class="flex items-center px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-subtle-color"
+    >
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 font-peridot text-xs font-semibold text-v4-primary-brand-bold-color hover:underline border-none bg-transparent cursor-pointer p-0"
+        [disabled]="fileDownloading()"
+        (click)="downloadSample()"
+      >
+        <lucide-icon [img]="DownloadIcon" [size]="15"></lucide-icon>
+        <span>{{
+          fileDownloading() ? "Downloading..." : "Download sample file"
+        }}</span>
+      </button>
+      <app-common-button-v4
+        class="ml-auto"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Import'"
+        [textColorInput]="'white'"
+        [customHeight]="'40px'"
+        [customPadding]="'0px 24px'"
+        (clickEvent)="submit()"
+        [loading]="submitting()"
+        [disabled]="submitting()"
+        [customClasses]="'!text-[13px] !font-semibold'"
+      ></app-common-button-v4>
+    </div>
+  }
+
+  <!-- Step 2: Column Mapping -->
+  @if (step().step === 2) {
+    <div class="p-6 bg-v4-tertiary-background-color">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <p class="text-sm text-v4-secondary-text-color">
+          Match each column from your file to the corresponding payment field
+        </p>
+        @if (hasMapping()) {
+          <button
+            type="button"
+            class="shrink-0 inline-flex items-center gap-1.5 font-peridot text-xs font-semibold text-v4-primary-brand-bold-color hover:underline border-none bg-transparent cursor-pointer p-0"
+            (click)="resetMapping()"
+          >
+            <lucide-icon [img]="RotateCcwIcon" [size]="14"></lucide-icon>
+            <span>Reset mapping</span>
+          </button>
+        }
+      </div>
+
+      <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+        <div class="max-h-[490px] overflow-y-auto">
+          <table class="v4-ocw-table">
+            <thead>
+              <tr>
+                <th class="text-center">#</th>
+                @for (entry of displayColumns(); track entry.index) {
+                  <th>
+                    <div
+                      #headerDropdownCell
+                      class="w-[250px] relative"
+                      [matTooltip]="getSelectedHeaderLabel(entry.index)"
+                      [matTooltipDisabled]="!truncatedHeaderLabels()[entry.index]"
+                      matTooltipPosition="above"
+                    >
+                      <app-v4-common-dropdown
+                        [config]="{
+                          placeholder: '-- Match --',
+                          displayField: 'label',
+                          outputField: 'value'
+                        }"
+                        [listData]="columnOptions()[entry.index]"
+                        [ngModel]="dropdownValue(entry.index)"
+                        (ngModelChange)="onFieldChange($event, entry.index)"
+                        [clearable]="false"
+                        [searchable]="false"
+                        [typeAhead]="true"
+                        appendTo="body"
+                      ></app-v4-common-dropdown>
+                      @if (dropdownValue(entry.index) !== null) {
+                        <button
+                          type="button"
+                          class="absolute right-7 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center cursor-pointer border-none bg-transparent text-v4-subtle-text-color hover:text-v4-main-text-color"
+                          (click)="onFieldChange(null, entry.index); $event.stopPropagation()"
+                        >
+                          <lucide-icon
+                            [img]="XIcon"
+                            [size]="12"
+                          ></lucide-icon>
+                        </button>
+                      }
+                    </div>
+                  </th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of step().info.rows; track row; let i = $index) {
+                <tr>
+                  <td class="text-center">
+                    <span class="text-xs text-v4-tertiary-text-color">{{
+                      i + 1
+                    }}</span>
+                  </td>
+                  @for (entry of displayColumns(); track entry.index) {
+                    <td class="text-sm text-v4-secondary-text-color">
+                      {{ row[entry.col.displayName] }}
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 Footer -->
+    <div
+      class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Back"
+        [customClasses]="'!text-sm !py-[10px] !px-[20px]'"
+        (clickEvent)="back()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Submit"
+        [customClasses]="'!text-sm !py-[10px] !px-[20px]'"
+        (clickEvent)="submitStep2()"
+        [disabled]="submitting()"
+        [loading]="submitting()"
+      />
+    </div>
+  }
+
+  <!-- Step 3: Import Success -->
+  @if (step().step === 3) {
+    <div
+      class="p-10 bg-v4-tertiary-background-color flex flex-col items-center justify-center w-[500px] max-w-full"
+    >
+      <div
+        class="w-16 h-16 rounded-full bg-v4-badge-success-bg-color flex items-center justify-center mb-5"
+      >
+        <lucide-icon
+          [img]="CircleCheckIcon"
+          [size]="32"
+          class="text-v4-common-green-color"
+        ></lucide-icon>
+      </div>
+      <h2
+        class="text-xl font-semibold text-v4-main-text-color font-funnel mb-2"
+      >
+        Import Successful!
+      </h2>
+      <p class="text-sm text-v4-secondary-text-color text-center">
+        Your payments have been imported successfully.
+      </p>
+    </div>
+
+    <div
+      class="flex justify-center p-6 bg-v4-secondary-background-color"
+    >
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Done"
+        [customClasses]="'!text-sm !py-[10px] !px-[30px]'"
+        (clickEvent)="closeWithSuccess()"
+      />
+    </div>
+  }
+</div>

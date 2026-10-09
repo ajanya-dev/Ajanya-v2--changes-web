@@ -1,0 +1,689 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [backdropZIndex]="backdropZIndex()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'invoice-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [titleSuffix]="panelTitleSuffix()"
+  [subtitleTemplate]="panelSubtitleTmpl"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="statusBadge()"
+  [actionButtons]="actionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="onClosed()"
+  (actionButtonClicked)="onActionClicked($event)"
+/>
+
+<!-- Header subtitle: "Invoice #: <bold>" / "From: <bold> · date · Due date" -->
+<ng-template #panelSubtitleTmpl>
+  <div
+    class="min-w-0"
+    [ngClass]="isPanelExpanded() ? 'flex items-center gap-3' : 'flex flex-col'"
+  >
+    @if (row()?.invoice_no) {
+      <p class="panel-subtitle m-0 shrink-0 !pr-0">
+        Invoice #:
+        <span class="font-semibold text-v4-main-text-color">{{
+          row()?.invoice_no
+        }}</span>
+      </p>
+    }
+    @if (isPanelExpanded() && row()?.invoice_no && panelFromName()) {
+      <span class="shrink-0 text-v4-tertiary-text-color">&bull;</span>
+    }
+    @if (panelFromName()) {
+      <p class="panel-subtitle m-0 min-w-0 truncate !pr-0">
+        From:
+        <span class="font-semibold text-v4-main-text-color">{{
+          panelFromName()
+        }}</span>
+        @if (panelDateLine()) {
+          · {{ panelDateLine() }}
+        }
+      </p>
+    }
+  </div>
+</ng-template>
+
+<!-- Header icon: navy circle with file-text -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="file-text" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<!-- Section skeleton (lazy-loaded sections use this while fetching) -->
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="5" [tiles]="4" />
+    } @else {
+      @if (details(); as d) {
+
+      <!-- ── 1. Invoice information (left col in expanded) ────────────── -->
+      <div class="pd-card invoice-info-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('invoice-info')"
+        >
+          <span class="pd-card-title">Invoice information</span>
+          <lucide-icon
+            [name]="isCardCollapsed('invoice-info') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed('invoice-info')) {
+          <div class="pd-card-body">
+            <div class="pd-row !py-[5px] border-b border-v4-border-color">
+              <span class="pd-row-label">Invoice #</span>
+              <span class="pd-row-value">{{ d.invoiceNo }}</span>
+            </div>
+            @if (d.poNo) {
+              <div class="pd-row !py-[5px] border-b border-v4-border-color">
+                <span class="pd-row-label">PO #</span>
+                <span class="pd-row-value">{{ d.poNo }}</span>
+              </div>
+            }
+            @if (d.category?.categoryName) {
+              <div class="pd-row !py-[5px] border-b border-v4-border-color">
+                <span class="pd-row-label">Category</span>
+                <span class="pd-row-value">{{ d.category.categoryName }}</span>
+              </div>
+            }
+            @if (d.bankAccount?.bankAccountNickName || d.bankAccount?.bankAccountName) {
+              <div class="pd-row !py-[5px] border-b border-v4-border-color">
+                <span class="pd-row-label">Inv from</span>
+                <span class="pd-row-value">
+                  {{ d.bankAccount.bankAccountNickName || d.bankAccount.bankAccountName }}
+                </span>
+              </div>
+            }
+            @if (d.payee?.payeeName) {
+              <div class="pd-row !py-[5px] border-b border-v4-border-color">
+                <span class="pd-row-label">Client name</span>
+                <span class="pd-row-value">{{ d.payee.payeeName }}</span>
+              </div>
+            }
+            @if (d.invoiceDate) {
+              <div class="pd-row !py-[5px] border-b border-v4-border-color">
+                <span class="pd-row-label">Invoice date</span>
+                <span class="pd-row-value">{{ d.invoiceDate }}</span>
+              </div>
+            }
+            @if (d.dueDate) {
+              <div class="pd-row !py-[5px] border-b border-v4-border-color">
+                <span class="pd-row-label">Due date</span>
+                <span class="pd-row-value">{{ d.dueDate }}</span>
+              </div>
+            }
+
+            <div class="pd-row !py-[5px] border-b border-v4-border-color">
+              <span class="pd-row-label">Total</span>
+              <span class="pd-row-value">{{
+                (d.statements?.invoice?.total ?? d.total) | currency
+              }}</span>
+            </div>
+            <div class="pd-row !py-[5px] border-b border-v4-border-color">
+              <span class="pd-row-label">Discount</span>
+              <span class="pd-row-value">
+                {{
+                  (d.discountType === 2
+                    ? (d.discount / 100) * d.total
+                    : d.discountApplied ?? d.discount
+                  ) | currency
+                }}
+                @if (d.discountType === 2) {
+                  <span class="text-v4-tertiary-text-color"
+                    >({{ d.discount }}%)</span
+                  >
+                }
+              </span>
+            </div>
+            <div class="pd-row !py-[5px]" [class.border-b]="!!d.creditMemoApplied" [class.border-v4-border-color]="!!d.creditMemoApplied">
+              <span class="pd-row-label">Tax</span>
+              <span class="pd-row-value">{{
+                (d.statements?.invoice?.totalTax ?? d.totalTax) | currency
+              }}</span>
+            </div>
+            @if (d.creditMemoApplied) {
+              <div class="pd-row !py-[5px]">
+                <span class="pd-row-label">Credit</span>
+                <span class="pd-row-value">{{ d.creditMemoApplied | currency }}</span>
+              </div>
+            }
+
+            <div
+              class="flex items-center justify-between rounded-lg px-3 py-2 mt-1"
+              style="background: color-mix(in srgb, var(--v4-primary-brand-bold-color) 10%, transparent)"
+            >
+              <span class="text-[12px] font-bold" style="color: var(--v4-primary-brand-bold-color)">Grand total</span>
+              <span class="text-sm font-bold" style="color: var(--v4-primary-brand-bold-color)">{{
+                (d.statements?.invoice?.grandTotal ?? d.grandTotal) | currency
+              }}</span>
+            </div>
+
+            @if (d.memo) {
+              <div class="pd-row-block">
+                <span class="pd-row-label">Memo</span>
+                <p class="pd-row-value m-0 whitespace-pre-wrap">{{ d.memo }}</p>
+              </div>
+            }
+            @if (d.note) {
+              <div class="pd-row-block">
+                <span class="pd-row-label">Private note</span>
+                <p class="pd-row-value m-0 whitespace-pre-wrap">{{ d.note }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ── 2. Client information (right col in expanded) ───────────── -->
+      <div class="pd-card client-info-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('client-info')"
+        >
+          <span class="pd-card-title">Client information</span>
+          <lucide-icon
+            [name]="isCardCollapsed('client-info') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed('client-info')) {
+          <div class="pd-card-body">
+            @if (d.payee) {
+              <div class="flex items-start gap-2.5">
+                <span
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color font-peridot text-sm font-bold text-white"
+                >
+                  {{ clientInitials() }}
+                </span>
+                <div class="min-w-0 flex-1 leading-tight">
+                  @if (d.payee.payeeName) {
+                    <p
+                      class="m-0 truncate font-peridot text-xs font-semibold text-v4-main-text-color"
+                      style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+                      [title]="d.payee.payeeName"
+                    >
+                      {{ d.payee.payeeName }}
+                    </p>
+                  }
+                  @if ($any(d.payee).payeeEmail) {
+                    <p
+                      class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                    >
+                      {{ $any(d.payee).payeeEmail }}
+                    </p>
+                  }
+                  @if ($any(d.payee).payeePhone) {
+                    <p
+                      class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                    >
+                      {{ $any(d.payee).payeePhone }}
+                    </p>
+                  }
+                  @if (
+                    d.payee.payeeAddress1 ||
+                    d.payee.payeeAddress2 ||
+                    d.payee.payeeCity ||
+                    d.payee.payeeState ||
+                    d.payee.payeeZip
+                  ) {
+                    <p
+                      class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                      style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+                      [title]="clientFullAddressLine()"
+                    >
+                      {{ clientFullAddressLine() }}
+                    </p>
+                  }
+                </div>
+              </div>
+
+              <!-- Last 10 invoices sub-table -->
+              @if (last10Invoices.length) {
+                <div class="mt-3 border-t border-v4-border-color pt-3">
+                  <p class="pd-row-label mb-1.5">Last 10 invoices</p>
+                  <div class="overflow-x-auto">
+                    <table class="v4-ocw-table w-full">
+                      <thead>
+                        <tr>
+                          <th class="w-8 text-center">#</th>
+                          <th class="w-full">Date</th>
+                          <th class="text-right whitespace-nowrap">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (inv of last10Invoices; track $index) {
+                          <tr>
+                            <td class="text-center">
+                              <span class="text-xs text-v4-tertiary-text-color">{{
+                                $index + 1
+                              }}</span>
+                            </td>
+                            <td>{{ inv.invoiceDate }}</td>
+                            <td class="text-right whitespace-nowrap">
+                              {{ inv.grandTotal | currency }}
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="pd-empty py-4">
+                <p class="pd-row-label">No client information</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ── 3. Payment status (left col row 2 in expanded) ──────────── -->
+      <div class="pd-card payment-status-card" [class.pd-full]="!d.items?.length">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('payment-status')"
+        >
+          <span class="pd-card-title">Payment status</span>
+          <lucide-icon
+            [name]="
+              isCardCollapsed('payment-status') ? 'chevron-down' : 'chevron-up'
+            "
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed('payment-status')) {
+          <div class="pd-card-body">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="pd-row-label">Total paid</p>
+                <p class="m-0 text-lg font-bold text-v4-badge-success-text-color">
+                  {{ d.paid | currency }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="pd-row-label">Due amount</p>
+                <p
+                  class="m-0 text-lg font-bold text-v4-insight-card-icon-orange"
+                >
+                  {{ d.balance | currency }}
+                </p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ── 4. Invoice details (right col row 2 in expanded) ────────── -->
+      @if (d.items?.length) {
+        <div class="pd-card invoice-details-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('invoice-details')"
+          >
+            <span class="pd-card-title">Invoice details</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('invoice-details')
+                  ? 'chevron-down'
+                  : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed('invoice-details')) {
+            <div class="pd-card-body overflow-x-auto">
+              <table class="v4-ocw-table table-fixed min-w-[600px]">
+                <thead>
+                  <tr>
+                    <th class="w-8 text-center">#</th>
+                    <th class="w-24">Item name</th>
+                    <th class="w-28">Description</th>
+                    <th class="w-24">Unit price</th>
+                    <th class="w-12 text-right">Qty</th>
+                    <th class="w-28">Discount</th>
+                    <th class="w-24">Sub total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of d.items; track $index) {
+                    <tr>
+                      <td class="text-center">
+                        <span class="text-xs text-v4-tertiary-text-color">{{
+                          $index + 1
+                        }}</span>
+                      </td>
+                      <td>
+                        <div class="truncate" [title]="item.itemName">
+                          {{ item.itemName }}
+                        </div>
+                      </td>
+                      <td>
+                        <div class="truncate" [title]="item.note || '-'">
+                          {{ item.note || "-" }}
+                        </div>
+                      </td>
+                      <td class="truncate">{{ item.unitPrice | currency }}</td>
+                      <td class="text-right">{{ item.units }}</td>
+                      <td class="truncate">
+                        {{ (item.discountAmount ?? 0) | currency }}
+                        @if (item.discountType === 2) {
+                          <span class="text-v4-tertiary-text-color"
+                            >({{ item.discountApplied }}%)</span
+                          >
+                        }
+                      </td>
+                      <td class="whitespace-nowrap">
+                        {{ (item.itemTotal ?? item.total) | currency }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── 5. Mail details (full width, conditional) ────────────────── -->
+      @if (isMailed()) {
+        <div class="pd-card mail-details-card pd-full">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('mail-details')"
+          >
+            <span class="pd-card-title">Mail details</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('mail-details') ? 'chevron-down' : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed('mail-details')) {
+            <div class="pd-card-body">
+              @if (mailTrackLoading()) {
+                <app-pd-skeleton variant="section" />
+              } @else {
+                <div class="pd-row">
+                  <span class="pd-row-label">Mailed using</span>
+                  <span class="pd-row-value">{{ mailTrack()?.mailedUsing }}</span>
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Tracking link</span>
+                  @if (mailTrack()?.trackingCode) {
+                    <a
+                      [href]="getMailTrackUrl(mailTrack()!.trackingCode)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="pd-row-value text-v4-primary-brand-color hover:underline"
+                      >Track</a
+                    >
+                  } @else {
+                    <span class="pd-row-value">Not available</span>
+                  }
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Carrier type</span>
+                  <span class="pd-row-value">{{ mailTrack()?.carrier }}</span>
+                </div>
+                @if (d.payee?.payeeAddress1?.trim()) {
+                  <div class="pd-row-block">
+                    <span class="pd-row-label">Payee address</span>
+                    <p class="pd-row-value m-0 leading-relaxed">
+                      {{ d.payee.payeeAddress1
+                      }}@if (d.payee.payeeAddress2?.trim()) {
+                        , {{ d.payee.payeeAddress2 }}
+                      }<br />
+                      {{ mailAddressLine() }}
+                    </p>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── 6. Action grid (always full width) ──────────────────────── -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <!-- Tile row -->
+        <div
+          class="pd-card-head-flush grid grid-cols-4 gap-1.5 px-3 py-2"
+          [ngClass]="openActionSection() ? 'border-b border-v4-border-color' : ''"
+        >
+          <!-- Payment summary -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'payment-summary'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'border-v4-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('payment-summary')"
+          >
+            <lucide-icon
+              name="receipt"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight whitespace-nowrap"
+              >Payment summary</span
+            >
+          </button>
+
+          <!-- Audit trail -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'audit'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'border-v4-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('audit')"
+          >
+            <lucide-icon
+              name="activity"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight whitespace-nowrap"
+              >Audit trail</span
+            >
+          </button>
+
+          <!-- Attachments -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'attachments'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'border-v4-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('attachments')"
+          >
+            <lucide-icon
+              name="paperclip"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Attachments</span
+            >
+          </button>
+
+          <!-- Comments -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'comments'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'border-v4-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('comments')"
+          >
+            <lucide-icon
+              name="message-square"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Comments</span
+            >
+          </button>
+        </div>
+
+        <!-- Section panels -->
+        @if (openActionSection() === 'payment-summary') {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (paymentSummary.length) {
+              <div class="overflow-x-auto">
+                <div class="max-h-[490px] overflow-y-auto">
+                  <table class="v4-ocw-table">
+                    <thead>
+                      <tr>
+                        <th class="text-center">#</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th class="text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of paymentSummary; track $index) {
+                        <tr>
+                          <td class="text-center">
+                            <span class="text-xs text-v4-tertiary-text-color">{{ $index + 1 }}</span>
+                          </td>
+                          <td>
+                            <app-pd-date-time [value]="item.paymentDate" />
+                          </td>
+                          <td>{{ item.paymentType }}</td>
+                          <td>{{ item.reference }}</td>
+                          <td class="text-right">{{ item.amount | currency }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <app-pd-empty-state
+                icon="wallet"
+                [title]="'No payments yet'"
+                [hint]="'Payments recorded against this invoice will show up here.'"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === 'audit') {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading('audit')) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-audit-log-list
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                [logs]="auditLogsForList()"
+                [maxHeight]="'400px'"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === 'attachments') {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading('attachments')) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-attachments-list
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                variant="view-panel"
+                [emptyHint]="'Files attached to this invoice will show up here.'"
+                [attachments]="attachmentsForList()"
+                [maxHeight]="'400px'"
+                [deletingId]="deletingAttachmentId()"
+                [uploading]="attachmentUploading()"
+                [error]="attachmentError()"
+                (fileSelected)="onAttachmentSelected($event)"
+                (openAttachment)="onOpenAttachment($event)"
+                (deleteAttachment)="onDeleteAttachment($event)"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === 'comments') {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading('comments')) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-comments-list
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                variant="view-panel"
+                [emptyHint]="'Notes you add here stay with this invoice.'"
+                [comments]="commentsForList()"
+                [maxHeight]="'400px'"
+                [posting]="commentPosting()"
+                [error]="commentError()"
+                (submitComment)="onSubmitComment($event)"
+                (deleteComment)="onDeleteComment($event)"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+      </div>
+      }
+    }
+  </div>
+</ng-template>

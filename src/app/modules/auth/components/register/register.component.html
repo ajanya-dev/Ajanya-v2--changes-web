@@ -1,0 +1,375 @@
+<div class="page_container">
+  <a href="/" class="logo">
+    @if(isArcharina){
+      <img
+        role="presentation"
+        alt="Archarina"
+        (click)="authV3Service.onGoToWebsite()"
+        [ngSrc]="'assets/white_label/archarina.io/assets/app_logo.png'"
+        title="Archarina"
+        width="160"
+        height="75"
+        priority
+        class="!max-w-[160px]"
+      />
+    }@else{
+      <img
+        [ngSrc]="logoPath"
+        [alt]="authV3Service.appConfig?.websiteTitle"
+        [title]="authV3Service.appConfig?.websiteTitle"
+        width="130"
+        height="85"
+      />
+    }
+  </a>
+  <div class="flex flex-col w-full">
+    <div
+      class="main_content !mb-5"
+      [ngClass]="{ single_side: isSingleSideUIEnabledVariable }"
+    >
+      <!--=====================================>
+      LEFT SECTION START
+      =======================================-->
+      @if (!isSingleSideUIEnabledVariable) {
+        <div class="left_section">
+          <h1>
+            Register now for<br />
+            <span>Free</span>
+          </h1>
+
+          <div id="benefits">
+            @for (
+              item of benefits | whiteLabel: "registerPageBenefitsList";
+              track item
+            ) {
+              <div class="!items-center">
+                <fa-icon
+                  class="text-common-green-color pr-2"
+                  [icon]="['fas', 'circle-check']"
+                ></fa-icon>
+                <span class="text">{{ item }}</span>
+              </div>
+            }
+          </div>
+
+          <div id="signup_with">
+            <!-- Social login icons start -->
+            @if (staticWhiteLabelConditions.socialLoginVisible) {
+              <ng-container>
+                <span>Sign Up With</span>
+
+                <div class="options">
+                  @for (item of socialLoginIcons; track $index) {
+                    <ng-container>
+                      <a
+                        role="presentation"
+                        (click)="onClickSocialIcon(item.url)"
+                        [ngStyle]="item?.styles?.a"
+                        [matTooltip]="'Sign in with' + ' ' + item.name"
+                      >
+                        <img
+                          class="social_login"
+                          [ngStyle]="item?.styles?.img"
+                          [src]="'/assets/images/login/social/' + item.image"
+                          [alt]="item.name"
+                        />
+                      </a>
+                    </ng-container>
+                  }
+                </div>
+              </ng-container>
+            }
+            <!-- Social login icons end -->
+
+            <span
+              >Already have an account ? <a routerLink="/login">Login</a>
+            </span>
+          </div>
+
+          <div id="award">
+            <span>Awards or Affiliation</span>
+
+            <div class="award_img">
+              <a
+                href="https://reviews.financesonline.com/p/online-check-writer/"
+                target="_blank"
+                rel="nofollow noopener"
+              >
+                <img
+                  src="https://c.onlinecheckwriter.com/public/asset/image/risign-Star_icon.svg"
+                  alt="FORSA"
+                  title="Finance Online Rising Star Award"
+                />
+              </a>
+              <a
+                href="https://reviews.financesonline.com/p/online-check-writer/"
+                target="_blank"
+                rel="nofollow noopener"
+              >
+                <img
+                  src="https://c.onlinecheckwriter.com/public/asset/image/guest_user_icon.svg"
+                  alt="FOGUEA"
+                  title="Finance Online Great User Experience Award"
+                />
+              </a>
+              <a
+                href="https://www.inc.com/profile/tyler-petroleum"
+                target="_blank"
+                rel="noopener"
+              >
+                <img
+                  src="https://c.onlinecheckwriter.com/public/marketing/inc500.png"
+                  alt="Tyler petroleum"
+                  title="Our Parent Company (Tyler Petroleum Inc) is fastest growing companies of america "
+                />
+              </a>
+              <a
+                href="https://www.nacha.org/content/alliance-program-membership-directory"
+                target="_blank"
+                rel="noopener"
+              >
+                <img
+                  src="https://c.onlinecheckwriter.com/public/asset/image/nacha_logo.png"
+                  alt="PIAN"
+                  title="Payment Innovation Alliance member of NACHA"
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+      <!--=====================================>
+      LEFT SECTION END
+      =======================================-->
+
+      <!--=====================================>
+      RIGHT SECTION START
+      =======================================-->
+      <div class="right_section">
+        <form [formGroup]="userForm" (ngSubmit)="submit()" autocomplete="off">
+          <input type="email" name="email" style="display: none" />
+          <input type="password" name="password" style="display: none" />
+
+          <span id="signup-text">Sign Up</span>
+
+          <div class="input_group">
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="name"
+                maxlength="60"
+              />
+              <span class="floating_label_field">Name</span>
+              <div class="error_msg">
+                <app-control-message-v35 [control]="userForm.controls.name" [label]="userForm.controls.name.value?.length > 0 ? 'Name should be at least 3 character' : 'Name is required'" />
+              </div>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="email"
+                class="input_style"
+                placeholder=" "
+                formControlName="email"
+                maxlength="100"
+                autocomplete="xxxxxxxxxxx"
+              />
+              <span class="floating_label_field">Work Email</span>
+              @if(authV3Service.emailError){
+                <div class="error_msg">{{ authV3Service.emailError }}</div>
+              }@else{
+                <div class="error_msg">
+                  <app-control-message-v35 [control]="userForm.controls.email" [label]="userForm.controls.email.errors?.['required'] ? 'Email is required' : 'Invalid Email address' "/>
+                </div>
+              }
+            </div>
+
+            <div class="single_input">
+              <input
+                type="{{ passwordHide ? 'password' : 'text' }}"
+                class="input_style"
+                placeholder=" "
+                formControlName="password"
+                (click)="passwordFocus()"
+                (focusout)="showValidBox = false"
+                (input)="authV3Service.onPasswordValidation($event)"
+                maxlength="100"
+                autocomplete="xxxxxxxxxxx"
+              />
+              <span class="floating_label_field">Password</span>
+
+              <!-- EYE BUTTON START-->
+              @if (passwordHide) {
+                <fa-icon
+                  (click)="passwordHide = !passwordHide"
+                  class="eye-btn text-secondary-text-color"
+                  [icon]="['far', 'eye']"
+                ></fa-icon>
+              }
+              @if (!passwordHide) {
+                <fa-icon
+                  (click)="passwordHide = !passwordHide"
+                  class="eye-btn text-secondary-text-color"
+                  [icon]="['far', 'eye-slash']"
+                ></fa-icon>
+              }
+              <!-- EYE BUTTON END-->
+
+              <div
+                id="pswd_info"
+                [ngClass]="{ active: authV3Service.isPasswordAssistanceShown }"
+              >
+                <ul id="validationList">
+                  <li id="letter" class="invalid">At least one lower case</li>
+                  <li id="capital" class="invalid">
+                    At least one capital letter
+                  </li>
+                  <li id="number" class="invalid">At least one number</li>
+                  <li id="specialCharacter" class="invalid">
+                    At least one special character
+                  </li>
+                  <li id="length" class="invalid">Be at least 8 characters</li>
+                </ul>
+              </div>
+              <div class="error_msg">
+                <app-control-message-v35 [control]="userForm.controls.password" [label]="userForm.controls.password.errors?.['required'] ? 'Password is required' : 'Password must be at least 8 characters'" />
+              </div>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="password"
+                class="input_style"
+                placeholder=" "
+                formControlName="password_confirmation"
+                maxlength="100"
+              />
+              <span class="floating_label_field">Confirm Password</span>
+              <div class="error_msg">
+                <app-control-message-v35 
+                  [control]="userForm.controls.password_confirmation" 
+                  [label]="userForm.controls.password_confirmation.errors?.['required'] ? 'Confirm Password is required' : userForm.controls.password_confirmation.errors?.['confirmPassword'] ? 'Password does not match' : userForm.controls.password_confirmation.errors?.['minlength'] ? 'Confirm Password must be at least 8 characters' : ''"
+                />
+              </div>
+            </div>
+
+            <div class="single_input">
+              <app-new-phone-input
+                [isRequiredField]="false"
+                formControlName="phone_no"
+                (countryDropdown)="countryChange($event)"
+                (countryCodeEmit)="countryCodeChange($event)"
+              ></app-new-phone-input>
+              <app-control-message-v35 [control]="userForm.controls.phone_no" />
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="coupon_code"
+                maxlength="100"
+              />
+              <span class="floating_label_field">Coupon Code</span>
+            </div>
+          </div>
+         <div class="flex gap-1 flex-col">
+           @if(!env?.isItWhiteLabel){
+             <label class="flex items-start min-w-[16px]">
+              <input id="termsAccepted" type="checkbox" formControlName="eSign" class="mr-2 min-w-[16px] w-4 h-4 mt-0.5 flex-shrink-0" (change)="openTermsDialog($event.target.checked)">
+                <span class="font-inter font-normal text-[12px] leading-5 text-main-text-color cursor-pointer">By proceeding, you, as the authorized representative of your business, agree to
+                  <a href="https://zilmoney.com/zil-money-e-signature-agreement" target="_blank"> Zil Money’s E-Signature Agreement</a>
+                  and consent to receive all disclosures and agreements electronically. You acknowledge that electronic signatures are legally binding and that all account communications will be delivered in electronic form.
+                </span>
+            </label>
+          }
+            <label class="flex items-start min-w-[16px]">
+              <input
+                type="checkbox"
+                formControlName="termsAndCondition"
+                class="mr-2 min-w-[16px] w-4 h-4 mt-0.5 flex-shrink-0"
+              />
+              @if (env?.isItWhiteLabel) {
+                <span class="text-sm cursor-pointer">
+                  I Agree to the
+                  <a
+                    [href]="staticWhiteLabelConditions.termsAndConditions"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Terms and Conditions
+                  </a>
+                </span>
+              }@else{
+                <span class="font-inter font-normal text-[12px] leading-5 text-main-text-color cursor-pointer">
+                  I accept Zil Money's <a href="https://zilmoney.com/terms-and-condition" target="_blank">Terms and Conditions</a> and <a href="https://zilmoney.com/privacy-policy" target="_blank">Privacy Policy</a>, and confirm compliance with the <a href="http://zilmoney.com/usa-patriot-act-notice/" target="_blank">USA PATRIOT Act</a>, including identity verification. I consent to receive communications from Zil Money as described in the <a href="https://zilmoney.com/communications-policy/" target="_blank">Zil Money Communication Policy</a>, including contact via SMS and other communication methods.
+                </span>
+              }
+            </label>
+            <label class="flex items-start min-w-[16px]">
+              <input
+                type="checkbox"
+                formControlName="ccpa"
+                class="mr-2 min-w-[16px] w-4 h-4 mt-0.5 flex-shrink-0"
+              />
+                <span class="font-inter font-normal text-[12px] leading-5 text-main-text-color cursor-pointer">I acknowledge my rights under the <a href="https://zilmoney.com/california-consumer-privacy-act-disclosure/" target="_blank">California Consumer Privacy Act (CCPA)</a> to access, delete, and opt-out of data sales.</span>
+            </label>
+          </div>
+
+          <div class="signup-button">
+            <button
+              class="ocw-btn"
+              type="submit"
+              [ngClass]="{ disableBtn: authV3Service.submitting }"
+            >
+              @if (authV3Service.submitting) {
+                <span class="loadingSpinner"></span>
+              }
+              Sign Up
+            </button>
+          </div>
+        </form>
+      </div>
+      <!--=====================================>
+      RIGHT SECTION END
+      =======================================-->
+    </div>
+    @if (authV3Service.staticWhiteLabelConditions.zilMoneyLogoVisible) {
+      <div class="flex items-baseline justify-center gap-1.5">
+        <p
+          class="font-normal font-inter text-sm leading-none text-main-text-color"
+        >
+          POWERED BY
+        </p>
+        <a class="flex items-center leading-none" href="https://zilmoney.com/">
+          <img
+            class="block w-[90px] h-[18px] object-cover object-[center_37%]"
+            ngSrc="/assets/main/zil_Money_logo.svg"
+            width="90"
+            height="18"
+            priority
+            alt="Zil Money"
+          />
+        </a>
+      </div>
+    }
+    @if (supportNo) {
+      <a
+        class="flex justify-center font-inter font-normal text-sm z-10 !text-main-text-color"
+        href="tel:{{ supportNo }}"
+        ><span
+          class="self-center flex gap-2.5 text-[13px] rounded-sm cursor-pointer py-1.5 px-2"
+          ><fa-icon [icon]="faPhone" role="presentation"></fa-icon
+          >{{ supportNo }}</span
+        ></a
+      >
+    }
+  </div>
+
+  <div class="background">
+    <img src="/assets/images/register-bg.svg" alt="">
+  </div>
+</div>

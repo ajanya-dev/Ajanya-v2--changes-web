@@ -1,0 +1,378 @@
+@if (bankDataService.isGridView) {
+  <div class="h-full">
+    @if (bankDataService.bankAccountsSignal()?.length) {
+      <div
+        class="flex justify-between items-center gap-3 laptop:hidden w-full bg-secondary-background-color"
+      >
+        <div
+          class="w-16 h-12 rounded bg-main-background-color flex justify-center items-center"
+        >
+          <div
+            class="h-min w-min text-main-text-color bg-main-background-color flex justify-center items-center"
+          >
+            <app-list-view-toggle
+              (viewToggleEvent)="viewToggle($event)"
+            ></app-list-view-toggle>
+          </div>
+        </div>
+        <div class="flex-1 bg-main-background-color">
+          <app-v35-common-dropdown
+            [config]="{
+              placeholder: 'Select Bank Account',
+              displayField: 'bank_account_nick_name',
+              displaySubField: 'truncatedBankAccNumber',
+              style: {
+                size: 3,
+                enableLabelIcon: true,
+                labelIconData: {
+                  icon_fa: ['fas', 'building-columns'],
+                  color: 'common-blue-color'
+                }
+              },
+              commons: {
+                iconColor: {
+                  background: 'common-secondary-blue-color',
+                  text: 'common-blue-color'
+                },
+                iconData: ['fas', 'building-columns']
+              },
+              enableAddNew: true
+            }"
+            [listData]="bankDataService.bankAccountsSignal()"
+            [(ngModel)]="selectedValue"
+            (buttonClick)="onNew()"
+          ></app-v35-common-dropdown>
+        </div>
+      </div>
+    }
+
+    <div class="hidden laptop:flex flex-col h-full">
+      @if (!resize) {
+        <app-list-header-v35
+          header="Bank Accounts"
+          (gridClickEvent)="viewToggle($event)"
+          (searchEvent)="filterData($event)"
+          (addButtonClickEvent)="onNew()"
+          addButtonTextColor="white"
+        ></app-list-header-v35>
+      }
+      <div
+        cdkDropList
+        (cdkDropListDropped)="dropListSort($event)"
+        [cdkDropListSortPredicate]="sortPredicate()"
+        [ngClass]="{
+          '!cursor-grabbing': grabbing
+        }"
+        class="bank-accounts-list flex-1 flex flex-col overflow-x-hidden overflow-y-auto"
+        appScrollToEnd
+        (scrollToEnd)="onScrollToEnd()"
+      >
+        @if (
+          !bankDataService.isRemainingLoading &&
+          !bankDataService.accountLoadingSignal()
+        ) {
+          <div
+            role="presentation"
+            class="border-t border-input-border-color flex justify-between items-center text-xs font-semibold text-main-text-color cursor-pointer hover:shadow-lg hover:bg-secondary-background-color"
+            [ngClass]="{
+              '!cursor-grabbing': grabbing,
+              'border !border-common-blue-color shadow-common-button rounded-sm bg-secondary-background-color':
+                !bankDataService.selectedBankAccountSignal()?.id
+            }"
+            (click)="selectAll()"
+          >
+            <div class="pl-6 pr-3 py-2 flex gap-3">
+              <div class="w-full">
+                <h1
+                  class="font-roboto text-xs font-medium text-main-text-color"
+                >
+                  All Accounts
+                </h1>
+                <h2
+                  class="font-roboto text-xs font-normal text-secondary-text-color"
+                >
+                  {{ totalAccountsCount }} Accounts
+                </h2>
+              </div>
+            </div>
+          </div>
+        }
+        @for (
+          item of bankDataService.bankAccountsSignal()
+            | moveSelectedToTop: selectedBankAccount : searchInput;
+          track $index
+        ) {
+          <div
+            class="bank-account-item cursor-pointer"
+            [ngClass]="{
+              '!cursor-grab': item.is_favorite && !grabbing,
+              '!cursor-grabbing': grabbing
+            }"
+            (cdkDragStarted)="dragEvents('start')"
+            (cdkDragEnded)="dragEvents('end')"
+            [cdkDragDisabled]="!item.is_favorite"
+            cdkDragLockAxis="y"
+            cdkDragBoundary=".bank-accounts-list"
+            cdkDrag
+          >
+            <div
+              tabindex="0"
+              [ngClass]="{
+                'border !border-common-blue-color shadow-common-button rounded bg-secondary-background-color':
+                  item?.id === bankDataService.selectedBankAccountSignal()?.id
+              }"
+              class="bank-account-item border-b border-input-border-color pl-4 py-2 flex justify-between items-center text-xs font-semibold text-main-text-color hover:shadow-lg hover:bg-secondary-background-color select-none"
+              role="presentation"
+              (click)="bankDataService.selectBankAccount(item)"
+            >
+              <div class="flex gap-2 items-center overflow-hidden">
+                @if (!resize) {
+                  <div
+                    class="relative flex justify-center items-center rounded-full h-7 w-7 bg-common-secondary-blue-color"
+                    [ngClass]="{
+                      '!bg-main-background-color':
+                        item?.id ===
+                        bankDataService.selectedBankAccountSignal()?.id
+                    }"
+                  >
+                    <fa-icon
+                      [icon]="['fas', 'building-columns']"
+                      class="text-sm text-common-blue-color"
+                    />
+                    @if (item.is_favorite) {
+                      <fa-icon
+                        class="absolute -top-0.5 -right-0.5 text-common-yellow-color"
+                        [icon]="faStar"
+                      />
+                    }
+                  </div>
+                }
+                <div class="flex flex-col overflow-hidden">
+                  <div class="flex items-center gap-1 !text-xs max-w-[150px]">
+                    <div
+                      class="whitespace-nowrap truncate flex-1 min-w-0"
+                      [matTooltip]="
+                        item.bank_account_nick_name ||
+                        item.bank_account_account_name
+                      "
+                    >
+                      {{
+                        item.bank_account_nick_name ||
+                          item.bank_account_account_name
+                      }}
+                    </div>
+                    @if (item.is_positive_pay_enabled === 1) {
+                      <img
+                        ngSrc="assets/images/header/header-main-menu/positive_pay.svg"
+                        alt="Positive pay enabled"
+                        width="16"
+                        height="16"
+                        class="!w-4 !h-4 !mb-1 flex-shrink-0"
+                        [matTooltip]="'This bank account is configured for Positive Pay.'"
+                        matTooltipPosition="below"
+                      />
+                    }
+                  </div>
+                  <div
+                    class="whitespace-nowrap overflow-hidden !font-normal !text-secondary-text-color"
+                  >
+                    {{ item.truncatedBankAccNumber }}
+                  </div>
+                </div>
+              </div>
+              @if (!resize) {
+                <div class="flex items-center justify-between">
+                  <div class="flex justify-end items-center whitespace-nowrap">
+                    @if (
+                      (!item.verified_by &&
+                      (item.mark_as_verified === 0 || !item.mark_as_verified)) || (item.verified_by  == 88 && item.mark_as_verified === 0)
+                    ) {
+                      <div class="flex justify-end items-center">
+                        <button
+                          class="text-common-blue-color h-5 text-xs flex items-center"
+                          (click)="openBankVerifyModal(item)"
+                        >
+                          <fa-icon
+                            [icon]="['fas', 'triangle-exclamation']"
+                            class="text-common-yellow-color pr-1 text-[12px] hidden xl:block"
+                          ></fa-icon>
+                          <div class="underline hidden xl:block">Verify</div>
+                        </button>
+                      </div>
+                    }
+                    @if (
+                      item.mark_as_verified === 1 &&
+                      item?.ach_application_status !== 1
+                    ) {
+                      <div class="text-xs text-center flex items-center">
+                        <fa-icon
+                          [icon]="['fas', 'circle-check']"
+                          class="text-common-green-color pr-1 text-[12px] hidden xl:block"
+                        ></fa-icon>
+                        <div class="hidden xl:block">Verified</div>
+                      </div>
+                    }
+                    @if (
+                      item.verified_by === 3 &&
+                      item?.ach_application_status !== 1
+                    ) {
+                      <div class="flex justify-end items-center">
+                        <button
+                          class="text-common-blue-color h-5 text-xs flex items-center"
+                          (click)="microDeposit(item)"
+                        >
+                          <fa-icon
+                            [icon]="['fas', 'triangle-exclamation']"
+                            class="text-common-yellow-color pr-1 text-[12px] hidden xl:block"
+                          ></fa-icon>
+                          <div class="underline hidden xl:block">
+                            Confirm MD
+                          </div>
+                        </button>
+                      </div>
+                    }
+                    @if (
+                      item.verified_by === 4 &&
+                      item?.ach_application_status !== 1
+                    ) {
+                      <div class="text-common-yellow-color flex items-center">
+                        <fa-icon
+                          [icon]="['fas', 'circle']"
+                          class="pr-1 text-[12px] hidden xl:block"
+                        ></fa-icon>
+                        <div class="hidden xl:block">Pending</div>
+                      </div>
+                    }
+                    @if (
+                      item.verified_by === 5 &&
+                      item?.ach_application_status !== 1
+                    ) {
+                      <div class="text-[13px] text-center flex items-center">
+                        <fa-icon
+                          [icon]="['fas', 'circle-check']"
+                          class="text-common-green-color pr-1 text-[12px] hidden xl:block"
+                        ></fa-icon>
+                        <div class="hidden xl:block">Approved</div>
+                      </div>
+                    }
+                    @if (item?.ach_application_status === 1) {
+                      <div class="text-[13px] text-center flex items-center">
+                        <fa-icon
+                          [icon]="['fas', 'circle-check']"
+                          class="text-common-green-color pr-1 text-[12px] hidden xl:block"
+                        ></fa-icon>
+                        <div class="hidden xl:block">ACH</div>
+                      </div>
+                    }
+                    @if (
+                      (item.verified_by === 6 || item.verified_by === 10) &&
+                      item?.ach_application_status !== 1
+                    ) {
+                      <div class="text-common-red-color flex items-center">
+                        <fa-icon
+                          [icon]="['fas', 'circle']"
+                          class="pr-1 text-[8px] hidden xl:block"
+                        ></fa-icon>
+                        <div class="hidden xl:block">Rejected</div>
+                      </div>
+                    }
+                    @if (
+                      item.verified_by === 12 &&
+                      item?.ach_application_status !== 1
+                    ) {
+                      <div class="text-common-red-color flex items-center">
+                        <fa-icon
+                          [icon]="['fas', 'circle']"
+                          class="pr-1 text-[8px] hidden xl:block"
+                        ></fa-icon>
+                        <div class="hidden xl:block">Failed</div>
+                      </div>
+                    }
+                  </div>
+                  <div>
+                    <button
+                      matTooltip="Actions"
+                      [matMenuTriggerFor]="menu"
+                      aria-label="Example icon-button with a menu"
+                    >
+                      <fa-icon
+                        [icon]="['fas', 'ellipsis-vertical']"
+                        class="text-secondary-text-color text-sm px-3"
+                      ></fa-icon>
+                    </button>
+                    <mat-menu #menu="matMenu">
+                      @for (list of settings; track $index) {
+                        <button
+                          [disabled]="
+                            ((item.is_neo_bank ||
+                              item.bank_account_nature_type === 2) &&
+                              list.id === 'id_edit_design_row') ||
+                            ((item.is_neo_bank ||
+                              item.bank_account_nature_type === 2) &&
+                              list.id === 'id_add_signature')
+                          "
+                          mat-menu-item
+                          (click)="onSettingClick(list.id, item)"
+                        >
+                          <fa-icon
+                            [icon]="list.faIcon"
+                            [ngClass]="{
+                              '!text-common-yellow-color':
+                                list.id === 'id_favorite' &&
+                                item.is_favorite === 0
+                            }"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color">{{
+                            list.id === "id_favorite"
+                              ? item.is_favorite === 0
+                                ? "Add to Favorites"
+                                : "Unfavorite"
+                              : list.name
+                          }}</span>
+                        </button>
+                      }
+                    </mat-menu>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @if (
+          bankDataService.isRemainingLoading ||
+          bankDataService.accountLoadingSignal()
+        ) {
+          <div>
+            <app-common-list-skelton [items]="14"></app-common-list-skelton>
+          </div>
+        }
+        @if (
+          (bankDataService.bankAccountsSignal() | json) === "[]" &&
+          !bankDataService.accountLoadingSignal()
+        ) {
+          <div
+            tabindex="0"
+            [ngClass]="{ 'p-5': !resize }"
+            class="v3-border w-full text-sm flex justify-between items-center hover:shadow-md my-auto"
+          >
+            <div
+              class="h-full w-full flex items-center text-center justify-center"
+            >
+              Sorry!
+              @if (resize) {
+                <br />
+              }
+              No results Found.
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+@if (!bankDataService.isGridView) {
+  <div class="flex flex-col h-full w-full relative min-w-max overflow-x-auto">
+    <app-bank-accounts-data-table-v35></app-bank-accounts-data-table-v35>
+  </div>
+}

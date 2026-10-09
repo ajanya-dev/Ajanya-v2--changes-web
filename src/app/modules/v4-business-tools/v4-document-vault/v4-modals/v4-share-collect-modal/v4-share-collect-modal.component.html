@@ -1,0 +1,460 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-2.5">
+      <div
+        class="w-10 h-10 rounded-lg flex items-center justify-center"
+        style="background-color: rgba(5, 149, 229, 0.12)"
+      >
+        <lucide-icon
+          [img]="LinkIcon"
+          [size]="20"
+          style="color: var(--v4-primary-brand-bold-color)"
+        ></lucide-icon>
+      </div>
+      <h1 class="text-[18px] font-semibold text-v4-main-text-color font-peridot">
+        Request Files
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body -->
+  <div class="p-6 bg-v4-tertiary-background-color max-h-[70vh] overflow-y-auto">
+    <form [formGroup]="shareForm" class="space-y-5">
+      <!-- Share Link Box -->
+      <div class="share-link-box">
+        <h4 class="share-link-title">Share Link</h4>
+        <div class="share-link-input-row">
+          <div class="share-link-input" [class.loading]="loading">
+            @if (loading) {
+              <lucide-icon
+                name="loader-circle"
+                [size]="14"
+                class="link-icon animate-spin"
+              ></lucide-icon>
+            } @else {
+              <lucide-icon
+                name="link-2"
+                [size]="14"
+                class="link-icon"
+              ></lucide-icon>
+              <span
+                class="link-text"
+                [matTooltip]="
+                  (shareableLink?.length ?? 0) > 50 ? shareableLink : ''
+                "
+              >
+                {{ shareableLink | truncate: 50 }}
+              </span>
+            }
+          </div>
+          <button
+            type="button"
+            class="copy-btn"
+            [class.copied]="urlCopied"
+            (click)="copyLink()"
+            [matTooltip]="urlCopied ? 'Copied' : 'Copy URL'"
+          >
+            @if (urlCopied) {
+              <lucide-icon name="check" [size]="14"></lucide-icon>
+              Copied
+            } @else {
+              <lucide-icon name="copy" [size]="14"></lucide-icon>
+              Copy
+            }
+          </button>
+          <button aria-label="Share URL"
+            type="button"
+            class="share-btn"
+            [class.active]="showShareOptions"
+            (click)="toggleMoreShareCard()"
+            matTooltip="Share URL"
+          >
+            <fa-icon [icon]="faShareNod"></fa-icon>
+          </button>
+        </div>
+
+        @if (showShareOptions) {
+          <div class="social-share-row">
+            <button aria-label="Email"
+              type="button"
+              class="quick-share-icon-btn"
+              matTooltip="Email"
+              (click)="toggleEmailInput()"
+            >
+              <span
+                class="quick-share-circle"
+                style="background-color: var(--v4-common-blue-color); color: #ffffff"
+              >
+                <lucide-icon [img]="MailIcon" [size]="18"></lucide-icon>
+              </span>
+            </button>
+            <button aria-label="Message"
+              type="button"
+              class="quick-share-icon-btn"
+              matTooltip="Message"
+              (click)="togglePhoneInput()"
+            >
+              <span
+                class="quick-share-circle"
+                style="background-color: var(--v4-common-yellow-color); color: #ffffff"
+              >
+                <lucide-icon
+                  [img]="MessageCircleIcon"
+                  [size]="18"
+                ></lucide-icon>
+              </span>
+            </button>
+            @for (item of socialShareData; track item.key) {
+              <button [attr.aria-label]="(item.name) || null"
+                type="button"
+                class="quick-share-icon-btn"
+                [matTooltip]="item.name"
+                (click)="shareUrlDirect(shareableLink, item.name)"
+              >
+                <span
+                  class="quick-share-circle"
+                  [style.background-color]="item.bgColor"
+                  [style.color]="item.iconColor"
+                >
+                  <fa-icon
+                    [icon]="quickShareIcons[item.key]"
+                    class="text-base"
+                  ></fa-icon>
+                </span>
+              </button>
+            }
+            <button aria-label="More"
+              type="button"
+              class="quick-share-icon-btn"
+              matTooltip="More"
+              (click)="openSocialShareModal(shareableLink)"
+            >
+              <span class="quick-share-circle more-circle">
+                <lucide-icon name="more-horizontal" [size]="18" />
+              </span>
+            </button>
+          </div>
+        }
+
+        <!-- Email Input -->
+        @if (showEmailInput) {
+          <div class="flex gap-2 items-start mt-3" [formGroup]="shareForm">
+            <div class="flex-1">
+              <app-common-input-v4
+                formControlName="emailToShare"
+                placeholder="Enter email address"
+                class="w-full"
+              ></app-common-input-v4>
+              <app-control-message-v4
+                [control]="shareForm.get('emailToShare')"
+              ></app-control-message-v4>
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              text="Send"
+              width="90px"
+              [loading]="sendingEmail"
+              [disabled]="sendingEmail"
+              (clickEvent)="shareViaEmail()"
+            />
+          </div>
+        }
+
+        <!-- Phone Input -->
+        @if (showPhoneInput) {
+          <div class="flex gap-2 items-start mt-3" [formGroup]="shareForm">
+            <div class="flex-1">
+              <app-phone-input-v4
+                formControlName="phoneToShare"
+                [disabled]="sendingSMS"
+              ></app-phone-input-v4>
+              <app-control-message-v4
+                [control]="shareForm.get('phoneToShare')"
+              ></app-control-message-v4>
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              text="Send"
+              width="90px"
+              [loading]="sendingSMS"
+              [disabled]="sendingSMS"
+              (clickEvent)="shareViaSMS()"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- Company Logo (Optional) -->
+      <div>
+        <label
+          class="text-sm font-medium font-peridot text-v4-main-text-color mb-1.5 block"
+        >
+          Company Logo
+          <span class="text-v4-secondary-text-color font-normal"
+            >(Optional)</span
+          >
+        </label>
+        <div
+          class="border border-dashed border-v4-border-color rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-v4-secondary-background-color transition-colors"
+          (click)="openFileBrowser()"
+        >
+          @if (logoPreview) {
+            <img
+              [src]="logoPreview"
+              alt="Company Logo"
+              class="w-16 h-16 rounded-full object-cover mb-2"
+            />
+            <button
+              type="button"
+              class="text-xs text-v4-common-red-color hover:underline"
+              (click)="removeLogo(); $event.stopPropagation()"
+            >
+              Remove
+            </button>
+          } @else {
+            <lucide-icon
+              [img]="UploadIcon"
+              [size]="24"
+              class="text-v4-secondary-text-color mb-2"
+            ></lucide-icon>
+            <span class="text-sm font-peridot text-v4-secondary-text-color"
+              >Click to upload logo</span
+            >
+          }
+        </div>
+        <input
+          type="file"
+          #fileInput
+          class="hidden"
+          accept="image/png,image/jpeg,image/jpg"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <!-- Company Name -->
+      <div>
+        <label
+          class="text-sm font-medium font-peridot text-v4-main-text-color mb-1.5 block"
+          >Company Name</label
+        >
+        <app-common-input-v4
+          formControlName="companyName"
+          placeholder="Enter company name"
+          class="w-full"
+        ></app-common-input-v4>
+        <app-control-message-v4
+          [control]="shareForm.get('companyName')"
+        ></app-control-message-v4>
+      </div>
+
+      <!-- Message to Recipients -->
+      <div>
+        <label
+          class="text-sm font-medium font-peridot text-v4-main-text-color mb-1.5 block"
+        >
+          Message to Recipients
+          <span class="text-v4-secondary-text-color font-normal">(Optional)</span>
+        </label>
+        <textarea
+          formControlName="message"
+          rows="4"
+          placeholder="Add instructions or notes for recipients"
+          maxlength="500"
+          class="v4-input-style w-full px-3 py-2.5 border border-input-border-color rounded-lg text-sm font-peridot text-v4-main-text-color focus:outline-none focus:ring-2 focus:ring-v4-brand-border-color focus:border-v4-brand-border-color resize-y"
+        ></textarea>
+        <p class="text-xs font-peridot text-v4-tertiary-text-color mt-1.5">
+          This message will be shown when recipients open the link
+        </p>
+      </div>
+
+      <!-- Additional Settings -->
+      <h3 class="text-sm font-semibold font-peridot text-v4-main-text-color">
+        Additional Settings
+      </h3>
+
+      <!-- PIN Protection -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-start gap-3">
+          <div
+            class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style="background-color: rgba(5, 149, 229, 0.12)"
+          >
+            <lucide-icon
+              [img]="ShieldIcon"
+              [size]="18"
+              style="color: var(--v4-primary-brand-bold-color)"
+            ></lucide-icon>
+          </div>
+          <div>
+            <p class="text-sm font-medium font-peridot text-v4-main-text-color">
+              PIN Protection
+            </p>
+            <p class="text-xs font-peridot text-v4-secondary-text-color">
+              Require a PIN code to access the upload form
+            </p>
+          </div>
+        </div>
+        <label
+          class="relative inline-block w-11 h-6 shrink-0 cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            class="peer opacity-0 w-0 h-0"
+            formControlName="pinProtectionEnabled"
+          />
+          <span
+            class="absolute inset-0 rounded-full bg-v4-border-color transition-colors duration-300 peer-checked:bg-v4-primary-brand-color before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"
+          ></span>
+        </label>
+      </div>
+      @if (shareForm.value.pinProtectionEnabled) {
+        <div>
+          <app-common-input-v4
+            formControlName="pinCode"
+            placeholder="Enter PIN (4 or 6 digits)"
+            [maxLength]="6"
+            [isNumberOnly]="true"
+            [numberType]="'numeric'"
+            class="w-full"
+          ></app-common-input-v4>
+          <app-control-message-v4
+            [control]="shareForm.get('pinCode')"
+            [customMessages]="{
+              pattern: 'PIN must be 4 or 6 digits',
+              required: 'PIN code is required'
+            }"
+          ></app-control-message-v4>
+        </div>
+      }
+
+      <!-- Upload File Limit -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-start gap-3">
+          <div
+            class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style="background-color: rgba(5, 149, 229, 0.12)"
+          >
+            <lucide-icon
+              [img]="FileTextIcon"
+              [size]="18"
+              style="color: var(--v4-primary-brand-bold-color)"
+            ></lucide-icon>
+          </div>
+          <div>
+            <p class="text-sm font-medium font-peridot text-v4-main-text-color">
+              Upload File Limit
+            </p>
+            <p class="text-xs font-peridot text-v4-secondary-text-color">
+              Choose how many files can be uploaded using this link
+            </p>
+          </div>
+        </div>
+        <label
+          class="relative inline-block w-11 h-6 shrink-0 cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            class="peer opacity-0 w-0 h-0"
+            formControlName="uploadLimitEnabled"
+          />
+          <span
+            class="absolute inset-0 rounded-full bg-v4-border-color transition-colors duration-300 peer-checked:bg-v4-primary-brand-color before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"
+          ></span>
+        </label>
+      </div>
+      @if (shareForm.value.uploadLimitEnabled) {
+        <div>
+          <app-common-input-v4
+            formControlName="maxFiles"
+            placeholder="Max number of files"
+            [isNumberOnly]="true"
+            [numberType]="'numeric'"
+            class="w-full"
+          ></app-common-input-v4>
+          <app-control-message-v4
+            [control]="shareForm.get('maxFiles')"
+          ></app-control-message-v4>
+        </div>
+      }
+
+      <!-- Link Expiry -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-start gap-3">
+          <div
+            class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style="background-color: rgba(5, 149, 229, 0.12)"
+          >
+            <lucide-icon
+              [img]="ClockIcon"
+              [size]="18"
+              style="color: var(--v4-primary-brand-bold-color)"
+            ></lucide-icon>
+          </div>
+          <div>
+            <p class="text-sm font-medium font-peridot text-v4-main-text-color">
+              Link Expiry
+            </p>
+            <p class="text-xs font-peridot text-v4-secondary-text-color">
+              Set when the link will expire and become inactive
+            </p>
+          </div>
+        </div>
+        <label
+          class="relative inline-block w-11 h-6 shrink-0 cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            class="peer opacity-0 w-0 h-0"
+            formControlName="linkExpiryEnabled"
+          />
+          <span
+            class="absolute inset-0 rounded-full bg-v4-border-color transition-colors duration-300 peer-checked:bg-v4-primary-brand-color before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"
+          ></span>
+        </label>
+      </div>
+      @if (shareForm.value.linkExpiryEnabled) {
+        <div>
+          <app-common-input-v4
+            formControlName="expiryDays"
+            placeholder="Days until expiry"
+            [isNumberOnly]="true"
+            [numberType]="'numeric'"
+            class="w-full"
+          ></app-common-input-v4>
+          <app-control-message-v4
+            [control]="shareForm.get('expiryDays')"
+          ></app-control-message-v4>
+        </div>
+      }
+    </form>
+  </div>
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      width="170px"
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="shareToken ? 'Update Link' : 'Create Request Link'"
+      (clickEvent)="generateLink()"
+      [disabled]="loading"
+      [loading]="loading"
+    />
+  </div>
+</div>

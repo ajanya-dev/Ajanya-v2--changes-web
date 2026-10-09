@@ -1,0 +1,1371 @@
+<div
+  [ngClass]="{ 'min-h-[575px]': !updateAddressOnly}"
+  class="ocw_man_modal_wrapper add_payee_modal max-h-max text-main-text-color !font-roboto !font-medium !text-[13px]"
+>
+  <form [formGroup]="payeeForm">
+    @if (IsMainForm) {
+      <div>
+        <div class="ocw_modal_header">
+          <div class="ocw_modal_title !text-base !font-semibold">
+            {{ !editMode ? "Add" : "Update" }}
+            {{ entityLabel || ("Payee" | whiteLabel: "payeeName") }}
+          </div>
+          <div class="close_btn" [mat-dialog-close]="false">
+            <img
+              ngSrc="../../../../../../assets/icon/close-icon.svg"
+              alt="close"
+              width="20"
+              height="20"
+            />
+          </div>
+        </div>
+
+        <!-- modal body start -->
+        <div class="ocw_modal_body !bg-main-background-color">
+          <div class="h-12 w-full mb-4 flex justify-between items-center gap-4">
+            <div class="v35-button-switch w-full">
+              @for (item of transferTypes; track item) {
+                <div
+                  role="presentation"
+                  class="flex gap-2 !justify-normal"
+                  [ngClass]="{ selected: item.id === selectedTransferType }"
+                  (click)="changeTransferType(item)"
+                >
+                  <div
+                    class="w-5 h-5 border-2 border-common-blue-color rounded-full flex items-center justify-center"
+                    [ngClass]="{
+                      '!border-[5px]': item.id === selectedTransferType
+                    }"
+                  >
+                    <div
+                      class="w-2 h-2 bg-secondary-background-color rounded-full"
+                    ></div>
+                  </div>
+                  <span class="text-gray-700">{{ item.name }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <mat-radio-group
+            appWhiteLabel
+            hiddenIf="isCompassRequirement"
+            [value]="payeeType?.toString()"
+            aria-labelledby="radio-label"
+            class="radio-group flex justify-between"
+            (change)="onTabClick($event.value)"
+          >
+            @for (item of payeeTypes; track item) {
+              <mat-radio-button
+                class="radio-button"
+                [value]="item.value"
+                [disabled]="payeeTypePermisson[item?.type] === 0 && !editMode"
+              >
+                {{ item.name }}
+              </mat-radio-button>
+            }
+          </mat-radio-group>
+          @if (!isSendLink) {
+            <app-add-payee-modal-personal-details-comp
+              [childData$]="childData$.asObservable()"
+              [payeeForm]="payeeForm"
+              [payeePhone]="payeePhone"
+              [payeeEmail]="payeeEmail"
+              [editMode]="editMode"
+              [entityLabel]="entityLabel"
+              [payeeTypeId]="payeeType"
+              [isCompass]="isCompassCustomer"
+              (inputDataChange)="payeePersonalDetails($event)"
+              (countryChange)="countryChange($event)"
+            >
+            </app-add-payee-modal-personal-details-comp>
+            <div
+              class="w-full pt-4 flex flex-col gap-4 !text-[13px] !font-medium"
+              appWhiteLabel
+              shownIf="isCompassRequirement"
+            >
+              <form [formGroup]="payeeForm">
+                <div class="flex flex-col w-full gap-4">
+                  <div class="flex w-full gap-4">
+                    <div class="single_input w-full">
+                      <input
+                        type="text"
+                        class="input_style"
+                        formControlName="payeeAddress1"
+                        maxlength="150"
+                        (keyup)="loadFormValue()"
+                        placeholder=" "
+                        (focus)="loadGoogleAddress(searchGoogleAddess)"
+                        #searchGoogleAddess
+                      />
+                      <span class="floating_label_field">Address Line 1</span>
+                      <app-control-message
+                        [control]="payeeForm.controls.payeeAddress1"
+                      ></app-control-message>
+                    </div>
+                    <div class="single_input w-full">
+                      <input
+                        type="text"
+                        class="input_style"
+                        formControlName="payeeAddress2"
+                        maxlength="150"
+                        (keyup)="loadFormValue()"
+                        placeholder=" "
+                      />
+                      <span class="floating_label_field">Address Line 2 </span>
+                      <app-control-message
+                        [control]="payeeForm.controls.payeeAddress2"
+                      ></app-control-message>
+                    </div>
+                  </div>
+                  <div class="flex w-full gap-4">
+                    <div class="flex-1 min-w-0">
+                      <div class="single_input w-full">
+                        <input
+                          type="text"
+                          class="input_style"
+                          formControlName="payeeCity"
+                          (keyup)="loadFormValue()"
+                          maxlength="50"
+                          placeholder=" "
+                        />
+                        <span class="floating_label_field">City</span>
+                      </div>
+                    </div>
+                    <!-- min-w-0 lets the column shrink to its half instead of widening to fit a long state name. -->
+                    <div class="flex-1 min-w-0">
+                      <div class="single_input w-full">
+                        <app-common-state-select
+                          formControlName="payeeState"
+                          [country]="payeeForm.controls.payeeCountry.value"
+                          placeholder="State"
+                        ></app-common-state-select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex w-full gap-4">
+                    <div class="single_input w-full">
+                      <input
+                        type="text"
+                        class="input_style"
+                        formControlName="payeeZip"
+                        (keyup)="loadFormValue()"
+                        maxlength="10"
+                        placeholder=" "
+                      />
+                      @if (
+                        !payeeForm.get("payeeCountry")?.value ||
+                        payeeForm.get("payeeCountry")?.value === "US" ||
+                        payeeForm.get("payeeCountry")?.value === "United States"
+                      ) {
+                        <span class="floating_label_field">Zip </span>
+                      } @else {
+                        <span class="floating_label_field">Postal Code </span>
+                      }
+                      <app-control-message
+                        [control]="payeeForm.controls.payeeZip"
+                      ></app-control-message>
+                    </div>
+                    <div class="w-full overflow-hidden">
+                      <div class="single_input w-full">
+                        <app-common-country-select
+                          formControlName="payeeCountry"
+                          placeholder="Country"
+                        ></app-common-country-select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          }
+          <!-- //----------payee request modal-------// -->
+          @if (!isSendLink) {
+            <div class="mt-4">
+              <label class="request_bank_info !text-[13px] !font-medium cursor-pointer">
+                <input
+                  id="myCheckbox"
+                  type="checkbox"
+                  (change)="
+                    requestPayBtn(
+                      payeeForm.controls.payeeEmail,
+                      payeeForm.controls.payeeEmail.value,
+                      payeeForm.controls.payeePhone,
+                      payeeForm.controls.payeePhone.value,
+                      $event
+                    )
+                  "
+                />
+
+                Request {{ entityLabel || ("Payee" | whiteLabel: "payeeName") }} to Add Bank
+                Account
+                <fa-icon
+                  [matTooltip]="
+                    'A link will be sent to ' +
+                    ((entityLabel | lowercase) || ('Payee' | whiteLabel: 'payeeName' | lowercase)) +
+                    ' email to add their bank account details'
+                  "
+                  class="text-common-blue-color cursor-pointer"
+                  [icon]="['fas', 'circle-question']"
+                ></fa-icon>
+              </label>
+            </div>
+          }
+          <!-- //--------payee request modal ends---------// -->
+
+          <!-- ---OTHER ADDING OPTIONS--- -->
+          @if (!isSendLink) {
+            <section class="w-full flex flex-col gap-3 mt-4" [ngClass]="{'!gap-[22px]':isAddressRequired() || isAddressCountryStateRequired()}">
+              <div class="w-full h-10 flex gap-3 relative">
+                <button
+                  appWhiteLabel
+                  hiddenIf="isCompassRequirement"
+                  [class.finishaddress]="isFinishedAddress"
+                  (click)="addAddress()"
+                  class="h-full w-full px-3 rounded-md flex justify-between items-center bg-common-secondary-blue-color"
+                  [ngClass]="{'border border-common-red-color':isAddressRequired() || isAddressCountryStateRequired()}"
+                >
+                  <span class="flex items-center gap-2">
+                    @if (!isFinishedAddress) {
+                      <fa-icon [icon]="['fas', 'address-card']"></fa-icon>
+                    }
+                    @if (isFinishedAddress) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'circle-check']"
+                      ></fa-icon>
+                    }
+                    <p class="font-medium !text-[13px]">Address</p>
+                  </span>
+                  <span>
+                    @if (!isFinishedAddress && !editMode) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'plus']"
+                      ></fa-icon>
+                    }
+                    @if (editMode || isFinishedAddress) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'pen-to-square']"
+                      ></fa-icon>
+                    }
+                  </span>
+                </button>
+
+                <button
+                  [class.finishbank]="isFinishedBank"
+                  (click)="addBankDetails()"
+                  class="h-full w-full px-3 rounded-md flex justify-between items-center bg-common-secondary-blue-color"
+                >
+                  <span class="flex items-center gap-2">
+                    @if (!isFinishedBank) {
+                      <fa-icon [icon]="['fas', 'building-columns']"></fa-icon>
+                    }
+                    @if (isFinishedBank) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'circle-check']"
+                      ></fa-icon>
+                    }
+                    <p class="font-medium !text-[13px]">Bank Account</p>
+                  </span>
+                  <span>
+                    @if (!isFinishedBank) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'plus']"
+                      ></fa-icon>
+                    }
+                    @if ((editMode || isFinishedBank) && isFinishedBank) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'pen-to-square']"
+                      ></fa-icon>
+                    }
+                  </span>
+                </button>
+                @if(isAddressRequired()){
+                  <small class="flex absolute gap-1 pl-1 bottom-[-18px]">
+                    <fa-icon
+                      [icon]="faCircleExclamation"
+                      class="text-common-red-color text-[12px]"
+                      size="lg"
+                      animation="shake"
+                    />
+                    <p class="text-common-red-color text-xs font-medium font-roboto">
+                      Address is required
+                    </p>
+                  </small>
+                }
+                @if(!isAddressRequired() && isAddressCountryStateRequired()){
+                  <small class="flex absolute gap-1 pl-1 bottom-[-18px]">
+                    <fa-icon
+                      [icon]="faCircleExclamation"
+                      class="text-common-red-color text-[12px]"
+                      size="lg"
+                      animation="shake"
+                    />
+                    <p class="text-common-red-color text-xs font-medium font-roboto">
+                      Country and State are required
+                    </p>
+                  </small>
+                }
+              </div>
+              <div class="w-full h-10 flex gap-3">
+                <button
+                  [class.finishinternationalbank]="isFinishedInternationalBank"
+                  (click)="addInternationalBankDetails()"
+                  class="w-[50%] h-full px-3 rounded-md flex justify-between items-center bg-common-secondary-blue-color"
+                >
+                  <span class="flex items-center gap-2">
+                    @if (!isFinishedInternationalBank) {
+                      <fa-icon [icon]="['fas', 'globe']"></fa-icon>
+                    }
+                    @if (isFinishedInternationalBank) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'circle-check']"
+                      ></fa-icon>
+                    }
+                    <p class="font-medium !text-[13px]">
+                      International Account
+                    </p>
+                  </span>
+                  <span>
+                    @if (!isFinishedInternationalBank) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'plus']"
+                      ></fa-icon>
+                    }
+                    @if (
+                      (editMode || isFinishedInternationalBank) &&
+                      isFinishedInternationalBank
+                    ) {
+                      <fa-icon
+                        class="text-common-blue-color"
+                        [icon]="['fas', 'pen-to-square']"
+                      ></fa-icon>
+                    }
+                  </span>
+                </button>
+                <button
+                  [disabled]="dataLoaded"
+                  (click)="addMoreInfo(payeeType)"
+                  class="h-full w-[50%] flex justify-between items-center gap-2 px-3 rounded-md bg-common-secondary-blue-color"
+                >
+                  <p class="!text-[13px] !font-medium">Add More Info</p>
+                  <fa-icon
+                    (click)="backbutton()"
+                    [icon]="['fas', 'plus']"
+                    class="text-common-blue-color"
+                  ></fa-icon>
+                </button>
+              </div>
+            </section>
+          }
+          <!----- MORE INFOR AREA END ---->
+
+          <!-- -----------------Send Link----------------- -->
+          @if (isSendLink) {
+            <section class="overflow-hidden h-[430px]">
+              <form [formGroup]="requestPayeeForm" class="h-full">
+                <div class="flex flex-col justify-between w-full h-full">
+                  <div class="input_group w-full">
+                    <div class="input_box w-full">
+                      <input
+                        type="checkbox"
+                        name="email-checkbox"
+                        formControlName="emailCheck"
+                        (change)="setCheck('email')"
+                        id="email-checkbox"
+                        class="mr-2 check"
+                      />
+                      <div class="single_input w-full">
+                        <input
+                          class="w-full"
+                          type="text"
+                          class="input_style"
+                          placeholder=" "
+                          (keyup)="getEmail()"
+                          formControlName="payeeEmail"
+                        />
+                        <span class="floating_label_field">Email Address</span>
+                        <app-control-message
+                          [control]="requestPayeeForm.controls.payeeEmail"
+                        ></app-control-message>
+                      </div>
+                    </div>
+
+                    <div class="input_box w-full">
+                      <input
+                        type="checkbox"
+                        name="phone-checkbox"
+                        id="phone-checkbox"
+                        (change)="setCheck('phone')"
+                        class="mr-2 check"
+                        formControlName="phoneCheck"
+                      />
+                      <div class="single_input w-full">
+                        <app-new-phone-input
+                          (keyup)="getPhoneNumber()"
+                          formControlName="payeePhone"
+                        ></app-new-phone-input>
+                        <app-control-message
+                          [control]="requestPayeeForm.controls.payeePhone"
+                        ></app-control-message>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="!text-[13px] !font-medium cursor-pointer">
+                        <input
+                          id="myCheckbox"
+                          type="checkbox"
+                          [(ngModel)]="addPayeeBank"
+                          [ngModelOptions]="{ standalone: true }"
+                          (ngModelChange)="requestPayeeAccount()"
+                        />
+        
+                        Request {{ entityLabel || ("Payee" | whiteLabel: "payeeName") }} to Add Bank
+                        Account
+                        <fa-icon
+                        [matTooltip]="'By selecting this option, the ' + ((entityLabel | lowercase) || ('Payee' | whiteLabel: 'payeeName' | lowercase)) + ' \ncan use the same link to add both their details and bank account information.'"
+                        class="text-common-blue-color cursor-pointer"
+                        [icon]="['fas', 'circle-question']"
+                      ></fa-icon>
+                      </label>
+                    </div>
+                    <div class="w-full">
+                      <h1
+                        class="text-main-text-color font-inter text-sm font-medium pb-2"
+                      >
+                        Share Link
+                      </h1>
+                      <div
+                        class="border border-input-border-color rounded flex justify-between pl-3 pr-1 py-2 items-center"
+                      >
+                        <div [ngClass]="{ skelton: loadingSendLink() }">
+                          <fa-icon
+                            [icon]="faLink"
+                            class="text-main-text-color"
+                          />
+                          <span
+                            class="text-main-text-color font-inter text-sm font-normal"
+                            [matTooltip]="
+                              resendLink()?.length > 60 ? resendLink() : ''
+                            "
+                          >
+                            {{ resendLink() | truncate: 60 }}
+                          </span>
+                        </div>
+
+                        <div class="flex gap-2">
+                          <div
+                            role="presentation"
+                            class="bg-common-secondary-blue-color cursor-pointer py-[2px] px-[5px] rounded"
+                            (click)="copyLink(resendLink())"
+                            [matTooltip]="urlCopied() ? 'Copied' : 'Copy URL'"
+                          >
+                            <fa-icon
+                              [icon]="faCopy"
+                              class="text-common-blue-color"
+                            />
+                          </div>
+
+                          <div
+                            role="presentation"
+                            class="bg-common-secondary-blue-color cursor-pointer py-[2px] px-[5px] rounded"
+                            (click)="toggleMoreShareCard()"
+                            [matTooltip]="'Share URL'"
+                          >
+                            <fa-icon
+                              [icon]="faShareNod"
+                              class="text-common-blue-color"
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                    @if(toggleMoreShare()) {
+                    <div class="flex gap-2 justify-end w-full mb-4">
+                      <!-- social share first section -->
+                       @for (item of socialShareData; track item) {
+                        <div class="flex items-center gap-2">
+                          <div class="cursor-pointer p-2 w-[38px] h-[38px] rounded-full flex items-center justify-center" [ngClass]="getIconShareClass(item.name)">
+                            <img [src]="item.icon" [alt]="item.name" class="w-[34px] h-[34px]"
+                            (click)="shareUrlDirect(resendLink(),item.name)"
+                            [matTooltip]="item.name"
+                            />
+                          </div>
+                        </div>
+                       }
+                       <div class="cursor-pointer w-[38px] h-[38px] rounded-full bg-secondary-background-color flex items-center justify-center">
+                       <fa-icon [icon]="faEllipsis" class="text-main-text-color w-[34px] h-[34px] flex items-center justify-center" matTooltip="More" (click)="openSocialShareModal(resendLink())" />
+                      </div>
+                    </div>
+                  }
+                  </div>
+                  <div class="ocw_modal_footer flex gap-2">
+                    <app-common-button-v35
+                      width="125px"
+                      mat-dialog-close
+                      [type]="{ style: 'bordered', name: 'main' }"
+                      text="Close"
+                    ></app-common-button-v35>
+                    <app-common-button-v35
+                      width="125px"
+                      [type]="{ style: 'modal', name: 'main' }"
+                      text="Send"
+                      [disabled]="loading"
+                      [loading]="loading"
+                      (clickEvent)="onSubmitself()"
+                    ></app-common-button-v35>
+                  </div>
+                </div>
+              </form>
+            </section>
+          }
+        </div>
+        @if (!isSendLink) {
+          <div class="ocw_modal_footer flex gap-2">
+            <app-common-button-v35
+              width="125px"
+              mat-dialog-close
+              [type]="{ style: 'bordered', name: 'main' }"
+              text="Close"
+            ></app-common-button-v35>
+            <app-common-button-v35
+              width="125px"
+              [type]="{ style: 'modal', name: 'main' }"
+              [text]="editMode ? 'Update' : 'Save'"
+              [disabled]="loading"
+              [loading]="loading"
+              (clickEvent)="onSubmit()"
+            ></app-common-button-v35>
+          </div>
+        }
+        <!-- modal body end -->
+      </div>
+    }
+    <!-- Address-Modal-Form -->
+    @if (!IsAddressForm) {
+      <form [formGroup]="payeeForm">
+        <div class="ocw_modal_header">
+          <div
+            class="flex items-center gap-3 mb-4 ocw_modal_title !text-base !font-semibold !text-main-text-color"
+          >
+          @if(!updateAddressOnly){
+            <fa-icon
+            (click)="resetToPrevForm('addressForm'); backbutton()"
+            [icon]="['fas', 'arrow-left']"
+            class="!text-base cursor-pointer"
+            ></fa-icon>
+          }
+            <div>{{data?.page === 'bryanCohenPayee' ? 'Update Info' : (entityLabel || ("Payee" | whiteLabel: "payeeName") )+ ' Info'}}</div>
+          </div>
+          <div class="close_btn" [mat-dialog-close]="false">
+            <img
+              ngSrc="../../../../../../assets/icon/close-icon.svg"
+              alt="close"
+              width="20"
+              height="20"
+            />
+          </div>
+        </div>
+
+        <!-- modal body starts -->
+        <div
+          [ngClass]="{'mb-72 mt-8': !updateAddressOnly}"
+          class="w-full flex flex-col gap-4 !text-[13px] !font-medium"
+        >
+        @if(data?.page === 'addCompany') {
+        <div class="flex-[1_1_calc(50%_-_24px)]">
+          <app-common-input-field
+            placeholder="Company Name"
+            formControlName="payeeCompany"
+            [maxlength]="60"
+            [showInfoIcon]="true"
+            tooltip="If an individual and not a business, please use your full legal name instead."
+            [isFieldRequired]="isBusinessIsRequired && updateAddressOnly"
+          />
+          <app-control-message-v35
+            [control]="payeeForm.controls.payeeCompany"
+          />
+        </div>
+        <div class="flex-[1_1_calc(50%_-_24px)]">
+          <app-common-input-field
+            placeholder="Business Website"
+            formControlName="payeeCompanyWebsite"
+            [maxlength]="60"
+            [showInfoIcon]="true"
+            [tooltip]="'Enter the ' + ((entityLabel | lowercase) || ('Payee' | whiteLabel: 'payeeName' | lowercase)) + ' business website URL.'"
+            [isFieldRequired]="false"
+          />
+          <app-control-message-v35
+            [control]="payeeForm.controls.payeeCompanyWebsite"
+          />
+        </div>   
+        }
+      <div class="text-base font-medium">Address</div>
+          <div class="flex flex-col w-full gap-4">
+            <div class="flex w-full gap-4">
+              <div class="single_input w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  formControlName="payeeAddress1"
+                  maxlength="150"
+                  (keyup)="loadFormValue()"
+                  placeholder=" "
+                  (focus)="loadGoogleAddress(searchGoogleAddess)"
+                  #searchGoogleAddess
+                />
+                <span class="floating_label_field">Address Line 1</span>
+                <app-control-message-v35
+                [control]="payeeForm.controls.payeeAddress1"
+                />
+              </div>
+              <div class="single_input w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  formControlName="payeeAddress2"
+                  maxlength="150"
+                  (keyup)="loadFormValue()"
+                  placeholder=" "
+                />
+                <span class="floating_label_field">Address Line 2</span>
+                <app-control-message-v35
+                  [control]="payeeForm.controls.payeeAddress2"
+                />
+              </div>
+            </div>
+            <!-- Equal halves (flex-1) that can shrink below content (min-w-0) so a long country/state name truncates instead of widening the column. -->
+            <div class="flex w-full gap-4">
+
+              <div class="flex-1 min-w-0">
+                <div class="single_input w-full">
+                  <app-common-country-select
+                    formControlName="payeeCountry"
+                    placeholder="Country"
+                  ></app-common-country-select>
+                </div>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="single_input w-full">
+                  <app-common-state-select
+                    formControlName="payeeState"
+                    [country]="payeeForm.controls.payeeCountry.value"
+                    placeholder="State"
+                  ></app-common-state-select>
+                </div>
+              </div>
+            </div>
+            <div class="flex w-full gap-4">
+              <div class="single_input w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  formControlName="payeeCity"
+                  (keyup)="loadFormValue()"
+                  maxlength="50"
+                  placeholder=" "
+                />
+                <span class="floating_label_field">City</span>
+                <app-control-message-v35
+                [control]="payeeForm.controls.payeeCity"
+                />
+              </div>
+
+              <div class="single_input w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  formControlName="payeeZip"
+                  (keyup)="loadFormValue()"
+                  maxlength="10"
+                  placeholder=" "
+                />
+                @if (
+                  !payeeForm.get("payeeCountry")?.value ||
+                  payeeForm.get("payeeCountry")?.value === "US" ||
+                  payeeForm.get("payeeCountry")?.value === "United States"
+                ) {
+                  <span class="floating_label_field">Zip </span>
+                } @else {
+                  <span class="floating_label_field">Postal Code </span>
+                }
+                <app-control-message-v35
+                  [control]="payeeForm.controls.payeeZip"
+                ></app-control-message-v35>
+              </div>
+
+            </div>
+            @if(data?.page === 'bryanCohenPayee' && payeeGetData?.payeeTypeId.toString() === '3') {
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style !w-[48%]"
+                  formControlName="employeeSsn"
+                  mask="000-00-0000"
+                  maxlength="60"
+                  placeholder=" "
+                />
+                <span class="floating_label_field">SSN</span>
+                <app-control-message
+                [control]="payeeForm.controls.employeeSsn"
+                />
+              </div>
+            }
+            @if(data?.page === 'bryanCohenPayee' && payeeGetData?.payeeTypeId.toString() === '2') {
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style !w-[48%]"
+                  formControlName="vendorTaxId"
+                  mask="00-0000000"
+                  maxlength="60"
+                  placeholder=" "
+                />
+                <span class="floating_label_field">Tax ID</span>
+                <app-control-message
+                [control]="payeeForm.controls.vendorTaxId"
+                />
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- modal body end -->
+
+        <div class="ocw_modal_footer">
+          <mat-dialog-actions align="end">
+            <button
+              (click)="addressAdded()"
+              class="ocw-btn ocw-btn-modal-blue add_btn px-12"
+              [ngStyle]="{ 'pointer-events': loading ? 'none' : 'inherit' }"
+            >
+              <ng-container>
+                @if (loading) {
+                  <span class="loadingSpinner"></span>
+                }
+                <span>{{
+                  !editMode
+                    ? !loading
+                      ? "Add"
+                      : "Adding.."
+                    : !loading
+                      ? "Update"
+                      : "Updating.."
+                }}</span>
+              </ng-container>
+            </button>
+          </mat-dialog-actions>
+        </div>
+      </form>
+    }
+    <!--Bank-Modal-Form -->
+    @if (!IsBankForm) {
+      <div>
+        <app-add-bank-detail-modal
+          [payeeId]="payeeId"
+          [payeeBankDetails]="payeeBankDetails"
+          [entityLabel]="entityLabel"
+          (emptyPayeeBank)="removingBankIndicator()"
+          (addPayeeBankFinished)="finishedIndicatorBank()"
+          (back)="backbutton()"
+          [payeeNameFromPayeeModal]="payeeForm.get('payeeName')?.value || ''"
+          [payeeAddressFromPayeeModal]="{
+            addressLine1: payeeForm.get('payeeAddress1')?.value || '',
+            addressLine2: payeeForm.get('payeeAddress2')?.value || '',
+            city: payeeForm.get('payeeCity')?.value || '',
+            state: payeeForm.get('payeeState')?.value || '',
+            country: payeeForm.get('payeeCountry')?.value || '',
+            zip: payeeForm.get('payeeZip')?.value || ''
+          }"
+        ></app-add-bank-detail-modal>
+      </div>
+    }
+    <!-- InternationalBank-Modal-Form -->
+    @if (!IsInternationalBankForm) {
+      <div>
+        <app-add-payee-international-bank
+          [payeeInternationalBankDetails]="payeeInternationalBankDetails"
+          [payeeId]="payeeId"
+          [payeeEmail]="payeeForm.controls.payeeEmail.value || ''"
+          [payeePhone]="payeeForm.controls.payeePhone.value || ''"
+          (emptyInternationalBank)="removingInternationalBankIndicator()"
+          (InternationalBankSetupFinished)="
+            finishedIndicatorInternationalBank($event)
+          "
+          (back)="backbutton()"
+        ></app-add-payee-international-bank>
+      </div>
+    }
+    <!--More-Info-Modal-Form-Customer -->
+
+    <form [formGroup]="payeeForm">
+      @if (!addMoreInfoCustomer) {
+        <div class="ocw_man_modal_wrapper add_payee_modal">
+          <div class="ocw_modal_header">
+            <div
+              class="flex items-center gap-3 mb-4 ocw_modal_title !text-base !font-semibold !text-main-text-color"
+            >
+              <fa-icon
+                (click)="resetToPrevForm('addMoreInfoForm'); backbutton()"
+                [icon]="['fas', 'arrow-left']"
+                class="!text-base cursor-pointer"
+              ></fa-icon>
+              {{
+                editMode
+                  ? "Edit " + (entityLabel || ("Payee" | whiteLabel: "payeeName")) + " More Info"
+                  : (entityLabel || ("Payee" | whiteLabel: "payeeName")) + " More Info"
+              }}
+            </div>
+            <div class="close_btn" [mat-dialog-close]="false"></div>
+          </div>
+
+          <!-- ------------------------Header-Ends------------------------- -->
+
+          <div class="input_group customer_info_group">
+            <div class="single_input payee_default_bank">
+              <ng-select
+                bindLabel="name"
+                formControlName="customerDefaultPayFromAcount"
+                (scrollToEnd)="onScrollToEndBank()"
+                (input)="searchBank($event.target.value)"
+                placeholder="Default Pay from Bank A/C"
+              >
+                @for (item of bankAccounts; track item) {
+                  <ng-option [value]="item.id">
+                    {{ item.nickName ? item.nickName : item.name }}
+                  </ng-option>
+                }
+              </ng-select>
+            </div>
+
+            <div class="single_input">
+              <app-drop-down-category
+                [placeholder]="'Default Pay Category'"
+                [selectedId]="customerCategoryId"
+                (selectionEvent)="catagoryDropDownChange($event, 'customer')"
+                id="input_catagory"
+                class="drop_style category-ng"
+              ></app-drop-down-category>
+            </div>
+
+            <div class="single_input">
+              <select
+                class="input_style"
+                formControlName="customerDefaultPayFromMethod"
+              >
+                <option value="" selected disabled>Default Pay Method</option>
+                @for (method of DefaultPayMethod; track method) {
+                  <option [value]="method.value">
+                    {{ method.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="customerFirstName"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">First Name</span>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="customerLastName"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Last Name</span>
+            </div>
+
+            <div class="single_input">
+              <select class="input_style" formControlName="customerType">
+                <option value="" selected disabled>Customer Type</option>
+                @for (type of customerType; track type) {
+                  <option [value]="type.value">
+                    {{ type.name }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="payeeCompanyWebsite"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Business Website</span>
+              <app-control-message-v35
+                [control]="payeeForm.controls.payeeCompanyWebsite"
+              />
+            </div>
+
+          </div>
+
+          <!-- ------------------------footer----------------------- -->
+
+          <div class="ocw_modal_footer">
+            <mat-dialog-actions align="end">
+              <button
+                (click)="backbutton()"
+                type="button"
+                class="ocw-btn ocw-btn-modal-blue add_btn"
+                [ngStyle]="{ 'pointer-events': loading ? 'none' : 'inherit' }"
+              >
+                <ng-container>
+                  @if (loading) {
+                    <span class="loadingSpinner"></span>
+                  }
+                  <span>{{ !loading ? "Add" : "Adding.." }}</span>
+                </ng-container>
+              </button>
+            </mat-dialog-actions>
+          </div>
+        </div>
+      }
+    </form>
+
+    <!--  More-Info-Modal-Form-Vendor -->
+
+    <form [formGroup]="payeeForm">
+      @if (!addMoreInfoVendor) {
+        <div class="ocw_man_modal_wrapper add_payee_modal">
+          <div class="ocw_modal_header">
+            <div
+              class="flex items-center gap-3 mb-4 ocw_modal_title !text-base !font-semibold !text-main-text-color"
+            >
+              <fa-icon
+                (click)="backbutton()"
+                [icon]="['fas', 'arrow-left']"
+                class="!text-base cursor-pointer"
+              ></fa-icon>
+              {{
+                editMode
+                  ? "Edit " + (entityLabel || ("Payee" | whiteLabel: "payeeName")) + " More Info"
+                  : (entityLabel || ("Payee" | whiteLabel: "payeeName")) + " More Info"
+              }}
+            </div>
+            <div class="close_btn" [mat-dialog-close]="false"></div>
+          </div>
+
+          <!-- ------------------------Header-Ends------------------------- -->
+
+          <div class="input_group vendor_info_group">
+            <div class="single_input">
+              <ng-select
+                bindLabel="name"
+                formControlName="vendorDefaultPayAccount"
+                (scrollToEnd)="onScrollToEndBank()"
+                (input)="searchBank($event.target.value)"
+                placeholder="Default Pay from Bank A/C"
+              >
+                @for (item of bankAccounts; track item) {
+                  <ng-option [value]="item.id">
+                    {{ item.nickName ? item.nickName : item.name }}
+                  </ng-option>
+                }
+              </ng-select>
+            </div>
+
+            <div class="single_input">
+              <app-drop-down-category
+                [placeholder]="'Default Pay Category'"
+                [selectedId]="vendorCategoryId"
+                (selectionEvent)="catagoryDropDownChange($event, 'vendor')"
+                id="input_catagory"
+                class="drop_style category-ng"
+              ></app-drop-down-category>
+            </div>
+
+            <div class="single_input">
+              <select
+                class="input_style"
+                formControlName="vendorDefaultPayMethod"
+              >
+                <option value="" selected disabled>Default Pay Method</option>
+                @for (method of DefaultPayMethod; track method) {
+                  <option [value]="method.value">
+                    {{ method.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="vendorFistName"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">First Name</span>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="vendorLastName"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Last Name</span>
+            </div>
+
+            <div class="single_input">
+              <select class="input_style" formControlName="vendorType">
+                <option value="" selected disabled>Select vendor type</option>
+                @for (type of customerType; track type) {
+                  <option [value]="type.value">
+                    {{ type.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="payeeCompanyWebsite"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Business Website</span>
+              <app-control-message-v35
+                [control]="payeeForm.controls.payeeCompanyWebsite"
+              />
+            </div>
+
+            <div class="single_input">
+              <select class="input_style" formControlName="vendorPaymentTerms">
+                <option value="" selected disabled>Payment Terms</option>
+                @for (type of vendorPaymentTerms; track type) {
+                  <option [value]="type.value">
+                    {{ type.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="vendorTaxId"
+                mask="00-0000000"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Tax ID</span>
+            </div>
+
+            <div class="single_input">
+              <select class="input_style" formControlName="vendor_1099">
+                <option value="" selected disabled>1099 Vendor</option>
+                @for (type of vendor_1099; track type) {
+                  <option [value]="type.value">
+                    {{ type.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+          </div>
+
+          <!-- ------------------------footer----------------------- -->
+
+          <div class="ocw_modal_footer">
+            <mat-dialog-actions align="end">
+              <button
+                (click)="backbutton()"
+                type="button"
+                class="ocw-btn ocw-btn-modal-blue add_btn"
+                [ngStyle]="{ 'pointer-events': loading ? 'none' : 'inherit' }"
+              >
+                <ng-container>
+                  @if (loading) {
+                    <span class="loadingSpinner"></span>
+                  }
+                  <span>{{ !loading ? "Add" : "Adding.." }}</span>
+                </ng-container>
+              </button>
+            </mat-dialog-actions>
+          </div>
+        </div>
+      }
+    </form>
+
+    <!--  More-Info-Modal-Form-Employee -->
+
+    <form [formGroup]="payeeForm">
+      @if (!addMoreInfoEmployee) {
+        <div class="ocw_man_modal_wrapper add_payee_modal">
+          <div class="ocw_modal_header">
+            <div
+              class="flex items-center gap-3 mb-4 ocw_modal_title !text-base !font-semibold !text-main-text-color"
+            >
+              <fa-icon
+                (click)="backbutton()"
+                [icon]="['fas', 'arrow-left']"
+                class="!text-base cursor-pointer"
+              ></fa-icon>
+              {{
+                editMode
+                  ? "Edit " + (entityLabel || ("Payee" | whiteLabel: "payeeName")) + " More Info"
+                  : (entityLabel || ("Payee" | whiteLabel: "payeeName")) + " More Info"
+              }}
+            </div>
+            <div class="close_btn" [mat-dialog-close]="false">
+              <img
+                ngSrc="../../../../../../assets/icon/close-icon.svg"
+                alt="close"
+                width="20"
+                height="20"
+              />
+            </div>
+          </div>
+
+          <!-- ------------------------Header-Ends------------------------- -->
+
+          <div class="input_group employee_info_group">
+            <div class="single_input">
+              <ng-select
+                bindLabel="name"
+                formControlName="employeeDefaultPayAccount"
+                (scrollToEnd)="onScrollToEndBank()"
+                (input)="searchBank($event?.target?.value)"
+                placeholder="Default Pay from Bank A/C"
+              >
+                @for (item of bankAccounts; track item) {
+                  <ng-option [value]="item.id">
+                    {{ item.nickName ? item.nickName : item.name }}
+                  </ng-option>
+                }
+              </ng-select>
+            </div>
+            @if (payeeForm.controls?.employeeCategory) {
+              <div class="single_input">
+                <app-drop-down-category
+                  [placeholder]="'Default Pay Category'"
+                  [selectedId]="employeeCategoryId"
+                  (selectionEvent)="catagoryDropDownChange($event, 'employee')"
+                  id="input_catagory"
+                  class="drop_style category-ng"
+                ></app-drop-down-category>
+              </div>
+            }
+
+            <div class="single_input">
+              <select
+                class="input_style"
+                formControlName="employeeDefaultPayMethod"
+              >
+                <option value="" selected disabled>Default Pay Method</option>
+                @for (method of DefaultPayMethod; track method) {
+                  <option [value]="method.value">
+                    {{ method.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <select formControlName="employeeType" class="input_style">
+                <option value="" selected disabled>Select Employee Type</option>
+                @for (type of employeeType; track type) {
+                  <option [value]="type.value">
+                    {{ type.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="payeeCompanyWebsite"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Business Website</span>
+              <app-control-message-v35
+                [control]="payeeForm.controls.payeeCompanyWebsite"
+              />
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="employeeFirstName"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">First Name</span>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="employeeLastName"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Last Name</span>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="date"
+                class="input_style"
+                formControlName="employeeDob"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Date of Birth</span>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="employeeSsn"
+                mask="000-00-0000"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">SSN</span>
+            </div>
+
+            <div class="single_input">
+              <app-amount-input formControlName="employeeHourlyRate" fieldLabel="Hourly Rate" />
+            </div>
+
+            <div class="single_input">
+              <select
+                formControlName="employeePaymentSchedule"
+                class="input_style"
+              >
+                <option value="" selected disabled>Payment Schedule</option>
+                @for (schedule of employeePaymentSchedule; track schedule) {
+                  <option [value]="schedule.value">
+                    {{ schedule.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <select
+                name=""
+                id=""
+                formControlName="employeeFillingStatus"
+                class="input_style"
+              >
+                <option value="" selected disabled>Filing Status</option>
+                @for (schedule of employeeFilingStatus; track schedule) {
+                  <option [value]="schedule.value">
+                    {{ schedule.name }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                maxlength="60"
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                formControlName="employeeOvertimeRate"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Overtime Rate</span>
+            </div>
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                maxlength="60"
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                formControlName="employeeYtdEarning"
+                placeholder=" "
+              />
+              <span class="floating_label_field">YTD Earning</span>
+            </div>
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                maxlength="60"
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                formControlName="employeeYtdTax"
+                placeholder=" "
+              />
+              <span class="floating_label_field">YTD Tax</span>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                formControlName="payeeCompanyWebsite"
+                maxlength="60"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Business Website</span>
+              <app-control-message-v35
+                [control]="payeeForm.controls.payeeCompanyWebsite"
+              />
+            </div>
+          </div>
+
+          <!-- ------------------------footer----------------------- -->
+
+          <div class="ocw_modal_footer">
+            <mat-dialog-actions align="end">
+              <button
+                (click)="backbutton()"
+                type="button"
+                class="ocw-btn ocw-btn-modal-blue add_btn"
+                [ngStyle]="{ 'pointer-events': loading ? 'none' : 'inherit' }"
+              >
+                <ng-container>
+                  @if (loading) {
+                    <span class="loadingSpinner"></span>
+                  }
+                  <span>{{ !loading ? "Add" : "Adding.." }}</span>
+                </ng-container>
+              </button>
+            </mat-dialog-actions>
+          </div>
+        </div>
+      }
+    </form>
+  </form>
+</div>
+@if (isPermissionLoading) {
+  <div class="w-[95%] h-[95%] z-10 absolute">
+    <span class="data_spinner"></span>
+  </div>
+}

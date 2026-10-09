@@ -1,0 +1,255 @@
+<div class="flex flex-1 flex-col min-h-0 mt-5">
+  <div
+    class="flex flex-col xl:flex-row xl:items-end xl:justify-between mb-1 gap-2 min-h-[35px] border-b border-v4-border-color"
+  >
+    <!-- Filter tabs (left) -->
+    <app-common-tab-v4
+      class="flex-1"
+      [tabs]="paymentsTable?.filterTabs ?? []"
+      [activeTab]="activeFilter()"
+      (tabChange)="onFilterChange($event)"
+      variant="underline"
+      size="xs"
+      [borderNone]="true"
+    />
+
+    <!-- Import/Export buttons (right) — accessed via #paymentsTable template reference -->
+    @if (paymentsTable?.showImportButtons) {
+      <div
+        class="import-actions flex flex-wrap items-center justify-end gap-2 pb-1"
+      >
+        @if (paymentsTable.isVerifiedChecksPluginEnabled()) {
+          <app-common-button-v4
+            class="whitespace-nowrap"
+            text="Check reconciliation"
+            [type]="{ name: 'list', style: 'green' }"
+            [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+            [disableHoverEffect]="true"
+            customClasses="font-semibold px-2.5 py-1.5 border border-v4-primary-brand-bold-color rounded-xl"
+            backGroundInput="transparent"
+            [isAddIcon]="true"
+            [icon]="paymentsTable.faFileMagnifyGlass"
+            toolTip="Import processed checks to mark the checks in the list as cleared."
+            (clickEvent)="paymentsTable.gotoReconcilePage()"
+          />
+        }
+        <div appWhiteLabel hiddenIf="isCSNHCRequirement">
+          <app-common-button-v4
+            appWhiteLabel
+            hiddenIf="isCSNHCRequirement"
+            class="whitespace-nowrap"
+            text="Import payments"
+            [type]="{ name: 'list', style: 'green' }"
+            [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+            [disableHoverEffect]="true"
+            customClasses="font-semibold px-2.5 py-1.5 border border-v4-primary-brand-bold-color rounded-xl"
+            backGroundInput="transparent"
+            [isAddIcon]="true"
+            toolTip="Import payments from connected apps"
+            [icon]="['fas', 'arrow-down-to-line']"
+            (clickEvent)="paymentsTable.openImport()"
+          />
+        </div>
+        <div class="flex items-center gap-1.5 font-peridot">
+          @if (
+            (paymentsTable.isQucikBookConnected &&
+              paymentsTable.isPushBackEnable) ||
+            (paymentsTable.isQucikBookDesktopConnected &&
+              paymentsTable.isQBDPushBackEnabled) ||
+            (paymentsTable.isNetSuiteConnected &&
+              paymentsTable.isNetSuiteushBackEnabled) ||
+            (paymentsTable.isFreshBooksConnected &&
+              paymentsTable.isFreshBooksPushBackEnabled)
+          ) {
+            <span
+              class="whitespace-nowrap text-[12px] font-semibold text-v4-secondary-text-color"
+              >Export to</span
+            >
+            <div class="export-links flex items-center">
+              @if (
+                paymentsTable.isQucikBookConnected &&
+                paymentsTable.isPushBackEnable
+              ) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="
+                    paymentsTable.isQBOnlineLoading() ||
+                    paymentsTable.loadingpush
+                  "
+                  [disabled]="paymentsTable.loadingpush"
+                  matTooltip="Export checks to QuickBooks Online"
+                  (click)="paymentsTable.exportChecks('qbo')"
+                >
+                  QuickBooks Online
+                </button>
+              }
+              @if (
+                paymentsTable.isQucikBookDesktopConnected &&
+                paymentsTable.isQBDPushBackEnabled
+              ) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="
+                    paymentsTable.isQBDesktopLoading() ||
+                    paymentsTable.loadingpush
+                  "
+                  [disabled]="paymentsTable.loadingpush"
+                  matTooltip="Export checks to QuickBooks Desktop"
+                  (click)="paymentsTable.exportChecks('qbd')"
+                >
+                  QuickBooks Desktop
+                </button>
+              }
+              @if (
+                paymentsTable.isNetSuiteConnected &&
+                paymentsTable.isNetSuiteushBackEnabled
+              ) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="
+                    paymentsTable.isNetsuitExportLoading() ||
+                    paymentsTable.loadingpush
+                  "
+                  [disabled]="paymentsTable.loadingpush"
+                  matTooltip="Export checks to NetSuite"
+                  (click)="paymentsTable.exportChecks('netsuite')"
+                >
+                  NetSuite
+                </button>
+              }
+              @if (
+                paymentsTable.isFreshBooksConnected &&
+                paymentsTable.isFreshBooksPushBackEnabled
+              ) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="
+                    paymentsTable.isFreshBooksExportLoading() ||
+                    paymentsTable.loadingpush
+                  "
+                  [disabled]="paymentsTable.loadingpush"
+                  matTooltip="Export checks to FreshBooks"
+                  (click)="paymentsTable.exportChecks('freshbooks')"
+                >
+                  FreshBooks
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Check tab: same inline strip as All, delegated to the check-list's own methods/selection.
+         Hidden on the Group Mailings sub-tab, where the check table is not rendered. -->
+    @if (checkListRef(); as cl) {
+      @if (!cl.isGroupMailingsActive()) {
+        <div
+          class="import-actions flex flex-wrap items-center justify-end gap-2 pb-1"
+        >
+          @if (cl.isVerifiedChecksPluginEnabled()) {
+            <app-common-button-v4
+              class="whitespace-nowrap"
+              text="Check reconciliation"
+              [type]="{ name: 'list', style: 'green' }"
+              [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+              [disableHoverEffect]="true"
+              customClasses="font-semibold px-2.5 py-1.5 border border-v4-primary-brand-bold-color rounded-xl"
+              backGroundInput="transparent"
+              [isAddIcon]="true"
+              [icon]="cl.faFileMagnifyGlass"
+              toolTip="Import processed checks to mark the checks in the list as cleared."
+              (clickEvent)="cl.gotoReconcilePage()"
+            />
+          }
+          <app-common-button-v4
+            class="whitespace-nowrap"
+            text="Import checks"
+            [type]="{ name: 'list', style: 'green' }"
+            [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+            [disableHoverEffect]="true"
+            customClasses="font-semibold px-2.5 py-1.5 border border-v4-primary-brand-bold-color rounded-xl"
+            backGroundInput="transparent"
+            [isAddIcon]="true"
+            [icon]="['fas', 'arrow-down-to-line']"
+            toolTip="Import checks"
+            (clickEvent)="cl.openImport()"
+          />
+          @if (
+            (cl.isQucikBookConnected && cl.isPushBackEnable) ||
+            (cl.isQucikBookDesktopConnected && cl.isQBDPushBackEnabled) ||
+            (cl.isNetSuiteConnected && cl.isNetSuiteushBackEnabled) ||
+            (cl.isFreshBooksConnected && cl.isFreshBooksPushBackEnabled)
+          ) {
+          <div class="flex items-center gap-1.5 font-peridot">
+            <span
+              class="whitespace-nowrap text-[12px] font-semibold text-v4-secondary-text-color"
+              >Export to</span
+            >
+            <div class="export-links flex items-center">
+              @if (cl.isQucikBookConnected && cl.isPushBackEnable) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="cl.loadingpush"
+                  [disabled]="cl.loadingpush"
+                  matTooltip="Export checks to QuickBooks Online"
+                  (click)="cl.exportChecksToQuickbook()"
+                >
+                  QuickBooks Online
+                </button>
+              }
+              @if (cl.isQucikBookDesktopConnected && cl.isQBDPushBackEnabled) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="cl.loadingpush"
+                  [disabled]="cl.loadingpush"
+                  matTooltip="Export checks to QuickBooks Desktop"
+                  (click)="cl.exportChecksToQuickbookDesktop()"
+                >
+                  QuickBooks Desktop
+                </button>
+              }
+              @if (cl.isNetSuiteConnected && cl.isNetSuiteushBackEnabled) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="cl.loadingpush"
+                  [disabled]="cl.loadingpush"
+                  matTooltip="Export checks to NetSuite"
+                  (click)="cl.exportChecksToNetSuite()"
+                >
+                  NetSuite
+                </button>
+              }
+              @if (cl.isFreshBooksConnected && cl.isFreshBooksPushBackEnabled) {
+                <button
+                  type="button"
+                  class="export-link"
+                  [class.opacity-60]="cl.loadingpush"
+                  [disabled]="cl.loadingpush"
+                  matTooltip="Export checks to FreshBooks"
+                  (click)="cl.exportChecksToFreshBooks()"
+                >
+                  FreshBooks
+                </button>
+              }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <app-v4-payments-table
+    #paymentsTable
+    [(activeFilter)]="activeFilter"
+    (activeFilterChange)="onFilterChange($event)"
+  />
+</div>

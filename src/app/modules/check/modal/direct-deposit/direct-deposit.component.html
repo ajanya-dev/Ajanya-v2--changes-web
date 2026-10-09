@@ -1,0 +1,505 @@
+<div class="ocw_man_modal_wrapper add_bank_modal">
+  <div class="flex justify-between items-center">
+    <div>
+      <span class="w-full text-base text-main-text-color flex items-center">
+        <span class="pl-1 font-inter font-semibold text-base">
+          DIRECT DEPOSIT
+        </span>
+      </span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <span
+              class="text-sm font-medium text-main-text-color whitespace-nowrap"
+              >MY CREDITS</span
+            >
+            <span
+              class="amount-recharge text-lg font-semibold text-common-blue-color"
+              >{{ currentCredit | currency }}</span
+            >
+          </div>
+
+          <app-common-button-v35
+            [text]="'Recharge Now'"
+            [type]="{ style: 'green', name: 'money-action' }"
+            (clickEvent)="openRechargeModal()"
+            [disabled]="isCreditLoading()"
+            width="120px"
+            customClasses="!h-[44px]"
+          ></app-common-button-v35>
+        </div>
+      </div>
+      <div [mat-dialog-close]="false">
+        <fa-icon
+          class="text-secondary-text-color cursor-pointer"
+          [icon]="faXmark"
+        ></fa-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="ocw_modal_body">
+    @if (isLoading()) {
+      <!-- Loading Spinner -->
+      <div class="flex justify-center items-center h-64">
+        <div class="loadingSpinner"></div>
+      </div>
+    } @else {
+      <!-- Actual Content -->
+      <div class="table-container">
+        <form [formGroup]="DDForm">
+          <div class="table-responsive-wrapper">
+            <table class="new-table">
+              <thead>
+                <tr>
+                  <th class="text-left font-semibold">#</th>
+                  <th class="text-left font-semibold">PAY FROM</th>
+                  <th class="text-left font-semibold">PAY TO</th>
+                  <th class="text-left font-semibold">
+                    <fa-icon
+                      [icon]="faEnvelope"
+                      class="mr-1 text-common-blue-color w-4 h-4"
+                    ></fa-icon>
+                    PAYEE EMAIL
+                  </th>
+                  <th class="text-left font-semibold">
+                    <div class="flex items-center gap-4 pl-3">
+                      <input
+                        type="checkbox"
+                        name="sms"
+                        id="sms"
+                        class="cursor-pointer"
+                        (change)="checkAllSms($event)"
+                      />
+                      <fa-icon
+                        [icon]="faMessage"
+                        class="mr-1 text-common-green-color w-4 h-4"
+                      ></fa-icon>
+                      SMS
+                    </div>
+                  </th>
+                  <th class="text-left font-semibold">
+                    <fa-icon
+                      [icon]="faMoneycheck"
+                      class="mr-1 text-common-violet-color w-4 h-4"
+                    ></fa-icon>
+                    CHECK #
+                  </th>
+                  <th class="text-left font-semibold">
+                    <fa-icon
+                      [icon]="faCircleDollar"
+                      class="mr-1 text-common-yellow-color w-4 h-4"
+                    ></fa-icon>
+                    CHECK AMOUNT
+                  </th>
+                  <th class="text-left font-semibold">
+                    <fa-icon
+                      [icon]="faCircleDollar"
+                      class="mr-1 text-common-red-color w-4 h-4"
+                    ></fa-icon>
+                    COST
+                  </th>
+                  <th class="text-left font-semibold">
+                    <fa-icon
+                      [icon]="faPaperclip"
+                      class="mr-1 text-common-violet-color w-4 h-4"
+                    ></fa-icon>
+                    ATTACHMENT
+                  </th>
+                  <th class="text-left">ENABLE WALLET BYPASSING</th>
+                  @if (isPayeeBankAccExist?.length) {
+                    <th class="text-left font-semibold">PAY TO ACCOUNT</th>
+                  }
+                </tr>
+              </thead>
+              <ng-container formArrayName="achData">
+                @for (
+                  item of DDForm?.controls["achData"]["controls"];
+                  track item;
+                  let i = $index
+                ) {
+                  <ng-container>
+                    <ng-container [formGroupName]="i">
+                      <tbody class="text-sm scrollable-tbody">
+                        <tr>
+                          <td class="text-left">{{ i + 1 }}</td>
+                          <td class="text-left">
+                            {{ item.value.bankNickName }}
+                          </td>
+                          @if (item.value.payeeNickName) {
+                            <td
+                              class="text-left w-[150px] max-w-[150px] overflow-hidden whitespace-nowrap"
+                              [matTooltip]="
+                                item.value.payeeNickName.length > 15
+                                  ? item.value.payeeNickName
+                                  : ''
+                              "
+                            >
+                              <span class="block truncate">
+                                {{
+                                  item.value.payeeNickName
+                                    ? item.value.payeeNickName
+                                    : item.value.payTo
+                                }}
+                              </span>
+                            </td>
+                          } @else {
+                            <td
+                              class="text-left w-[150px] max-w-[150px] overflow-hidden whitespace-nowrap"
+                              [matTooltip]="
+                                item.value.payTo.length > 15
+                                  ? item.value.payTo
+                                  : ''
+                              "
+                            >
+                              <span class="block truncate">
+                                {{
+                                  item.value.payTo
+                                    ? item.value.payTo
+                                    : item.value.payTo
+                                }}
+                              </span>
+                            </td>
+                          }
+                          <td class="text-left">
+                            <input
+                              type="text"
+                              class="input_style"
+                              formControlName="email"
+                              name="email_{{ i }}"
+                              id="email_{{ i }}"
+                              [value]="item.value.email"
+                            />
+                            <app-control-message
+                              [control]="item.controls.email"
+                              labelName="Email is Required"
+                            >
+                            </app-control-message>
+                          </td>
+                          <td class="w-64">
+                            <div class="item-container flex">
+                              <div
+                                class="py-0 px-2.5 border-input-border-color border-r-0 flex items-center justify-center"
+                              >
+                                <input
+                                  formControlName="sms"
+                                  type="checkbox"
+                                  class="cursor-pointer"
+                                />
+                              </div>
+                              <app-new-phone-input
+                                class="min-h-9 font-roboto text-sm font-medium"
+                                inputBorderRadius="0px"
+                                dropDownHeight="145px"
+                                type="text"
+                                [ngClass]="{
+                                  'border border-common-red-color':
+                                    item?.controls.phone.touched &&
+                                    item?.controls.phone.invalid
+                                }"
+                                formControlName="phone"
+                                mask="(000) 000-0000"
+                              ></app-new-phone-input>
+                            </div>
+                          </td>
+                          <td class="text-left">{{ item.value.check }}</td>
+                          <td class="text-left">
+                            {{ item.value.checkAmount }}
+                          </td>
+                          <td class="text-left">
+                            {{ item.value.cost | currency }}
+                          </td>
+                          <td>
+                            <div class="attachment-panel">
+                              <app-common-button-v35
+                                type="list"
+                                text="Add"
+                                [isAddIcon]="true"
+                                [icon]="['fas', 'plus']"
+                                (clickEvent)="
+                                  addAttachmentToAchEmail(item.value.checkId)
+                                "
+                              ></app-common-button-v35>
+                              @if (
+                                item.value.existingAttach === 1 &&
+                                !attachments[item.value.checkId]?.length > 0
+                              ) {
+                                <fa-icon
+                                  matTooltip="You have attachments with this check"
+                                  [icon]="faCircleInto"
+                                ></fa-icon>
+                              }
+
+                              @if (
+                                !attachments[item.value.checkId] &&
+                                item.value.addedAttachments > 0
+                              ) {
+                                <div class="attachment-count">
+                                  {{ item.value.addedAttachments }}
+                                </div>
+                              } @else {
+                                @if (
+                                  attachments[item.value.checkId]?.length > 0
+                                ) {
+                                  <div class="attachment-count">
+                                    {{
+                                      attachments[item.value.checkId]?.length
+                                    }}
+                                  </div>
+                                }
+                              }
+                            </div>
+                          </td>
+                          <td class="text-center">
+                            <input
+                              type="checkbox"
+                              [checked]="true"
+                              formControlName="walletBypassing"
+                              class="cursor-pointer"
+                            />
+                          </td>
+                          @if (isPayeeBankAccExist?.length) {
+                            <td class="text-left">
+                              @if (
+                                directDepositData.data[i].bankAccountList
+                                  ?.length !== "1"
+                              ) {
+                                <div class="single_input no_modal_btn">
+                                  <select
+                                    class="input_style"
+                                    formControlName="payee_account"
+                                  >
+                                    @for (
+                                      bankAcc of directDepositData.data[i]
+                                        .bankAccountList;
+                                      track bankAcc
+                                    ) {
+                                      <option [value]="bankAcc.value">
+                                        {{ bankAcc.displayName }}
+                                      </option>
+                                    }
+                                  </select>
+                                </div>
+                              }
+                            </td>
+                          }
+                        </tr>
+                      </tbody>
+                    </ng-container>
+                  </ng-container>
+                }
+              </ng-container>
+            </table>
+          </div>
+          <!-- Total Cost Row -->
+          <div class="total-cost-row flex justify-between items-center">
+            <div align="start" class="note_message flex-1">
+              @if (autoAttachmentForAch) {
+                Note: To include attachments, click 'Add' before sending the
+                check.
+              }
+            </div>
+            <div class="total-cost-content">
+              <div>
+                <span class="total-cost-label font-semibold text-lg"
+                  >Total Cost:</span
+                >
+                <span
+                  class="total-cost-amount text-common-blue-color font-semibold text-lg"
+                  >{{ grandCheckCost | currency }}</span
+                >
+              </div>
+
+              <div>
+                <span class="total-cost-label font-semibold text-lg"
+                  >Total Amount:</span
+                >
+                <span
+                  class="total-cost-amount text-common-blue-color font-semibold text-lg"
+                  >{{ grandCheckAmount | currency }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="mail-types-input-wrapper flex flex-col p-2 border border-solid border-input-border-color rounded-lg mt-2">
+        <div class="w-full flex gap-3">
+          <mat-radio-group
+          class="flex gap-3"
+          >
+          @for (option of paymentOptions; track option.value) {
+            <div
+              class="flex items-center justify-center p-2 border border-solid border-input-border-color rounded-lg"
+            >
+              <mat-radio-button
+                [value]="option.value"
+                [checked]="selectedType() === option.value"
+                (change)="changePaymentType(option.value)"
+                class="flex items-center input-text-color text-sm font-inter font-normal text-main-text-color cursor-pointer"
+                >{{ option.label }}</mat-radio-button
+              >
+            </div>
+          }
+        </mat-radio-group>
+        </div>
+        @if (recurringAdded()) {
+          <div
+            class="mail-types-recurring-option w-full flex border border-solid border-input-border-color my-4 rounded-lg p-4 gap-9"
+            [formGroup]="reccuringForm"
+          >
+            <div class="recurring_left flex flex-col">
+              <div class="flex flex-col mail-types-option-container flex-1">
+                <p class="font-inter font-medium text-sm text-main-text-color my-1">Frequency</p>
+                <select
+                  name="frequency"
+                  id="frequency"
+                  formControlName="frequency"
+                  class="border border-input-border-color text-main-text-color font-inter p-1 !h-7 !rounded text-sm cursor-pointer w-52"
+                >
+                @for (option of frequencyOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="flex flex-col mail-types-option-container flex-1">
+                <p class="font-inter font-medium text-sm text-main-text-color my-1">Start Date</p>
+                <input
+                  type="date"
+                  name="recurring-types"
+                  formControlName="start_date"
+                  id="start_date"
+                  [min]="mindate"
+                  class="border border-input-border-color text-main-text-color p-1 !h-7 !rounded text-sm font-inter w-52"
+                />
+                @if (reccuringForm.controls.start_date.value < minDate) {
+                  <div class="flex gap-1 pt-[2px]">
+                    <fa-icon
+                      class="text-common-red-color text-[12px]"
+                      [icon]="faCircleExclamation"
+                      animation="shake"
+                      size="lg"
+                    ></fa-icon>
+                    <p class="text-common-red-color text-xs font-medium font-roboto">
+                      Starting date should be a future date.
+                    </p>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="recurring_right flex flex-col gap-2 pt-10 pb-3">
+              <div class="flex w-full justify-between h-full">
+                <mat-radio-group
+                  formControlName="end_select"
+                  aria-label="Select an option"
+                  class="flex flex-col h-full justify-between"
+                >
+                  <mat-radio-button
+                    value="3"
+                    checked="checked"
+                    class="flex items-center input-text-color text-sm font-inter font-normal text-main-text-color cursor-pointer"
+                    >Pay Until I Cancel</mat-radio-button
+                  >
+                  <mat-radio-button
+                    value="1"
+                    class="flex"
+                    class="flex items-center mt-4 input-text-color text-sm font-inter font-normal text-main-text-color cursor-pointer"
+                    >Pay for
+                  </mat-radio-button>
+                </mat-radio-group>
+                <div class="flex items-end flex-col h-full justify-between">
+                  <div class="h-7"></div>
+                  @if (reccuringForm.controls.end_select.value === "1") {
+                    <div class="mb-[-12px]">
+                      <app-common-input-field
+                        placeholder=""
+                        formControlName="count"
+                        [isFieldRequired]="false"
+                        [isNumberOnly]="true"
+                        [maxLength]="3"
+                      />
+                      <app-control-message-v35 [control]="reccuringForm.controls.count" />
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (schedulingAdded()) {
+          <div class="flex justify-between mt-5 flex-col p-4 border border-solid border-input-border-color rounded-lg">
+            <span class="w-36 text-sm font-inter font-normal text-main-text-color"
+              >Select Date</span
+            >
+            <div class="w-[220px]">
+              <input
+                type="date"
+                class="input_style"
+                [min]="minDate"
+                [(ngModel)]="selectedDate"
+              />
+              @if (selectedDate < minDate) {
+                <div class="flex gap-1 pt-[2px]">
+                  <fa-icon
+                    class="text-common-red-color text-[12px]"
+                    [icon]="faCircleExclamation"
+                    animation="shake"
+                    size="lg"
+                  ></fa-icon>
+                  <p class="text-common-red-color text-xs font-medium font-roboto">
+                    Starting date should be a future date.
+                  </p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+    <div class="alert-wrapper" [hidden]="!showAlertBody">
+      <div class="alert_area">
+        <span>
+          <fa-icon
+            class="text-common-red-color cursor-pointer"
+            [icon]="faExclamationTriangle"
+          ></fa-icon>
+        </span>
+        <p id="alert"></p>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end  -->
+
+  <div class="h-2"></div>
+  <div class="ocw_modal_footer !pt-4">
+    <div class="action_button">
+      <div>
+        <mat-dialog-actions align="start">
+          @if (skipprocess) {
+            <button class="ocw-btn ocw-btn-dark-blue" (click)="skip()">
+              skip
+            </button>
+          }
+        </mat-dialog-actions>
+      </div>
+      <mat-dialog-actions>
+        @if (fAchData?.length) {
+          <ng-container>
+            <app-common-button-v35
+              [type]="{ style: 'filled', name: 'main' }"
+              [text]="schedulingAdded() ? 'Schedule Now' : recurringAdded() ? 'Recurring Now' : 'Process Now'"
+              (clickEvent)="onProcess()"
+              [disabled]="loading"
+              [loading]="loading"
+            ></app-common-button-v35>
+          </ng-container>
+        }
+      </mat-dialog-actions>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,240 @@
+@if(!isProcessing()) {
+  <div class="font-peridot">
+    <!-- Modal Header -->
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color">
+          Process Payments
+        </h1>
+        <h2 class="text-xs text-v4-subtle-text-color">
+          Review and process all payment types
+        </h2>
+      </div>
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  
+    <!-- Modal Body -->
+    <div
+      class="p-6 bg-v4-tertiary-background-color overflow-y-auto"
+      style="max-height: 60vh"
+      [formGroup]="bulkPaymentForm"
+      (scroll)="closeAllDropdowns()"
+    >
+      @if (!hasAnyPayments()) {
+        <div class="flex items-center justify-center py-12">
+          <p class="text-sm text-v4-subtle-text-color">No payments to process</p>
+        </div>
+      }
+
+      <!-- Initialization loader -->
+      @if (v4Service.isAnyChildInitializing()) {
+        <div class="flex items-center justify-center py-12 gap-3">
+          <lucide-icon
+            [img]="Loader2Icon"
+            [size]="24"
+            class="text-v4-primary-brand-color animate-spin"
+          />
+          <div class="text-sm text-v4-secondary-text-color">
+            Loading payment details...
+          </div>
+        </div>
+      }
+
+      <div
+        [class.pointer-events-none]="isProcessing()"
+        [class.opacity-60]="isProcessing()"
+        [class.hidden]="v4Service.isAnyChildInitializing()"
+      >
+        <!-- Check Mail from Bank -->
+        @if (checkMailPayments.length > 0) {
+          <app-v4-check-mail-bulk
+            [payments]="checkMailPayments"
+            formGroupName="checkMailFormGroup"
+          />
+        }
+  
+        <!-- Check Email -->
+        @if (checkEmailPayments.length > 0) {
+          <app-v4-check-email-bulk
+            [payments]="checkEmailPayments"
+            formGroupName="checkEmailFormGroup"
+          />
+        }
+  
+        <!-- Check Print -->
+        @if (checkPrintPayments.length > 0) {
+          <app-v4-check-print-bulk
+            [payments]="checkPrintPayments"
+            formGroupName="checkPrintFormGroup"
+          />
+        }
+  
+        <!-- Check Direct Deposit -->
+        @if (checkDDPayments.length > 0) {
+          <app-v4-check-dd-bulk
+            [payments]="checkDDPayments"
+            formGroupName="checkDDFormGroup"
+            [skipBankPrefill]="skipBankPrefill"
+          />
+        }
+
+        <!-- ACH Transfer -->
+        @if (achPayments.length > 0) {
+          <app-v4-ach-bulk
+            [payments]="achPayments"
+            formGroupName="achFormGroup"
+            [skipBankPrefill]="skipBankPrefill"
+          />
+        }
+
+        <!-- Wire Transfer -->
+        @if (wirePayments.length > 0) {
+          <app-v4-wire-bulk
+            [payments]="wirePayments"
+            formGroupName="wireFormGroup"
+            [skipBankPrefill]="skipBankPrefill"
+          />
+        }
+  
+        <!-- Virtual Card -->
+        @if (virtualCardPayments.length > 0) {
+          <app-v4-virtual-card-bulk
+            [payments]="virtualCardPayments"
+            formGroupName="virtualCardFormGroup"
+          />
+        }
+  
+        <!-- Wallet Check Print -->
+        @if (walletCheckPrintPayments.length > 0) {
+          <app-v4-wallet-check-print-bulk
+            [payments]="walletCheckPrintPayments"
+            formGroupName="walletCheckPrintFormGroup"
+          />
+        }
+
+        <!-- Wallet Check Email -->
+        @if (walletCheckEmailPayments.length > 0) {
+          <app-v4-wallet-check-email-bulk
+            [payments]="walletCheckEmailPayments"
+            formGroupName="walletCheckEmailFormGroup"
+          />
+        }
+  
+        <!-- Check Mail Type 2 (Non-Bank) -->
+        @if (checkMailType2Payments.length > 0) {
+          <app-v4-check-mail-type2-bulk
+            [payments]="checkMailType2Payments"
+            formGroupName="checkMailType2FormGroup"
+          />
+        }
+
+        <!-- Let vendor decide -->
+        @if (letVendorDecidePayments.length > 0) {
+          <app-v4-let-vendor-decide-bulk
+            [payments]="letVendorDecidePayments"
+            formGroupName="letVendorDecideFormGroup"
+          />
+        }
+      </div>
+    </div>
+  
+    <!-- Modal Footer -->
+    <div class="bg-v4-secondary-background-color border-t border-v4-border-color">
+      <!-- Summary Cards -->
+      <div class="flex gap-3 px-4 pt-4">
+        <!-- Total Payments -->
+        <div class="flex-1 flex flex-col items-center justify-center py-4 border border-v4-border-color rounded-xl">
+          <span class="text-xs text-v4-tertiary-text-color mb-1">Total Payments</span>
+          <span class="text-2xl font-bold text-v4-main-text-color">
+            {{ v4Service.totalPaymentCount() }}
+          </span>
+        </div>
+
+        <!-- Payment Amount -->
+        <div class="flex-1 flex flex-col items-center justify-center py-4 border border-v4-border-color rounded-xl">
+          <span class="text-xs text-v4-tertiary-text-color mb-1">Payment Amount</span>
+          <span class="text-2xl font-bold text-v4-main-text-color">
+            {{ v4Service.totalPaymentAmount() | currency: 'USD' : 'symbol' : '1.2-2' }}
+          </span>
+        </div>
+
+        <!-- Total Shipping Fee -->
+        @if (v4Service.totalShippingFee() > 0) {
+          <div class="flex-1 flex flex-col items-center justify-center py-4 border border-v4-border-color rounded-xl">
+            <span class="text-xs text-v4-secondary-text-color mb-1">Total Shipping Fee</span>
+            <span class="text-2xl font-bold text-v4-main-text-color">
+              {{ v4Service.totalShippingFee() | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </span>
+          </div>
+        }
+
+        <!-- Total Attachment Fee -->
+        @if (v4Service.totalAttachmentFee() > 0) {
+          <div class="flex-1 flex flex-col items-center justify-center py-4 border border-v4-border-color rounded-xl">
+            <span class="text-xs text-v4-secondary-text-color mb-1">Total Attachment Fee</span>
+            <span class="text-2xl font-bold text-v4-main-text-color">
+              {{ v4Service.totalAttachmentFee() | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </span>
+          </div>
+        }
+
+        <!-- Total Amount (grand total incl. fees) -->
+        <div class="flex-1 flex flex-col items-center justify-center py-4 bg-v4-primary-brand-color rounded-xl">
+          <span class="text-xs text-white/80 mb-1">Total Amount</span>
+          <span class="text-2xl font-bold text-v4-secondary-brand-color">
+            {{ (v4Service.totalPaymentAmount() + totalCost() + v4Service.totalShippingFee() + v4Service.totalAttachmentFee()) | currency: 'USD' : 'symbol' : '1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 px-4 py-4">
+        <div class="flex-1">
+          <app-common-button-v4
+            mat-dialog-close=""
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Cancel"
+            [disabled]="isProcessing()"
+            [customClasses]="'w-full'"
+          />
+        </div>
+        <div class="flex-1">
+          <app-common-button-v4
+            [type]="{ style: 'neon', name: 'main' }"
+            text="Process Now"
+            [lucideIcon]="'send'"
+            (clickEvent)="onSubmit()"
+            [disabled]="isProcessing() || !hasAnyPayments()"
+            [loading]="isProcessing()"
+            [customClasses]="'w-full'"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+}@else{
+  <div class="flex flex-col items-center justify-center gap-3 py-16">
+    <div class="flex items-center justify-center bg-v4-primary-brand-color rounded-full w-20 h-20 blink-animation">
+      <lucide-icon [img]="SendIcon" [size]="32" class="text-v4-secondary-brand-color" />
+    </div>
+    <div class="flex flex-col items-center justify-center">
+      <h1 class="text-v4-main-text-color text-xl font-semibold">Processing Payments...</h1>
+      <p class="text-v4-secondary-text-color text-sm">Please wait while we process your payments.</p>
+    </div>
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Continue in Background"
+      (clickEvent)="continueInBackground()"
+    />
+    <p class="text-v4-tertiary-text-color text-xs text-center px-6">
+      Payments keep processing. Progress is shown at the top of the page.
+    </p>
+  </div>
+}

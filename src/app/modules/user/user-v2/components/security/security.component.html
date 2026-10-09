@@ -1,0 +1,460 @@
+<div class="bg-main-background-color" [ngClass]="{ 'blur-[3px]': isLogout() }">
+  <div class="border-b border-input-border-color">
+    <div class="flex p-7">
+      <h3
+        class="font-medium text-main-text-color text-sm items-center capitalize font-inter"
+      >
+        Security
+      </h3>
+    </div>
+  </div>
+  <div class="p-7 bg-main-background-color flex flex-col gap-7">
+    <div class="shadow-common-box-shadow p-3 rounded">
+      <div>
+        <h3
+          class="pb-3 text-secondary-text-color font-inter font-medium text-[13px]"
+        >
+          Change Password
+        </h3>
+        <div class="flex gap-5 flex-col" [formGroup]="securityForm">
+          <div class="flex gap-7 w-full">
+            <div class="w-full flex flex-col gap-5">
+              <div class="relative">
+                <app-common-input-field
+                  placeholder="Old Password"
+                  formControlName="oldPassword"
+                  [type]="oldPasswordHide() ? 'password' : 'text'"
+                />
+                <app-control-message-v35
+                  [control]="securityForm.controls.oldPassword"
+                />
+                <fa-icon
+                  (click)="oldPasswordHide.set(!oldPasswordHide())"
+                  [icon]="oldPasswordHide() ? faEye : faEyeSlash"
+                  class="absolute right-2 top-[10px] text-main-text-color text-sm cursor-pointer"
+                />
+              </div>
+              <div class="relative">
+                <app-common-input-field
+                  placeholder="New Password"
+                  formControlName="newPassword"
+                  [type]="newPasswordHide() ? 'password' : 'text'"
+                  maxlength="50"
+                  (inputEvent)="isPasswordValid()"
+                  (inputFocusEvent)="showValidBox.set(true)"
+                  (inputFocusOutEvent)="showValidBox.set(false)"
+                />
+                <app-control-message-v35
+                  class="absolute -bottom-5"
+                  [control]="securityForm.controls.newPassword"
+                />
+                <div
+                  class="password-info"
+                  [ngClass]="{ active: showValidBox() }"
+                >
+                  <ul id="validationList">
+                    <li
+                      id="letter"
+                      class="invalid text-common-red-color font-inter font-normal text[13px] list-none"
+                    >
+                      At least one lower case
+                    </li>
+                    <li
+                      id="capital"
+                      class="invalid text-common-red-color font-inter font-normal text[13px] list-none"
+                    >
+                      At least one capital letter
+                    </li>
+                    <li
+                      id="number"
+                      class="invalid text-common-red-color font-inter font-normal text[13px] list-none"
+                    >
+                      At least one number
+                    </li>
+                    <li
+                      id="specialCharacter"
+                      class="invalid text-common-red-color font-inter font-normal text[13px] list-none"
+                    >
+                      At least one special character
+                    </li>
+                    <li
+                      id="length"
+                      class="invalid text-common-red-color font-inter font-normal text[13px] list-none"
+                    >
+                      Be at least 8 characters
+                    </li>
+                  </ul>
+                </div>
+                <fa-icon
+                  (click)="newPasswordHide.set(!newPasswordHide())"
+                  [icon]="newPasswordHide() ? faEye : faEyeSlash"
+                  class="absolute right-2 top-[10px] text-main-text-color text-sm cursor-pointer"
+                />
+              </div>
+            </div>
+            <div class="w-full flex items-end">
+              <div class="w-full relative">
+                <app-common-input-field
+                  placeholder="Confirm New Password"
+                  [type]="confirmPasswordHide() ? 'password' : 'text'"
+                  maxlength="50"
+                  formControlName="confirmPassword"
+                />
+
+                @if (passWordMismatch()) {
+                  <span
+                    class="text-common-red-color text-xs font-medium font-roboto absolute"
+                  >
+                    <fa-icon
+                      class="text-common-red-color text-[12px]"
+                      [icon]="['fas', 'circle-exclamation']"
+                      animation="shake"
+                      size="lg"
+                    ></fa-icon>
+                    Passwords doesn't match</span
+                  >
+                }
+                @if (!passWordMismatch()) {
+                  <app-control-message-v35
+                    class="absolute -bottom-5"
+                    [control]="securityForm.controls.confirmPassword"
+                  />
+                }
+                <fa-icon
+                  (click)="confirmPasswordHide.set(!confirmPasswordHide())"
+                  [icon]="confirmPasswordHide() ? faEye : faEyeSlash"
+                  class="absolute right-2 top-[10px] text-main-text-color text-sm cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <app-common-button-v35
+              [type]="{ style: 'filled', name: 'main' }"
+              backGroundInput="var(--common-green-color)"
+              textColorInput="white"
+              text="Update"
+              width="125px"
+              (clickEvent)="securityFormSubmit()"
+              [disabled]="isSubmit()"
+              [loading]="isSubmit()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="shadow-common-box-shadow p-3 rounded">
+      <h3
+        class="pb-3 text-secondary-text-color font-inter font-medium text-[13px]"
+      >
+        Two-steps Verification
+      </h3>
+      <div class="flex gap-5">
+        <div
+          class="two-fact items-center w-full flex justify-between p-3 bg-tertiary-background-color rounded"
+        >
+          <h4 class="font-inter font-medium text-main-text-color text-[13px]">
+            Two Factor Authentication
+          </h4>
+          <div
+            role="presentation"
+            class="flex rounded-xl h-5 w-10 p-0.5 transition-all duration-1000"
+            (click)="turnOnTwoFactor()"
+            [ngClass]="[
+              isTwoFactorActive()
+                ? 'justify-end bg-common-blue-color'
+                : 'justify-start bg-input-border-color',
+              diasbleTwoFactorToggle()
+                ? 'pointer-events-none'
+                : 'cursor-pointer'
+            ]"
+          >
+            <div
+              class="rounded-full h-4 w-4 transition-all duration-1000"
+              [ngClass]="[
+                isTwoFactorActive()
+                  ? 'bg-main-background-color'
+                  : 'bg-main-text-color'
+              ]"
+            ></div>
+          </div>
+        </div>
+        <div
+          class="two-fact items-center w-full flex justify-between p-3 bg-tertiary-background-color rounded"
+          matTooltip="If this is enabled, you must approve to login from the same device you attempted to sign in with."
+        >
+          <h4 class="font-inter font-medium text-main-text-color text-[13px]">
+            Advanced Two Factor Authentication
+          </h4>
+          <div
+            role="presentation"
+            class="flex rounded-xl h-5 w-10 p-0.5 transition-all duration-1000"
+            (click)="turnOnAdvancedTwoFactor()"
+            [ngClass]="[
+              isAdvancedTwoFactorActive()
+                ? 'justify-end bg-common-blue-color'
+                : 'justify-start bg-input-border-color',
+              diasbleAdvancedTwoFactorToggle()
+                ? 'pointer-events-none'
+                : 'cursor-pointer'
+            ]"
+          >
+            <div
+              class="rounded-full h-4 w-4 transition-all duration-1000"
+              [ngClass]="[
+                isAdvancedTwoFactorActive()
+                  ? 'bg-main-background-color'
+                  : 'bg-main-text-color'
+              ]"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (isParentCompany()) {
+    <div class="shadow-common-box-shadow p-3 rounded">
+      <div class="flex justify-between pb-3">
+        <h3
+          class="text-secondary-text-color font-inter font-medium text-[13px]"
+        >
+          IP Whitelist Management
+        </h3>
+        <button
+          class="flex justify-center items-center bg-common-secondary-blue-color rounded"
+          [disabled]="isLogout()"
+          (click)="addIpWhitelist()"
+        >
+          <span
+            class="text-common-blue-color font-medium font-inter text-[13px] px-3 py-1"
+            >Add IP Address</span
+          >
+        </button>
+      </div>
+      @if (!isLoadIpWhitelist() && ipWhitelist().length > 0) {
+        <table class="w-full">
+          <tr>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              IP Address
+            </th>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              Nickname
+            </th>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              Created At
+            </th>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              Action
+            </th>
+            
+          </tr>
+          @for (ip of ipWhitelist(); track ip) {
+            <tr>
+              <td
+                class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+              >
+                {{ ip.ip }}
+              </td>
+              <td
+                class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+              >
+                {{ ip.nickname }}
+              </td>
+              <td
+                class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+              >
+                <p class="ip-text">
+                  {{ ip.created_at | date:'dd/MM/yyyy HH:mm' }}
+                </p>
+              </td>
+              <td class="border-b border-input-border-color pl-4">
+                <fa-icon [icon]="faTrash" class="cursor-pointer text-common-red-color" (click)="removeIpWhitelist(ip.ip)" />
+              </td>
+            </tr>
+          }
+        </table>
+      } @else if(isLoadIpWhitelist()) {
+        @for (_ of [].constructor(3); track $index) {
+          <div class="skelton w-full h-8 mb-2"></div>
+        }
+      } @else {
+        <div class="flex justify-center items-center mb-4">
+          <span class="text-secondary-text-color font-inter font-medium text-[13px]">No IP addresses found</span>
+        </div>
+      }
+    </div>
+    }
+
+    <div class="shadow-common-box-shadow p-3 rounded">
+      <div class="flex justify-between pb-3">
+        <h3
+          class="text-secondary-text-color font-inter font-medium text-[13px]"
+        >
+          Your Devices
+        </h3>
+        <button
+          class="flex justify-center items-center bg-common-secondary-blue-color rounded"
+          [disabled]="isLogout()"
+          (click)="logout()"
+        >
+          <span
+            class="text-common-blue-color font-medium font-inter text-[13px] px-3 py-1"
+            >Remove All Other Devices</span
+          >
+        </button>
+      </div>
+
+      @if (devices()?.length > 0 && !isLoadActiveDevices()) {
+        <table class="w-full">
+          <tr>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              Device
+            </th>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              IP Address
+            </th>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              Activity
+            </th>
+            <th
+              class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+            >
+              Action
+            </th>
+          </tr>
+          @for (device of devices(); track device) {
+            <tr>
+              <td
+                class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+              >
+                <fa-icon [icon]="faDesktop" class="pr-1" />
+                {{ device.deviceType }} - {{ device.browser }}
+              </td>
+              <td
+                class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+              >
+                {{ device.ipAddress }}
+              </td>
+              <td
+                class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+              >
+                <p class="ip-text">
+                  @if (device.isCurrentLogin === 1) {
+                    <span class="text-common-green-color"
+                      ><fa-icon [icon]="faPoint" class="pr-1" />Current
+                      Device</span
+                    >
+                  } @else if (device.isCurrentLogin !== 1) {
+                    <span class="location-text"
+                      >Last Active in {{ device.city }} - {{ device.country }}
+                    </span>
+                  }
+                </p>
+              </td>
+              <td class="border-b border-input-border-color pl-4">
+                @if (device.isCurrentLogin !== 1) {
+                  @if (
+                    isSingleDeviceLogout() && selectedDeviceId === device.id
+                  ) {
+                    <fa-icon
+                      [icon]="faSpinner"
+                      [animation]="'spin'"
+                      class="text-common-red-color"
+                    />
+                  } @else {
+                    <fa-icon
+                      matTooltip="Sign out"
+                      [icon]="faSignout"
+                      class="cursor-pointer text-common-red-color"
+                      (click)="logout(device.id)"
+                    />
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </table>
+      } @else {
+        @for (_ of [].constructor(3); track $index) {
+          <div class="skelton w-full h-8 mb-2"></div>
+        }
+      }
+      @if (totalPage > 1 && devices().length) {
+        <div class="py-3 flex items-center justify-between">
+          <div class="flex-1 flex items-center justify-end">
+            <div>
+              <nav
+                class="relative z-0 inline-flex rounded-md shadow-sm gap-0.5"
+                aria-label="Pagination"
+              >
+                <a
+                  (click)="onPrevious()"
+                  role="presentation"
+                  class="relative page_indent inline-flex items-center px-2 py-2 rounded-md border border-input-border-color text-sm font-medium text-gray-500 cursor-pointer"
+                >
+                  <fa-icon [icon]="faAngleLeft">Previous</fa-icon>
+                </a>
+                @for (item of pageArr; let i = $index; track item) {
+                  <a
+                    aria-current="page"
+                    (click)="gotoPage(item)"
+                    role="presentation"
+                    class="page_indent z-10 relative inline-flex items-center px-3 py-1 text-sm font-medium cursor-pointer font-inter text-main-text-color"
+                    [ngClass]="{
+                      ' border-w':
+                        (mode === 1 && i + 1 === initialPage) ||
+                        (mode !== 1 && i + 1 === pseudoI),
+                      ' border-gray-300': i + 1 !== initialPage,
+                      'rounded-md border border-input-border-color':
+                        item !== '...',
+                      'bg-common-blue-color text-white': paginationPage === item
+                    }"
+                  >
+                    {{ item ? item : "..." }}
+                  </a>
+                }
+
+                <a
+                  (click)="onNext()"
+                  role="presentation"
+                  class="page_indent relative inline-flex items-center px-2 py-1 rounded-md border border-input-border-color text-sm font-medium text-gray-500 cursor-pointer"
+                >
+                  <fa-icon [icon]="faAngleRight">Next</fa-icon>
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="shadow-common-box-shadow p-3 rounded">
+      <div class="flex justify-end">
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          backGroundInput="var(--common-secondary-red-color)"
+          textColorInput="var(--common-red-color)"
+          text="Close My Account"
+          width="160px"
+          (clickEvent)="closeAccouont()"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+@if (isLogout()) {
+  <div class="absolute left-[50%] top-[50%] loader !z-10"></div>
+}

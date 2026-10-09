@@ -1,0 +1,194 @@
+@if (currentStep() === "recipient") {
+  <div
+    class="bg-main-background-color w-full rounded-lg h-full flex flex-col justify-between"
+  >
+    <div class="p-4">
+      <!-- Recipient List -->
+      <div
+        class="flex flex-col"
+        [formGroup]="recipientForm"
+      >
+        <!-- Payment Summary Section -->
+        <div class="rounded-lg p-4 !pb-3">
+          <div class="bg-secondary-background-color rounded-lg p-4">
+            <!-- Recipient Details -->
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-sm text-main-text-color">Recipient:</span>
+              <span class="text-sm font-semibold text-main-text-color">
+                {{ walletDataService.interSelectedRecipientSignal()?.name || walletDataService.interSelectedRecipientSignal()?.nickName }}
+              </span>
+            </div>
+            
+            <!-- Bank Details -->
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-sm text-main-text-color">Bank:</span>
+              <span class="text-sm font-semibold text-main-text-color">
+                {{ walletDataService.interSelectedRecipientSignal()?.bank?.bank_name }}
+              </span>
+            </div>
+            
+            <!-- Amount Details -->
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-sm text-main-text-color">Amount:</span>
+              <span class="text-sm font-bold text-main-text-color">
+                ${{ walletDataService.interAmountSignal()?.amount }} → {{ walletDataService.interSelectedCurrencySignal()?.currency }} {{ walletDataService.interAmountSignal()?.totalAmount }}
+              </span>
+            </div>
+            
+            <!-- Account Type -->
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-main-text-color">Type:</span>
+              <span class="text-sm font-semibold text-main-text-color">
+                {{ walletDataService.interSelectedRecipientSignal()?.bank?.account_type | titlecase }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        @if (isSourceOfFundsRequired()) {
+        <div
+          class="flex flex-col gap-1 rounded-lg p-4 !pb-0"
+        >
+          <span class="text-sm font-medium text-main-text-color font-roboto pb-[2px]">
+            Source of Funds <span class="text-common-red-color">*</span>
+          </span>
+          <app-v35-common-dropdown
+            appendTo="body"
+            [config]="{
+              placeholder: isSourceLoadindg() ? 'Loading..' : 'Select Source',
+              displayField: 'description',
+              style: {
+                size: 0,
+                enableLabelIcon: false
+              },
+              enableAddNew: false
+            }"
+            [loading]="isSourceLoadindg()"
+            [listData]="sourceList()"
+            [(ngModel)]="selectedSource"
+            (ngModelChange)="changeSource($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <app-control-message-v35 [control]="recipientForm.controls.source" />
+        </div>
+        }
+        <div
+          class="flex flex-col gap-1 rounded-lg p-4 !pb-0"
+        >
+          <span class="text-sm font-medium text-main-text-color font-roboto pb-[2px]"
+            >Purpose <span class="text-common-red-color">*</span></span
+          >
+          <app-v35-common-dropdown
+            #purposeDropdown
+            appendTo="body"
+            [config]="{
+              placeholder: isPurposeLoading() ? 'Loading..' : 'Select Purpose',
+              displayField: 'description',
+              style: {
+                size: 0,
+                enableLabelIcon: false
+              },
+              enableAddNew: false
+            }"
+            [loading]="isPurposeLoading() || limitCard.isCheckingTransactionLimit()"
+            [listData]="purposeList()"
+            [(ngModel)]="selectedPurpose"
+            (ngModelChange)="changePurpose($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <app-control-message-v35 [control]="recipientForm.controls.purpose" />
+        </div>
+        <div
+          class="flex flex-col gap-1 rounded-lg p-4 !pb-0"
+        >
+          <span class="text-sm font-medium text-main-text-color font-roboto pb-[2px]"
+            >Memo
+            @if (isMemoRequired()) {
+              <span class="text-common-red-color">*</span>
+            }
+          </span>
+          <div class="relative">
+            <input
+              type="text"
+              class="input_style w-full"
+              placeholder="Enter memo"
+              formControlName="memo"
+              maxlength="50"
+              (input)="onMemoInput($event)"
+            />
+          </div>
+          <app-control-message-v35
+            [control]="recipientForm.controls.memo"
+            [label]="
+              recipientForm.controls.memo.hasError('maxlength')
+                ? 'Memo cannot exceed 50 characters'
+                : recipientForm.controls.memo.hasError('pattern')
+                  ? 'Only letters, numbers, spaces, and hyphens are allowed'
+                  : 'Please enter the memo'
+            "
+          />
+          <span class="text-right text-xs text-secondary-text-color font-roboto">
+            {{ (recipientForm.controls.memo.value || '').length }}/50 characters
+          </span>
+          <app-transaction-limit-card
+            #limitCard
+            [editAmountOnLimitCancel]="true"
+            [quoteId]="walletDataService.interAmountSignal()?.quoteId ?? null"
+            [payeeId]="walletDataService.interSelectedRecipientSignal()?.id ?? null"
+            [countryCode]="walletDataService.interSelectedCurrencySignal()?.countryCode ?? null"
+            [payoutCurrencyCode]="walletDataService.interSelectedCurrencySignal()?.currency ?? null"
+            [type]="walletDataService.internationalPayment()?.recipientType ?? null"
+            [paymentMemo]="recipientForm.controls.memo.value ?? ''"
+            [receivingCurrency]="walletDataService.interSelectedCurrencySignal()?.currency || ''"
+            [purposeDescription]="selectedPurposeDescription()"
+            [currentSendAmount]="walletDataService.interAmountSignal()?.amount ?? null"
+            [currentReceivingAmount]="walletDataService.interAmountSignal()?.totalAmount ?? null"
+            (amountUpdated)="onLimitCardAmountUpdated($event)"
+            (limitCheckFailed)="onPurposeLimitError()"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="pt-4 px-[32px]">
+      @if (
+        !walletDataService.interSelectedRecipientSignal() && onContinueClick()
+      ) {
+        <small
+          class="flex items-center gap-1 text-warning-color text-sm font-normal pl-1 pb-2"
+        >
+          <fa-icon
+            [icon]="faCircleExclamation"
+            animation="shake"
+            class="text-common-red-color text-[12px]"
+          />
+          <p class="text-common-red-color text-xs font-medium font-roboto">
+            Please select a recipient
+          </p>
+        </small>
+      }
+      <div class="flex gap-4">
+        <app-common-button-v35
+          class="flex-1"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Back"
+          width="100%"
+          (clickEvent)="goBack()"
+        />
+        <app-common-button-v35
+          class="flex-1"
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Continue"
+          width="100%"
+          (clickEvent)="onContinue()"
+          [disabled]="isSubmit() || limitCard.isLockedForSubmit()"
+          [loading]="isSubmit() || limitCard.isCheckingTransactionLimit()"
+        />
+      </div>
+    </div>
+  </div>
+} @else {
+  <app-inter-complete
+    [paymentHistory]="paymentHistory()"
+    (complete)="onNextClick($event)"
+  />
+}

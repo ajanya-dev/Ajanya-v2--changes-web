@@ -1,0 +1,294 @@
+<div class="page_container">
+  <div class="flex flex-col w-full justify-center items-center gap-12">
+    <div class="main_content">
+      <!-- LEFT SECTION START -->
+      <div>
+        <h1>
+          Welcome to<br />
+          {{ "" | whiteLabel: "name" }}
+        </h1>
+
+        <div id="discount_block">
+          <div>
+            <span>Get&nbsp;</span>
+            <span>{{ chosenPlan?.planName }} plan</span>
+          </div>
+          @if (chosenPlan?.planCode === "standard-yearly-v2") {
+            <div class="original_price">$ 199</div>
+          }
+
+          <div class="plan_price">
+            {{ chosenPlan?.monthlyPrice }}
+          </div>
+        </div>
+
+        <div id="benefits">
+          <div>
+            Benefits You Will Get
+            <div></div>
+            <span>{{ chosenPlan?.headingFeature }}</span>
+          </div>
+
+          <div>
+            @for (item of chosenPlan?.planFeatures; track $index) {
+              <div>
+                <fa-icon
+                  class="text-common-green-color pr-2"
+                  [icon]="['fas', 'circle-check']"
+                ></fa-icon>
+                <div>
+                  <span>
+                    {{ item.name }}
+                  </span>
+                  @if (item.more) {
+                    <span>{{ item.more }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="flex justify-between">
+          <div class="flex flex-col">
+            <span>400k+</span>
+            <span>Business</span>
+          </div>
+
+          <div class="flex flex-col">
+            <span>1M+</span>
+            <span>Users</span>
+          </div>
+
+          <div class="flex flex-col">
+            <span>#1</span>
+            <span>In Quickbook App store</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div id="customer_thumb">
+            @for (path of customerImages1; track path; let i = $index) {
+              <ng-container>
+                <img
+                  src="../../../../../assets/images/marketing_sign_up/{{
+                    path
+                  }}"
+                  alt=""
+                />
+              </ng-container>
+            }
+          </div>
+
+          <span>1M+ Happy Customers</span>
+        </div>
+      </div>
+      <!-- LEFT SECTION END -->
+
+      <!-- RIGHT SECTION START -->
+      <div>
+        <form [formGroup]="userForm" (ngSubmit)="submit()" autocomplete="off">
+          <!-- HACK FOR DISABLING AUTOCOMPLETE -->
+          <input type="email" name="email" style="display: none" />
+          <input type="password" name="password" style="display: none" />
+
+          <span id="signup-text">Sign Up</span>
+
+          <div class="input_group">
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="name"
+                maxlength="60"
+              />
+              <span class="floating_label_field">Name</span>
+              @if (
+                userForm.controls.name.touched &&
+                userForm.controls.name.errors?.required
+              ) {
+                <div class="error_msg">Name is required</div>
+              }
+            </div>
+
+            <div class="single_input">
+              <input
+                type="email"
+                class="input_style"
+                placeholder=" "
+                formControlName="email"
+                maxlength="100"
+              />
+              <span class="floating_label_field">Work Mail</span>
+
+              <div class="error_msg">{{ emailError }}</div>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="password"
+                class="input_style"
+                placeholder=" "
+                formControlName="password"
+                (click)="passwordFocus()"
+                (focusout)="showValidBox = false"
+                (input)="isPasswordValid()"
+                maxlength="100"
+              />
+              <span class="floating_label_field">Password</span>
+
+              <div
+                id="pswd_info"
+                [ngClass]="{
+                  active: showValidBox && userForm.controls.password?.touched
+                }"
+              >
+                <ul id="validationList">
+                  <li id="letter" class="invalid">At least one lower case</li>
+                  <li id="capital" class="invalid">
+                    At least one capital letter
+                  </li>
+                  <li id="number" class="invalid">At least one number</li>
+                  <li id="length" class="invalid">Be at least 8 characters</li>
+                </ul>
+              </div>
+
+              <div class="error_msg">
+                {{ passwordError }}
+              </div>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="password"
+                class="input_style"
+                placeholder=" "
+                formControlName="confirmPassword"
+                maxlength="100"
+              />
+              <span class="floating_label_field">Confirm Password</span>
+
+              <div class="error_msg">{{ confirmPassowrdError }}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1">
+            <label>
+              <input type="checkbox" formControlName="termsAndCondition" class="mr-2">
+              @if(environment?.isItWhiteLabel){
+                <span class="text-sm cursor-pointer">
+                  I Agree to the
+                  <a [href]="staticWhiteLabelConditions.termsAndConditions" target="_blank">
+                    Terms and Conditions
+                  </a>
+                </span>
+              }@else{
+                <span class="font-inter font-normal text-[12px] text-main-text-color cursor-pointer">By checking the consent box, 
+                  you agree to electronically sign Documents with the same legal effect as a 
+                  handwritten signature, accept Zil Money's <a href="https://zilmoney.com/terms-and-condition" target="_blank">Terms and Conditions</a>, 
+                  consent to our <a href="https://zilmoney.com/privacy-policy" target="_blank">Privacy Policy</a>, 
+                  acknowledge your <a href="https://zilmoney.com/california-consumer-privacy-act-disclosure" target="_blank">CCPA</a>(California Consumer Privacy Act) rights to access, delete, and opt-out of data sales,
+                   and confirm compliance with the <a href="https://zilmoney.com/usa-patriot-act-notice" target="_blank">USA PATRIOT Act</a>, including identity verification.</span>
+              }
+            </label>
+          </div>
+
+          <div class="signup-button">
+            <button
+              class="ocw-btn"
+              type="submit"
+              [ngClass]="{ disableBtn: submitting }"
+            >
+              @if (submitting) {
+                <span class="loadingSpinner"></span>
+              }
+              Sign Up
+            </button>
+          </div>
+        </form>
+
+        <div id="award">
+          <span>Awards Or Affiliation</span>
+
+          <div class="award_img">
+            <a
+              href="https://reviews.financesonline.com/p/online-check-writer/"
+              target="_blank"
+              rel="nofollow"
+            >
+              <img
+                src="https://c.onlinecheckwriter.com/public/asset/image/risign-Star_icon.svg"
+                alt="FORSA"
+                title="Finance Online Rising Star Award"
+              />
+            </a>
+            <a
+              href="https://reviews.financesonline.com/p/online-check-writer/"
+              target="_blank"
+              rel="nofollow"
+            >
+              <img
+                src="https://c.onlinecheckwriter.com/public/asset/image/guest_user_icon.svg"
+                alt="FOGUEA"
+                title="Finance Online Great User Experience Award"
+              />
+            </a>
+            <a
+              href="https://www.inc.com/profile/tyler-petroleum"
+              target="_blank"
+            >
+              <img
+                src="https://c.onlinecheckwriter.com/public/marketing/inc500.png"
+                alt="Tyler petroleum"
+                title="Our Parent Company (Tyler Petroleum Inc) is fastest growing companies of america "
+              />
+            </a>
+            <a
+              href="https://www.nacha.org/content/alliance-program-membership-directory"
+              target="_blank"
+            >
+              <img
+                src="https://c.onlinecheckwriter.com/public/asset/image/nacha_logo.png"
+                alt="PIAN"
+                title="Payment Innovation Alliance member of NACHA"
+              />
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- RIGHT SECTION END -->
+    </div>
+    <div class="flex flex-col">
+      @if (authV3Service.staticWhiteLabelConditions.zilMoneyLogoVisible) {
+        <div class="flex justify-center gap-1">
+          <p class="font-normal font-inter text-sm text-main-text-color">
+            POWERED BY
+          </p>
+          <a href="https://zilmoney.com/">
+            <img
+              alt=""
+              [ngSrc]="
+                authV3Service.appConfig?.zilMoneyLogo ||
+                '/assets/main/zil_Money_logo.svg'
+              "
+              width="90"
+              height="17"
+              priority
+            />
+          </a>
+        </div>
+      }
+      @if (staticWhiteLabelConditions.customerSupportNo) {
+        <a class="flex justify-center font-inter font-normal text-sm !text-main-text-color" href="tel:{{ staticWhiteLabelConditions.customerSupportNo }}"
+          ><span
+            class="self-center flex gap-2.5 text-[13px] rounded-sm cursor-pointer py-1.5 px-2"
+            ><fa-icon
+              [icon]="faPhone"
+              role="presentation"
+            ></fa-icon>{{staticWhiteLabelConditions.customerSupportNo}}</span
+        ></a>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,852 @@
+@if (isPreparingImport()) {
+  <app-loading-overlay-v4 />
+}
+
+<!-- Blocks edits while a save / group / process action runs -->
+@if (isAnyProcessLoadings()) {
+  <div
+    class="absolute inset-0 z-20 rounded-2xl bg-v4-main-background-color/60 backdrop-blur-[1px] cursor-not-allowed"
+  >
+    <div
+      class="sticky top-1/2 -translate-y-1/2 flex flex-col items-center gap-2"
+    >
+      <lucide-icon
+        name="loader-circle"
+        [size]="40"
+        class="animate-spin text-v4-primary-brand-bold-color"
+      />
+      <p class="text-sm font-medium text-v4-main-text-color">
+        {{ actionOverlayMessage() }}
+      </p>
+    </div>
+  </div>
+}
+
+<!-- Section 1: Change Input Method -->
+<div class="mb-4">
+  <a
+    role="presentation"
+    class="inline-flex items-center gap-1.5 text-sm text-v4-secondary-text-color cursor-pointer hover:text-v4-main-text-color transition-colors"
+    (click)="changeInputMethod.emit()"
+  >
+    <lucide-icon [img]="arrowLeftIcon" [size]="16"></lucide-icon>
+    <span>Back to Selection</span>
+  </a>
+</div>
+
+<!-- Section 2: Default Settings Card -->
+<div
+  class="bg-v4-secondary-background-color rounded-2xl border border-v4-border-color p-6 mb-4"
+>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-5">
+    @if (paymentGroupId()) {
+      <div
+        class="flex items-center gap-2"
+        [ngClass]="{ 'skelton px-11': !groupName() }"
+      >
+        <h2 class="text-base font-bold text-v4-main-text-color">
+          Group - {{ groupName() }}
+        </h2>
+        <lucide-icon
+          [img]="SquarePenIcon"
+          [size]="20"
+          class="text-v4-common-blue-color cursor-pointer"
+          (click)="editGroupName()"
+          [matTooltip]="'Edit Group Name'"
+        ></lucide-icon>
+      </div>
+    } @else {
+      <div class="flex flex-col">
+        <div class="flex items-center gap-2">
+          <lucide-icon
+            [img]="CircleCheckIcon"
+            [size]="20"
+            class="text-v4-common-blue-color"
+          ></lucide-icon>
+          <h2 class="text-base font-bold text-v4-main-text-color">
+            Default Settings
+          </h2>
+        </div>
+        <p class="text-xs text-v4-tertiary-text-color">
+          Apply to all payments automatically
+        </p>
+      </div>
+    }
+  </div>
+
+  <!-- Default Settings Fields -->
+  <div
+    class="grid grid-cols-2 min-[1000px]:grid-cols-3 min-[1200px]:grid-cols-4 gap-4"
+    [formGroup]="basePaymentForm"
+  >
+    <!-- Pay From -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-v4-secondary-text-color mb-1"
+        for="payFrom"
+        >Pay From</label
+      >
+      <div class="angular-ocw-v4-ng-select-dropdown">
+        <ng-select
+          class="height-0 ng-dropdown-panel-v4 text-sm"
+          [items]="paymentSourceTypes"
+          formControlName="paymentSourceType"
+          bindLabel="label"
+          (change)="onBasePayFromChange($event)"
+          [clearable]="false"
+        >
+          <ng-template ng-label-tmp let-item="item">
+            <div class="flex items-center text-sm text-v4-main-text-color">
+              <div>{{ item.label }}</div>
+            </div>
+          </ng-template>
+          <ng-template ng-option-tmp let-item="item" let-index="index">
+            <div
+              class="rounded-full mr-2 text-sm"
+              [ngClass]="
+                'w-8 h-8 flex justify-center items-center bg-v4-badge-info-bg-color'
+              "
+            >
+              @if (item.fontawesomeIconDataV4?.lucideIcon) {
+                <lucide-icon
+                  [img]="item.fontawesomeIconDataV4?.lucideIcon"
+                  [size]="16"
+                  [style]="
+                    'color:var(--' + item.fontawesomeIconDataV4?.color + ')'
+                  "
+                />
+              }
+            </div>
+            <div class="flex-1 justify-between flex">
+              <div>
+                <p class="main-text-highlight text-ellipsis">
+                  {{ item?.label }}
+                </p>
+              </div>
+            </div>
+          </ng-template>
+        </ng-select>
+      </div>
+    </div>
+
+    <!-- Source -->
+    <div>
+      <label
+        class="flex items-center gap-1 text-xs font-semibold text-v4-secondary-text-color mb-1"
+        for="account"
+      >
+        Source
+        @if (basePaymentForm.controls.paymentSourceType.value?.id === 'card') {
+          <lucide-icon
+            class="text-v4-tertiary-text-color"
+            [img]="InfoIcon"
+            [size]="14"
+            [matTooltip]="
+              '• Choose your saved credit card. \n• Select \'+New\' to add different card.'
+            "
+          />
+        }
+      </label>
+      <app-payment-source-dropdown-v4
+        [displayIcon]="true"
+        [paymentSourceType$]="basePaymentSourceType$"
+        [hideInlineHelpIcon]="true"
+        formControlName="paymentSource"
+      />
+    </div>
+
+    <!-- Payment Method -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-v4-secondary-text-color mb-1"
+        for="paymentMethod"
+        >Pay As</label
+      >
+      <div class="angular-ocw-v4-ng-select-dropdown">
+        <ng-select
+          class="height-0 ng-dropdown-panel-v4 text-sm"
+          [items]="basePaymentMethods$ | async"
+          formControlName="paymentMethod"
+          bindLabel="label"
+          (change)="onBasePaymentMethodChange($event)"
+          [clearable]="false"
+          appendTo="ng-select"
+        ></ng-select>
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-v4-secondary-text-color mb-1"
+        for="category"
+        >Category</label
+      >
+      <app-category-dropdown-v4
+        id="category"
+        [selectDropdownItem]="basePaymentForm.controls.category.value"
+        (selectionEvent)="onBaseCategoryChange($event)"
+        [placeholder]="'Select Category'"
+        [enableAddNew]="true"
+        [showInfoIcon]="true"
+      ></app-category-dropdown-v4>
+    </div>
+
+    <!-- Default Amount -->
+    <div>
+      <app-common-amount-input-v4
+        formControlName="amount"
+        [fieldLabel]="'Amount'"
+        [isRequired]="false"
+      ></app-common-amount-input-v4>
+    </div>
+
+    <!-- Default Date -->
+    <div>
+      <app-v4-date-picker
+        formControlName="date"
+        [fieldLabel]="'Date'"
+        [placeholder]="'Select date'"
+        [isFieldRequired]="false"
+      ></app-v4-date-picker>
+    </div>
+
+    <!-- Default Memo / Purpose of Payment (card source swaps memo for a purpose picker) -->
+    <div class="col-span-2 min-[1000px]:col-span-3 min-[1200px]:col-span-2">
+      @if (basePaymentForm.controls.paymentSourceType.value?.id !== 'card') {
+        <app-common-input-v4
+          formControlName="memo"
+          [fieldLabel]="'Memo'"
+          [placeholder]="'Enter memo'"
+          [maxLength]="150"
+          [isFieldRequired]="false"
+          [showInfoIcon]="true"
+          [tooltip]="
+            '• Brief note about this payment.\n• Example: \'Office rent\' or \'Supplies\'.'
+          "
+        ></app-common-input-v4>
+      } @else {
+        <label class="block text-xs font-semibold text-v4-secondary-text-color mb-1">
+          Purpose of Payment
+        </label>
+        @if (basePurposeOfPaymentControl.value !== 'Other') {
+          <div class="angular-ocw-v4-ng-select-dropdown">
+            <ng-select
+              class="height-0 ng-dropdown-panel-v4 text-sm"
+              [items]="purposeOfPaymentOptions()"
+              [formControl]="basePurposeOfPaymentControl"
+              placeholder="Select Purpose of Payment"
+              (change)="onBasePurposeChange()"
+              [clearable]="false"
+              appendTo="ng-select"
+            ></ng-select>
+          </div>
+        } @else {
+          <div class="flex items-center gap-1">
+            <div class="flex-1 min-w-0">
+              <app-common-input-v4
+                formControlName="memo"
+                [fieldLabel]="''"
+                [placeholder]="'Enter Purpose of Payment'"
+                [maxLength]="26"
+                [isFieldRequired]="false"
+                (keypress)="allowAlphabetsAndSpaces($event)"
+              ></app-common-input-v4>
+            </div>
+            <button aria-label="Back to purpose selection"
+              type="button"
+              class="h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-full border border-v4-border-color text-v4-secondary-text-color hover:bg-v4-tertiary-background-color"
+              matTooltip="Back to purpose selection"
+              (click)="clearBasePurpose()"
+            >
+              <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Payment Entries Card -->
+<!-- Hidden while an excel import is preparing, so the seeded blank rows do not flash
+     behind the overlay before the imported rows replace them. -->
+@if (!isPreparingImport()) {
+<div
+  class="bg-v4-secondary-background-color rounded-2xl border border-v4-border-color p-6 mb-4"
+>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-base font-bold text-v4-main-text-color">
+        Payment Entries
+      </h2>
+      <p class="text-xs text-v4-tertiary-text-color">
+        {{ paymentsFormArray.length }}/{{ maxPaymentRows }} payment(s) &bull;
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      @if (paymentsFormArray.length > 15) {
+        <div class="flex items-center gap-2">
+          <label
+            class="text-xs text-v4-secondary-text-color whitespace-nowrap"
+            for="jumpToRow"
+            >Go to #:</label
+          >
+          <input
+            #jumpInput
+            id="jumpToRow"
+            type="number"
+            min="1"
+            [max]="paymentsFormArray.length"
+            placeholder="#"
+            class="w-16 h-[32px] rounded-lg border border-v4-border-color bg-white text-center text-sm focus:outline-none focus:border-v4-common-blue-color"
+            (keyup.enter)="jumpToRow(jumpInput.value)"
+            (change)="jumpToRow(jumpInput.value)"
+          />
+        </div>
+      }
+      <div class="flex items-center gap-2">
+        <label
+          class="text-xs text-v4-secondary-text-color whitespace-nowrap"
+          for="rows"
+          >Rows:</label
+        >
+        <input
+          type="number"
+          [formControl]="rowsToAdd"
+          class="w-16 h-[32px] rounded-lg border border-v4-border-color bg-white text-center text-sm focus:outline-none focus:border-v4-common-blue-color"
+          min="1"
+          [max]="maxPaymentRows"
+        />
+      </div>
+      <app-common-button-v4
+        [text]="'+ Add ' + (rowsToAdd.value || 5) + ' Rows'"
+        [type]="{ style: 'neon', name: 'main' }"
+        [customHeight]="'32px'"
+        (clickEvent)="addMultipleRows(rowsToAdd.value || 5)"
+      ></app-common-button-v4>
+    </div>
+  </div>
+
+  <!-- Table Container -->
+  <div
+    class="overflow-x-auto border border-v4-border-color rounded-xl"
+    (scroll)="closeAllDropdowns()"
+  >
+    <div class="min-w-[1400px] w-full">
+      <!-- Table Header -->
+      <div
+        class="grid items-center bg-v4-tertiary-background-color text-xs font-semibold text-v4-secondary-text-color uppercase tracking-wider border-b border-v4-border-color"
+        [style.grid-template-columns]="gridTemplateColumns()"
+      >
+        @if (paymentGroupId()) {
+          <div class="px-2 py-1 flex items-center justify-center">
+            <label
+              class="relative flex items-center justify-center w-5 h-5 rounded cursor-pointer border-[1.5px] transition-colors"
+              [ngClass]="
+                areAllPaymentsSelected() || areSomePaymentsSelected()
+                  ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                  : 'bg-transparent border-v4-main-text-color'
+              "
+            >
+              <input
+                type="checkbox"
+                class="absolute opacity-0 w-0 h-0"
+                [checked]="areAllPaymentsSelected()"
+                [indeterminate]="areSomePaymentsSelected()"
+                (change)="selectRowToggle($any($event.target).checked)"
+              />
+              @if (areAllPaymentsSelected()) {
+                <svg class="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M2.5 6L5 8.5L9.5 3.5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              } @else if (areSomePaymentsSelected()) {
+                <div class="w-2.5 h-0.5 bg-white rounded-full"></div>
+              }
+            </label>
+          </div>
+        }
+        <div class="px-2 py-1 text-[12px] text-center">#</div>
+        @for (col of resizableColumns(); track col.name; let i = $index) {
+          <div class="px-2 py-1 text-[12px] relative select-none">
+            <div class="flex items-center gap-1">
+              {{ col.name }}
+              @if (col.tooltip) {
+                <lucide-icon
+                  class="text-v4-tertiary-text-color"
+                  [img]="InfoIcon"
+                  [size]="14"
+                  [matTooltip]="col.tooltip"
+                />
+              }
+            </div>
+            <span
+              class="absolute right-0 top-0 bottom-0 w-4 cursor-col-resize bg-transparent z-[1] transition-colors hover:bg-v4-common-blue-color"
+              (mousedown)="onResizeStart($event, i)"
+            >
+              <lucide-icon
+                class="text-v4-main-text-color cursor-col-resize h-full flex w-3"
+                [img]="GripVerticalIcon"
+                [size]="12"
+                [matTooltip]="'Drag to resize column'"
+              />
+            </span>
+          </div>
+        }
+        <div class="px-2 py-1 text-[12px]"></div>
+      </div>
+
+      <!-- Table Body (virtualized: only the visible rows are painted, so 300 rows
+           no longer instantiate ~1,500 dropdown components at once) -->
+      <cdk-virtual-scroll-viewport
+        [itemSize]="45"
+        class="h-[490px] w-full"
+        (scroll)="closeAllDropdowns()"
+      >
+        <div
+          *cdkVirtualFor="
+            let formGroup of paymentRows();
+            trackBy: trackByFormGroup;
+            let idx = index
+          "
+          class="grid items-center border-b border-v4-border-color hover:bg-v4-tertiary-background-color transition-colors"
+          [class.invalid-row]="formGroup.invalid && formGroup.touched"
+          [class.row-unchecked]="
+            paymentGroupId() && !formGroup.controls.selected.value
+          "
+          [formGroup]="formGroup"
+          [style.grid-template-columns]="gridTemplateColumns()"
+        >
+          <!-- Checkbox -->
+          @if (paymentGroupId()) {
+            <div class="px-2 py-2 flex items-center justify-center">
+              <label
+                class="relative flex items-center justify-center w-5 h-5 rounded border-[1.5px] transition-colors"
+                [class.cursor-pointer]="formGroup.valid"
+                [class.opacity-50]="formGroup.invalid"
+                [class.cursor-not-allowed]="formGroup.invalid"
+                [ngClass]="
+                  formGroup.controls.selected.value
+                    ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                    : 'bg-transparent border-v4-main-text-color'
+                "
+              >
+                <input
+                  type="checkbox"
+                  class="absolute opacity-0 w-0 h-0"
+                  [checked]="formGroup.controls.selected.value"
+                  [disabled]="formGroup.invalid"
+                  (change)="
+                    toggleRowSelection(idx, $any($event.target).checked)
+                  "
+                />
+                @if (formGroup.controls.selected.value) {
+                  <svg
+                    class="w-3 h-3 text-white"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                  >
+                    <path
+                      d="M2.5 6L5 8.5L9.5 3.5"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                }
+              </label>
+            </div>
+          }
+          <!-- # -->
+          <div class="px-2 py-2 flex items-center justify-center gap-1">
+            <span
+              class="text-xs text-v4-tertiary-text-color min-w-[14px] text-right"
+              >{{ idx + 1 }}</span
+            >
+            <span
+              class="inline-flex items-center justify-center w-[14px] h-[14px]"
+            >
+              @if (formGroup.valid) {
+                <lucide-icon
+                  [img]="CircleCheckValidIcon"
+                  [size]="14"
+                  class="text-v4-common-green-color"
+                  matTooltip="Valid"
+                ></lucide-icon>
+              } @else if (formGroup.invalid && formGroup.touched) {
+                <lucide-icon
+                  [img]="CircleAlertIcon"
+                  [size]="14"
+                  class="text-v4-common-red-color"
+                  matTooltip="Invalid"
+                ></lucide-icon>
+              } @else {
+                <lucide-icon
+                  [img]="CircleAlertIcon"
+                  [size]="14"
+                  class="text-v4-subtle-text-color"
+                  matTooltip="No Data"
+                ></lucide-icon>
+              }
+            </span>
+          </div>
+
+          <!-- Pay To -->
+          <div
+            class="px-1 py-1"
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]?.payee
+            "
+          >
+            <app-payee-dropdown-v4
+              formControlName="payee"
+              [customHeight]="'1'"
+              [labelIconNeeded]="false"
+              [dropdownIconNeeded]="false"
+              [placeholder]="'Select Payee'"
+              [clearable]="true"
+              (ready)="
+                setDropDownAPIAndBindId(
+                  paymentFormsArrayHelpers[idx]?.payeeDropDown,
+                  $event
+                )
+              "
+              [isInvalid]="
+                formGroup.touched && formGroup.controls.payee.invalid
+              "
+            ></app-payee-dropdown-v4>
+          </div>
+
+          <!-- Amount -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.amount.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]?.amount
+            "
+          >
+            <app-common-amount-input-v4
+              formControlName="amount"
+              [fieldLabel]="''"
+              [height]="'32px'"
+              [border]="true"
+            ></app-common-amount-input-v4>
+          </div>
+
+          <!-- Date -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.date.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]?.date
+            "
+          >
+            <app-v4-date-picker
+              [ngClass]="
+                isBankCheckPayment(formGroup) ? '' : 'pointer-events-none'
+              "
+              formControlName="date"
+              [fieldLabel]="''"
+              [placeholder]="'MM-DD-YYYY'"
+              [isFieldRequired]="false"
+              [fieldHeight]="'32px'"
+              [disabled]="!isBankCheckPayment(formGroup)"
+            ></app-v4-date-picker>
+          </div>
+
+          <!-- Pay From -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.paymentSourceType.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]
+                    ?.paymentSourceType
+            "
+          >
+            <div class="angular-ocw-v4-ng-select-dropdown">
+              <ng-select
+                class="height-1 ng-dropdown-panel-v4 text-sm"
+                [items]="paymentSourceTypes"
+                formControlName="paymentSourceType"
+                bindLabel="shortLabel"
+                (change)="onPayFromChange($event, formGroup)"
+                [clearable]="false"
+                appendTo="ng-select"
+              ></ng-select>
+            </div>
+          </div>
+
+          <!-- Account -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.paymentSource.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]
+                    ?.paymentSource
+            "
+          >
+            <app-payment-source-dropdown-v4
+              displayIcon="false"
+              [paymentSourceType$]="
+                paymentFormsArrayHelpers[idx].paymentSourceTypeChanges$
+              "
+              (ready)="
+                setDropDownAPIAndBindId(
+                  paymentFormsArrayHelpers[idx].paymentSourceDropDown,
+                  $event
+                )
+              "
+              formControlName="paymentSource"
+              [customHeight]="'1'"
+              pageType="bulkMail"
+              [isInvalid]="
+                formGroup.touched && formGroup.controls.paymentSource.invalid
+              "
+              [hideInlineHelpIcon]="true"
+            ></app-payment-source-dropdown-v4>
+          </div>
+
+          <!-- Method -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.paymentMethod.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]
+                    ?.paymentMethod
+            "
+          >
+            <div class="angular-ocw-v4-ng-select-dropdown">
+              <ng-select
+                class="height-1 ng-dropdown-panel-v4 text-sm"
+                [items]="getRowPaymentMethods(formGroup)"
+                formControlName="paymentMethod"
+                bindLabel="label"
+                (change)="onPaymentMethodChange($event, formGroup)"
+                [clearable]="false"
+                appendTo="ng-select"
+              ></ng-select>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div
+            class="px-1 py-1"
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]?.category
+            "
+          >
+            <app-category-dropdown-v4
+              (ready)="
+                setDropDownAPIAndBindId(
+                  paymentFormsArrayHelpers[idx].categoryDropDown,
+                  $event
+                )
+              "
+              formControlName="category"
+              [customHeight]="'1'"
+              [showInfoIcon]="false"
+              [enableAddNew]="true"
+            />
+          </div>
+
+          <!-- Invoice # -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.invoiceNumber.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]
+                    ?.invoiceNumber
+            "
+          >
+            <app-common-input-v4
+              formControlName="invoiceNumber"
+              [fieldLabel]="''"
+              [placeholder]="'Invoice #'"
+              [maxLength]="30"
+              [isFieldRequired]="false"
+              [fieldHeight]="'32px'"
+            ></app-common-input-v4>
+          </div>
+
+          <!-- Memo / Purpose of Payment (card source swaps memo for a purpose picker) -->
+          <div
+            class="px-1 py-1"
+            [class.invalid-field]="
+              formGroup.touched && formGroup.controls.memo.invalid
+            "
+            [matTooltip]="
+              formGroup.untouched
+                ? undefined
+                : paymentFormValidityStatus.validityStatusArray[idx]?.memo
+            "
+          >
+            @if (formGroup.controls.paymentSourceType.value?.id !== 'card') {
+              <app-common-input-v4
+                formControlName="memo"
+                [fieldLabel]="''"
+                [placeholder]="'Memo'"
+                [maxLength]="150"
+                [isFieldRequired]="false"
+                [fieldHeight]="'32px'"
+              ></app-common-input-v4>
+            } @else if (rowPurposeOfPaymentControls[idx]?.value !== 'Other') {
+              <div class="angular-ocw-v4-ng-select-dropdown">
+                <ng-select
+                  class="height-1 ng-dropdown-panel-v4 text-sm"
+                  [items]="purposeOfPaymentOptions()"
+                  [formControl]="rowPurposeOfPaymentControls[idx]"
+                  placeholder="Select Purpose"
+                  (change)="onRowPurposeChange(idx)"
+                  [clearable]="false"
+                  appendTo="ng-select"
+                ></ng-select>
+              </div>
+            } @else {
+              <div class="flex items-center gap-1">
+                <div class="flex-1 min-w-0">
+                  <app-common-input-v4
+                    formControlName="memo"
+                    [fieldLabel]="''"
+                    [placeholder]="'Enter Purpose'"
+                    [maxLength]="26"
+                    [isFieldRequired]="false"
+                    [fieldHeight]="'32px'"
+                    (keypress)="allowAlphabetsAndSpaces($event)"
+                  ></app-common-input-v4>
+                </div>
+                <button aria-label="Back to purpose selection"
+                  type="button"
+                  class="h-7 w-7 flex-shrink-0 flex items-center justify-center rounded-full border border-v4-border-color text-v4-secondary-text-color hover:bg-v4-tertiary-background-color"
+                  matTooltip="Back to purpose selection"
+                  (click)="clearRowPurpose(idx)"
+                >
+                  <lucide-icon [img]="XIcon" [size]="12"></lucide-icon>
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="px-1 py-1 flex items-center justify-center">
+            <button
+              type="button"
+              class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+              (click)="removeFormFromPaymentsArray(idx)"
+            >
+              <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </cdk-virtual-scroll-viewport>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Section 4: Sticky Payment Summary Footer -->
+<div class="bg-v4-primary-brand-color p-4 md:p-6 rounded-xl">
+  <div
+    class="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4"
+  >
+    <!-- Left: Summary -->
+    <div class="flex gap-3 flex-col">
+      <h3 class="text-white font-bold text-sm">Payment Summary</h3>
+      <div class="flex items-center gap-4 text-white/80 text-xs">
+        <span
+          >Payments:
+          <strong class="text-v4-secondary-brand-color text-base font-bold">{{
+            paymentFormValidityStatus.validPaymentFormCount
+          }}</strong></span
+        >
+        <span
+          >Amount:
+          <strong class="text-v4-secondary-brand-color text-base font-bold">{{
+            totalAmount | currency: "USD" : "symbol" : "1.2-2"
+          }}</strong></span
+        >
+      </div>
+    </div>
+
+    <!-- Right: Action Buttons — single row on xl, 2-col grid on smaller -->
+    <div class="grid grid-cols-2 gap-2 xl:flex xl:items-center xl:gap-2">
+      <app-common-button-v4
+        [text]="'Save Draft'"
+        [type]="{ style: 'borderless', name: 'main' }"
+        [textColorInput]="'var(--v4-main-text-color)'"
+        [backGroundInput]="'var(--v4-tertiary-background-color)'"
+        [loading]="loadingIndicatorFlags['isSavePaymentsLoading']"
+        (clickEvent)="checkConditionsAndSavePayments(false)"
+        [lucideIcon]="'save'"
+        [customClasses]="
+          'w-full !text-[14px] !py-[10px] !px-[20px] whitespace-nowrap'
+        "
+      ></app-common-button-v4>
+
+      <app-common-button-v4
+        [text]="paymentGroupId() ? 'Update Group' : 'Save as Group'"
+        [type]="{ style: 'borderless', name: 'main' }"
+        [textColorInput]="'var(--v4-main-text-color)'"
+        [backGroundInput]="'var(--v4-tertiary-background-color)'"
+        [loading]="loadingIndicatorFlags['isCreateOrUpdateGroupLoading']"
+        (clickEvent)="paymentGroupId() ? updateGroup() : createGroup()"
+        [lucideIcon]="'folder-open'"
+        [customClasses]="
+          'w-full !text-[14px] !py-[10px] !px-[20px] whitespace-nowrap'
+        "
+      ></app-common-button-v4>
+
+      <app-common-button-v4
+        class="col-span-2 xl:col-span-1"
+        [text]="
+          'Process ' +
+          paymentFormValidityStatus.validPaymentFormCount +
+          ' Payment(s)'
+        "
+        [type]="{ style: 'neon', name: 'main' }"
+        [loading]="loadingIndicatorFlags['isProcessPaymentsLoading']"
+        (clickEvent)="processPayments()"
+        [lucideIcon]="'send'"
+        [customClasses]="
+          'w-full !text-[14px] !py-[10px] !px-[20px] whitespace-nowrap'
+        "
+      ></app-common-button-v4>
+    </div>
+  </div>
+</div>

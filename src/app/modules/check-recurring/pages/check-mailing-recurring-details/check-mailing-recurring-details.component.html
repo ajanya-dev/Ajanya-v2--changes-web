@@ -1,0 +1,294 @@
+<section class="main_common_module">
+  <!-------- left section start -------->
+  <div class="main_left_wrapper">
+    <!-- top section start -->
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title flex items-center gap-1">
+          <app-common-back-button-v35
+          type="takeEvent"
+          (backEvent)="backButtonClick()"
+          ></app-common-back-button-v35>
+          <h3>Check Mailing Recurring Details</h3>
+        </div>
+      </div>
+      <hr class="header_border" />
+      <!-- main body -->
+      <div class="module_main_body">
+        <div>
+          @if (isLoading()) {
+            <!-- Skeleton Loader -->
+            <table class="ocw-table ocw-table-striped">
+              <thead>
+                <tr>
+                  <td>
+                    <div class="skelton h-4 w-32"></div>
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]; track $index) {
+                  <tr>
+                    <td>
+                      <div class="skelton h-3 w-24"></div>
+                    </td>
+                    <td>
+                      <div class="skelton h-3 w-20"></div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+          <table class="ocw-table ocw-table-striped">
+            <thead>
+              <tr>
+                <td>Check Details</td>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- amount: "100.00"
+  endDate: "02/15/2022"
+  frequency: "MONTHLY"
+  isItSendOrReceived: 2
+  isItUnlimited: 0
+  memo: null
+  ofLeft: 1
+  ofPaid: 0
+  ofPay: 1
+  payingFrom: "KPMALL(*********5555)"
+  startDate: "02/15/2022"
+  status: "Canceled" -->
+              <tr>
+                <td>Status</td>
+                <td>{{ checkDetails?.status }}</td>
+              </tr>
+              <tr>
+                <td>Check No</td>
+                <td>{{ checkDetails?.cheque_serial_number }}</td>
+              </tr>
+              <tr>
+                <td>Bank Account Name</td>
+                <td>
+                  <span class="inline-flex items-center gap-2 flex-wrap">
+                    <span>{{ checkDetails?.bank_account_account_name }}</span>
+                    @if (isBankDeleted) {
+                      <span
+                        class="inline-flex items-center gap-1 bg-common-secondary-red-color text-common-red-color text-[12px] font-medium font-inter px-2 py-0.5 rounded-full leading-none cursor-help"
+                        matTooltip="This bank account has been deleted. As a result, recurring payments linked to this account are no longer being processed."
+                        matTooltipPosition="above"
+                      >
+                        <fa-icon
+                          [icon]="faCircleExclamation"
+                          class="text-[12px] leading-none"
+                        ></fa-icon>
+                        Deleted
+                      </span>
+                    }
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Payee Name</td>
+                <td>
+                  <span class="inline-flex items-center gap-2 flex-wrap">
+                    <span>{{ checkDetails?.payee_name }}</span>
+                    @if (isPayeeDeleted) {
+                      <span
+                        class="inline-flex items-center gap-1 bg-common-secondary-red-color text-common-red-color text-[12px] font-medium font-inter px-2 py-0.5 rounded-full leading-none cursor-help"
+                        matTooltip="This payee has been deleted. As a result, recurring payments linked to this payee are no longer being processed."
+                        matTooltipPosition="above"
+                      >
+                        <fa-icon
+                          [icon]="faCircleExclamation"
+                          class="text-[12px] leading-none"
+                        ></fa-icon>
+                        Deleted
+                      </span>
+                    }
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Amount</td>
+                <td>$ {{ checkDetails?.cheque_amount }}</td>
+              </tr>
+              <tr>
+                <td>Check Date</td>
+                <td>
+                  {{ checkDetails?.cheque_issue_date | date: "MM-dd-yyyy" }}
+                </td>
+              </tr>
+              <tr>
+                <td>Frequency</td>
+                <td>{{ checkDetails?.rrule_freq }}</td>
+              </tr>
+              <tr>
+                <td>Start Date</td>
+                <td>{{ checkDetails?.start_date | date: "MM-dd-yyyy" }}</td>
+              </tr>
+              <tr>
+                <td>Ac#</td>
+                <td>
+                  @if (checkDetails?.bank_account_account_number) {
+                    ********{{ checkDetails?.bank_account_account_number }}
+                  } 
+                </td>
+              </tr>
+              <tr>
+                <td>Inv#</td>
+                <td>{{ checkDetails?.cheque_invoice_number }}</td>
+              </tr>
+              <tr>
+                <td>Memo</td>
+                <td>{{ checkDetails?.cheque_memo }}</td>
+              </tr>
+              <tr>
+                <td>Total</td>
+                <td>
+                  {{
+                    checkDetails?.is_it_unlimited === 1
+                      ? "Untill Cancel"
+                      : checkDetails?.total
+                  }}
+                </td>
+              </tr>
+              <tr>
+                <td>Completed</td>
+                <td>{{ checkDetails?.completed }}</td>
+              </tr>
+              @if (checkDetails?.is_it_unlimited !== 1) {
+                <tr>
+                  <td>Remaining</td>
+                  <td>{{ checkDetails?.total - checkDetails?.completed }}</td>
+                </tr>
+              }
+              @if (cancelDate) {
+                <tr>
+                  <td>Cancelled Date</td>
+                  <td>{{ cancelDate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="module_bottom_section">
+      <div>
+        <table class="ocw-table ocw-table-striped">
+          <thead>
+            <tr>
+              <td>Payee Details</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Payee Name</td>
+              <td>
+                <span class="inline-flex items-center gap-2 flex-wrap">
+                  <span>{{ checkDetails?.payee_name }}</span>
+                  @if (isPayeeDeleted) {
+                    <span
+                      class="inline-flex items-center gap-1 bg-common-secondary-red-color text-common-red-color text-[12px] font-medium font-inter px-2 py-0.5 rounded-full leading-none cursor-help"
+                      matTooltip="This payee has been deleted. As a result, recurring payments linked to this payee are no longer being processed."
+                      matTooltipPosition="above"
+                    >
+                      <fa-icon
+                        [icon]="faCircleExclamation"
+                        class="text-[12px] leading-none"
+                      ></fa-icon>
+                      Deleted
+                    </span>
+                  }
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td>Payee Email</td>
+              <td>{{ checkDetails?.payee_email }}</td>
+            </tr>
+            <tr>
+              <td>Address</td>
+              <td>
+                {{ checkDetails?.payee_address_line_1 }},
+                {{ checkDetails?.payee_city }},{{
+                  checkDetails?.payee_state
+                }},{{ checkDetails?.payee_zip }},{{
+                  checkDetails?.payee_country
+                }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- top section end -->
+  </div>
+  <!--------left section end -------->
+
+  <!-------- right section start -------->
+  <div class="main_right_section">
+    <!-- top section start -->
+    <div class="module_top_section">
+      <!-- <div class="main__header">
+               <div class="left">
+                  <p class="sub_head">Payee Details</p>
+               </div>
+            </div> -->
+      <!-- main body -->
+      <div class="module_body">
+        <mat-tab-group [selectedIndex]="selectedTabIndex">
+          <mat-tab label="Audit Trail">
+            <app-audit-trail-table
+              [type]="'check-mailing/recurring'"
+            ></app-audit-trail-table>
+          </mat-tab>
+          <mat-tab label="Comments">
+            <app-comments [type]="'recurring'"></app-comments>
+          </mat-tab>
+          <mat-tab label="Recurring Details">
+            <table class="ocw-table ocw-table-striped">
+              <thead>
+                <tr>
+                  <td>Date</td>
+                  <td>Processed</td>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of recurringDetails; track $index) {
+                  <tr>
+                    <td>{{ item.date }}</td>
+                    <td>
+                      <span class="inline-flex items-center gap-2 flex-wrap">
+                        <span>{{ item.status | titlecase }}</span>
+                        @if (item.canRetry) {
+                          <button
+                            type="button"
+                            class="inline-flex items-center justify-center gap-1 min-w-[78px] h-6 text-[12px] font-medium px-1.5 rounded-[10px] leading-none bg-common-secondary-blue-color text-common-blue-color"
+                            [disabled]="retryingId() === item.enc_id"
+                            (click)="retryEvent(item.enc_id)"
+                          >
+                            <fa-icon [icon]="faArrowsRotate"></fa-icon>
+                            Retry
+                            @if (retryingId() === item.enc_id) {
+                              <fa-icon [icon]="faSpinner" [animation]="'spin'"></fa-icon>
+                            }
+                          </button>
+                        }
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </div>
+    <!-- top section end -->
+  </div>
+  <!-------- right section end -------->
+</section>

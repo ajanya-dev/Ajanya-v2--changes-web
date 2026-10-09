@@ -1,0 +1,240 @@
+<div class="flex flex-col max-h-[90vh]">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        QuickBooks Desktop Mapping
+      </h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Refresh -->
+      <button aria-label="Refresh"
+        type="button"
+        class="p-2 border border-v4-input-border-color rounded-xl transition-colors cursor-pointer"
+        style="
+          background-color: var(--v4-badge-info-bg-color);
+          color: var(--v4-badge-info-text-color);
+        "
+        matTooltip="Refresh"
+        (click)="refreshData()"
+      >
+        <lucide-icon
+          name="refresh-cw"
+          [size]="16"
+          [class.animate-spin]="initialLoading"
+        ></lucide-icon>
+      </button>
+      <!-- Import Bank Accounts -->
+      <app-common-button-v4
+        [type]="{ style: 'filled-blue', name: 'action' }"
+        [backGroundInput]="'var(--v4-primary-brand-color)'"
+        [text]="'Import Bank Accounts'"
+        [isAddIcon]="true"
+        [loading]="quickBooksLoading().bank"
+        [disabled]="quickBooksLoading().bank"
+        [toolTip]="'Import all bank accounts from QuickBooks account'"
+        (clickEvent)="ImportBank()"
+      />
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon name="x" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="flex-1 overflow-y-auto p-6 space-y-4 bg-v4-tertiary-background-color"
+  >
+    <!-- Loading -->
+    @if (initialLoading) {
+      <div class="flex items-center justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="24"
+          class="text-v4-primary-brand-color animate-spin"
+        ></lucide-icon>
+      </div>
+    } @else {
+      <!-- Company Cards -->
+      @for (company of companyBankAccountList; track company.company_id) {
+        <div
+          class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color overflow-hidden"
+        >
+          <!-- Company Card Header -->
+          <div
+            class="flex items-center justify-between px-4 py-3 bg-v4-input-background-color border-b border-v4-input-border-color"
+          >
+            <span class="text-sm font-semibold text-v4-main-text-color">
+              {{ company.companyName }}
+            </span>
+            @if (company.status === 1) {
+              <span
+                class="text-xs px-3 py-1 rounded-full font-medium"
+                style="
+                  background-color: var(--v4-badge-success-bg-color);
+                  color: var(--v4-badge-success-text-color);
+                "
+              >
+                Connected
+              </span>
+            } @else {
+              <span
+                class="text-xs px-3 py-1 rounded-full font-medium"
+                style="
+                  background-color: var(--v4-badge-error-bg-color);
+                  color: var(--v4-badge-error-text-color);
+                "
+              >
+                Disconnected
+              </span>
+            }
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-v4-input-background-color">
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color w-16"
+                  >
+                    SL No
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    QuickBooks Bank Ac
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    OCW Bank Ac
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    OCW Bank Nick Name
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (bank of company.data; track bank.id; let i = $index) {
+                  <tr
+                    class="border-b border-v4-input-border-color hover:bg-v4-input-background-color/50 transition-colors"
+                  >
+                    <!-- SL No -->
+                    <td class="px-4 py-2 text-v4-main-text-color">
+                      {{ i + 1 }}
+                    </td>
+                    <!-- QB Bank Ac -->
+                    <td class="px-4 py-2 text-v4-main-text-color">
+                      {{ bank.quickBookName }}
+                    </td>
+                    <!-- OCW Bank Ac -->
+                    <td class="px-4 py-2">
+                      @if (bank.isMapped) {
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-v4-main-text-color">{{
+                            bank.bankAccount
+                          }}</span>
+                          @if (bank.duplicated) {
+                            <lucide-icon
+                              name="triangle-alert"
+                              [size]="14"
+                              class="text-v4-badge-warning-text-color"
+                              matTooltip="This Bank Account is mapped to another QuickBooks Bank account. Please choose a different bank account to map."
+                            ></lucide-icon>
+                          }
+                        </div>
+                      } @else {
+                        <app-common-button-v4
+                          [type]="{ style: 'primary', name: 'main' }"
+                          [text]="'Map Now'"
+                          [toolTip]="'Map your bank account.'"
+                          [customHeight]="'32px'"
+                          (clickEvent)="openBankAccountMappingModal(bank.id)"
+                        />
+                      }
+                    </td>
+                    <!-- Nick Name -->
+                    <td class="px-4 py-2 text-v4-main-text-color">
+                      {{ bank.accountNickName }}
+                    </td>
+                    <!-- Actions -->
+                    <td class="px-4 py-2">
+                      <div class="flex items-center gap-1.5">
+                        <!-- Edit -->
+                        <button aria-label="Edit mapping"
+                          type="button"
+                          class="p-1 rounded-lg transition-colors cursor-pointer text-v4-primary-brand-bold-color"
+                          matTooltip="Edit mapping"
+                          (click)="onEditRow(bank.id)"
+                        >
+                          <lucide-icon name="pencil" [size]="14"></lucide-icon>
+                        </button>
+                        <!-- Delete -->
+                        @if (loading !== bank.id) {
+                          <button aria-label="Delete"
+                            type="button"
+                            class="p-1 rounded-lg transition-colors cursor-pointer"
+                            style="color: var(--v4-badge-error-text-color)"
+                            matTooltip="Delete"
+                            (click)="onDeleteBankAccount(bank.id, i, company)"
+                          >
+                            <lucide-icon
+                              name="trash-2"
+                              [size]="14"
+                            ></lucide-icon>
+                          </button>
+                        } @else {
+                          <lucide-icon
+                            name="loader-circle"
+                            [size]="14"
+                            class="animate-spin"
+                            style="color: var(--v4-badge-error-text-color)"
+                          ></lucide-icon>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td
+                      colspan="5"
+                      class="px-4 py-8 text-center text-sm text-v4-tertiary-text-color"
+                    >
+                      No bank accounts found.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @empty {
+        <div
+          class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color p-8 text-center"
+        >
+          <p class="text-sm text-v4-tertiary-text-color">
+            No bank account mappings found.
+          </p>
+          <p class="text-xs text-v4-tertiary-text-color mt-2">
+            Click "Import Bank Accounts" to import bank accounts from QuickBooks
+            Desktop.
+          </p>
+        </div>
+      }
+    }
+  </div>
+  <!-- modal body end -->
+</div>

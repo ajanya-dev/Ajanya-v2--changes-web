@@ -1,0 +1,232 @@
+<div class="bg-v4-secondary-background-color rounded-2xl flex flex-col max-h-[90vh] overflow-hidden">
+  <!-- Header -->
+  <div
+    class="font-funnel flex-shrink-0 flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-2.5">
+      <div
+        class="w-9 h-9 rounded-lg bg-v4-primary-brand-color flex items-center justify-center flex-shrink-0"
+      >
+        <lucide-icon
+          [img]="LandmarkIcon"
+          [size]="16"
+          class="text-white"
+        ></lucide-icon>
+      </div>
+      <div>
+        <h2
+          class="font-peridot text-sm sm:text-base font-bold text-v4-main-text-color leading-tight"
+        >
+          Update Return Address
+        </h2>
+        @if (itemArray.length === 1 && itemArray.at(0)?.controls.checkNo.value) {
+          <p class="font-funnel text-[12px] text-v4-subtle-text-color mt-0.5">
+            Check #{{ itemArray.at(0)?.controls.checkNo.value }}
+          </p>
+        }
+      </div>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon
+        [img]="XIcon"
+        class="text-v4-subtle-text-color"
+      ></lucide-icon>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 sm:py-4">
+    <form [formGroup]="EditBankForm" class="v4-update-bank-form">
+      @if (itemArray.length > 1) {
+        <!-- Multiple checks: one row per check, mirroring the v3 bank table. -->
+        <div class="overflow-x-auto rounded-xl border-2 border-v4-border-color">
+          <table class="w-full table-fixed border-collapse min-w-[960px]">
+            <thead class="bg-v4-tertiary-background-color">
+              <tr>
+                <th class="v4-th text-left" style="width: 4%">S.l</th>
+                <th class="v4-th text-left" style="width: 9%">Check No</th>
+                <th class="v4-th text-left" style="width: 13%">Bank Name</th>
+                <th class="v4-th text-left" style="width: 17%">
+                  Address Line 1
+                </th>
+                <th class="v4-th text-left" style="width: 13%">
+                  Address Line 2
+                </th>
+                <th class="v4-th text-left" style="width: 12%">City</th>
+                <th class="v4-th text-left" style="width: 12%">State</th>
+                <th class="v4-th text-left" style="width: 9%">Zip</th>
+                <th class="v4-th text-left" style="width: 12%">Country</th>
+              </tr>
+            </thead>
+            <tbody formArrayName="item">
+              @for (credit of itemArray.controls; track credit; let i = $index) {
+                <tr [formGroupName]="i">
+                  <td class="v4-td">{{ i + 1 }}</td>
+                  <td class="v4-td">
+                    {{ itemArray.at(i).controls.checkNo.value }}
+                  </td>
+                  <td class="v4-td compact-input">
+                    <app-common-input-v4
+                      placeholder="Bank Name"
+                      formControlName="name"
+                      [disabled]="true"
+                      [control]="itemArray.at(i).controls.name"
+                      [isFieldRequired]="false"
+                    />
+                  </td>
+                  <td class="v4-td compact-input">
+                    <app-address-autocomplete-v4
+                      [placeholder]="'Street address'"
+                      [control]="$any(itemArray.at(i).controls.address_line_1)"
+                      [allowedCountries]="['us', 'ca']"
+                      [isFieldRequired]="false"
+                      (addressSelected)="onAddressSelected($event, i)"
+                    />
+                  </td>
+                  <td class="v4-td compact-input">
+                    <app-common-input-v4
+                      placeholder="Suite, Floor, etc."
+                      formControlName="address_line_2"
+                      [control]="itemArray.at(i).controls.address_line_2"
+                      [isFieldRequired]="false"
+                    />
+                  </td>
+                  <td class="v4-td compact-input">
+                    <app-common-input-v4
+                      placeholder="City"
+                      formControlName="city"
+                      [maxLength]="50"
+                      [control]="itemArray.at(i).controls.city"
+                      [isFieldRequired]="false"
+                    />
+                  </td>
+                  <td class="v4-td compact-input">
+                    <app-common-input-v4
+                      placeholder="State"
+                      formControlName="state"
+                      [control]="itemArray.at(i).controls.state"
+                    />
+                  </td>
+                  <td class="v4-td compact-input">
+                    <app-common-input-v4
+                      placeholder="Zip"
+                      formControlName="zip"
+                      [control]="itemArray.at(i).controls.zip"
+                    />
+                  </td>
+                  <!-- Country is derived from the Address Line 1 Google Places selection, never typed. -->
+                  <td class="v4-td compact-input">
+                    <app-common-input-v4
+                      placeholder="Country"
+                      formControlName="country"
+                      [readOnly]="true"
+                      [isApprovedReadOnly]="true"
+                      [control]="itemArray.at(i).controls.country"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+      <div formArrayName="item">
+        @for (credit of itemArray.controls; track credit; let i = $index) {
+          <div [formGroupName]="i" class="flex flex-col gap-3 sm:gap-3.5">
+            <!-- Bank Name -->
+            <app-common-input-v4
+              placeholder="Bank Name"
+              [fieldLabel]="'Bank Name'"
+              formControlName="name"
+              [disabled]="true"
+              [control]="itemArray.at(i).controls.name"
+              [isFieldRequired]="false"
+            />
+
+            <!-- Address Line 1 -->
+            <app-address-autocomplete-v4
+              [label]="'Address Line 1'"
+              [placeholder]="'Street address'"
+              [control]="$any(itemArray.at(i).controls.address_line_1)"
+              [allowedCountries]="['us', 'ca']"
+              [isFieldRequired]="false"
+              (addressSelected)="onAddressSelected($event, i)"
+            />
+
+            <!-- Address Line 2 -->
+            <app-common-input-v4
+              placeholder="Suite, Floor, etc."
+              [fieldLabel]="'Address Line 2'"
+              formControlName="address_line_2"
+              [control]="itemArray.at(i).controls.address_line_2"
+              [isFieldRequired]="false"
+            />
+
+            <!-- City + State -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <app-common-input-v4
+                placeholder="City"
+                [fieldLabel]="'City'"
+                formControlName="city"
+                [maxLength]="50"
+                [control]="itemArray.at(i).controls.city"
+                [isFieldRequired]="false"
+              />
+              <app-common-input-v4
+                placeholder="State"
+                [fieldLabel]="'State'"
+                formControlName="state"
+                [control]="itemArray.at(i).controls.state"
+              />
+            </div>
+
+            <!-- Zip + Country -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <app-common-input-v4
+                placeholder="Zip"
+                [fieldLabel]="'Zip'"
+                formControlName="zip"
+                [control]="itemArray.at(i).controls.zip"
+              />
+              <!-- Country is derived from the Address Line 1 Google Places selection, never typed.
+                   `readOnly` is used rather than `disabled` because the forms directive overwrites
+                   the `disabled` model input via setDisabledState when formControlName is present. -->
+              <app-common-input-v4
+                placeholder="Country"
+                [fieldLabel]="'Country'"
+                formControlName="country"
+                [readOnly]="true"
+                [isApprovedReadOnly]="true"
+                [control]="itemArray.at(i).controls.country"
+              />
+            </div>
+          </div>
+        }
+      </div>
+      }
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex-shrink-0 flex justify-end gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5 border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close
+      [type]="{ style: 'outline', name: 'main' }"
+      [text]="'Cancel'"
+      [width]="'100px'"
+    ></app-common-button-v4>
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="'Update'"
+      [width]="'100px'"
+      [disabled]="disabled"
+      [loading]="disabled"
+      (clickEvent)="update()"
+    ></app-common-button-v4>
+  </div>
+</div>

@@ -1,0 +1,413 @@
+<div class="space-y-6 font-peridot">
+  <!-- ==================== OLD VERSION ==================== -->
+  @if (isOldVersion()) {
+    <!-- Heading -->
+    <div>
+      <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+        Connection Settings
+      </h3>
+      <p class="text-sm text-v4-tertiary-text-color mt-1">
+        Download the integration software.
+      </p>
+    </div>
+
+    <!-- Download Integration File -->
+    <div
+      class="border border-v4-input-border-color rounded-xl p-4 bg-main-background space-y-4"
+    >
+      <div class="flex flex-col gap-3">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Download V5.0'"
+          [width]="'100%'"
+          [isAddIcon]="true"
+          [icon]="['fas', 'arrow-right']"
+          (clickEvent)="
+            downloadURI(
+              'https://ocw2019.s3.amazonaws.com/quickbook-desktop/CheckPrintingSoftware_5.exe'
+            )
+          "
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Download V5.1'"
+          [width]="'100%'"
+          [isAddIcon]="true"
+          [icon]="['fas', 'arrow-right']"
+          (clickEvent)="
+            downloadURI(
+              'https://ocw2019.s3.amazonaws.com/quickbook-desktop/CheckPrintingSoftware5_1.exe'
+            )
+          "
+        />
+      </div>
+    </div>
+
+    <!-- Switch to new version -->
+    <div class="flex justify-end">
+      <button
+        class="text-sm text-v4-primary-brand-bold-color hover:underline flex items-center gap-1.5 cursor-pointer"
+        (click)="switchVersion()"
+      >
+        Switch to new version
+        <lucide-icon name="refresh-cw" [size]="14"></lucide-icon>
+      </button>
+    </div>
+  } @else {
+    <!-- ==================== NEW VERSION ==================== -->
+
+    <!-- Status Banner -->
+    @if (isConnected) {
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl bg-v4-badge-success-bg-color"
+      >
+        <lucide-icon
+          name="circle-check"
+          [size]="24"
+          class="flex-shrink-0 text-v4-badge-success-text-color"
+        ></lucide-icon>
+        <div>
+          <p class="font-semibold text-v4-badge-success-text-color">Connected</p>
+        </div>
+      </div>
+    } @else if (isPending) {
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl border border-v4-badge-warning-text-color/30 bg-v4-badge-warning-bg-color"
+      >
+        <lucide-icon
+          name="clock"
+          [size]="24"
+          class="flex-shrink-0 text-v4-badge-warning-text-color"
+        ></lucide-icon>
+        <div>
+          <p class="font-semibold text-v4-badge-warning-text-color">Pending</p>
+        </div>
+      </div>
+    } @else {
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl"
+        style="background-color: var(--v4-badge-error-bg-color)"
+      >
+        <lucide-icon
+          name="x-circle"
+          [size]="20"
+          [color]="'var(--v4-badge-error-text-color)'"
+        ></lucide-icon>
+        <span
+          class="text-sm font-semibold"
+          style="color: var(--v4-badge-error-text-color)"
+        >
+          Status: <span class="font-bold">Disconnected</span>
+        </span>
+      </div>
+    }
+
+    <!-- Heading -->
+    @if (hasFiles) {
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          Integration Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Manage your QuickBooks Desktop integration settings and preferences.
+        </p>
+      </div>
+    } @else {
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          Connection Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1 mb-4">
+          Download the integration file and add it to your QuickBooks Desktop
+          web connector to get started.
+        </p>
+      </div>
+    }
+
+    <!-- Download Integration File -->
+    <div
+      class="border border-v4-input-border-color rounded-xl p-4 bg-main-background space-y-4"
+    >
+      <div>
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+          Download Integration File
+        </h4>
+        <p class="text-xs text-v4-tertiary-text-color mt-1 mb-4">
+          Download the integration file and add it to your QuickBooks Desktop
+          web connector.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Download File'"
+        [width]="'100%'"
+        (clickEvent)="onDownloadFileClicked()"
+      />
+    </div>
+
+    <!-- Integration Files Section -->
+    @if (hasFiles) {
+      <div class="space-y-4">
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+          Integration Files
+        </h4>
+
+        @if (loading().filesLoading) {
+          <div class="flex items-center justify-center py-8">
+            <lucide-icon
+              name="loader-circle"
+              [size]="24"
+              class="text-v4-primary-brand-color animate-spin"
+            ></lucide-icon>
+          </div>
+        } @else {
+          @if (quickBookDesktopFiles?.length) {
+            <div
+              class="border border-v4-input-border-color rounded-xl overflow-hidden"
+            >
+              <table class="w-full text-sm">
+                <thead>
+                  <tr
+                    class="bg-v4-input-background-color border-b border-v4-input-border-color"
+                  >
+                    <th
+                      class="text-left px-4 py-3 font-semibold text-v4-main-text-color"
+                    >
+                      File Name
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 font-semibold text-v4-main-text-color"
+                    >
+                      Status
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 font-semibold text-v4-main-text-color"
+                    >
+                      Company Name
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 font-semibold text-v4-main-text-color"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (
+                    file of quickBookDesktopFiles;
+                    track file.id;
+                    let i = $index
+                  ) {
+                    <tr
+                      class="border-b border-v4-input-border-color last:border-b-0"
+                    >
+                      <td class="px-4 py-3 text-v4-main-text-color">
+                        {{ file.nick_name }}
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap">
+                        <span
+                          class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap"
+                          [ngClass]="getFileStatusClasses(file.status)"
+                        >
+                          <span
+                            class="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0"
+                          ></span>
+                          {{ getFileStatusText(file.status) }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-v4-tertiary-text-color">
+                        {{ file.companyName || "-" }}
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-1.5">
+                          <button aria-label="Download"
+                            class="p-1.5 rounded-lg transition-colors cursor-pointer text-v4-primary-brand-bold-color"
+                            matTooltip="Download"
+                            [disabled]="actionLoadingFileId === file.id"
+                            (click)="onDownloadCompanyFile(file)"
+                          >
+                            <lucide-icon
+                              name="download"
+                              [size]="16"
+                            ></lucide-icon>
+                          </button>
+                          @if (file.status == 1) {
+                            <button aria-label="Disconnect"
+                              class="p-1.5 rounded-lg transition-colors cursor-pointer"
+                              style="color: var(--v4-badge-warning-text-color)"
+                              matTooltip="Disconnect"
+                              [disabled]="actionLoadingFileId === file.id"
+                              (click)="onDisconnect(file)"
+                            >
+                              <lucide-icon
+                                name="unplug"
+                                [size]="16"
+                              ></lucide-icon>
+                            </button>
+                          }
+                          <button aria-label="Reset Password"
+                            class="p-1.5 rounded-lg transition-colors cursor-pointer text-v4-primary-brand-bold-color"
+                            matTooltip="Reset Password"
+                            (click)="onResetPassword(file)"
+                          >
+                            <lucide-icon
+                              name="square-pen"
+                              [size]="16"
+                            ></lucide-icon>
+                          </button>
+                          <button aria-label="Delete"
+                            class="p-1.5 rounded-lg transition-colors cursor-pointer"
+                            style="color: var(--v4-badge-error-text-color)"
+                            matTooltip="Delete"
+                            [disabled]="actionLoadingFileId === file.id"
+                            (click)="onDeleteFile(file, i)"
+                          >
+                            <lucide-icon
+                              name="trash-2"
+                              [size]="16"
+                            ></lucide-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="text-sm text-v4-tertiary-text-color text-center py-4">
+              No integration files found.
+            </p>
+          }
+        }
+      </div>
+    }
+
+    <!-- Settings Section -->
+    @if (hasFiles && quickBookDesktopData) {
+      <div
+        class="border border-v4-input-border-color rounded-xl p-4 bg-main-background space-y-4"
+      >
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">Settings</h4>
+          <button aria-label="More Settings"
+            class="p-2 border border-v4-input-border-color rounded-xl transition-colors cursor-pointer"
+            style="
+              background-color: var(--v4-badge-info-bg-color);
+              color: var(--v4-badge-info-text-color);
+            "
+            matTooltip="More Settings"
+            (click)="openMoreSettings()"
+          >
+            <lucide-icon name="settings" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- Payee Address Special Setting -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-v4-main-text-color font-medium">
+              Payee Address Special Setting
+            </span>
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="text-v4-tertiary-text-color"
+              matTooltip="If you turn on QuickBooks address settings, the second address line will be considered as the first line."
+            ></lucide-icon>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1">
+              <app-v4-common-dropdown
+                [formControl]="payeeAddressSpecialSetting"
+                [config]="{
+                  placeholder: 'Select',
+                  displayField: 'label',
+                  outputField: 'value'
+                }"
+                [listData]="payeeAddressOptions"
+                [clearable]="false"
+                [appendTo]="'body'"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="'Update'"
+              [disabled]="loading().settingsLoading"
+              (clickEvent)="updateSetting('setting')"
+            />
+          </div>
+        </div>
+
+        <!-- Enable OCW Style Stub -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-v4-main-text-color font-medium">
+              Enable OCW Style Stub
+            </span>
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="text-v4-tertiary-text-color"
+              matTooltip="Enable to use OCW default stub style or disable it to print stub in QB desktop format."
+            ></lucide-icon>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1">
+              <app-v4-common-dropdown
+                [formControl]="enableOcwStyleStub"
+                [config]="{
+                  placeholder: 'Select',
+                  displayField: 'label',
+                  outputField: 'value'
+                }"
+                [listData]="ocwStyleStubOptions"
+                [clearable]="false"
+                [appendTo]="'body'"
+              />
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="'Update'"
+              [disabled]="loading().settingsLoading"
+              (clickEvent)="updateSetting('styleStub')"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Bank Account Mapping -->
+    @if (hasFiles) {
+      <div
+        class="border border-v4-input-border-color rounded-xl p-4 bg-main-background space-y-3"
+      >
+        <div>
+          <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+            Bank Account Mapping
+          </h4>
+          <p class="text-xs text-v4-tertiary-text-color mt-1 mb-4">
+            Link your QuickBooks Desktop bank accounts to Zil Money.
+          </p>
+        </div>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Map Now'"
+          [disabled]="loading().dataLoading"
+          (clickEvent)="onMapCompany()"
+        />
+      </div>
+    }
+
+    <!-- Switch to old version -->
+    <div class="flex justify-end">
+      <button
+        class="text-sm text-v4-primary-brand-bold-color hover:underline flex items-center gap-1.5 cursor-pointer"
+        (click)="switchVersion()"
+      >
+        Switch to old version
+        <lucide-icon name="refresh-cw" [size]="14"></lucide-icon>
+      </button>
+    </div>
+  }
+</div>

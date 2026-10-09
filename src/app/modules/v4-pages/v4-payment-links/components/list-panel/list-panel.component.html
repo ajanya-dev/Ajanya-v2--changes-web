@@ -1,0 +1,237 @@
+<!-- Outer wrapper: relative so the floating collapse badge can be positioned against the panel corner -->
+<div class="relative h-full">
+
+@if (!hideCollapseToggle()) {
+  <button [attr.aria-label]="(collapsed() ? 'Expand panel' : 'Collapse panel') || null"
+    type="button"
+    (click)="toggleCollapse.emit()"
+    class="absolute top-3 -right-2.5 z-10 bg-v4-secondary-background-color border border-v4-border-color rounded-full p-0.5 shadow-sm text-v4-primary-brand-bold-color cursor-pointer"
+    [matTooltip]="collapsed() ? 'Expand panel' : 'Collapse panel'"
+  >
+    <lucide-angular [name]="collapsed() ? 'chevron-right' : 'chevron-left'" [size]="14" />
+  </button>
+}
+
+<div class="h-full rounded-xl border border-v4-border-color overflow-hidden flex flex-col bg-v4-secondary-background-color">
+
+  @if (!collapsed()) {
+    <!-- Search + Add -->
+    <div class="flex items-center gap-2 px-3 py-2">
+      <div class="relative flex-1">
+        <lucide-angular
+          name="search"
+          [size]="14"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-v4-subtle-text-color pointer-events-none"
+        />
+        <input
+          #searchInput
+          type="text"
+          class="w-full rounded-lg border border-v4-input-border-color bg-v4-secondary-background-color text-xs text-v4-main-text-color pl-10 pr-8 py-3 placeholder:text-v4-subtle-text-color focus:outline-none focus:ring-1 focus:ring-v4-primary-brand-color/50 focus:border-v4-primary-brand-color"
+          placeholder="Search links..."
+          [value]="searchTerm()"
+          (input)="onSearch(searchInput.value)"
+        />
+        @if (searchTerm()) {
+          <button
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-v4-subtle-text-color hover:text-v4-main-text-color cursor-pointer"
+            (click)="onSearch('')"
+          >
+            <lucide-angular name="x" [size]="12" />
+          </button>
+        }
+      </div>
+      <!-- Add -->
+      <app-common-button-v4 ariaLabel="Create New Link"
+        [type]="{ style: 'primary', name: 'main' }"
+        text=""
+        lucideIcon="plus"
+        [customClasses]="'!min-w-0 !w-11 !h-11 !p-0 justify-center shrink-0'"
+        matTooltip="Create New Link"
+        (clickEvent)="createNew.emit()"
+      />
+    </div>
+
+    <!-- Active / Archived tabs -->
+    <div class="flex items-stretch pt-2 mb-2 border-b border-v4-border-color">
+      @for (tab of tabs; track tab.value) {
+        <button
+          type="button"
+          (click)="tabChange.emit(tab.value)"
+          class="relative flex-1 px-3 pb-2 text-xs text-center transition-colors cursor-pointer"
+          [ngClass]="{
+            'text-v4-primary-brand-bold-color font-semibold': selectedListTab() === tab.value,
+            'text-v4-tertiary-text-color hover:text-v4-main-text-color': selectedListTab() !== tab.value
+          }"
+        >
+          {{ tab.label }}
+          @if (selectedListTab() === tab.value) {
+            <span class="absolute -bottom-px left-0 right-0 h-0.5 rounded-sm bg-v4-primary-brand-bold-color"></span>
+          }
+        </button>
+      }
+    </div>
+  }
+
+  <!-- List: flex-1 + min-h-0 so this div scrolls within the panel; load more on scroll -->
+  <div
+    class="flex-1 min-h-0 overflow-y-auto flex flex-col"
+    (scroll)="onScroll($event)"
+  >
+    @if (loading() && links().length === 0) {
+      <!-- Skeleton -->
+      @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]; track i) {
+        <div class="border-b border-v4-border-color p-3 flex items-center gap-2" [ngClass]="{ 'justify-center': collapsed() }">
+          <div class="w-7 h-7 rounded-md bg-v4-border-color animate-pulse shrink-0"></div>
+          @if (!collapsed()) {
+            <div class="flex-1 min-w-0">
+              <div class="h-3.5 bg-v4-border-color rounded w-3/4 mb-2 animate-pulse"></div>
+              <div class="h-3 bg-v4-border-color rounded w-1/2 animate-pulse"></div>
+            </div>
+          }
+        </div>
+      }
+    } @else {
+      @for (link of links(); track link.id) {
+        <div
+          tabindex="0"
+          role="presentation"
+          (click)="selectLink.emit(link)"
+          class="payment-link-item border-b border-v4-border-color border-l-4 border-l-transparent p-3 flex items-center gap-2 cursor-pointer transition-all group relative"
+          [ngClass]="{
+            'border-l-v4-primary-brand-bold-color bg-v4-input-background-color': selectedLinkId() === link.id,
+            'justify-center': collapsed()
+          }"
+          [matTooltip]="collapsed() ? link.name : ''"
+        >
+          <!-- Icon badge: same element/position in both collapsed and expanded states -->
+          <div class="relative flex justify-center items-center rounded-md h-7 w-7 bg-v4-badge-info-bg-color flex-shrink-0">
+            <lucide-angular name="link" [size]="14" class="text-v4-primary-brand-color" />
+            <!-- Status dot -->
+            <span
+              class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-v4-secondary-background-color"
+              [style.background-color]="getStatusConfig(link).dot"
+            ></span>
+          </div>
+
+          @if (!collapsed()) {
+            <div class="flex-1 min-w-0">
+              <!-- Name -->
+              <span class="text-xs font-bold text-v4-main-text-color truncate block">
+                {{ link.name }}
+              </span>
+              <!-- Short URL with redirect icon (hidden on archived tab — link is no longer live) -->
+              @if (selectedListTab() === 'active') {
+                <div class="flex items-center gap-1">
+                  <lucide-angular name="external-link" [size]="10" class="shrink-0 text-v4-primary-brand-bold-color" />
+                  <a
+                    class="text-[12px] text-v4-primary-brand-bold-color truncate hover:underline cursor-pointer"
+                    [href]="getFullUrl(link)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="$event.stopPropagation()"
+                  >{{ link.shortUrl }}</a>
+                </div>
+              }
+            </div>
+
+            <!-- Status Badge + Three-dot menu -->
+            <div class="flex items-center gap-1 shrink-0">
+              <span
+                class="px-1.5 py-0.5 rounded-full text-[12px] font-semibold inline-flex items-center gap-1"
+                [style.background-color]="getStatusConfig(link).bg"
+                [style.color]="getStatusConfig(link).color"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  [style.background-color]="getStatusConfig(link).dot"
+                ></span>
+                {{ getStatusConfig(link).label }}
+              </span>
+              <button aria-label="Actions"
+                [matMenuTriggerFor]="linkMenu"
+                (click)="$event.stopPropagation()"
+                class="p-1 rounded hover:bg-v4-tertiary-background-color transition-all shrink-0"
+                matTooltip="Actions"
+              >
+                <lucide-angular name="ellipsis-vertical" [size]="14" class="text-v4-main-text-color" />
+              </button>
+            </div>
+            <mat-menu #linkMenu="matMenu" class="v4-action-menu">
+              @if (selectedListTab() === 'active') {
+                <button mat-menu-item (click)="viewDetails.emit(link)">
+                  <div class="v4-menu-item">
+                    <lucide-angular name="eye" [size]="14" />
+                    <span>View Details</span>
+                  </div>
+                </button>
+                <button mat-menu-item (click)="copyLink.emit(link)">
+                  <div class="v4-menu-item">
+                    <lucide-angular name="copy" [size]="14" />
+                    <span>Copy Link</span>
+                  </div>
+                </button>
+                <button mat-menu-item (click)="shareLink.emit(link)">
+                  <div class="v4-menu-item">
+                    <lucide-angular name="share-2" [size]="14" />
+                    <span>Share</span>
+                  </div>
+                </button>
+                <button mat-menu-item (click)="editLink.emit(link)">
+                  <div class="v4-menu-item">
+                    <lucide-angular name="pencil" [size]="14" />
+                    <span>Edit</span>
+                  </div>
+                </button>
+                <mat-divider />
+                <button mat-menu-item (click)="archiveLink.emit(link)">
+                  <div class="v4-menu-item v4-danger-item">
+                    <lucide-angular name="archive" [size]="14" />
+                    <span>Archive</span>
+                  </div>
+                </button>
+              } @else {
+                <button mat-menu-item (click)="restoreLink.emit(link)">
+                  <div class="v4-menu-item">
+                    <lucide-angular name="archive-restore" [size]="14" />
+                    <span>Restore</span>
+                  </div>
+                </button>
+                <button mat-menu-item (click)="viewAuditTrail.emit(link)">
+                  <div class="v4-menu-item">
+                    <lucide-angular name="history" [size]="14" />
+                    <span>Audit Trail</span>
+                  </div>
+                </button>
+              }
+            </mat-menu>
+          }
+        </div>
+      }
+
+      @if (loading() && links().length > 0) {
+        @for (i of [1,2]; track i) {
+          <div class="border-b border-v4-border-color p-3 flex items-center gap-2" [ngClass]="{ 'justify-center': collapsed() }">
+            <div class="w-7 h-7 rounded-md bg-v4-border-color animate-pulse shrink-0"></div>
+            @if (!collapsed()) {
+              <div class="flex-1 min-w-0">
+                <div class="h-3.5 bg-v4-border-color rounded w-3/4 mb-2 animate-pulse"></div>
+                <div class="h-3 bg-v4-border-color rounded w-1/2 animate-pulse"></div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @if (links().length === 0 && !loading()) {
+        <div class="h-full w-full flex items-center justify-center text-center text-sm text-v4-tertiary-text-color">
+          @if (!collapsed()) {
+            {{ selectedListTab() === 'archived' ? 'Sorry! No Archived Links Found.' : 'Sorry! No Payment Links Found.' }}
+          }
+        </div>
+      }
+    }
+  </div>
+
+</div>
+
+</div>

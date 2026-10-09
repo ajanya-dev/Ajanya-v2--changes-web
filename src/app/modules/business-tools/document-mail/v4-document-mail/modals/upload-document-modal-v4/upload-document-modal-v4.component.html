@@ -1,0 +1,113 @@
+<!-- Sticky Header -->
+<div class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+  <div class="flex flex-col">
+    <h2 class="text-xl font-semibold text-v4-main-text-color font-funnel m-0">Upload Documents</h2>
+    <p class="text-xs text-v4-tertiary-text-color m-0 mt-0.5">Upload files to your document mail library</p>
+  </div>
+  <button
+    class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center border-none bg-transparent"
+    [mat-dialog-close]="false"
+  >
+    <lucide-icon name="x" [size]="18" class="text-v4-subtle-text-color" />
+  </button>
+</div>
+
+<!-- Scrollable Body -->
+<div class="py-6 px-6 bg-v4-tertiary-background-color overflow-y-auto max-h-[60vh]">
+  <!-- Drop Zone -->
+  <div class="mb-4">
+    <div
+      class="border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center transition-colors"
+      [class]="isDragging()
+        ? 'border-v4-common-blue-color bg-v4-secondary-background-color'
+        : 'border-v4-border-color hover:border-v4-subtle-text-color'"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <lucide-icon name="upload" [size]="48" class="text-v4-subtle-text-color mx-auto mb-4" />
+      <p class="text-lg text-v4-main-text-color mb-2 m-0">Upload or drag a file here</p>
+      <p class="text-sm text-v4-subtle-text-color m-0">Supports files up to 4MB</p>
+      <input
+        #fileInput
+        type="file"
+        class="hidden"
+        (change)="onFileSelect($event)"
+      />
+      <div class="mt-4">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="No file chosen"
+          (clickEvent)="triggerFileInput(fileInput)"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-center gap-2 text-xs text-v4-tertiary-text-color mb-4">
+    <lucide-icon name="info" [size]="14" class="text-v4-primary-brand-bold-color shrink-0" />
+    <span>Your document will be securely processed.</span>
+  </div>
+
+  @if (loading()) {
+    <div class="flex gap-2 justify-end items-center mb-4 text-sm text-v4-secondary-text-color">
+      <span class="loadingSpinner attachloader"></span>
+      <span>Saving...</span>
+    </div>
+  }
+
+  <!-- Uploaded Files Table -->
+  @if (uploadedFiles().length) {
+    <div class="border border-v4-border-color rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-v4-secondary-background-color">
+            <th class="text-left px-4 py-2.5 text-v4-secondary-text-color font-medium">#</th>
+            <th class="text-left px-4 py-2.5 text-v4-secondary-text-color font-medium">File Name</th>
+            <th class="text-right px-4 py-2.5 text-v4-secondary-text-color font-medium w-16"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of uploadedFiles(); track item.id; let i = $index) {
+            <tr class="border-t border-v4-border-color">
+              <td class="px-4 py-2.5 text-v4-main-text-color">{{ i + 1 }}</td>
+              <td class="px-4 py-2.5 text-v4-main-text-color">{{ item.document_title }}</td>
+              <td class="px-4 py-2.5 text-right">
+                <button aria-label="Delete"
+                  class="text-v4-common-red-color  transition-colors cursor-pointer bg-transparent border-none"
+                  (click)="deleteAttachment(item.id)"
+                  matTooltip="Delete"
+                >
+                  <lucide-icon name="trash-2" [size]="14" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="flex items-center justify-center h-20 text-sm text-v4-secondary-text-color font-medium">
+      No File Uploaded
+    </div>
+  }
+</div>
+
+<!-- Sticky Footer -->
+<div class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color">
+      <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Mail"
+      lucideIcon="mail"
+      (clickEvent)="onMail()"  
+    />
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Done"
+      [disabled]="loading()"
+      [mat-dialog-close]="uploadedFiles().length ? { success: true } : false"
+      />
+</div>

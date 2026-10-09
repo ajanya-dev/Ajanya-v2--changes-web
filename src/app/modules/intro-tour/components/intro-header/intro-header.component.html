@@ -1,0 +1,581 @@
+<div>
+  <div class="w-full bg-main-background-color sticky top-0">
+    <div
+      class="w-full flex py-2.5 h-14 px-2.5 justify-between border-b border-solid border-b-secondary-background-color"
+    >
+      <div
+        class="flex gap-2"
+        appOutsideClick
+        (clickOutSide)="isQuickNavigationMenuShown = false"
+      >
+        <button class="cursor-pointer lg:hidden" >
+          <img
+            class="w-7 h-7"
+            src="/assets/icon/svg/header-lines.svg"
+            alt="lines"
+          />
+        </button>
+        <button
+          class="flex items-center justify-center w-9 h-9 rounded bg-common-secondary-blue-color cursor-pointer"
+          [matTooltip]="!isQuickNavigationMenuShown ? 'Create New' : 'Close'"
+          
+        >
+          <div
+            class="transform transition-transform duration-300"
+          >
+            <fa-icon
+              [icon]="['fas', 'plus']"
+              class="text-common-dark-blue-color text-sm"
+              role="presentation"
+            ></fa-icon>
+          </div>
+        </button>
+        <ng-container
+          *ngIf="
+            staticWhiteLabelConditions?.subscriptionVisible &&
+            this.personalInfo?.isLegalEnabled !== 1
+          "
+        >
+        </ng-container>
+        <div
+          class="ocw_menu_wrapper quick-navigation-menu !bg-main-background-color !shadow-common-box-shadow opacity-50 !p-4 z-50 max-w-[480px] w-full fixed overflow-y-auto !top-14"
+          *ngIf="isQuickNavigationMenuShown"
+        >
+          <ul class="flex flex-wrap gap-y-5 gap-x-2.5">
+            <li
+              role="presentation"
+              class="single_list flex flex-col !p-0 text-center hover:bg-common-green-color"
+              *ngFor="
+                let quickNavigationButton of quickNavigationMenu;
+                let i = index;
+                trackBy: trackByFunction
+              "
+            >
+              <div
+                class="file-icon w-10 h-10 flex items-center justify-center rounded-full hover:bg-common-dark-blue-color hover:text-secondary-background-color bg-secondary-background-color text-common-dark-blue-color"
+              >
+                <img
+                  *ngIf="
+                    !quickNavigationButton?.faIcon &&
+                    quickNavigationButton?.icon
+                  "
+                  class="w-5 h-5"
+                  src="{{ quickNavigationButton.icon }}"
+                  alt=""
+                />
+                <fa-icon
+                  [icon]="quickNavigationButton?.faIcon"
+                  *ngIf="quickNavigationButton?.faIcon"
+                ></fa-icon>
+              </div>
+              <span
+                class="!text-xs !whitespace-pre-wrap !text-main-text-color"
+                >{{ quickNavigationButton.title }}</span
+              >
+            </li>
+          </ul>
+        </div>
+        <div
+          class="gap-1.5 items-center py-1.5 px-3 rounded p-2 cursor-pointer bg-common-secondary-green-color hidden sm:flex"
+          *ngIf="this.personalInfo?.isLegalEnabled === 1"
+          routerLink="/manage/cheque/multi_import/txt-to-check1"
+        >
+          <div class="logo w-auto">
+            <fa-icon
+              [icon]="['fas', 'arrow-down-to-line']"
+              class="text-main-text-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="font-semibold text-sm text-main-text-color xl:block hidden"
+          >
+            Import Checks
+          </div>
+          <div class="xl:hidden text-main-text-color h-5 w-auto">
+            <fa-icon [icon]="['fas', 'money-check-dollar']"></fa-icon>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 relative">
+        <div class="flex items-center gap-1 pr-2.5 sm:gap-5">
+          <button
+            class="text-common-dark-blue-color hidden sm:block"
+            id="theme-id"
+            (click)="toggleDarkMode()"
+          >
+            <fa-icon
+              [icon]="['fas', isDarkMode ? 'brightness' : 'moon']"
+              [matTooltip]="
+                isDarkMode
+                  ? 'View with a light background'
+                  : 'View with a dark background'
+              "
+              [ngClass]="isDarkMode ? 'text-common-yellow-color' : ''"
+            ></fa-icon>
+          </button>
+          <app-common-help-button></app-common-help-button>
+          <div
+            class="text-common-dark-blue-color cursor-pointer hidden sm:block"
+            matTooltip="Quick Access"
+          >
+            <fa-icon [icon]="['fas', 'magnifying-glass']"></fa-icon>
+          </div>
+          <div
+            role="presentation"
+            class="text-common-dark-blue-color cursor-pointer"
+            matTooltip="Notifications"
+            mat-icon-button
+            [matMenuTriggerFor]="notiDropdown"
+            #notificationMenu="matMenuTrigger"
+          >
+            <div class="relative py-2.5">
+              <fa-icon [icon]="['fas', 'bell']"></fa-icon>
+              <div
+                class="w-4 h-4 rounded-full text-white bg-common-red-color text-[12px] text-center pt-[1px] absolute top-1.5 left-2"
+              >
+                <span>99+</span>
+              </div>
+            </div>
+          </div>
+          <mat-menu #notiDropdown="matMenu">
+            <div class="bg-main-background-color rounded-md w-64">
+              <div class="max-h-96 overflow-y-auto">
+                <li
+                  class="border-b border-b-input-border-color text-secondary-text-color whitespace-nowrap py-2.5 px-3.5 text-xs"
+                >
+                  <span>{{
+                    notifications?.length ? "Notifications" : "No notifications"
+                  }}</span>
+                </li>
+
+                <ng-container
+                  *ngFor="
+                    let item of notifications;
+                    let i = index;
+                    trackBy: trackByFunction
+                  "
+                >
+                  <ul>
+                    <li
+                      role="presentation"
+                      class="flex items-center py-2 px-3 gap-3 font-roboto cursor-pointer"
+                    >
+                      <div
+                        class="w-7 h-7 flex items-center justify-center rounded-full"
+                      >
+                        <fa-icon
+                          [icon]="['fas', 'building-columns']"
+                          class="text-common-dark-blue-color text-sm"
+                          role="presentation"
+                        ></fa-icon>
+                      </div>
+                      <div>
+                        <h3
+                          class="text-sm font-medium w-48 whitespace-nowrap text-ellipsis overflow-hidden"
+                        >
+                          {{ item?.notification?.title }}
+                        </h3>
+                        <span class="text-secondary-text-color text-xs">{{
+                          item?.dateDuaration
+                        }}</span>
+                      </div>
+                    </li>
+                  </ul>
+                </ng-container>
+              </div>
+              <ng-container class="fixed" *ngIf="notifications?.length">
+                <a
+                  class="w-full block text-center p-1.5 bg-common-green-color text-white text-sm font-semibold rounded transition-all duration- ease-in-out"
+                  routerLink="/manage/more/notification/show"
+                  >View All</a
+                >
+              </ng-container>
+            </div>
+          </mat-menu>
+        </div>
+        <div
+          class="border border-solid border-input-border-color rounded max-w-xs flex cursor-pointer"
+          [matMenuTriggerFor]="companyDropdowns"
+        >
+          <span
+            class="label text-[12px] text-secondary-text-color bg-main-background-color absolute bottom-[26px] px-1 ml-1"
+          >
+            <span class="sm:block hidden">Company Switch</span>
+            <span class="sm:hidden block">Company</span>
+          </span>
+          <div class="company-name flex items-center h-full px-3">
+            <span class="flex justify-between min-w-[67px]"
+              ><span
+                class="text-sm font-medium whitespace-nowrap text-ellipsis text-main-text-color font-roboto overflow-hidden leading-6 min-w-[35px] sm:max-w-[18ch] max-w-[5ch]"
+                >Intro Company</span
+              >
+              <span class="pl-1"
+                ><fa-icon [icon]="['fas', 'caret-down']"></fa-icon></span
+            ></span>
+          </div>
+          <div
+            class="company-logo border-l border-solid border-l-input-border-color rounded w-10"
+          >
+            <img
+              class="w-full h-full object-cover rounded"
+              *ngIf="activeComapanyLogo"
+              [src]="activeComapanyLogo"
+              alt="company logo"
+            />
+            <span
+              class="flex items-center justify-center h-full"
+              *ngIf="!activeComapanyLogo"
+              ><fa-icon
+                [icon]="['fas', 'buildings']"
+                class="text-secondary-text-color text-xl"
+              ></fa-icon
+            ></span>
+          </div>
+        </div>
+        <mat-menu #companyDropdowns="matMenu" class="!mt-4">
+          <div class="bg-main-background-color">
+            <div
+              class="pt-0.5 py-4 pb-2 font-roboto text-sm text-center font-medium border-b border-b-input-border-color text-common-dark-blue-color"
+            >
+              <h3>Choose Your Company</h3>
+            </div>
+
+            <div class="company_list overflow-y-auto max-h-80">
+              <app-header-company-drop-down-list
+                [allCompanies]="allCompanies"
+              ></app-header-company-drop-down-list>
+            </div>
+
+            <button
+              class="add_company w-full hover:underline flex justify-center mt-2 items-center text-sm font-medium bg-common-secondary-blue-color text-common-dark-blue-color gap-2 cursor-pointer pt-3 px-6 pb-2"
+            >
+              <fa-icon [icon]="['fas', 'user-plus']"></fa-icon>
+              <p class="text-xs uppercase">add or manage companies</p>
+            </button>
+          </div>
+        </mat-menu>
+        <div class="flex rounded border border-input-border-color border-solid">
+          <div
+            *ngIf="
+              kycKybStatus.kybStatus === null || kycKybStatus.kybStatus === 3
+            "
+            (mouseover)="showStatus = true"
+            (mouseleave)="showStatus = false"
+            (focus)="showStatus = true"
+            (blur)="showStatus = false"
+            class="relative w-10 border-l border-solid border-l-input-border-color rounded flex justify-center items-center"
+            role="presentation"
+          >
+            <span
+              class="bg-common-secondary-red-color pt-[2px] pb-[1px] pl-[7.5px] pr-[9.5px] rounded cursor-pointer"
+            >
+              <fa-icon
+                [icon]="['fas', 'circle-exclamation']"
+                class="text-common-red-color"
+              ></fa-icon>
+            </span>
+            <div
+              *ngIf="showStatus"
+              class="absolute top-10 -right-10 p-2 shadow-common-box-shadow flex flex-col gap-2 items-start bg-main-background-color text-xs font-semibold font-inter text-main-text-color w-64 h-14 overflow-hidden border border-common-yellow-color rounded"
+            >
+              <div>Complete your setup</div>
+              <div class="flex w-full gap-2">
+                <div
+                  class="w-full h-2 rounded"
+                  [ngClass]="
+                    isUserVerified?.phone_verified === 1
+                      ? 'bg-common-green-color'
+                      : 'bg-common-blue-color'
+                  "
+                ></div>
+                <div
+                  class="w-full h-2 rounded"
+                  [ngClass]="
+                    kycKybStatus.kycStatus === 3 || kycKybStatus.kybStatus === 3
+                      ? 'bg-common-red-color'
+                      : isUserVerified?.phone_verified === 1
+                        ? 'bg-common-blue-color'
+                        : 'bg-secondary-background-color'
+                  "
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="cursor-pointer w-12 hidden text-sm sm:flex justify-center items-center text-main-text-color font-roboto"
+            #profileDropMenu="matMenuTrigger"
+            [matMenuTriggerFor]="profileMenu"
+          >
+            <p class="name text-lg font-semibold">IU</p>
+          </div>
+          <div
+            class="relative w-10 border-l border-solid border-l-input-border-color rounded flex justify-center items-center"
+          >
+            <span
+              class="flex items-center justify-center h-full cursor-pointer"
+              #profileDropMenu="matMenuTrigger"
+              [matMenuTriggerFor]="profileMenu"
+              ><fa-icon
+                [icon]="['fas', 'user-tie-hair']"
+                class="text-secondary-text-color text-xl"
+              ></fa-icon
+            ></span>
+          </div>
+        </div>
+        <mat-menu
+          #profileMenu="matMenu"
+          class="absolute right-3 top-[1px] ocw-meterial-menu w-44"
+        >
+          <div class="profile_dropdown cursor-pointer">
+            <li
+              class="cursor-default font-semi-bold text-common-dark-blue-color text-xs w-full text-ellipsis py-2.5 px-3.5 overflow-x-hidden inline-block whitespace-nowrap"
+            >
+              {{ userEmail }}
+            </li>
+            <li
+              class="font-normal text-common-dark-blue-color text-sm w-full items-center py-2.5 px-3.5 flex gap-2 hover:bg-common-secondary-blue-color"
+            >
+              <fa-icon [icon]="['fas', 'user']"></fa-icon>
+              <p>My Profile</p>
+            </li>
+            <li
+              class="font-normal text-common-dark-blue-color text-sm w-full items-center py-2.5 px-3.5 flex gap-2 hover:bg-common-secondary-blue-color"
+            >
+              <fa-icon [icon]="['fas', 'lock']"></fa-icon>
+              <p>Change Password</p>
+            </li>
+            <li
+              role="presentation"
+              class="font-normal text-common-dark-blue-color items-center text-sm w-full py-2.5 px-3.5 flex gap-2 hover:bg-common-secondary-blue-color"
+            >
+              <fa-icon [icon]="['fas', 'sign-out']"></fa-icon>
+              <p>Logout</p>
+            </li>
+          </div>
+        </mat-menu>
+      </div>
+    </div>
+  </div>
+  <div [ngClass]="{ '!h-[0px]': isHidden }">
+    <div
+      class="sub-header"
+      [ngClass]="
+        isHidden
+          ? 'hideSubHeader'
+          : !isHidden && animation
+            ? 'display-header'
+            : ''
+      "
+    >
+      <!--DYNAMIC HEADER STARTS-->
+      <div
+        class="dynamic-header w-full flex justify-start items-center gap-[10px] px-[10px] pt-[10px] bg-secondary-background-color text-main-text-color font-inter overflow-x-auto pb-[10px]"
+      >
+        <button
+          class="overview-card"
+          [ngClass]="{
+            'border !border-common-blue-color shadow-common-button':
+              isCreditPath && !overallDataLoading,
+            skelton: overallDataLoading,
+            'shadow-none': isHidden
+          }"
+          (click)="navigateToUrl('credit')"
+        >
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'credit-card-blank']"
+              class="text-2xl text-common-blue-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0"
+          >
+            <p class="font-normal text-xs">My Credits</p>
+            <p class="text-base font-semibold">
+              $100.00
+            </p>
+          </div>
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'chevron-right']"
+              class="text-common-green-color"
+            ></fa-icon>
+          </div>
+        </button>
+        <button
+          class="overview-card"
+          [ngClass]="{
+            'border !border-common-blue-color shadow-common-button':
+              isWalletPath && !overallDataLoading,
+            skelton: overallDataLoading,
+            'shadow-none': isHidden
+          }"
+          (click)="navigateToUrl('wallet')"
+        >
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'wallet']"
+              class="text-2xl text-common-violet-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0"
+          >
+            <div class="font-normal text-xs">My Wallet</div>
+            <div class="text-base font-semibold">
+              $1000.00
+            </div>
+          </div>
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'chevron-right']"
+              class="text-common-green-color"
+            ></fa-icon>
+          </div>
+        </button>
+
+        <button
+          class="overview-card"
+          *ngIf="overallData?.bankAcc"
+          [ngClass]="{
+            'border !border-common-blue-color shadow-common-button':
+              isBankAccountPath && !overallDataLoading,
+            skelton: overallDataLoading,
+            'shadow-none': isHidden
+          }"
+          (click)="navigateToUrl('account')"
+        >
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'building-columns']"
+              class="text-2xl text-common-blue-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0"
+          >
+            <div class="font-normal text-xs">Bank Accounts</div>
+            <div class="text-base font-semibold">
+              3
+            </div>
+          </div>
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'chevron-right']"
+              class="text-common-green-color"
+            ></fa-icon>
+          </div>
+        </button>
+
+        <button
+          class="overview-card"
+          *ngIf="overallData?.cloudBankExist === 1"
+          (click)="navigateToUrl('cloud')"
+          [ngClass]="{
+            'border !border-common-blue-color shadow-common-button':
+              isCloudPath && !overallDataLoading,
+            skelton: overallDataLoading,
+            'shadow-none': isHidden
+          }"
+        >
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'building-columns']"
+              class="text-2xl text-common-green-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0"
+          >
+            <div class="font-normal text-xs">Cloud Bank</div>
+            <div class="text-base font-semibold">
+              $1000.00
+            </div>
+          </div>
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'chevron-right']"
+              class="text-common-green-color"
+            ></fa-icon>
+          </div>
+        </button>
+
+        <button
+          class="overview-card"
+          *ngIf="overallData?.creditCards"
+          appWhiteLabelFlagChecker
+          whiteLabelFlagCheckerNOT="isAddCreditCardRestricted"
+          (click)="navigateToUrl('credit_card')"
+          [ngClass]="{
+            'border !border-common-blue-color shadow-common-button':
+              isCreditCardPath && !overallDataLoading,
+            skelton: overallDataLoading,
+            'shadow-none': isHidden
+          }"
+        >
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'credit-card-front']"
+              class="text-2xl text-common-yellow-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0"
+          >
+            <div class="font-normal text-xs">Credit Cards</div>
+            <div class="text-base font-semibold">
+              3
+            </div>
+          </div>
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'chevron-right']"
+              class="text-common-green-color"
+            ></fa-icon>
+          </div>
+        </button>
+
+        <button
+          class="overview-card"
+          *ngIf="!overallData?.creditCards"
+          appWhiteLabelFlagChecker
+          whiteLabelFlagCheckerNOT="isAddCreditCardRestricted"
+          (click)="navigateToUrl('credit_card')"
+          [ngClass]="{
+            'border !border-common-blue-color shadow-common-button':
+              isCreditCardPath && !overallDataLoading,
+            skelton: overallDataLoading,
+            'shadow-none': isHidden
+          }"
+        >
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'credit-card-front']"
+              class="text-2xl text-common-yellow-color"
+            ></fa-icon>
+          </div>
+          <div
+            class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0"
+          >
+            <div class="font-normal text-xs">Credit Cards</div>
+            <div class="text-base font-semibold hidden laptop:block">
+              {{ overallData?.creditCards }}
+            </div>
+            <div
+              class="text-base text-common-blue-color font-semibold flex laptop:hidden"
+            >
+              <fa-icon [icon]="['fas', 'plus']" class="text-base"></fa-icon>Add
+            </div>
+          </div>
+          <div class="hidden laptop:flex justify-end items-center">
+            <fa-icon
+              [icon]="['fas', 'plus']"
+              class="text-2xl text-common-blue-color"
+            ></fa-icon>
+          </div>
+        </button>
+      </div>
+      <!--DYNAMIC HEADER ENDS-->
+    </div>
+  </div>
+</div>

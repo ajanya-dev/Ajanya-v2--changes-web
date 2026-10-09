@@ -1,0 +1,530 @@
+<div class="flex flex-col max-h-[90vh] font-peridot">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-2xl font-semibold text-v4-main-text-color font-funnel">
+        Check Draft
+      </h1>
+      <h2 class="text-sm text-v4-subtle-text-color font-peridot">
+        Create and manage check drafts
+      </h2>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Amount Badge -->
+      @if (form.controls.amount.value) {
+        <div class="px-4 py-1.5 bg-v4-border-color rounded-lg overflow-hidden">
+          <div class="text-[12px] text-v4-tertiary-text-color font-peridot">
+            Amount
+          </div>
+          <div
+            class="text-lg font-bold text-v4-primary-brand-bold-color font-funnel truncate"
+          >
+            ${{ form.controls.amount.value }}
+          </div>
+        </div>
+      }
+      <!-- Close Button -->
+      <div
+        (click)="confirmClose()"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color flex-1 overflow-y-auto">
+    <div class="space-y-6" [formGroup]="form">
+      <!-- SECTION 1: Amount -->
+      <div
+        class="bg-v4-secondary-background-color rounded-xl p-8 border border-v4-border-color"
+      >
+        <label
+          for="amount-input"
+          class="block text-lg md:text-2xl font-semibold text-v4-main-text-color mb-4 md:mb-6 text-center font-peridot"
+        >
+          How much would you like to send?
+        </label>
+        <app-common-amount-input-v4
+          formControlName="amount"
+          [customClass]="'hero-input'"
+          [maxLength]="15"
+        />
+      </div>
+
+      <!-- SECTION 2: Payee Selection -->
+      @if (form.controls.amount.value) {
+        <div
+          class="bg-v4-secondary-background-color rounded-xl p-6 border border-v4-border-color"
+        >
+          <label for="payee-input"
+            class="block text-base font-medium text-v4-secondary-text-color mb-4 font-peridot"
+          >
+            Who are you paying?
+          </label>
+          <app-payments-payee-list
+            [payeeId]="preSelectedPayeeId()"
+            (payeeSelected)="onPayeeSelected($event)"
+          />
+        </div>
+      }
+
+      <!-- SECTION 3: Bank Account Selection -->
+      @if (selectedPayee()) {
+        <div
+          class="bg-v4-secondary-background-color rounded-xl p-6 border border-v4-border-color"
+        >
+          <label for="bank-account-input"
+            class="block text-base font-medium text-v4-secondary-text-color mb-4 font-peridot"
+          >
+            Deposit to account
+          </label>
+          <app-payments-bank-list
+            [bankAccountId]="preSelectedBankId()"
+            (bankSelected)="onBankSelected($event)"
+            [requestContext]="'checkDraft'"
+          />
+        </div>
+      }
+
+      <!-- SECTION 4: Additional Details -->
+      @if (selectedBank()) {
+        <div
+          class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color overflow-visible"
+        >
+          <div class="space-y-4 p-6">
+            <!-- Section heading with attachment/comment/remittance icons -->
+            <div class="flex items-center justify-between">
+              <h3
+                class="text-v4-secondary-text-color text-sm md:text-base font-medium font-peridot"
+              >
+                Additional Details
+              </h3>
+              <div class="flex items-center gap-1">
+                <!-- Attachment button -->
+                <button
+                  type="button"
+                  class="relative rounded-lg p-2 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color hover:bg-v4-tertiary-background-color"
+                  matTooltip="Attachment"
+                  [matTooltipShowDelay]="0"
+                  (click)="openAttachmentModal()"
+                >
+                  <lucide-icon name="paperclip" [size]="18" />
+                  @if (attachmentList.length > 0) {
+                    <span
+                      class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-v4-secondary-brand-color text-[12px] font-bold text-v4-main-text-color"
+                    >
+                      {{ attachmentList.length }}
+                    </span>
+                  }
+                </button>
+                <!-- Comment button -->
+                <button
+                  type="button"
+                  class="relative rounded-lg p-2 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color hover:bg-v4-tertiary-background-color"
+                  matTooltip="Comment"
+                  [matTooltipShowDelay]="0"
+                  (click)="openAddCommentsModal()"
+                >
+                  <lucide-icon name="message-square" [size]="18" />
+                  @if (commentsList.length > 0) {
+                    <span
+                      class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-v4-secondary-brand-color text-[12px] font-bold text-v4-main-text-color"
+                    >
+                      {{ commentsList.length }}
+                    </span>
+                  }
+                </button>
+                <!-- Remittance button -->
+                <button
+                  type="button"
+                  class="relative rounded-lg p-2 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color hover:bg-v4-tertiary-background-color"
+                  matTooltip="Remittance"
+                  [matTooltipShowDelay]="0"
+                  (click)="openRemittanceModal()"
+                >
+                  <lucide-icon name="copy" [size]="18" />
+                  @if (filledRemittanceCount > 0) {
+                    <span
+                      class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-v4-secondary-brand-color text-[12px] font-bold text-v4-main-text-color"
+                    >
+                      {{ filledRemittanceCount }}
+                    </span>
+                  }
+                </button>
+              </div>
+            </div>
+
+            <!-- Check Number -->
+            <div>
+              <label
+                class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+              >
+                Check Number
+              </label>
+              <app-common-input-v4
+                [placeholder]="'Check number'"
+                [isFieldRequired]="false"
+                [maxLength]="12"
+                [control]="form.controls.chequeSerialNumber"
+                formControlName="chequeSerialNumber"
+              />
+            </div>
+
+            <!-- Ac# / Inv# / Comment - 3 columns -->
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Ac# if any
+                </label>
+                <app-common-input-v4
+                  [placeholder]="'Account number'"
+                  [isFieldRequired]="false"
+                  [control]="form.controls.accountNumber"
+                  formControlName="accountNumber"
+                />
+              </div>
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Inv# if any
+                </label>
+                <app-common-input-v4
+                  [placeholder]="'Invoice number'"
+                  [isFieldRequired]="false"
+                  [control]="form.controls.invoiceNumber"
+                  formControlName="invoiceNumber"
+                />
+              </div>
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Comment (Note to self)
+                </label>
+                <app-common-input-v4
+                  [placeholder]="'Note to self'"
+                  [isFieldRequired]="false"
+                  [control]="form.controls.note"
+                  formControlName="note"
+                />
+              </div>
+            </div>
+
+            <!-- Date -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Date
+                </label>
+                <app-v4-date-picker
+                  [placeholder]="'Select date'"
+                  [control]="form.controls.checkIssueDate"
+                  formControlName="checkIssueDate"
+                  [isFieldRequired]="false"
+                />
+              </div>
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label
+                class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+              >
+                Category
+              </label>
+              <app-category-dropdown-v4
+                [enableAddNew]="true"
+                [selectedId]="preSelectedCategoryId()"
+                (selectionEvent)="onCategoryChange($event)"
+              />
+            </div>
+
+            <!-- Memo -->
+            <div>
+              <label
+                class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+              >
+                Memo
+              </label>
+              <textarea
+                class="w-full resize-none rounded-lg border border-v4-border-color bg-v4-secondary-background-color px-3 py-2.5 text-sm text-v4-main-text-color placeholder-v4-subtle-text-color outline-none transition-colors focus:border-v4-primary-brand-color font-peridot"
+                rows="3"
+                placeholder="Add a note..."
+                formControlName="memo"
+                [maxlength]="150"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Ask for Permission -->
+          <div class="px-6 pb-5">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                class="v4-checkbox-sm"
+                [formControl]="isThisNeedPermission"
+              />
+              <span
+                class="text-sm font-semibold uppercase tracking-wider text-v4-primary-brand-bold-color font-peridot"
+              >
+                Ask for Permission
+              </span>
+            </label>
+
+            @if (isThisNeedPermission.value) {
+              <div class="flex flex-col gap-4 mt-4">
+                <!-- Email Permission -->
+                <div class="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    class="v4-checkbox-sm"
+                    [formControl]="sendPermissionEmail"
+                  />
+                  <div class="flex-1">
+                    <app-common-input-v4
+                      [formControl]="permissionEmail"
+                      [placeholder]="'Email'"
+                      [type]="'text'"
+                      [isFieldRequired]="false"
+                      [control]="permissionEmail"
+                      (keyup)="getEmail()"
+                    />
+                  </div>
+                </div>
+                @if (emailValidation && !sendPermissionEmail.value) {
+                  <span class="text-xs text-v4-common-red-color ml-8"
+                    >Please add valid email</span
+                  >
+                }
+                <!-- Phone Permission -->
+                <div class="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    class="v4-checkbox-sm"
+                    [formControl]="permissionSms"
+                    [attr.disabled]="(!validPhoneNumber && isDisablePermissionSms) ? true : null"
+                  />
+                  <div class="flex-1">
+                    <app-phone-input-v4
+                      [formControl]="permissionPhone"
+                      [placeholder]="'Phone'"
+                      [isFieldRequired]="false"
+                    />
+                  </div>
+                </div>
+                @if (!validPhoneNumber) {
+                  <span class="text-xs text-v4-common-red-color ml-8"
+                    >Please add valid phone number</span
+                  >
+                }
+                <!-- Total -->
+                <p class="text-sm text-v4-tertiary-text-color">
+                  TOTAL:
+                  <span class="font-semibold text-v4-main-text-color">
+                    ${{ permissionSms.value ? "0.50" : "0.00" }}
+                  </span>
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- SECTION 5: Recurring -->
+      @if (selectedBank()) {
+        <div
+          class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-6 space-y-4"
+        >
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                class="v4-checkbox-sm"
+                [checked]="showRecurring()"
+                (change)="onRecurringToggle($event.target['checked'])"
+              />
+              <span
+                class="text-sm font-medium text-v4-main-text-color font-peridot"
+                >Make this payment recurring</span
+              >
+            </label>
+          </div>
+
+          @if (showRecurring()) {
+            <div class="space-y-4 rounded-xl bg-v4-tertiary-background-color border border-v4-border-color p-5">
+              <h4
+                class="text-xs font-semibold uppercase tracking-wider text-v4-main-text-color font-peridot"
+              >
+                Recurring Payment Settings
+              </h4>
+
+              <!-- Frequency -->
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Frequency
+                </label>
+                <app-v4-common-dropdown
+                  [config]="frequencyDropdownConfig"
+                  [listData]="frequencyOptions"
+                  [formControl]="recurringFrequency"
+                  appendTo="body"
+                />
+              </div>
+
+              <!-- Starting Date -->
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Starting Date
+                </label>
+                <app-v4-date-picker
+                  [formControl]="recurringStartDate"
+                  [placeholder]="'Select start date'"
+                  [control]="recurringStartDate"
+                  [minDate]="getTomorrowDate()"
+                  [isFieldRequired]="true"
+                />
+              </div>
+
+              <!-- Payment Duration -->
+              <div>
+                <label
+                  class="mb-1.5 block text-xs font-medium text-v4-secondary-text-color font-peridot"
+                >
+                  Payment Duration
+                </label>
+                <div class="flex flex-col gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      class="v4-radio-md"
+                      [formControl]="recurringEndSelect"
+                      [value]="'3'"
+                      name="recurringEnd"
+                    />
+                    <span class="text-sm text-v4-main-text-color font-peridot"
+                      >Pay until I cancel</span
+                    >
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        class="v4-radio-md"
+                        [formControl]="recurringEndSelect"
+                        [value]="'1'"
+                        name="recurringEnd"
+                      />
+                      <span class="text-sm text-v4-main-text-color font-peridot"
+                        >Pay for</span
+                      >
+                    </label>
+                    <div class="w-16">
+                      <app-common-input-v4
+                        [formControl]="recurringCount"
+                        [placeholder]="'2'"
+                        [type]="'text'"
+                        [isNumberOnly]="true"
+                        [numberType]="'numeric'"
+                        [maxLength]="5"
+                        [isFieldRequired]="false"
+                        [control]="recurringCount"
+                        [disabled]="recurringEndSelect.value !== '1'"
+                      />
+                    </div>
+                    <span class="text-sm text-v4-main-text-color font-peridot"
+                      >months</span
+                    >
+                  </div>
+                  <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        class="v4-radio-md"
+                        [formControl]="recurringEndSelect"
+                        [value]="'2'"
+                        name="recurringEnd"
+                      />
+                      <span class="text-sm text-v4-main-text-color font-peridot"
+                        >Specific date</span
+                      >
+                    </label>
+                    @if (recurringEndSelect.value === "2") {
+                      <div class="mt-2 ml-8 w-48">
+                        <app-v4-date-picker
+                          [formControl]="recurringUntilDate"
+                          [placeholder]="'Select end date'"
+                          [control]="recurringUntilDate"
+                          [minDate]="getTomorrowDate()"
+                          [isFieldRequired]="false"
+                        />
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    @if (!showRecurring()) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="confirmClose()"
+      />
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Print"
+        (clickEvent)="save('P')"
+        [disabled]="!canSubmit() || printing()"
+        [loading]="printing()"
+      />
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Save"
+        (clickEvent)="save('S')"
+        [disabled]="!canSubmit() || saving()"
+        [loading]="saving()"
+      />
+    } @else {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="confirmClose()"
+      />
+      <app-common-button-v4
+        width="160px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Save Recurring"
+        (clickEvent)="saveRecurring()"
+        [disabled]="!canSubmit() || recurringLoading()"
+        [loading]="recurringLoading()"
+      />
+    }
+  </div>
+</div>

@@ -1,0 +1,313 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'vendor-credit-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [headerLoading]="isLoading()"
+  [subtitle]="panelSubtitle()"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="onActionButtonClicked($event)"
+/>
+
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="credit-card" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped panel-body--fill"
+    [class.panel-body--expanded]="isPanelExpanded()"
+    [style.grid-template-rows]="
+      isPanelExpanded() && !isLoading() ? 'auto auto 1fr' : null
+    "
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="9" [tiles]="3" [timeline]="0" />
+    } @else {
+      @if (viewData(); as d) {
+        <!-- Credit details -->
+        <div class="pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('credit')"
+          >
+            <span class="pd-card-title">Credit details</span>
+            <lucide-icon
+              [name]="isCardCollapsed('credit') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("credit")) {
+            <div class="pd-card-body">
+              @for (row of creditRows(); track row.label) {
+                <div class="pd-row">
+                  <span class="pd-row-label">{{ row.label }}</span>
+                  <span
+                    class="pd-row-value break-words text-right tabular-nums"
+                    [class.text-v4-common-green-color]="row.balance"
+                    >{{ row.value || "—" }}</span
+                  >
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Vendor details -->
+        @if (vendorDisplay(); as v) {
+          <div class="pd-card">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('vendor')"
+            >
+              <span class="pd-card-title">Vendor details</span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('vendor') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+            @if (!isCardCollapsed("vendor")) {
+              <div class="pd-card-body">
+                @if (payeeLoading()) {
+                  <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+                } @else {
+                  @for (row of v.rows; track row.label) {
+                    <div class="pd-row">
+                      <span class="pd-row-label">{{ row.label }}</span>
+                      <span class="pd-row-value break-words text-right">{{
+                        row.value || "—"
+                      }}</span>
+                    </div>
+                  }
+                  @if (v.id) {
+                    <div class="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        class="border-none bg-transparent font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                        (click)="onOpenPayee()"
+                      >
+                        Open payee
+                      </button>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Applied to bills -->
+        <div class="pd-card pd-full">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('payments')"
+          >
+            <span class="pd-card-title">Applied to bills</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('payments') ? 'chevron-down' : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("payments")) {
+            <div class="pd-card-body">
+              @if (payments().length) {
+                <div class="overflow-x-auto">
+                  <div class="max-h-[490px] overflow-y-auto">
+                    <table class="v4-ocw-table">
+                      <thead>
+                        <tr>
+                          <th class="text-center">#</th>
+                          <th>Reference</th>
+                          <th>Date</th>
+                          <th class="text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (payment of payments(); track $index) {
+                          <tr>
+                            <td class="text-center text-v4-tertiary-text-color">
+                              {{ $index + 1 }}
+                            </td>
+                            <td>
+                              @if (
+                                payment.referenceType === 1 &&
+                                payment.paymentReference
+                              ) {
+                                <button
+                                  type="button"
+                                  class="cursor-pointer border-none bg-transparent p-0 font-medium text-v4-primary-brand-bold-color hover:underline"
+                                  (click)="onPaymentReferenceClick(payment)"
+                                >
+                                  {{ payment.paymentReference }}
+                                </button>
+                              } @else {
+                                {{ payment.paymentReference ?? "Payment" }}
+                              }
+                            </td>
+                            <td class="whitespace-nowrap">
+                              {{ payment.paymentDate }}
+                            </td>
+                            <td class="text-right font-semibold tabular-nums">
+                              {{ payment.amount ? "$" + payment.amount : "" }}
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              } @else {
+                <div class="pd-empty">
+                  <p
+                    class="m-0 py-6 text-center text-sm text-v4-tertiary-text-color"
+                  >
+                    This credit hasn’t been applied to any bills yet.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Actions — the tile row is the card head; the open section renders below. -->
+        <div
+          class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+        >
+          <div
+            class="pd-card-head-flush grid grid-cols-3 gap-1.5 px-3 py-2"
+            [class.border-b]="!!openActionSection()"
+            [class.border-v4-border-color]="!!openActionSection()"
+          >
+            @for (tile of tiles; track tile.key) {
+              <button
+                type="button"
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+                [ngClass]="
+                  openActionSection() === tile.key
+                    ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                    : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+                "
+                (click)="selectSection(tile.key)"
+              >
+                <lucide-icon
+                  [name]="tile.icon"
+                  [size]="16"
+                  class="shrink-0"
+                ></lucide-icon>
+                <span
+                  class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                  >{{ tile.label }}</span
+                >
+              </button>
+            }
+          </div>
+
+          @if (openActionSection() === "audit") {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              <app-po-audit-log-list
+                [allowDeviceEdit]="false"
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                [logs]="auditLogsForList()"
+                [maxHeight]="null"
+                emptyHint="Changes to this credit will show up here."
+                (closed)="closeSection()"
+              />
+            </div>
+          }
+
+          @if (openActionSection() === "comments") {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading("comments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-comments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [comments]="comments()"
+                  [maxHeight]="'420px'"
+                  [posting]="commentPosting()"
+                  [error]="commentError()"
+                  emptyHint="Notes you add here stay with the credit."
+                  (submitComment)="onSubmitComment($event)"
+                  (deleteComment)="onDeleteComment($event)"
+                  (closed)="closeSection()"
+                />
+              }
+            </div>
+          }
+
+          @if (openActionSection() === "attachments") {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading("attachments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-attachments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [attachments]="attachments()"
+                  [maxHeight]="'420px'"
+                  [accept]="'.pdf,.png,.jpg,.jpeg'"
+                  [maxFiles]="5"
+                  [deletingId]="deletingAttachmentId()"
+                  [uploading]="attachmentUploading()"
+                  [error]="attachmentError()"
+                  emptyHint="Files attached to this credit will show up here."
+                  (fileSelected)="onAttachmentSelected($event)"
+                  (openAttachment)="onOpenAttachment($event)"
+                  (deleteAttachment)="onDeleteAttachment($event)"
+                  (closed)="closeSection()"
+                />
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="pd-empty">
+          <p class="m-0 py-8 text-center text-sm text-v4-tertiary-text-color">
+            Couldn’t load this credit.
+          </p>
+        </div>
+      }
+    }
+  </div>
+
+  @if (selectedBillId()) {
+    <app-v4-bills-details-panel
+      [billId]="selectedBillId()"
+      [isOpen]="isBillPanelOpen()"
+      [backdropZIndex]="300"
+      (closed)="isBillPanelOpen.set(false)"
+    />
+  }
+</ng-template>

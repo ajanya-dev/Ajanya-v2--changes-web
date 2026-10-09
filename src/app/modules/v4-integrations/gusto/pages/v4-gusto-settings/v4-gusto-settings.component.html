@@ -1,0 +1,199 @@
+<div class="space-y-6 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  } @else if (!isConnected()) {
+    <!-- Disconnected state -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl"
+      style="background-color: var(--v4-badge-error-bg-color)"
+    >
+      <lucide-icon
+        name="x-circle"
+        [size]="20"
+        [color]="'var(--v4-badge-error-text-color)'"
+      ></lucide-icon>
+      <span
+        class="text-sm font-semibold"
+        style="color: var(--v4-badge-error-text-color)"
+      >
+        Status: <span class="font-bold">Disconnected</span>
+      </span>
+    </div>
+    <p class="text-sm text-v4-tertiary-text-color">
+      Connect to Gusto from the Overview tab to manage your payroll integration.
+    </p>
+  } @else {
+    <!-- Status banner -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl bg-v4-badge-success-bg-color"
+    >
+      <lucide-icon
+        name="circle-check"
+        [size]="24"
+        class="flex-shrink-0 text-v4-badge-success-text-color"
+      ></lucide-icon>
+      <div>
+        <p class="font-semibold text-v4-badge-success-text-color">Connected</p>
+      </div>
+    </div>
+
+    <!-- Heading + Disconnect -->
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          Gusto Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Manage Gusto companies and import payroll checks.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'destructive', name: 'main' }"
+        text="Disconnect"
+        width="140px"
+        [loading]="loading().disconnecting"
+        [disabled]="loading().disconnecting"
+        (clickEvent)="onDisconnect()"
+      />
+    </div>
+
+    <!-- Connected companies -->
+    <div
+      class="border border-v4-input-border-color rounded-xl bg-main-background p-4 space-y-3"
+    >
+      <div class="flex items-center justify-between">
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+          Connected Companies
+        </h4>
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="New Company"
+          width="160px"
+          [isAddIcon]="true"
+          [icon]="['fas', 'plus']"
+          [loading]="loading().connecting"
+          [disabled]="loading().connecting"
+          (clickEvent)="onConnect()"
+        />
+      </div>
+
+      @if (importedCompanies().length) {
+        <div class="space-y-2">
+          @for (company of importedCompanies(); track company.companyId) {
+            <div
+              class="p-3 border border-v4-input-border-color rounded-xl bg-main-background hover:bg-v4-input-background-color transition-colors"
+            >
+              <!-- Top: name + delete -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="text-sm font-semibold text-v4-main-text-color truncate"
+                  >
+                    {{ company.companyName }}
+                  </p>
+                  @if (company.lastUpdated) {
+                    <p class="text-xs text-v4-tertiary-text-color mt-1">
+                      Last run: {{ company.lastUpdated }}
+                    </p>
+                  }
+                </div>
+                <button aria-label="Remove company"
+                  type="button"
+                  class="p-2 rounded-lg hover:bg-v4-tertiary-background-color transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  style="color: var(--v4-badge-error-text-color)"
+                  matTooltip="Remove company"
+                  [disabled]="loading().deletingCompany === company.companyId"
+                  (click)="deleteCompany(company)"
+                >
+                  @if (loading().deletingCompany === company.companyId) {
+                    <lucide-icon
+                      name="loader-circle"
+                      [size]="18"
+                      class="animate-spin"
+                    />
+                  } @else {
+                    <lucide-icon name="trash-2" [size]="18" />
+                  }
+                </button>
+              </div>
+
+              <!-- Actions row -->
+              <div
+                class="mt-3 pt-3 border-t border-v4-input-border-color flex flex-wrap items-center gap-2"
+              >
+                <app-common-button-v4
+                  [type]="{ style: 'outline', name: 'main' }"
+                  text="View"
+                  customHeight="32px"
+                  width="auto"
+                  (clickEvent)="openViewCompany(company)"
+                />
+                <app-common-button-v4
+                  [type]="{ style: 'primary', name: 'main' }"
+                  text="Payroll Checks"
+                  customHeight="32px"
+                  width="auto"
+                  (clickEvent)="openPayrollList(company, false)"
+                />
+                <app-common-button-v4
+                  [type]="{ style: 'primary', name: 'main' }"
+                  text="Off-Cycle"
+                  customHeight="32px"
+                  width="auto"
+                  (clickEvent)="openPayrollList(company, true)"
+                />
+                <app-common-button-v4
+                  [type]="{ style: 'primary', name: 'main' }"
+                  text="Contractor Checks"
+                  customHeight="32px"
+                  width="auto"
+                  (clickEvent)="openContractorPayments(company)"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm text-v4-tertiary-text-color">
+          No companies connected yet. Use "New Company" to create one in Gusto.
+        </p>
+      }
+    </div>
+
+    <!-- Bank mapping -->
+    <div class="mt-6">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="View Bank Account Mapping"
+        [width]="'100%'"
+        (clickEvent)="openBankMappingModal()"
+      />
+    </div>
+
+    <!-- Short on cash -->
+    <div
+      class="mt-6 flex items-center justify-between gap-3 p-4 rounded-xl border border-v4-input-border-color bg-main-background"
+    >
+      <div class="min-w-0">
+        <h3 class="text-sm font-bold text-v4-badge-error-text-color font-funnel">
+          Short on Cash?
+        </h3>
+        <p class="text-xs text-v4-tertiary-text-color mt-1">
+          Fund your payroll account with credit card.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Add Fund"
+        width="120px"
+        (clickEvent)="openAddFund()"
+      />
+    </div>
+  }
+</div>

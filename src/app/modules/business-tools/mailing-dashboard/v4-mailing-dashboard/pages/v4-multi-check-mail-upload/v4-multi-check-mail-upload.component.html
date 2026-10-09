@@ -1,0 +1,208 @@
+<div class="flex flex-col h-screen w-full overflow-hidden bg-v4-main-background-color">
+  <div class="w-full max-w-[1400px] mx-auto px-6 flex flex-col flex-1 min-h-0">
+    <!-- Page Header -->
+    <div class="flex items-center gap-2 py-4">
+      <button
+        type="button"
+        class="flex items-center justify-center cursor-pointer text-v4-subtle-text-color hover:text-v4-main-text-color"
+        (click)="backButtonClick()"
+        (keyup.enter)="backButtonClick()"
+      >
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+      <h3 class="text-v4-main-text-color font-peridot font-semibold text-lg">
+        Mail Checks from Excel/CSV/ZIP Files
+      </h3>
+    </div>
+
+    <!-- Stepper -->
+    <div class="flex-shrink-0 pt-2 pb-4">
+      <app-v4-multi-check-stepper [activeStep]="1" />
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-auto pb-4">
+      <section class="flex flex-col min-[1300px]:flex-row gap-5 w-full">
+      <!-- Left: Upload Form -->
+      <div class="w-full min-[1300px]:w-[calc(65%-10px)]">
+        <div class="bg-v4-secondary-background-color rounded-xl p-4 sm:p-6 min-[1300px]:h-full">
+          <form [formGroup]="importForm">
+            <div class="flex flex-col gap-6">
+              <!-- Select File Section -->
+              <div class="flex flex-col gap-2">
+                <label class="font-peridot font-semibold text-v4-main-text-color text-sm">
+                  Select File <span class="text-v4-common-red-color">*</span>
+                </label>
+                <div
+                  class="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all"
+                  [class.border-v4-primary-brand-bold-color]="isDragging()"
+                  [class.bg-v4-tertiary-background-color]="isDragging()"
+                  [class.border-v4-common-green-color]="isFileSelected() && !isDragging()"
+                  [class.border-v4-border-color]="!isFileSelected() && !isDragging()"
+                  (dragover)="onDragOver($event)"
+                  (dragleave)="onDragLeave($event)"
+                  (drop)="onDrop($event)"
+                  (click)="triggerFileInput()"
+                >
+                  <input
+                    #fileInput
+                    type="file"
+                    accept=".csv,.xlsx,.xls,.zip"
+                    class="hidden"
+                    (change)="onFileSelected($event)"
+                  />
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-v4-tertiary-background-color flex items-center justify-center">
+                      <lucide-icon name="upload" [size]="24" class="text-v4-primary-brand-bold-color"></lucide-icon>
+                    </div>
+                    <div class="font-peridot font-semibold text-v4-primary-brand-bold-color">Browse Files</div>
+                    <div class="font-peridot text-v4-main-text-color text-sm">or drag and drop here</div>
+                    <div class="font-peridot text-v4-subtle-text-color text-xs">
+                      CSV/XLSX/ZIP supported
+                    </div>
+                    <div class="font-peridot text-v4-subtle-text-color text-xs">
+                      Date format: mm/dd/yyyy
+                    </div>
+                    <app-common-button-v4
+                      class="mt-2"
+                      [type]="{ style: 'outline', name: 'main' }"
+                      text="Choose File"
+                      (clickEvent)="$event.stopPropagation(); triggerFileInput()"
+                    />
+                    @if (selectedFileName()) {
+                      <div class="flex flex-col items-center gap-2 mt-2 border border-v4-common-green-color rounded-lg px-3 py-4 w-full bg-v4-main-background-color">
+                        <div
+                          class="font-peridot text-v4-common-green-color text-sm font-semibold w-full truncate text-center"
+                          [matTooltip]="selectedFileName()"
+                        >
+                          {{ selectedFileName() }}
+                        </div>
+                        <div class="font-peridot text-v4-common-green-color text-sm font-medium">
+                          {{ selectedFileSize() }}
+                        </div>
+                        <button
+                          type="button"
+                          class="text-xs text-v4-common-red-color hover:underline"
+                          (click)="$event.stopPropagation(); removeFile()"
+                        >
+                          Remove file
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <app-control-message-v4 [control]="importForm.controls.file" label="Please select a file" />
+              </div>
+
+              <!-- Include Column Headers Toggle -->
+              <div class="flex items-center justify-between border border-v4-border-color rounded-xl px-4 py-4">
+                <label for="head" class="font-peridot font-semibold text-v4-main-text-color text-sm">
+                  Include Column Headers
+                </label>
+                <label class="switch">
+                  <input type="checkbox" formControlName="includeHeader" id="head" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Batch Name Input -->
+              <div class="flex flex-col gap-2">
+                <label class="font-peridot font-semibold text-v4-main-text-color text-sm">Batch Name</label>
+                <app-common-input-v4
+                  formControlName="batch_name"
+                  placeholder="Enter batch name (optional)"
+                  [isFieldRequired]="false"
+                />
+              </div>
+
+              <!-- Download Sample Files -->
+              <div class="w-full flex flex-row flex-wrap items-center gap-4 px-1">
+                <button
+                  type="button"
+                  class="flex items-center gap-1.5 p-0 bg-transparent border-none cursor-pointer text-sm font-peridot font-medium text-v4-primary-brand-bold-color hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+                  [disabled]="isSampleFileLoading()"
+                  (click)="downloadClick()"
+                >
+                  <lucide-icon name="download" [size]="14"></lucide-icon>
+                  Download Sample CSV
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-1.5 p-0 bg-transparent border-none cursor-pointer text-sm font-peridot font-medium text-v4-primary-brand-bold-color hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+                  [disabled]="isSampleFileLoading()"
+                  (click)="downloadZipClick()"
+                >
+                  <lucide-icon name="download" [size]="14"></lucide-icon>
+                  Download ZIP
+                </button>
+              </div>
+
+              <!-- Import Button -->
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                text="Import"
+                [width]="'100%'"
+                [backGroundInput]="'var(--v4-primary-brand-color)'"
+                [loading]="submitting()"
+                (clickEvent)="submit()"
+              />
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right: Shipping Types Reference -->
+      <div class="w-full min-[1300px]:w-[calc(35%-10px)] min-[1300px]:flex-shrink-0">
+        <div class="bg-v4-secondary-background-color rounded-xl p-4 sm:p-6">
+          <div class="border border-v4-border-color rounded-xl p-4">
+            <h3 class="text-base font-semibold mb-4 text-v4-main-text-color font-peridot">
+              Supported Shipment Type
+            </h3>
+            @if (isLoading()) {
+              <div class="flex flex-col gap-2">
+                @for (_ of skeletonRows; track $index) {
+                  <div class="h-6 bg-v4-tertiary-background-color rounded animate-pulse w-40"></div>
+                }
+              </div>
+            } @else {
+              <div class="text-v4-main-text-color text-[12px] font-normal font-peridot">
+                <!-- Header Row -->
+                <div class="flex items-center pb-2 mb-3 gap-3">
+                  <div class="flex-1 min-w-0">
+                    <span class="font-semibold whitespace-nowrap">Shipping Type</span>
+                  </div>
+                  <div class="w-24 flex-shrink-0 text-left">
+                    <span class="font-semibold whitespace-nowrap">Shipping Code</span>
+                  </div>
+                  <div class="w-[90px] flex-shrink-0 text-right">
+                    <span class="font-semibold">Attachment Page Limit</span>
+                  </div>
+                </div>
+                <!-- Data Rows -->
+                <div class="space-y-2">
+                  @for (item of shippingTypeList(); track $index) {
+                    <div class="flex items-start pb-2 gap-3">
+                      <div class="flex-1 min-w-0">
+                        <div class="flex gap-0.5">
+                          <span class="flex-shrink-0 text-[13px]">{{ $index + 1 }}.</span>
+                          <span class="text-[13px]">{{ getShippingName(item?.name) | titlecase }}</span>
+                        </div>
+                      </div>
+                      <div class="w-24 flex-shrink-0 text-left">
+                        <span class="whitespace-nowrap">{{ item?.short_code }}</span>
+                      </div>
+                      <div class="w-[90px] flex-shrink-0 text-right">
+                        <span>{{ item?.page_count_limit }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      </section>
+    </div>
+  </div>
+</div>

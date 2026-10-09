@@ -1,0 +1,1971 @@
+<div
+  class="bg-v4-main-background-color h-full flex flex-col font-peridot"
+>
+  <!-- Top Bar -->
+  <div
+    class="border border-v4-border-color bg-v4-secondary-background-color px-4 sm:px-6 py-3 rounded-2xl flex items-center justify-between"
+  >
+      <div class="flex items-center gap-3">
+        <button
+          class="p-2 hover:bg-v4-tertiary-background-color rounded-lg text-v4-secondary-text-color transition-colors"
+          (click)="goBackToUserActivity()"
+        >
+          <lucide-icon name="arrow-left" [size]="18" />
+        </button>
+        <div>
+          <h1 class="text-base font-bold text-v4-main-text-color font-peridot">
+            User Permissions For {{ selectedUser?.client_name }}
+          </h1>
+          <p class="text-xs text-v4-tertiary-text-color mt-0.5">
+            Configure access permissions for this user account
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-start gap-2 2xl:flex-row 2xl:items-center 2xl:gap-3 ml-auto">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Clone Permission'"
+          [lucideIcon]="'copy'"
+          [lucideIconSize]="14"
+          [textClasses]="'text-xs sm:text-sm font-semibold'"
+          [customClasses]="'rounded-lg px-3 sm:px-4'"
+          [toolTip]="'Copy this user\'s permissions to another user'"
+          (clickEvent)="openClonePermissionsModal()"
+        />
+
+        <div class="flex flex-col gap-2 2xl:flex-row 2xl:gap-3">
+          <label
+            class="flex items-center gap-2 cursor-pointer text-v4-main-text-color"
+          >
+            <input
+              type="checkbox"
+              id="allowViewOnly"
+              [(ngModel)]="allowViewOnlyPermission"
+              class="v4-checkbox-sm"
+              (click)="onClickViewOnlyPermissions($event.target.checked)"
+            />
+            <span class="text-sm font-medium">Allow View Only Permissions</span>
+          </label>
+
+          <label
+            class="flex items-center gap-2 cursor-pointer text-v4-main-text-color"
+          >
+            <input
+              type="checkbox"
+              id="allowAll"
+              [(ngModel)]="allowAllPermissions"
+              class="v4-checkbox-sm"
+              (click)="onClickAllowAllPermissions($event.target.checked)"
+            />
+            <span class="text-sm font-medium">Allow All Permissions</span>
+          </label>
+        </div>
+      </div>
+  </div>
+
+  <div class="flex-1 grid gap-4 py-4 xl:grid-cols-[230px_1fr] xl:grid-rows-1 overflow-auto">
+    <!-- Sidebar card -->
+    <div
+      class="custom-thin-scrollbar relative rounded-xl border border-v4-border-color bg-v4-secondary-background-color shadow-sm overflow-hidden flex flex-col"
+    >
+      <!-- Search -->
+      <div class="border-b border-v4-border-color px-3 py-2.5 shrink-0">
+        @if (loading?.fetching) {
+          <div class="skelton w-full h-8 rounded-lg"></div>
+        } @else {
+          <div class="permission-search-input">
+            <app-common-input-v4
+              [placeholder]="'Search permissions.'"
+              [isFieldRequired]="false"
+              [fieldHeight]="'32px'"
+              [(ngModel)]="searchInput"
+              (inputEvent)="getSearchedPermissions($event.value)"
+            />
+          </div>
+        }
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-thin-scrollbar">
+        <!-- Core Modules -->
+        <div>
+          <p
+            class="px-3 pt-3 pb-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-v4-tertiary-text-color"
+          >
+            Funding Source
+          </p>
+          @if (!loading?.fetching) {
+            <nav>
+              @for (
+                item of coreModules | searchFilter: searchInput;
+                track item;
+                let i = $index
+              ) {
+                <button
+                  type="button"
+                  class="permission-sidebar-item flex w-full items-center gap-2 border-b border-v4-border-color px-3 py-2.5 text-left transition-colors"
+                  [ngClass]="{
+                    'active': activeIndex === i && item.name !== 'cloudbank',
+                    'opacity-50 cursor-not-allowed': item.name === 'cloudbank',
+                    'cursor-pointer': item.name !== 'cloudbank'
+                  }"
+                  (click)="
+                    item.name !== 'cloudbank'
+                      ? tabChange(item, i, 'core')
+                      : null
+                  "
+                  [matTooltip]="item.name === 'cloudbank' ? 'Coming soon' : ''"
+                  matTooltipPosition="right"
+                >
+                  <div
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    [ngClass]="
+                      activeIndex === i
+                        ? 'bg-v4-primary-brand-color text-white'
+                        : (item.displayName | moduleMeta: moduleMeta).tileBg +
+                          ' ' +
+                          (item.displayName | moduleMeta: moduleMeta).iconColor
+                    "
+                  >
+                    <lucide-icon
+                      [name]="(item.displayName | moduleMeta: moduleMeta).icon"
+                      [size]="14"
+                    />
+                  </div>
+                  <div class="min-w-0 flex-1 pt-0.5">
+                    <p
+                      class="truncate text-[13px] font-semibold text-v4-main-text-color"
+                    >
+                      {{ item.displayName | titlecase }}
+                    </p>
+                  </div>
+                </button>
+              }
+            </nav>
+          } @else {
+            <div class="p-3 space-y-2">
+              @for (_ of [].constructor(4); track _) {
+                <div class="skelton w-full h-11 rounded-lg"></div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Other Modules -->
+        <div>
+          <p
+            class="px-3 pt-3 pb-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-v4-tertiary-text-color"
+          >
+            Other Modules
+          </p>
+          @if (!loading?.fetching) {
+            <nav>
+              @for (
+                item of otherModules | searchFilter: searchInput;
+                track item;
+                let i = $index
+              ) {
+                <button
+                  type="button"
+                  class="permission-sidebar-item flex w-full items-center gap-2 border-b border-v4-border-color px-3 py-2.5 text-left transition-colors"
+                  [ngClass]="{
+                    'active': activeIndex === coreModules.length + i && item.name !== 'cloudbank',
+                    'opacity-50 cursor-not-allowed': item.name === 'cloudbank',
+                    'cursor-pointer': item.name !== 'cloudbank'
+                  }"
+                  (click)="
+                    item.name !== 'cloudbank'
+                      ? tabChange(item, i, 'other')
+                      : null
+                  "
+                  [matTooltip]="item.name === 'cloudbank' ? 'Coming soon' : ''"
+                  matTooltipPosition="right"
+                >
+                  <div
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    [ngClass]="
+                      activeIndex === coreModules.length + i
+                        ? 'bg-v4-primary-brand-color text-white'
+                        : (item.displayName | moduleMeta: moduleMeta).tileBg +
+                          ' ' +
+                          (item.displayName | moduleMeta: moduleMeta).iconColor
+                    "
+                  >
+                    <lucide-icon
+                      [name]="(item.displayName | moduleMeta: moduleMeta).icon"
+                      [size]="14"
+                    />
+                  </div>
+                  <div class="min-w-0 flex-1 pt-0.5">
+                    <p
+                      class="truncate text-[13px] font-semibold text-v4-main-text-color"
+                    >
+                      {{ item.displayName | titlecase }}
+                    </p>
+                  </div>
+                </button>
+              }
+            </nav>
+          } @else {
+            <div class="p-3 space-y-2">
+              @for (_ of [].constructor(8); track _) {
+                <div class="skelton w-full h-11 rounded-lg"></div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Body + Save button column -->
+    <div
+      class="relative rounded-xl border border-v4-border-color bg-v4-secondary-background-color shadow-sm overflow-hidden flex flex-col"
+    >
+      <!---------------  BODY START --------------->
+      <section
+        #permissionBody
+        class="w-full flex-1 user-permission__body overflow-y-auto"
+      >
+        <!-- Loading / no-results states fill the body with h-full (was h-[calc(100vh-200px)],
+             which overflowed the body and added a scrollbar). -->
+        <div
+          class="w-full px-3 pt-1"
+          [class.h-full]="loading?.fetching || isNoResultFound"
+        >
+          @if (!loading?.fetching && !isNoResultFound) {
+            @if (selectedTab?.displayName === "Whitelist IP") {
+              <div>
+                <app-user-whitelist-ip
+                  [clientId]="client_id"
+                  [actAsChild]="true"
+                />
+              </div>
+            }
+            <ng-container>
+              <!-- Select All Start -->
+              @if (
+                !isSelectAll && selectedTab?.displayName !== "Whitelist IP"
+              ) {
+                <div
+                  class="select_all flex justify-between items-center p-2.5 mt-1"
+                >
+                  <div class="text-lg font-semibold text-v4-main-text-color">
+                    {{ selectedTab?.displayName | titlecase }}
+                    @if (!selectedTab?.displayName?.toLowerCase()?.endsWith('permissions')) {
+                      Permissions
+                    }
+                    <div class="text-xs font-normal text-v4-secondary-text-color mt-1">
+                      Configure access level and permissions for this
+                      {{ selectedTab?.displayName }} module.
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'main' }"
+                      [text]="'Clear All'"
+                      [customHeight]="'32px'"
+                      [textClasses]="'text-xs sm:text-sm font-semibold'"
+                      [customClasses]="'rounded-lg px-3 sm:px-4'"
+                      (clickEvent)="selectAll(false)"
+                    />
+                    <app-common-button-v4
+                      [type]="{ style: 'primary', name: 'main' }"
+                      [text]="'Select All'"
+                      [lucideIcon]="'check'"
+                      [lucideIconSize]="16"
+                      [customHeight]="'32px'"
+                      [textClasses]="'text-xs sm:text-sm font-semibold'"
+                      [customClasses]="'rounded-lg px-3 sm:px-4'"
+                      (clickEvent)="selectAll(true)"
+                    />
+                  </div>
+                </div>
+              }
+              @if (isSelectAll) {
+                <div class="select_all integration-page flex gap-6 pt-4">
+                  @if (isThirdPartyApss === "all") {
+                    <div class="flex gap-6">
+                      <div
+                        role="presentation"
+                        class="qb-image"
+                        (click)="showQbOnlineData(combinedPermissionList)"
+                      >
+                        <img
+                          ngSrc="assets/images/integration/qb-logo-stacked.svg"
+                          width="111"
+                          height="100"
+                          alt="qb-img"
+                        />
+                        <p>QuickBooks Online</p>
+                      </div>
+                      <div
+                        role="presentation"
+                        class="qb-image"
+                        (click)="showQbDesktopData(combinedPermissionList)"
+                      >
+                        <img
+                          ngSrc="../../../../assets/images/integration/qb-logo-stacked.svg"
+                          width="111"
+                          height="100"
+                          alt="qb-img"
+                        />
+                        <p>QuickBooks Desktop</p>
+                      </div>
+                      <div
+                        role="presentation"
+                        class="qb-image"
+                        (click)="showNetSuite(combinedPermissionList)"
+                      >
+                        <img
+                          class="!h-14"
+                          ngSrc="assets/images/integration/netsuite-color-logo.png"
+                          width="111"
+                          height="50"
+                          alt="qb-img"
+                        />
+                        <p class="pt-1 !mt-0 !-mb-5">NetSuite</p>
+                      </div>
+                    </div>
+                  }
+                  @if (isThirdPartyApss === "online") {
+                    <div class="p-2.5">
+                      <div class="flex top-row">
+                        <button aria-label="Back"
+                          class="w-10 h-10 flex items-center justify-center bg-v4-secondary-background-color hover:bg-v4-tertiary-background-color rounded-lg text-v4-main-text-color transition-colors"
+                          [matTooltip]="'Back'"
+                          (click)="goToQbMainPage()"
+                        >
+                          <lucide-icon name="arrow-left" [size]="20" />
+                        </button>
+                        <div class="qb-online-side flex">
+                          <img
+                            ngSrc="assets/images/integration/qb-logo-stacked.svg"
+                            width="111"
+                            height="100"
+                            alt="qb-img"
+                          />
+                          <p class="cash-head-label text-v4-main-text-color">
+                            QuickBooks Online
+                          </p>
+                        </div>
+                      </div>
+                      @if (isThirdPartyApss === "online") {
+                        <div class="my-4">
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="allSelectedIndex[activeIndex]"
+                              (click)="
+                                selectAll($event.target.checked, 'online')
+                              "
+                            />
+                            <span
+                              class="text-sm text-v4-main-text-color font-semibold"
+                              >Select All</span
+                            >
+                          </label>
+                        </div>
+                      }
+
+                      <div class="grid grid-cols-2 gap-3">
+                        @for (item of qbOnline; track item) {
+                          <div
+                            class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                            [ngClass]="{'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color': userPermissions[item.name]}"
+                          >
+                            <label
+                              class="flex items-center gap-2 cursor-pointer font-peridot"
+                            >
+                              <input
+                                class="v4-checkbox-sm"
+                                type="checkbox"
+                                [(ngModel)]="userPermissions[item.name]"
+                                (change)="onClickCheckBox('online')"
+                              />
+                              <span
+                                class="text-base font-semibold text-v4-main-text-color select-none"
+                                >{{ item.display_name | titlecase }}</span
+                              >
+                            </label>
+                            @if (item.description) {
+                              <div class="text-[13px] text-v4-secondary-text-color mt-1 pl-6">{{ item.description }}</div>
+                            }
+                          </div>
+                        }
+                      </div>
+                      <!-- quickbook online companies enable start -->
+                      @if (
+                        quickbookOnlineEnable &&
+                        userPermissions["quickbooks-online-export"]
+                      ) {
+                        <div class="mt-3">
+                          <div
+                            class="single-permission p-4 border border-v4-input-border-color rounded-lg"
+                            [ngClass]="{'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color': userPermissions[quickbookOnlineEnable.name]}"
+                          >
+                            <label
+                              class="flex items-center gap-2 cursor-pointer font-peridot"
+                            >
+                              <input
+                                class="v4-checkbox-sm"
+                                type="checkbox"
+                                [(ngModel)]="
+                                  userPermissions[quickbookOnlineEnable.name]
+                                "
+                                (change)="onClickCheckBox('online')"
+                              />
+                              <span class="text-base font-semibold text-v4-main-text-color select-none">{{
+                                quickbookOnlineEnable.display_name | titlecase
+                              }}</span>
+                            </label>
+                            @if (
+                              userPermissions["enable-qb-online-companies"] &&
+                              userPermissions["quickbooks-online-export"]
+                            ) {
+                              <div class="qbonline_list_container">
+                                @for (
+                                  company of companyList;
+                                  track company;
+                                  let i = $index
+                                ) {
+                                  <div>
+                                    <div
+                                      class="flex items-center justify-between px-4 py-3 mt-2 bg-v4-tertiary-background-color border border-v4-input-border-color rounded-lg cursor-pointer hover:bg-v4-secondary-background-color transition-colors"
+                                      role="presentation"
+                                      (click)="expandQbCompanyist('online', i, company, selectedCategory[i])"
+                                    >
+                                      <div class="flex items-center gap-2">
+                                        <lucide-icon name="briefcase" [size]="16" class="text-v4-secondary-text-color"></lucide-icon>
+                                        <span class="text-sm font-medium text-v4-main-text-color font-peridot">{{ company.companyName }}</span>
+                                      </div>
+                                      <lucide-icon
+                                        name="chevron-down"
+                                        [size]="16"
+                                        class="text-v4-secondary-text-color transition-transform"
+                                        [ngClass]="{'rotate-180': moreInofrmationOnlineIndex === i}"
+                                      ></lucide-icon>
+                                    </div>
+                                    @if (moreInofrmationOnlineIndex === i) {
+                                      <div class="mt-4">
+                                        <div class="flex items-center gap-2 mb-3 px-2">
+                                          <input
+                                            class="v4-checkbox-sm"
+                                            type="checkbox"
+                                            [(ngModel)]="isSelectCategory[i]"
+                                            (click)="selectAllCategory(company.categories, $event.target.checked, i)"
+                                          />
+                                          <span class="text-sm text-v4-main-text-color font-peridot">Select All</span>
+                                        </div>
+                                        <div class="angular-ocw-v4-ng-select-dropdown">
+                                          <ng-select
+                                            class="ng-dropdown-panel-v4"
+                                            [dropdownPosition]="'top'"
+                                            [multiple]="true"
+                                            [(ngModel)]="selectedCategory[i]"
+                                            [closeOnSelect]="false"
+                                            placeholder="Select the Categories"
+                                            [appendTo]="'body'"
+                                            bindLabel="name"
+                                            bindValue="id"
+                                            (change)="CategorySelect($event, i, company.categories)"
+                                          >
+                                            @for (option of company.categories; track option) {
+                                              <ng-option [value]="option.id">{{ option.name }}</ng-option>
+                                            }
+                                          </ng-select>
+                                        </div>
+                                      </div>
+                                    }
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                      <!-- quickbook online companies enable end -->
+                    </div>
+                  }
+
+                  @if (isThirdPartyApss === "desktop") {
+                    <div class="p-2.5">
+                      <div class="flex top-row">
+                        <button aria-label="Back"
+                          class="w-10 h-10 flex items-center justify-center bg-v4-secondary-background-color hover:bg-v4-tertiary-background-color rounded-lg text-v4-main-text-color transition-colors"
+                          [matTooltip]="'Back'"
+                          (click)="goToQbMainPage()"
+                        >
+                          <lucide-icon name="arrow-left" [size]="20" />
+                        </button>
+                        <div class="qb-online-side flex">
+                          <img
+                            ngSrc="assets/images/integration/qb-logo-stacked.svg"
+                            width="111"
+                            height="100"
+                            alt="qb-img"
+                          />
+                          <p class="cash-head-label text-v4-main-text-color">
+                            QuickBooks Desktop
+                          </p>
+                        </div>
+                      </div>
+                      @if (isThirdPartyApss === "desktop") {
+                        <div class="my-4">
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="allSelectedIndex[activeIndex]"
+                              (click)="
+                                selectAll($event.target.checked, 'desktop')
+                              "
+                            />
+                            <span
+                              class="text-sm text-v4-main-text-color font-semibold"
+                              >Select All</span
+                            >
+                          </label>
+                        </div>
+                      }
+                      <div class="grid grid-cols-2 gap-3">
+                        @for (item of qbDesktop; track item) {
+                          <div
+                            class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                            [ngClass]="{'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color': userPermissions[item.name]}"
+                          >
+                            <label
+                              class="flex items-center gap-2 cursor-pointer font-peridot"
+                            >
+                              <input
+                                class="v4-checkbox-sm"
+                                type="checkbox"
+                                [(ngModel)]="userPermissions[item.name]"
+                                (change)="onClickCheckBox('desktop')"
+                              />
+                              <span
+                                class="text-base font-semibold text-v4-main-text-color select-none"
+                                >{{ item.display_name | titlecase }}</span
+                              >
+                            </label>
+                            @if (item.description) {
+                              <div class="text-[13px] text-v4-secondary-text-color mt-1 pl-6">{{ item.description }}</div>
+                            }
+                          </div>
+                        }
+                      </div>
+                      <!-- quickbook desktop companies enable start -->
+                      @if (
+                        quickbookDesktopEnable &&
+                        userPermissions["quickbooks-desktop-export"]
+                      ) {
+                        <div class="mt-3">
+                          <div
+                            class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                            [ngClass]="{'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color': userPermissions[quickbookDesktopEnable.name]}"
+                          >
+                            <label
+                              class="flex items-center gap-2 cursor-pointer font-peridot"
+                            >
+                              <input
+                                class="v4-checkbox-sm"
+                                type="checkbox"
+                                [(ngModel)]="
+                                  userPermissions[quickbookDesktopEnable.name]
+                                "
+                                (change)="onClickCheckBox('desktop')"
+                              />
+                              <span class="text-base font-semibold text-v4-main-text-color select-none">{{
+                                quickbookDesktopEnable.display_name | titlecase
+                              }}</span>
+                            </label>
+                          </div>
+                        </div>
+                      }
+                      <!-- quickbook desktop companies enable end -->
+                      @if (
+                        userPermissions["enable-qb-desktop-companies"] &&
+                        userPermissions["quickbooks-desktop-export"]
+                      ) {
+                        <div class="qbonline_list_container">
+                          @for (
+                            company of desktopCompanyList;
+                            track company;
+                            let i = $index
+                          ) {
+                            <div>
+                              <div
+                                role="presentation"
+                                class="header"
+                                (click)="
+                                  expandQbCompanyist(
+                                    'desktop',
+                                    i,
+                                    company,
+                                    selectedExpenses[i]
+                                  )
+                                "
+                              >
+                                <div class="left">
+                                  <div class="logo">
+                                    <fa-icon [icon]="faBriefcase"></fa-icon>
+                                  </div>
+                                  <div class="flex company-name">
+                                    <div>
+                                      <p>{{ company.companyName }}</p>
+                                    </div>
+                                    <div>
+                                      <fa-icon [icon]="faAngleDown"></fa-icon>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              @if (moreInofrmationDesktopIndex === i) {
+                                <div>
+                                  <div class="category-company pl-6 pt-4">
+                                    <label
+                                      class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                                    >
+                                      <input
+                                        class="v4-checkbox-sm"
+                                        type="checkbox"
+                                        [(ngModel)]="isSelectExpenses[i]"
+                                        (click)="
+                                          selectAllExpenses(
+                                            company.expenses,
+                                            $event.target.checked,
+                                            i
+                                          )
+                                        "
+                                      />
+                                      <span
+                                        class="text-sm text-v4-main-text-color"
+                                        >Select All</span
+                                      >
+                                    </label>
+                                  </div>
+                                  <div
+                                    class="angular-ocw-v4-ng-select-dropdown"
+                                    id="qb-company-category"
+                                  >
+                                    <ng-select
+                                      class="ng-dropdown-panel-v4"
+                                      style="width: 200px"
+                                      [dropdownPosition]="'top'"
+                                      [multiple]="true"
+                                      [(ngModel)]="selectedExpenses[i]"
+                                      [closeOnSelect]="false"
+                                      placeholder="Select the Expense"
+                                      [appendTo]="'body'"
+                                      bindLabel="name"
+                                      bindValue="id"
+                                      (change)="
+                                        expenseSelect(
+                                          $event,
+                                          i,
+                                          company.expenses
+                                        )
+                                      "
+                                    >
+                                      @for (
+                                        option of company.expenses;
+                                        track option
+                                      ) {
+                                        <ng-option
+                                          [value]="option.encrypted_id"
+                                        >
+                                          {{ option.name }}</ng-option
+                                        >
+                                      }
+                                    </ng-select>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (isThirdPartyApss === "netsuite") {
+                    <div class="p-2.5">
+                      <div class="flex top-row">
+                        <button aria-label="Back"
+                          class="w-10 h-10 flex items-center justify-center bg-v4-secondary-background-color hover:bg-v4-tertiary-background-color rounded-lg text-v4-main-text-color transition-colors"
+                          [matTooltip]="'Back'"
+                          (click)="goToQbMainPage()"
+                        >
+                          <lucide-icon name="arrow-left" [size]="20" />
+                        </button>
+                        <div class="qb-online-side flex">
+                          <img
+                            ngSrc="assets/images/integration/netsuite-color-logo.png"
+                            width="111"
+                            height="100"
+                            alt="qb-img"
+                          />
+                          <p class="cash-head-label text-v4-main-text-color">
+                            NetSuite
+                          </p>
+                        </div>
+                      </div>
+                      @if (isThirdPartyApss === "netsuite") {
+                        <div class="my-4">
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="allSelectedIndex[activeIndex]"
+                              (click)="
+                                selectAll($event.target.checked, 'netsuite')
+                              "
+                            />
+                            <span
+                              class="text-sm text-v4-main-text-color font-semibold"
+                              >Select All</span
+                            >
+                          </label>
+                        </div>
+                      }
+
+                      <div class="grid grid-cols-2 gap-3">
+                        @for (item of netSuitePermission; track item) {
+                          <div
+                            class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                            [ngClass]="{'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color': userPermissions[item.name]}"
+                          >
+                            <label
+                              class="flex items-center gap-2 cursor-pointer font-peridot"
+                            >
+                              <input
+                                class="v4-checkbox-sm"
+                                type="checkbox"
+                                [(ngModel)]="userPermissions[item.name]"
+                                (change)="onClickCheckBox('desktop')"
+                              />
+                              <span
+                                class="text-base font-semibold text-v4-main-text-color select-none"
+                                >{{ item.display_name | titlecase }}</span
+                              >
+                            </label>
+                            @if (item.description) {
+                              <div class="text-[13px] text-v4-secondary-text-color mt-1 pl-6">{{ item.description }}</div>
+                            }
+                          </div>
+                        }
+                      </div>
+                      <!-- quickbook desktop companies enable start -->
+                      @if (
+                        quickbookDesktopEnable &&
+                        userPermissions["quickbooks-desktop-export"]
+                      ) {
+                        <div class="mt-5">
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="
+                                userPermissions[quickbookDesktopEnable.name]
+                              "
+                              (change)="onClickCheckBox('desktop')"
+                            />
+                            <span class="text-sm text-v4-main-text-color">{{
+                              quickbookDesktopEnable.display_name | titlecase
+                            }}</span>
+                          </label>
+                        </div>
+                      }
+                      <!-- quickbook desktop companies enable end -->
+
+                      @if (
+                        userPermissions["enable-qb-desktop-companies"] &&
+                        userPermissions["quickbooks-desktop-export"]
+                      ) {
+                        <div class="qbonline_list_container">
+                          @for (
+                            company of desktopCompanyList;
+                            track company;
+                            let i = $index
+                          ) {
+                            <div>
+                              <div
+                                role="presentation"
+                                class="header"
+                                (click)="
+                                  expandQbCompanyist(
+                                    'desktop',
+                                    i,
+                                    company,
+                                    selectedExpenses[i]
+                                  )
+                                "
+                              >
+                                <div class="left">
+                                  <div class="logo">
+                                    <fa-icon [icon]="faBriefcase"></fa-icon>
+                                  </div>
+                                  <div class="flex company-name">
+                                    <div>
+                                      <p>{{ company.companyName }}</p>
+                                    </div>
+                                    <div>
+                                      <fa-icon [icon]="faAngleDown"></fa-icon>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              @if (moreInofrmationDesktopIndex === i) {
+                                <div>
+                                  <div class="category-company pl-6 pt-4">
+                                    <label
+                                      class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        class="v4-checkbox-sm"
+                                        [(ngModel)]="isSelectExpenses[i]"
+                                        (click)="
+                                          selectAllExpenses(
+                                            company.expenses,
+                                            $event.target.checked,
+                                            i
+                                          )
+                                        "
+                                      />
+                                      <span
+                                        class="text-sm text-v4-main-text-color"
+                                        >Select All</span
+                                      >
+                                    </label>
+                                  </div>
+                                  <div
+                                    class="angular-ocw-v4-ng-select-dropdown"
+                                    id="qb-company-category"
+                                  >
+                                    <ng-select
+                                      class="ng-dropdown-panel-v4"
+                                      style="width: 200px"
+                                      [dropdownPosition]="'top'"
+                                      [multiple]="true"
+                                      [(ngModel)]="selectedExpenses[i]"
+                                      [closeOnSelect]="false"
+                                      placeholder="Select the Expense"
+                                      [appendTo]="'body'"
+                                      bindLabel="name"
+                                      bindValue="id"
+                                      (change)="
+                                        expenseSelect(
+                                          $event,
+                                          i,
+                                          company.expenses
+                                        )
+                                      "
+                                    >
+                                      @for (
+                                        option of company.expenses;
+                                        track option
+                                      ) {
+                                        <ng-option
+                                          [value]="option.encrypted_id"
+                                        >
+                                          {{ option.name }}</ng-option
+                                        >
+                                      }
+                                    </ng-select>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+              <!-- Select All End -->
+
+              <!----------------------------------------  PERMISSIONS START   ------------------------------------------>
+
+              <!-- Normal Start -->
+              @if (activeListPermission?.normal?.length) {
+                <div class="p-2.5 pt-1.5">
+                  <div class="permissions grid grid-cols-2 gap-3">
+                    @for (item of activeListPermission?.normal; track item) {
+                      @if (item.display_name !== "Direct Deposit") {
+                        <div
+                          class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                          [ngClass]="{
+                            'col-span-2':
+                              isVirtualCard &&
+                              (item.name === 'virtualcard-create' ||
+                                item.name === 'virtualcard-update-settings'),
+                            'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                              userPermissions[item.name]
+                          }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              type="checkbox"
+                              class="v4-checkbox-sm"
+                              [(ngModel)]="userPermissions[item.name]"
+                              (change)="onClickCheckBox()"
+                              [disabled]="
+                                blankCheckActivated &&
+                                item.name === 'check-create'
+                              "
+                            />
+                            <span
+                              class="text-base font-semibold text-v4-main-text-color select-none"
+                              >{{ item.display_name | titlecase }}</span
+                            >
+                          </label>
+                          <div
+                            class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                          >
+                            {{ item.description }}
+                          </div>
+                          @if (
+                            isVirtualCard &&
+                            ((item.name === "virtualcard-create" &&
+                              userPermissions["virtualcard-create"]) ||
+                              (item.name === "virtualcard-update-settings" &&
+                                userPermissions["virtualcard-update-settings"]))
+                          ) {
+                            @if (item.name === "virtualcard-create") {
+                              <div
+                                class="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-6 pt-2"
+                              >
+                                @for (
+                                  item of createVirtualCardTypeRestrictions;
+                                  track item.id
+                                ) {
+                                  <div
+                                    class="single-permission p-2 border border-v4-input-border-color rounded-lg"
+                                  >
+                                    <label
+                                      class="flex items-center space-x-2 cursor-pointer"
+                                      role="presentation"
+                                      (change)="onClickCheckBox()"
+                                    >
+                                      <input
+                                        class="v4-checkbox-sm"
+                                        type="checkbox"
+                                        [(ngModel)]="userPermissions[item.name]"
+                                      />
+                                      <span
+                                        class="text-sm font-semibold text-v4-main-text-color"
+                                      >
+                                        {{ item.display_name | titlecase }}
+                                      </span>
+                                    </label>
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <div
+                                class="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-6 pt-2"
+                              >
+                                @for (
+                                  item of updateVirtualCardTypeRestrictions;
+                                  track item.id
+                                ) {
+                                  <div
+                                    class="single-permission p-2 border border-v4-input-border-color rounded-lg"
+                                  >
+                                    <label
+                                      class="flex items-center space-x-2 cursor-pointer"
+                                      role="presentation"
+                                      (change)="onClickCheckBox()"
+                                    >
+                                      <input
+                                        class="v4-checkbox-sm"
+                                        type="checkbox"
+                                        [(ngModel)]="userPermissions[item.name]"
+                                      />
+                                      <span
+                                        class="text-sm font-semibold text-v4-main-text-color"
+                                      >
+                                        {{ item.display_name | titlecase  }}
+                                      </span>
+                                    </label>
+                                  </div>
+                                }
+                              </div>
+                            }
+                          }
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+              <!-- Normal End -->
+
+              <!-- Direct deposit section start -->
+              @if (activeListPermission?.normal?.length) {
+              <div class="px-2.5 pb-2.5">
+                @for (item of activeListPermission?.normal; track item) {
+                  <div class="grid grid-cols-2 gap-3">
+                    @if (item.display_name === "Direct Deposit") {
+                      <div
+                        class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                        [ngClass]="{
+                          'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                            userPermissions[item.name]
+                        }"
+                      >
+                        <label
+                          class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                        >
+                          <input
+                            type="checkbox"
+                            class="v4-checkbox-sm"
+                            [(ngModel)]="userPermissions[item.name]"
+                            (change)="onClickCheckBox()"
+                          />
+                          <span
+                            class="text-base font-semibold text-v4-main-text-color select-none"
+                            >{{ item.display_name | titlecase }}
+                          </span>
+                        </label>
+                        <div
+                          class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                        >
+                          {{ item.description }}
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+              }
+              <!-- Direct deposit section end -->
+
+              <!-- Special (ap) Start -->
+              @if (activeListPermission?.ap?.length) {
+              <div
+                class="check_box_container flex flex-col gap-3 px-2.5 pb-2.5"
+              >
+                @for (item of activeListPermission?.ap; track item) {
+                  <div
+                    class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                    [ngClass]="{
+                      'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                        userPermissions[item.name]
+                    }"
+                  >
+                    <label
+                      class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                    >
+                      <input
+                        class="v4-checkbox-sm"
+                        type="checkbox"
+                        [(ngModel)]="userPermissions[item.name]"
+                        (click)="
+                          onClickSpecialPermission(item, $event.target.checked)
+                        "
+                        (change)="onClickCheckBox()"
+                      />
+                      <span
+                        class="text-base font-semibold text-v4-main-text-color select-none"
+                        [matTooltip]="item.description"
+                        matTooltipPosition="left"
+                        >{{ item.display_name | titlecase }}
+                      </span>
+                    </label>
+                    <div
+                      class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                    >
+                      {{ item.description }}
+                    </div>
+                  </div>
+                }
+              </div>
+              }
+              <!-- Special (ap) End -->
+
+              <!-- Special (sp) Start -->
+              @if (activeListPermission?.sp?.length) {
+              <div
+                class="special-check-section mx-2.5 mb-4"
+                [ngClass]="{
+                  'border border-v4-input-border-color mx-2.5 pt-0 pb-0 rounded-lg':
+                    activeListPermission?.sp?.length
+                }"
+              >
+                @for (item of activeListPermission?.sp; track item) {
+                  <div
+                    class="special-permission-check-items p-3"
+                    [ngClass]="{
+                      'bg-v4-insight-card-background-blue border !border-v4-primary-brand-bold-color rounded-lg':
+                        userPermissions[item.name] && !isBankAccount(item.name)
+                    }"
+                  >
+                    <label
+                      class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                    >
+                      <input
+                        type="checkbox"
+                        class="v4-checkbox-sm"
+                        [(ngModel)]="userPermissions[item.name]"
+                        (click)="
+                          onClickSpecialPermission(item, $event.target.checked)
+                        "
+                        (change)="onClickCheckBox()"
+                      />
+                      <span
+                        class="text-base font-semibold text-v4-main-text-color select-none"
+                        [matTooltip]="item.description"
+                        matTooltipPosition="right"
+                        >{{ item.display_name | titlecase }}
+                      </span>
+                    </label>
+                    <div
+                      class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                    >
+                      {{ item.description }}
+                    </div>
+                  </div>
+                  @if (
+                    item.name === "payee-accounts" &&
+                    showPayeeTable[item.name] &&
+                    !userPermissions[
+                      "only-show-selected-payees-and-payees-created-by-this-user"
+                    ] &&
+                    !userPermissions["only-show-payees-client-account"]
+                  ) {
+                    <div class="">
+                      <app-user-permission-payee-v4
+                        [permissionName]="'payee-accounts'"
+                        [userId]="client_id"
+                        (rowClicked)="onRowClicked($event)"
+                      />
+                    </div>
+                  }
+                  @if (
+                    item.name ===
+                      "only-show-selected-payees-and-payees-created-by-this-user" &&
+                    userPermissions[item.name]
+                  ) {
+                    <div class="">
+                      <app-user-permission-payee-v4
+                        [permissionName]="'payee-accounts'"
+                        [userId]="client_id"
+                        (rowClicked)="onRowClicked($event)"
+                      />
+                    </div>
+                  }
+                  @if (
+                    (item.name === "wallet-accounts" ||
+                      item.name === "virtualcard-wallet-creation" ||
+                      item.name === "international-payment-wallets") &&
+                    showBankDropDowns[item.name]
+                  ) {
+                    <div class="">
+                      <app-user-permission-wallet-v4
+                        [permissionName]="item.name"
+                        (rowClicked)="onRowClicked($event)"
+                      />
+                    </div>
+                  }
+                  @if (
+                    item.name === "can-i-see-specific-user-data" &&
+                    userPermissions[item.name]
+                  ) {
+                    <div class="p-2.5 angular-ocw-v4-ng-select-dropdown">
+                      <ng-select
+                        class="ng-dropdown-panel-v4"
+                        style="width: 200px"
+                        [multiple]="true"
+                        [closeOnSelect]="false"
+                        [placeholder]="'Select Users'"
+                        [(ngModel)]="selectedUsers"
+                        bindLabel="client_name"
+                        [searchable]="true"
+                        [items]="filteredUsers"
+                      >
+                        <ng-option [value]="item">
+                          <ng-template ng-option-tmp let-item="item">
+                            <input
+                              id="item-{{ index }}"
+                              type="checkbox"
+                              class="v4-checkbox-sm"
+                              [ngModel]="isUserSelected(item)"
+                            />
+                            <span class="pl-2">{{ item.client_name }}</span>
+                          </ng-template>
+                        </ng-option>
+                        <ng-template ng-loadingspinner>
+                          <div class="flex justify-center p-2">
+                            <lucide-icon
+                              name="loader-circle"
+                              [size]="18"
+                              class="animate-spin text-v4-primary-brand-color"
+                            />
+                          </div>
+                        </ng-template>
+                        <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+                          @for (item of selectedUsers; track item) {
+                            <div class="ng-value">
+                              <span class="ng-value-label font-peridot text-xs text-v4-main-text-color truncate max-w-[120px]">
+                                {{ item.client_name }}
+                              </span>
+                              <span
+                                class="ng-value-icon right text-v4-secondary-text-color hover:text-v4-main-text-color"
+                                aria-hidden="true"
+                                (click)="clearItem(item.client_id)"
+                                >&times;</span
+                              >
+                            </div>
+                          }
+                        </ng-template>
+                      </ng-select>
+                    </div>
+                  }
+                  @if (
+                    isBankAccount(item.name) &&
+                    showBankDropDowns[item.name] &&
+                    item.name !== "payee-accounts" &&
+                    item.name !== "wallet-accounts" &&
+                    item.name !== "virtualcard-wallet-creation" &&
+                    item.name !== "international-payment-wallets"
+                  ) {
+                    @if (item.name === "cashexpense-bank-accounts") {
+                      <div class="bank_permission_wrapper px-5 pl-9 pt-2">
+                        <div class="tab flex gap-2 mb-3">
+                          @for (item of bankTabLabels; track item) {
+                            <p
+                              class="text-sm font-semibold text-v4-main-text-color cursor-pointer pb-1.5"
+                              role="presentation"
+                              (click)="selectBankType(item.value)"
+                              [ngClass]="{
+                                '!border-b-2 !border-v4-primary-brand-bold-color !text-v4-primary-brand-bold-color':
+                                  bankType === item.value
+                              }"
+                            >
+                              {{ item.name }}
+                            </p>
+                          }
+                        </div>
+                        <!--  Bank Account List Start  -->
+                        @if (bankType === "bank") {
+                          <app-user-permission-bank-account-v4
+                            [permissionName]="'cashexpense-bank-accounts'"
+                            (rowClicked)="onRowClicked($event)"
+                          />
+                        }
+                        <!--  Bank Account List End  -->
+                        <!--  Cash Account List Start  -->
+                        @if (bankType === "cash") {
+                          <div class="cash_list_container mt-8">
+                            <div
+                              class="cash-expense_account flex justify-between items-center p-3 bg-v4-secondary-background-color border border-v4-input-border-color text-v4-main-text-color rounded-lg"
+                            >
+                              <p
+                                class="cash-head-label text-base font-semibold"
+                              >
+                                Cash Expense Account
+                              </p>
+                              <p class="total-cash-length text-sm">
+                                Total Accounts: {{ cashAccountList.length }}
+                              </p>
+                            </div>
+                            <div
+                              class="permissions mt-3 grid grid-cols-3 gap-3"
+                            >
+                              @for (cash of cashAccountList; track cash) {
+                                <div
+                                  class="single-permission p-1.5 border border-v4-input-border-color rounded-lg"
+                                  [ngClass]="{ 'card-item-selected': selectedBanks[item.name][cash.id] }"
+                                >
+                                  <label
+                                    class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      class="v4-checkbox-sm"
+                                      [(ngModel)]="
+                                        selectedBanks[item.name][cash.id]
+                                      "
+                                      (change)="onClickCheckBox(item.name)"
+                                    />
+                                    <span
+                                      class="text-sm font-semibold text-v4-main-text-color"
+                                      [title]="cash.name"
+                                      >{{ cash.name }}</span
+                                    >
+                                  </label>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                        <!--  Cash Account List End  -->
+                      </div>
+                    } @else {
+                      <div class="">
+                        <app-user-permission-bank-account-v4
+                          [permissionName]="item.name"
+                          (rowClicked)="onRowClicked($event)"
+                        />
+                      </div>
+                    }
+                  }
+                  @if (item.name === 'bankaccount-view-all' && !userPermissions['bankaccount-view-all']) {
+                    <div class="">
+                      <app-user-permission-bank-account-v4
+                        [permissionName]="'bankaccount'"
+                        (rowClicked)="onRowClicked($event)"
+                      />
+                    </div>
+                  }
+                }
+              </div>
+              }
+              <!-- Special (sp) End -->
+
+              <!----------------------------------------  PERMISSIONS END   ------------------------------------------>
+
+              <!----------------------------------------  SUB SECTION START   ------------------------------------------>
+              @if (activeListSubSection) {
+                @for (item of activeListSubSection; track item) {
+                  <div class="special-permission-check-items">
+                    <div
+                      class="sub_section_heading p-2 bg-v4-border-color rounded-lg my-3 mx-2.5"
+                    >
+                      <p
+                        class="text-base font-medium text-v4-main-text-color font-peridot"
+                      >
+                        {{ item.displayName }}
+                      </p>
+                    </div>
+                    <!-- Normal Start -->
+
+                    @if (item.name === "payment-restriction") {
+                      <div class="flex gap-3 justify-between mx-2.5 pb-3">
+                        <div
+                          class="border border-v4-input-border-color rounded-lg p-3 w-full"
+                          [ngClass]="{
+                            'pointer-events-none opacity-40':
+                              !userPermissions[
+                                'is-approval-required-for-printing'
+                              ] &&
+                              !userPermissions['is-approval-required-for-ach'],
+                            'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                              userPermissions['enable-check-email-notification']
+                          }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              type="checkbox"
+                              class="v4-checkbox-sm"
+                              [(ngModel)]="
+                                userPermissions[
+                                  'enable-check-email-notification'
+                                ]
+                              "
+                            />
+                            <span
+                              class="span text-sm text-v4-main-text-color cursor-pointer"
+                              >Enable Email Notification for Admin</span
+                            >
+                          </label>
+                          <span
+                            class="text-[13px] text-v4-secondary-text-color mt-1 block pl-6"
+                            >Receive an email notification when your user creates payments</span
+                          >
+                        </div>
+                        <div
+                          class="border border-v4-input-border-color rounded-lg p-3 w-full"
+                          [ngClass]="{
+                            'pointer-events-none opacity-40':
+                              !userPermissions[
+                                'is-approval-required-for-printing'
+                              ] &&
+                              !userPermissions['is-approval-required-for-ach'],
+                            'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                              userPermissions['enable-check-email-notification-user']
+                          }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              type="checkbox"
+                              class="v4-checkbox-sm"
+                              [(ngModel)]="
+                                userPermissions[
+                                  'enable-check-email-notification-user'
+                                ]
+                              "
+                            />
+                            <span
+                              class="span text-sm text-v4-main-text-color cursor-pointer"
+                              >Enable Email Notification for User</span
+                            >
+                          </label>
+                          <span
+                            class="text-[13px] text-v4-secondary-text-color mt-1 block pl-6"
+                            >Receive an email notification when payments are approved by the admin.</span
+                          >
+                        </div>
+                      </div>
+                    }
+                    <div class="permissions grid grid-cols-2 gap-3 mx-2.5 pb-3">
+                      @for (normal of item.permissions?.normal; track normal) {
+                        <div
+                          class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                          [ngClass]="{
+                            'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                              userPermissions[normal.name]
+                          }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[normal.name]"
+                              (change)="onClickCheckBox()"
+                            />
+                            <span
+                              class="text-base font-semibold text-v4-main-text-color"
+                              >{{ normal.display_name | titlecase }}</span
+                            >
+                          </label>
+                          <div
+                            class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                          >
+                            {{ normal.description }}
+                          </div>
+                          @if (
+                            userPermissions["is-approval-required-for-ach"] &&
+                            normal.name === "is-approval-required-for-ach"
+                          ) {
+                            <div>
+                              <div
+                                class="m-4 ml-5"
+                                matTooltip="Processing ACH requires approval from the administrator if the user creates an ACH greater than this specified amount."
+                              >
+                                <app-common-input-v4
+                                  [fieldLabel]="'ACH Amount Limit'"
+                                  [placeholder]="'0.00'"
+                                  [customMask]="'separator.2'"
+                                  [maxLength]="9"
+                                  [isNumberOnly]="true"
+                                  [control]="achTransactionLimit"
+                                  [formControl]="achTransactionLimit"
+                                  (inputFocusOutEvent)="onBlurAch($event)"
+                                />
+                              </div>
+                            </div>
+                          }
+                          @if (
+                            userPermissions[
+                              "is-approval-required-for-printing"
+                            ] &&
+                            normal.name === "is-approval-required-for-printing"
+                          ) {
+                            <div
+                              class="m-4 ml-5"
+                              matTooltip="Processing checks requires approval from the administrator if the user creates a check greater than this specified amount."
+                            >
+                              <app-common-input-v4
+                                [fieldLabel]="'Check Amount Limit'"
+                                [placeholder]="'0.00'"
+                                [customMask]="'separator.2'"
+                                [maxLength]="9"
+                                [isNumberOnly]="true"
+                                [control]="checkTransactionLimit"
+                                [formControl]="checkTransactionLimit"
+                                (inputFocusOutEvent)="onBlur($event)"
+                              />
+                            </div>
+                          }
+                          <div></div>
+                        </div>
+                      }
+                    </div>
+                    <!-- Normal End -->
+                    <!-- Special (ap) Start -->
+                    <div
+                      class="special-check-section check_box_container flex flex-col gap-3 mx-2.5"
+                      [ngClass]="{ 'pt-3': item.permissions?.ap?.length }"
+                    >
+                      @for (ap of item.permissions?.ap; track ap) {
+                        <div
+                          class="special-permission-check-items p-3 border border-v4-input-border-color rounded-lg"
+                          [ngClass]="{
+                            'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                              userPermissions[ap.name]
+                          }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[ap.name]"
+                              (change)="onClickCheckBox()"
+                            />
+                            <span
+                              [matTooltip]="ap.description"
+                              matTooltipPosition="left"
+                              class="text-base font-semibold text-v4-main-text-color"
+                              >{{ ap.display_name | titlecase }}
+                            </span>
+                          </label>
+                          <div
+                            class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                          >
+                            {{ ap.description }}
+                          </div>
+                        </div>
+                      }
+                    </div>
+                    <!-- Special (ap) End -->
+                    <!-- Special (sp) Start -->
+                    <div
+                      class="check_box_container flex flex-col gap-3 mx-2.5 pb-3"
+                      [ngClass]="{ 'pt-3': item.permissions?.sp?.length }"
+                    >
+                      @for (sp of item.permissions?.sp; track sp) {
+                        <div
+                          class="special-permission-check-items p-3 border border-v4-input-border-color rounded-lg"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[sp.name]"
+                              (change)="onClickCheckBox()"
+                              (click)="
+                                onClickSpecialPermission(
+                                  sp,
+                                  $event.target.checked
+                                )
+                              "
+                            />
+                            <span
+                              [matTooltip]="sp.description"
+                              matTooltipPosition="left"
+                              class="text-base font-semibold text-v4-main-text-color select-none"
+                            >
+                              {{ sp.display_name | titlecase }}
+                            </span>
+                          </label>
+                          <div
+                            class="text-[13px] text-v4-secondary-text-color mt-1 pl-6"
+                          >
+                            {{ sp.description }}
+                          </div>
+                          <div>
+                            @if (
+                              enableBillEmail &&
+                              sp.name ===
+                                "is-approval-required-for-printing-bills"
+                            ) {
+                              <label
+                                class="flex items-center space-x-2 ml-6 mt-2 cursor-pointer"
+                              >
+                                <input
+                                  class="v4-checkbox-sm"
+                                  type="checkbox"
+                                  [(ngModel)]="
+                                    userPermissions[
+                                      'enable-bill-email-notification'
+                                    ]
+                                  "
+                                />
+                                <span
+                                  class="text-sm text-v4-main-text-color"
+                                  matTooltip="Receive an email notification when your user create bills."
+                                  matTooltipPosition="right"
+                                  >Enable Email Notification</span
+                                >
+                              </label>
+                            }
+                          </div>
+                          @if (
+                            isBankAccount(sp.name) && showBankDropDowns[sp.name]
+                          ) {
+                            <app-user-permission-bank-account-v4
+                              [permissionName]="sp.name"
+                              (rowClicked)="onRowClicked($event)"
+                            />
+                          }
+                        </div>
+                      }
+                    </div>
+                    <!-- Special (sp) End -->
+                  </div>
+                }
+              }
+
+
+              @if (isCloudBankSelected) {
+                <div
+                  class="normal-check-section check_box_container mb-5 mx-2.5"
+                >
+                  <div class="normal-permission-section">
+                    @if (cloudPaymentRequests?.permissions?.normal?.length) {
+                      <div class="permissions grid grid-cols-2 gap-3">
+                        @for (
+                          item of cloudPaymentRequests?.permissions?.normal;
+                          track item
+                        ) {
+                          <div
+                            class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                            [ngClass]="{
+                              'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                                userPermissions[item?.name]
+                            }"
+                          >
+                            <label
+                              class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                            >
+                              <input
+                                class="v4-checkbox-sm"
+                                type="checkbox"
+                                [(ngModel)]="userPermissions[item?.name]"
+                                (change)="onClickCheckBox()"
+                              />
+                              <span
+                                class="select-none text-base font-semibold text-v4-main-text-color"
+                                >{{ item?.display_name | titlecase }}</span
+                              >
+                            </label>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="cloud_transaction_limit mx-2.5">
+                  <label
+                    class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                  >
+                    <input
+                      class="v4-checkbox-sm"
+                      type="checkbox"
+                      [(ngModel)]="isTransitionLimitSet"
+                      (change)="checkTranslimit()"
+                    />
+                    <span class="text-sm text-v4-main-text-color font-semibold"
+                      >Set Transaction Limit (for CHECK, ACH, WIRE and GIFT
+                      CARD)
+                    </span>
+                  </label>
+                  <div class="pl-5 mt-2">
+                    <div
+                      class="my-2"
+                      [ngClass]="
+                        isTransitionLimitSet
+                          ? ''
+                          : 'opacity-50 pointer-events-none'
+                      "
+                    >
+                      <app-common-input-v4
+                        [fieldLabel]="'Transaction Limit'"
+                        [placeholder]="'0.00'"
+                        [customMask]="'separator.2'"
+                        [maxLength]="14"
+                        [isNumberOnly]="true"
+                        [numberType]="'decimal'"
+                        [control]="cloudTransactionLimit"
+                        [formControl]="cloudTransactionLimit"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <!-- cloud bank account list start -->
+                @if (cloudBankAccountsEnable) {
+                  <div class="cloud_transaction_limit mx-2.5 mt-3">
+                    <label
+                      class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                    >
+                      <input
+                        class="v4-checkbox-sm"
+                        type="checkbox"
+                        [(ngModel)]="
+                          userPermissions[cloudBankAccountsEnable.name]
+                        "
+                        (change)="onClickCheckCloudBankAccounts()"
+                      />
+                      <span
+                        class="text-sm text-v4-main-text-color font-semibold"
+                        >{{
+                          cloudBankAccountsEnable.display_name | titlecase
+                        }}</span
+                      >
+                    </label>
+                  </div>
+                }
+                @if (userPermissions["cloudbank-bank-accounts"]) {
+                  <div
+                    class="cloud-bank-account-permissions special-permission-check-items mx-2.5 mt-3 p-3 border border-v4-input-border-color rounded-lg"
+                  >
+                    <div class="sub_section_heading flex justify-between mb-3">
+                      <p
+                        class="text-base font-semibold text-v4-main-text-color"
+                      >
+                        {{ cloudBankAccountLists?.displayName }}
+                      </p>
+                      <p class="text-sm text-v4-secondary-text-color">
+                        Total Accounts:
+                        {{ cloudBankAccountLists?.accounts?.length }}
+                      </p>
+                    </div>
+                    <!-- Accounts Start -->
+                    <div class="cloudbank-accounts-select mb-3">
+                      <label
+                        class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                      >
+                        <input
+                          class="v4-checkbox-sm"
+                          type="checkbox"
+                          [(ngModel)]="selectAllCloudBankAccounts"
+                          (change)="onClickCheckCloudBankAccounts()"
+                        />
+                        <span
+                          class="text-sm text-v4-main-text-color font-semibold"
+                          >Select All</span
+                        >
+                      </label>
+                    </div>
+                    <div class="permissions grid grid-cols-3 gap-3">
+                      @for (
+                        account of cloudBankAccountLists?.accounts;
+                        track account
+                      ) {
+                        <div
+                          class="single-permission p-1.5 border border-v4-input-border-color rounded-lg"
+                          [ngClass]="{
+                            'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                              checkedCloudBankIds[account.id]
+                          }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="checkedCloudBankIds[account.id]"
+                              (change)="isSeletedAllCloudBankAccounts()"
+                            />
+                            <span
+                              class="select-none text-sm text-v4-main-text-color"
+                              >{{ account.name }}</span
+                            >
+                          </label>
+                        </div>
+                      }
+                    </div>
+                    <!-- Accounts End -->
+                  </div>
+                }
+                <!-- cloud bank account list end -->
+              }
+
+              @if (
+                isSelectPayee &&
+                payeeTypeRestrictions &&
+                (userPermissions["payee-create"] ||
+                  userPermissions["payee-update"])
+              ) {
+                <div class="special-permission-check-items">
+                  <!-- Payee Type Restriction Checkbox -->
+                  <div class="p-2.5">
+                    <div
+                      class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                    [ngClass]="{
+                      'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                        userPermissions[payeeTypeRestrictions.name]
+                    }"
+                    >
+                      <label
+                        class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                      >
+                        <input
+                          class="v4-checkbox-sm"
+                          type="checkbox"
+                          [(ngModel)]="
+                            userPermissions[payeeTypeRestrictions.name]
+                          "
+                          (change)="
+                            onClickPayeeRestriction($event.target.checked)
+                          "
+                        />
+                        <span
+                          class="text-base font-semibold text-v4-main-text-color"
+                        >
+                          {{ payeeTypeRestrictions.display_name | titlecase }}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div
+                    class="sub_section_heading p-2 bg-v4-border-color rounded-lg my-3 mx-2.5"
+                  >
+                    <p
+                      class="text-base font-medium text-v4-main-text-color font-peridot"
+                    >
+                      Payee Types
+                    </p>
+                  </div>
+                  <div class="permissions grid grid-cols-2 gap-3 mx-2.5">
+                    @for (item of payeeTypes; track item) {
+                      <div
+                        class="single-permission p-3 border border-v4-input-border-color rounded-lg"
+                        [ngClass]="{
+                          'bg-v4-insight-card-background-blue !border-v4-primary-brand-bold-color':
+                            userPermissions[item.name]
+                        }"
+                      >
+                        <label
+                          class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                        >
+                          <input
+                            class="v4-checkbox-sm"
+                            type="checkbox"
+                            [disabled]="
+                              !userPermissions['payee-type-restriction']
+                            "
+                            [(ngModel)]="userPermissions[item.name]"
+                            (change)="onClickCheckBox()"
+                          />
+                          <span
+                            class="text-base font-semibold text-v4-main-text-color"
+                          >
+                            {{ item.display_name | titlecase }}
+                          </span>
+                        </label>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (activeId === "creditcard") {
+                <div class="p-2.5 pt-4 transition-all duration-500 ease-in-out overflow-hidden"
+                [ngClass]="{
+                  'max-h-0 opacity-0 !p-0': userPermissions['creditcard-view-all'],
+                  'max-h-screen opacity-100': !userPermissions['creditcard-view-all']
+                }"
+                >
+                  <div
+                    class="bg-v4-tertiary-background-color border border-v4-input-border-color rounded-lg"
+                  >
+                    <p
+                      class="cards_label p-3 text-base font-semibold text-v4-main-text-color"
+                    >
+                      Cards
+                    </p>
+                    <div
+                      class="permissions grid grid-cols-3 gap-3 bg-v4-secondary-background-color border-t border-v4-input-border-color p-3"
+                    >
+                      @for (card of cardsList; track card) {
+                        <div
+                          class="single-permission text-sm text-v4-secondary-text-color p-1.5 border border-v4-input-border-color rounded-lg"
+                          [ngClass]="{ 'card-item-selected': userCards[card.id] }"
+                        >
+                          <label
+                            class="flex items-center gap-2 cursor-pointer font-peridot text-sm text-v4-main-text-color"
+                          >
+                            <input
+                              class="v4-checkbox-sm"
+                              type="checkbox"
+                              [(ngModel)]="userCards[card.id]"
+                              (change)="onClickCheckBox()"
+                            />
+                            <span class="text-v4-main-text-color"
+                              >{{ card.name }}
+                            </span>
+                          </label>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!----------------------------------------  SUB SECTION END   ------------------------------------------>
+            </ng-container>
+          }
+          @if (isNoResultFound) {
+            <div
+              class="h-full flex flex-col justify-center items-center px-5"
+            >
+              <img
+                src="assets/images/warning/empty-activity.svg"
+                alt="Data not found"
+              />
+              <div
+                class="text-base font-normal font-peridot text-v4-main-text-color"
+              >
+                Sorry, No results found.
+              </div>
+            </div>
+          }
+
+          @if (loading?.fetching) {
+            <div
+              class="flex flex-col items-center justify-center h-full gap-3"
+            >
+              <lucide-icon
+                name="loader-circle"
+                [size]="32"
+                class="animate-spin text-v4-primary-brand-color"
+              />
+              <span class="text-sm text-v4-secondary-text-color font-peridot"
+                >Loading permissions...</span
+              >
+            </div>
+          }
+        </div>
+      </section>
+      <!---------------  BODY END --------------->
+    </div>
+  </div>
+  @if (!loading?.fetching && !isNoResultFound) {
+    <div
+      class="sticky bottom-0 z-20 border-t border-v4-border-color bg-v4-secondary-background-color px-4 pb-4 pt-4 shadow-[0_-8px_16px_-12px_rgba(15,23,42,0.35)]"
+    >
+    <div class="flex justify-end">
+      <app-common-button-v4
+        class="w-1/2"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Save Permissions'"
+        [lucideIcon]="'check'"
+        [lucideIconSize]="16"
+        [customHeight]="'48px'"
+        [textClasses]="'text-sm font-semibold'"
+        [customClasses]="'rounded-xl px-5'"
+        [disabled]="loading?.submiting"
+        [loading]="loading?.submiting"
+        (clickEvent)="onSubmit()"
+        width="100%"
+      />
+    </div>
+    </div>
+  }
+</div>

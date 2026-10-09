@@ -1,0 +1,333 @@
+<div class="flex flex-col">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-3">
+      @if (!open) {
+        <div
+          role="button"
+          (click)="back()"
+          class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+        >
+          <lucide-icon
+            [img]="ChevronLeftIcon"
+            [size]="18"
+            class="text-v4-subtle-text-color"
+          ></lucide-icon>
+        </div>
+      }
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          @if (!open && !isTabClicked) {
+            Connect New
+          } @else {
+            Import Payments
+          }
+        </h1>
+      </div>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="bg-v4-tertiary-background-color"
+    [ngClass]="isTabClicked ? 'overflow-hidden' : 'overflow-auto p-6'"
+  >
+    <!-- Main listing view -->
+    @if (open && !isTabClicked) {
+      @if (loading) {
+        <div class="flex flex-col items-center justify-center h-64 gap-3">
+          <lucide-icon
+            [img]="LoaderCircleIcon"
+            [size]="36"
+            class="animate-spin text-v4-primary-brand-color"
+          />
+          <span class="text-sm text-v4-subtle-text-color"
+            >Loading integrations...</span
+          >
+        </div>
+      } @else {
+        <div>
+          <div class="overflow-auto h-[500px]">
+            <!-- Connected Apps -->
+            @if (tabsArrays().length > 0) {
+              <div class="mb-6">
+                <h3
+                  class="text-sm font-semibold text-v4-secondary-text-color mb-3 m-0"
+                >
+                  Connected Apps
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  @for (tab of tabsArrays(); track tab.id; let i = $index) {
+                    <button
+                      (click)="selectTab(tab, i); activeLink = tab.name"
+                      class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-v4-input-border-color hover:border-v4-primary-brand-color hover:bg-v4-secondary-background-color transition-all min-h-[140px] gap-1.5 cursor-pointer bg-v4-secondary-background-color"
+                    >
+                      <div
+                        class="w-12 h-12 mb-2 flex items-center justify-center"
+                      >
+                        @if (tab.id === "importexcel") {
+                          <lucide-icon
+                            [img]="FileSpreadsheetIcon"
+                            [size]="32"
+                            class="text-v4-common-green-color"
+                          ></lucide-icon>
+                        } @else {
+                          <img
+                            [src]="tab.icon"
+                            [alt]="tab.name"
+                            class="w-10 h-10 object-contain"
+                            [style.width]="tab.imgWidth || '52px'"
+                          />
+                        }
+                      </div>
+                      <span
+                        class="text-xs font-medium text-v4-main-text-color text-center"
+                        >{{ tab.name }}</span
+                      >
+                      @if (tab.id !== "importexcel") {
+                        <span
+                          class="text-[12px] text-v4-common-green-color font-medium"
+                          >Connected</span
+                        >
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Connect New -->
+            <div class="mb-6">
+              <div
+                class="flex items-center gap-3 mb-3 sticky top-0 z-10 py-2 bg-v4-tertiary-background-color"
+              >
+                <h3
+                  class="text-sm font-semibold text-v4-secondary-text-color m-0"
+                >
+                  Connect New
+                </h3>
+                <div class="relative w-[240px] shrink-0">
+                  <lucide-icon
+                    [img]="SearchIcon"
+                    [size]="16"
+                    class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-v4-tertiary-text-color"
+                  ></lucide-icon>
+                  <input
+                    type="text"
+                    placeholder="Search integrations..."
+                    [(ngModel)]="searchQuery"
+                    class="pl-10 pr-8 w-full h-10 rounded-lg text-sm text-v4-main-text-color placeholder:text-v4-placeholder-text-color bg-v4-secondary-background-color border border-v4-input-border-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-primary-brand-color focus-visible:ring-offset-1 transition-all duration-200"
+                  />
+                  @if (searchQuery) {
+                    <button
+                      type="button"
+                      (click)="clearSearch()"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-v4-tertiary-text-color hover:text-v4-main-text-color"
+                    >
+                      <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
+                    </button>
+                  }
+                </div>
+              </div>
+              @if (
+                tabsNotconenctedArrays().length > 0 ||
+                filteredComingSoonApps().length > 0
+              ) {
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <!-- Disconnected apps -->
+                  @for (
+                    tab of tabsNotconenctedArrays();
+                    track tab.id;
+                    let i = $index
+                  ) {
+                    <button
+                      (click)="selectTab(tab, i); activeLink = tab.name"
+                      class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-v4-input-border-color hover:border-v4-primary-brand-color hover:bg-v4-secondary-background-color transition-all min-h-[155px] gap-1.5 cursor-pointer bg-v4-secondary-background-color"
+                    >
+                      <div
+                        class="w-12 h-12 mb-2 flex items-center justify-center"
+                      >
+                        <img
+                          [src]="tab.icon"
+                          [alt]="tab.name"
+                          class="w-10 h-10 object-contain"
+                          [style.width]="tab.imgWidth || '52px'"
+                        />
+                      </div>
+                      <span
+                        class="text-xs font-medium text-v4-main-text-color text-center"
+                        >{{ tab.name }}</span
+                      >
+                      <span
+                        class="text-[12px] text-v4-primary-brand-bold-color underline"
+                        >Connect</span
+                      >
+                    </button>
+                  }
+
+                  <!-- Coming Soon apps -->
+                  @for (tab of filteredComingSoonApps(); track tab.id) {
+                    <button
+                      (click)="requestIntegrationModal(tab)"
+                      class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-v4-input-border-color hover:border-v4-primary-brand-color hover:bg-v4-secondary-background-color transition-all min-h-[155px] gap-1.5 cursor-pointer bg-v4-secondary-background-color"
+                    >
+                      <div
+                        class="w-12 h-12 mb-2 flex items-center justify-center"
+                      >
+                        <img
+                          [src]="tab.icon"
+                          [alt]="tab.title"
+                          class="w-10 h-10 object-contain"
+                        />
+                      </div>
+                      <span
+                        class="text-xs font-medium text-v4-main-text-color text-center"
+                        >{{ tab.title }}</span
+                      >
+                      <span
+                        class="text-[12px] text-v4-primary-brand-bold-color underline"
+                        >Connect</span
+                      >
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- No results -->
+            @if (
+              tabsArrays().length === 0 &&
+              tabsNotconenctedArrays().length === 0 &&
+              filteredComingSoonApps().length === 0
+            ) {
+              <p class="text-sm text-v4-secondary-text-color text-center py-8 m-0">
+                No integrations found for "{{ searchQuery }}".
+              </p>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Child import component view -->
+    <section
+      [style.display]="isTabClicked ? 'flex' : 'none'"
+      class="flex-col h-full"
+    >
+      @for (tabItem of tabsArray; track tabItem) {
+        @if (tabItem?.name === "QuickBooks Online") {
+          <app-v4-qbonline-import
+            [hidden]="selectedTab.tab?.id !== 'qbo'"
+            (connectionStatus)="onConnectionStatus($event, 'qbo')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-qbonline-import>
+        }
+        @if (tabItem?.name === "QuickBooks Desktop") {
+          <app-v4-qbdesktop-import
+            [hidden]="selectedTab.tab?.id !== 'qbd'"
+            (connectionStatus)="onConnectionStatus($event, 'qbd')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-qbdesktop-import>
+        }
+        @if (tabItem?.id === "zoho") {
+          <app-v4-zoho-import
+            [hidden]="selectedTab.tab?.id !== 'zoho'"
+            (connectionStatus)="onConnectionStatus($event, 'zoho')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-zoho-import>
+        }
+        @if (tabItem?.id === "bill.com") {
+          <app-v4-bill-dot-com-import
+            [hidden]="selectedTab.tab?.id !== 'bill.com'"
+            (connectionStatus)="onConnectionStatus($event, 'bill.com')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-bill-dot-com-import>
+        }
+        @if (tabItem?.id === "xero") {
+          <app-v4-xero-import
+            [hidden]="selectedTab.tab?.id !== 'xero'"
+            (connectionStatus)="onConnectionStatus($event, 'xero')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-xero-import>
+        }
+        @if (tabItem?.id === "sage") {
+          <app-v4-sage-business-import
+            [hidden]="selectedTab.tab?.id !== 'sage'"
+            (connectionStatus)="onConnectionStatus($event, 'sage')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-sage-business-import>
+        }
+        @if (tabItem?.id === "freshbooks") {
+          <app-v4-freshbooks-import
+            [hidden]="selectedTab.tab?.id !== 'freshbooks'"
+            (connectionStatus)="onConnectionStatus($event, 'freshbooks')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-freshbooks-import>
+        }
+        @if (tabItem?.id === "wave") {
+          <app-v4-wave-import
+            [hidden]="selectedTab.tab?.id !== 'wave'"
+            (connectionStatus)="onConnectionStatus($event, 'wave')"
+            (clickBackButton)="back()"
+            [selectedType]="data.type"
+          ></app-v4-wave-import>
+        }
+        @if (tabItem?.id === "netsuite") {
+          <app-v4-netsuite-import
+            [hidden]="selectedTab.tab?.id !== 'netsuite'"
+            (connectionStatus)="onConnectionStatus($event, 'netsuite')"
+            (clickBackButton)="back()"
+            (completeImport)="onCompleteImport($event)"
+            [selectedType]="data.type"
+          ></app-v4-netsuite-import>
+        }
+        @if (tabItem?.id === "odoo") {
+          <app-v4-odoo-import
+            [hidden]="selectedTab.tab?.id !== 'odoo'"
+            (connectionStatus)="onConnectionStatus($event, 'odoo')"
+            (clickBackButton)="back()"
+            (completeImport)="onCompleteImport($event)"
+            [selectedType]="data.type"
+          ></app-v4-odoo-import>
+        }
+      }
+    </section>
+  </div>
+  <!-- modal body end -->
+
+  <!-- Footer -->
+  @if (!isTabClicked) {
+    <div
+      class="flex items-center justify-between p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <div>
+        <p class="text-sm font-semibold text-v4-main-text-color m-0">
+          Connect New App
+        </p>
+        <p class="text-xs text-v4-secondary-text-color m-0 mt-0.5">
+          Import payments effortlessly from various sources.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Connect New'"
+        (clickEvent)="newConnect()"
+      />
+    </div>
+  }
+</div>

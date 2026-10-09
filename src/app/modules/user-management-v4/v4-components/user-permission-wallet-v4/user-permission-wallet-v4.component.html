@@ -1,0 +1,305 @@
+<div class="main-v3-data-table-container">
+  <!-- Selected Wallets Display -->
+  @if (isLoadingAccountsPermission()) {
+    <div
+      class="mb-2 p-3 bg-v4-tertiary-background-color rounded-lg border border-v4-border-color"
+    >
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between">
+          <div class="skelton !w-[200px] !h-5"></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          @for (item of [1, 2, 3, 4, 5]; track item) {
+            <div class="skelton !w-[80px] !h-7 !rounded-2xl"></div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (totalSelectedCountComputed() > 0) {
+    <div
+      class="mb-2 p-3 bg-v4-tertiary-background-color rounded-lg border border-v4-border-color max-h-[170px] overflow-y-auto"
+      (scroll)="showAllSelected && onScrollToEnd($event)"
+    >
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between">
+          <h3
+            class="text-sm font-semibold text-v4-primary-brand-bold-color mb-2"
+            [ngClass]="{ '!mb-0': isAllWalletsSelectedComputed() }"
+          >
+            @if (isAllWalletsSelectedComputed()) {
+              All Wallets Selected
+            } @else {
+              Selected Wallets ({{ totalSelectedCountComputed() }})
+            }
+          </h3>
+          @if (!isAllWalletsSelectedComputed()) {
+            <div class="flex items-center gap-2">
+              @if (totalSelectedCountComputed() > 5) {
+                <app-common-button-v4
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="showAllSelected ? 'Show Less' : 'Show All'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-xs font-medium'"
+                  [customClasses]="'rounded-md px-2'"
+                  (clickEvent)="toggleShowAllSelected()"
+                />
+              }
+              @if (totalSelectedCountComputed() > 0) {
+                <app-common-button-v4
+                  [type]="{ style: 'destructive', name: 'main' }"
+                  [text]="'Clear All'"
+                  [customHeight]="'32px'"
+                  [textClasses]="'text-xs font-medium'"
+                  [customClasses]="'rounded-md px-2'"
+                  (clickEvent)="clearAllSelected()"
+                />
+              }
+            </div>
+          }
+        </div>
+        <div [ngClass]="{ hidden: isAllWalletsSelectedComputed() }">
+          <div class="flex flex-wrap gap-2">
+            @if (!isAllWalletsSelectedComputed()) {
+              @for (name of getSelectedNames(); track name) {
+                <span
+                  class="selected-name inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium bg-v4-secondary-background-color text-v4-main-text-color border border-v4-border-color"
+                >
+                  <span class="truncate">{{ name }}</span>
+                  <lucide-icon
+                    name="x"
+                    [size]="12"
+                    class="cursor-pointer text-v4-secondary-text-color hover:text-v4-badge-error-text-color transition-colors"
+                    (click)="removeSelectedItem(name)"
+                    [title]="'Remove ' + name"
+                  />
+                </span>
+              }
+              @if (totalSelectedCountComputed() > 5 && !showAllSelected) {
+                <span
+                  class="border-2 border-dotted border-v4-primary-brand-color items-center p-2 rounded-md text-xs font-medium bg-v4-secondary-background-color text-v4-primary-brand-bold-color"
+                >
+                  +{{ totalSelectedCountComputed() - 5 }} More
+                </span>
+              }
+            }
+            @if (isLoadingMoreSelectedItems) {
+              <span
+                class="border-2 border-dotted border-v4-primary-brand-color items-center p-2 rounded-md text-xs font-medium bg-v4-secondary-background-color text-v4-primary-brand-bold-color"
+              >
+                <lucide-icon
+                  name="loader-circle"
+                  [size]="12"
+                  class="inline-block animate-spin mr-1"
+                />
+                Loading more...
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Toolbar -->
+  <div class="pb-2">
+    <div class="flex justify-end">
+      <div class="flex gap-3 items-center">
+        <div
+          class="filter-button flex justify-center hover:bg-v4-tertiary-background-color"
+        >
+          <lucide-icon
+            name="refresh-cw"
+            [size]="16"
+            role="presentation"
+            matTooltip="Refresh Table"
+            [ngClass]="{ 'animate-spin': isLoading() }"
+            (click)="getWalletData(1, searchInput)"
+          ></lucide-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div
+    class="w-full v3-data-table-grid-container relative ag-theme-v4 wallet-ag-styled"
+  >
+    <div class="w-full overflow-x-auto bg-v4-main-background-color">
+      <!-- Header Row -->
+      <div class="flex ag-header ag-header-row">
+        <div
+          class="flex-[0_0_40px] flex justify-center items-center ag-header-cell ag-header-select-all ag-selection-cell"
+        >
+          <span
+            class="ag-checkbox-input-wrapper"
+            [class.ag-checked]="selectAllWallets"
+          >
+            <input
+              type="checkbox"
+              [(ngModel)]="selectAllWallets"
+              (change)="toggleSelectAll()"
+            />
+          </span>
+        </div>
+        <div class="flex-1 ag-header-cell text-left">
+          <span class="ag-header-cell-label">
+            <span class="ag-header-cell-text">Wallet Name</span>
+          </span>
+        </div>
+        <div class="flex-1 ag-header-cell text-left">
+          <span class="ag-header-cell-label">
+            <span class="ag-header-cell-text">Account Number</span>
+          </span>
+        </div>
+      </div>
+      <!-- Search Row (AG floating-filter styled) -->
+      <div class="flex ag-header-row-floating-filter">
+        <div class="flex-[0_0_40px] ag-floating-filter"></div>
+        <div class="flex-1 ag-floating-filter">
+          <div class="relative w-full font-peridot px-[1px]">
+            <input
+              type="text"
+              [(ngModel)]="searchInput"
+              placeholder="Search"
+              (input)="onSearch($event.target.value)"
+              class="w-full h-7 px-2 pr-6 py-1 text-[12px] border border-v4-input-border-color rounded-md focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color focus:border-v4-brand-border-color bg-v4-secondary-background-color text-v4-main-text-color placeholder-v4-subtle-text-color"
+            />
+            @if (searchInput) {
+              <button
+                type="button"
+                (click)="clearSearch()"
+                class="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-v4-subtle-text-color hover:text-v4-tertiary-text-color focus:outline-none"
+                aria-label="Clear filter"
+              >
+                <lucide-icon
+                  name="x"
+                  [size]="12"
+                  class="text-v4-subtle-text-color hover:text-v4-tertiary-text-color text-sm"
+                ></lucide-icon>
+              </button>
+            }
+          </div>
+        </div>
+        <div class="flex-1 ag-floating-filter"></div>
+      </div>
+
+      <!-- Data Rows -->
+      <div
+        class="custom-body body-view-scroll overflow-y-auto ag-body-viewport"
+      >
+        @if (!isLoading() && displayedWalletList.length) {
+          @for (wallet of displayedWalletList; track wallet) {
+            <div
+              class="flex ag-row cursor-pointer"
+              [class.ag-row-selected]="walletIds[wallet.id]"
+              role="presentation"
+              (click)="rowSelect(wallet.id)"
+            >
+              <div class="flex-[0_0_40px] ag-cell ag-selection-cell">
+                <span
+                  class="ag-checkbox-input-wrapper"
+                  [class.ag-checked]="walletIds[wallet.id]"
+                >
+                  <input type="checkbox" [(ngModel)]="walletIds[wallet.id]" />
+                </span>
+              </div>
+              <div
+                class="flex-1 ag-cell"
+                [matTooltip]="
+                  wallet.walletName.length > 47 ? wallet.walletName : ''
+                "
+              >
+                {{ wallet.walletName | truncate: 47 }}
+              </div>
+              <div class="flex-1 ag-cell">
+                {{ wallet.bankAccountNumber }}
+              </div>
+            </div>
+          }
+        } @else if (!isLoading() && !displayedWalletList.length) {
+          <div
+            class="w-full h-full flex justify-center items-center ag-overlay-no-rows-center"
+          >
+            Sorry! No results found
+          </div>
+        } @else {
+          <div
+            class="w-full h-full flex justify-center items-center gap-2 ag-overlay-loading-center"
+          >
+            <lucide-icon
+              name="loader-circle"
+              [size]="16"
+              class="animate-spin"
+            />
+            <span class="ag-loading-text">Loading..</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination (AG-theme styled) -->
+  <div class="custom-pagination-container">
+    <div class="pagination-results">
+      <strong>Showing {{ currentNumber }} to {{ toNumber }}</strong> of
+      <strong>{{ totalWallets }}</strong> results
+    </div>
+    @if (totalWallets > 0) {
+      <div class="pagination-controls">
+        <button
+          type="button"
+          title="Previous Page"
+          class="pagination-control-btn"
+          [class.disabled]="isLoading() || selectedPage === 1"
+          [disabled]="isLoading() || selectedPage === 1"
+          (click)="onPrevious()"
+        >
+          <lucide-icon name="chevron-left" [size]="14" />
+        </button>
+        <div class="pagination-page-buttons">
+          @for (item of pageArr; track item) {
+            <button
+              type="button"
+              title="Go To Page"
+              [disabled]="isLoading()"
+              (click)="gotoPage(item)"
+              class="pagination-page-btn"
+              [class.current-page]="selectedPage === item"
+            >
+              {{ item }}
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          title="Next Page"
+          class="pagination-control-btn"
+          [class.disabled]="isLoading() || selectedPage === totalPage"
+          [disabled]="isLoading() || selectedPage === totalPage"
+          (click)="onNext()"
+        >
+          <lucide-icon name="chevron-right" [size]="14" />
+        </button>
+        @if (totalPage > 1) {
+          <div class="pagination-go-to-page">
+            <input
+              title="Go To Specific Page"
+              [(ngModel)]="specificPageInput"
+              type="number"
+              class="pagination-input font-peridot"
+              (keyup.enter)="gotoPage(specificPageInput)"
+              (keypress)="utils.numberOnly($event, 'numeric')"
+            />
+            <button
+              type="button"
+              class="pagination-go-btn font-peridot"
+              (click)="gotoPage(specificPageInput)"
+            >
+              Go To Page
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

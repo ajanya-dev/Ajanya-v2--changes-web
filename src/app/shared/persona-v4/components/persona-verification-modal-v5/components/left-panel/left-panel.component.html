@@ -1,0 +1,624 @@
+<div
+  class="relative flex h-full w-full flex-col bg-main-background-color font-inter text-main-text-color"
+>
+  <!-- Persona SDK embed container (fills the card when active) -->
+  <div
+    #personaEmbed
+    id="persona-embed-v5"
+    class="absolute inset-0"
+    [ngClass]="{ hidden: !sdkEmbedded() }"
+  ></div>
+
+  <!-- Loader overlay while the Persona SDK iframe is warming up. Shown between
+       the user clicking Continue (sdkEmbedded=true) and the SDK's onReady
+       callback (personaLoading=false), otherwise the card appears blank. -->
+  @if (sdkEmbedded() && personaLoading()) {
+    <div
+      class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-main-background-color"
+    >
+      <div class="lds-ripple mb-6 block">
+        <div></div>
+        <div></div>
+      </div>
+      <p class="text-[17px] font-medium text-main-text-color">
+        Loading verification…
+      </p>
+      <p class="mt-1 text-[13px] text-secondary-text-color">
+        Please wait while we prepare the secure form.
+      </p>
+    </div>
+  }
+
+  @if (!sdkEmbedded()) {
+    <div class="flex h-full flex-col">
+      <div class="flex-1 overflow-y-auto">
+        <!-- Step: checking-prior-kyc (loader while GET /inquiry/check-prior-kyc is in flight) -->
+        @if (currentStep() === "checking-prior-kyc") {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col items-center justify-center px-7"
+          >
+            <div class="lds-ripple mb-6 block">
+              <div></div>
+              <div></div>
+            </div>
+            <p class="text-[17px] font-medium text-main-text-color">
+              Checking your details…
+            </p>
+            <p class="mt-1 text-[13px] text-secondary-text-color">
+              Please wait a moment.
+            </p>
+          </div>
+        }
+
+        <!-- Step: prior-kyc-prompt (backend reported has_prior_kyc=true) -->
+        @if (currentStep() === "prior-kyc-prompt") {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col justify-between px-7 pb-6 pt-6"
+          >
+            <div>
+              <div class="flex justify-end -mr-[6px]">
+                <button
+                  type="button"
+                  class="flex h-[26px] w-[26px] items-center justify-center rounded-md text-main-text-color transition hover:bg-tertiary-background-color"
+                  (click)="closeClick.emit()"
+                >
+                  <fa-icon [icon]="faXmark" class="text-[13px]" />
+                </button>
+              </div>
+
+              <div
+                class="mt-4 flex h-[111px] w-[126px] items-center justify-center rounded-[14px] bg-common-secondary-green-color"
+              >
+                <img
+                  ngSrc="assets/icon/persona-v4/tick-mark-green.svg"
+                  width="64"
+                  height="64"
+                  alt=""
+                />
+              </div>
+
+              <div class="pt-8">
+                <h1
+                  class="text-left text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-main-text-color"
+                >
+                  We found an existing KYC
+                </h1>
+                <p
+                  class="mt-2 text-left text-[13px] leading-[18px] text-secondary-text-color"
+                >
+                  We found an existing KYC for
+                  <span class="font-medium text-main-text-color">{{
+                    priorKycName()
+                  }}</span
+                  >. Would you like to use it for this business?
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-8 flex flex-col">
+              <button
+                type="submit"
+                [disabled]="fetchingInquiryId() || personaLoading()"
+                class="persona-primary-btn"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed':
+                    fetchingInquiryId() || personaLoading()
+                }"
+                (click)="btnClick.emit('use-existing-kyc')"
+              >
+                @if (fetchingInquiryId() || personaLoading()) {
+                  <span class="persona-btn-loader"></span>
+                } @else {
+                  Use existing
+                }
+              </button>
+
+              <button
+                type="button"
+                [disabled]="fetchingInquiryId() || personaLoading()"
+                class="persona-outline-btn"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed':
+                    fetchingInquiryId() || personaLoading()
+                }"
+                (click)="btnClick.emit('start-fresh-kyc')"
+              >
+              @if (fetchingInquiryId() || personaLoading()) {
+                <span class="persona-btn-loader"></span>
+              } @else {
+                New
+              }
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Step: start-kyc / start-kyb (intro with required docs) -->
+        @if (currentStep() === "start-kyc" || currentStep() === "start-kyb") {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col justify-between px-7 pb-6 pt-6"
+          >
+            <div>
+              <div class="pt-2">
+                <span
+                  class="block text-[30px] font-semibold capitalize leading-[1.1] tracking-[-0.025em] text-main-text-color"
+                  >Hi, {{ userName() }}</span
+                >
+                <div
+                  class="mt-2.5 max-w-[320px] text-left text-[13.5px] font-normal leading-[1.5] text-secondary-text-color"
+                >
+                  Before getting started, please ensure you have the following
+                  documents ready.
+                </div>
+              </div>
+
+              <div
+                class="my-6 flex h-[111px] w-[126px] items-center justify-center rounded-[14px] bg-common-secondary-green-color"
+              >
+                @if (currentStep() === "start-kyc") {
+                  <img
+                    ngSrc="assets/icon/persona-v4/scanner-persona.svg"
+                    width="126"
+                    height="111"
+                    alt=""
+                  />
+                } @else {
+                  <img
+                    ngSrc="assets/icon/persona-v4/box.svg"
+                    width="126"
+                    height="111"
+                    alt=""
+                  />
+                }
+              </div>
+
+              <div>
+                <h1
+                  class="text-left text-[15px] font-semibold leading-[20px] tracking-[-0.005em] text-main-text-color"
+                >
+                  {{
+                    currentStep() === "start-kyc"
+                      ? "ID Verification"
+                      : "Business Verification"
+                  }}
+                </h1>
+                <div class="mt-3.5 flex items-center gap-3">
+                  <img
+                    ngSrc="assets/icon/persona-v4/check_circle.svg"
+                    width="20"
+                    height="20"
+                    alt=""
+                  />
+                  <div
+                    class="text-left text-[13.5px] font-normal leading-normal text-main-text-color"
+                  >
+                    {{
+                      currentStep() === "start-kyc"
+                        ? "Any Govt ID"
+                        : "Formation Document"
+                    }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="
+                fetchingInquiryId() ||
+                personaLoading() ||
+                waitingForPusherResponse()
+              "
+              class="persona-primary-btn"
+              [ngClass]="{
+                'opacity-50 cursor-not-allowed':
+                  fetchingInquiryId() ||
+                  personaLoading() ||
+                  waitingForPusherResponse()
+              }"
+              (click)="
+                btnClick.emit(currentStep() === 'start-kyc' ? 'kyc' : 'kyb')
+              "
+            >
+              @if (
+                fetchingInquiryId() ||
+                personaLoading() ||
+                waitingForPusherResponse()
+              ) {
+                <span class="persona-btn-loader"></span>
+              } @else {
+                {{ buttonText() }}
+              }
+            </button>
+          </div>
+        }
+
+        <!-- Step: reverify-intro (migration re-verify — show outstanding fields) -->
+        @if (currentStep() === "reverify-intro") {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col justify-between px-7 pb-6 pt-6"
+          >
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <div class="pt-2">
+                <span
+                  class="block text-[30px] font-semibold capitalize leading-[1.1] tracking-[-0.025em] text-main-text-color"
+                  >Hi, {{ userName() }}</span
+                >
+                <div
+                  class="mt-2.5 max-w-[330px] text-left text-[13.5px] font-normal leading-[1.5] text-secondary-text-color"
+                >
+                  Your business is almost verified — we already have most of your
+                  details. To bring your account up to date, we just need
+                  @if (missingFields().length === 1) {
+                    one more detail.
+                  } @else {
+                    a few more details.
+                  }
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <h1
+                  class="text-left text-[12px] font-semibold uppercase tracking-[0.06em] text-secondary-text-color"
+                >
+                  What we still need
+                </h1>
+                <ul class="mt-3 flex flex-col gap-2.5">
+                  @for (field of missingFields(); track field.key) {
+                    <li class="flex items-center gap-3">
+                      @if (field.filled) {
+                        <span
+                          class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-common-secondary-green-color text-common-green-color"
+                        >
+                          <fa-icon [icon]="faCheck" class="text-[12px]" />
+                        </span>
+                      } @else {
+                        <span
+                          class="h-5 w-5 flex-shrink-0 rounded-full border-[1.5px] border-input-border-color"
+                        ></span>
+                      }
+                      <span
+                        class="text-left text-[13.5px] leading-normal"
+                        [ngClass]="
+                          field.filled
+                            ? 'text-secondary-text-color line-through'
+                            : 'text-main-text-color'
+                        "
+                        >{{ field.label }}</span
+                      >
+                      @if (field.required === false) {
+                        <span
+                          class="ml-auto rounded-full bg-tertiary-background-color px-2 py-0.5 text-[12px] font-medium text-secondary-text-color"
+                          >Optional</span
+                        >
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="
+                fetchingInquiryId() ||
+                personaLoading() ||
+                waitingForPusherResponse()
+              "
+              class="persona-primary-btn mt-6"
+              [ngClass]="{
+                'opacity-50 cursor-not-allowed':
+                  fetchingInquiryId() ||
+                  personaLoading() ||
+                  waitingForPusherResponse()
+              }"
+              (click)="btnClick.emit('kyb')"
+            >
+              @if (
+                fetchingInquiryId() ||
+                personaLoading() ||
+                waitingForPusherResponse()
+              ) {
+                <span class="persona-btn-loader"></span>
+              } @else {
+                {{ buttonText() }}
+              }
+            </button>
+          </div>
+        }
+
+        <!-- Step: check-kyb -->
+        @if (currentStep() === "check-kyb") {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col justify-between px-7 pb-6 pt-6"
+          >
+            <div>
+              <button
+                type="button"
+                class="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-md text-main-text-color transition hover:bg-tertiary-background-color"
+                (click)="closeClick.emit()"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+
+              <div class="flex items-start gap-2.5 pt-3">
+                <img
+                  class="mt-1"
+                  ngSrc="assets/icon/persona-v4/tick-mark-green.svg"
+                  width="44"
+                  height="44"
+                  alt="tick"
+                />
+                <div
+                  class="text-left text-[13px] leading-[18px] text-main-text-color"
+                >
+                  <h3 class="text-[15px] font-medium leading-[19px]">
+                    <span class="text-[17px] font-bold">Great!,</span> ID
+                    Submission<br />Successfully Completed
+                  </h3>
+                </div>
+              </div>
+
+              <div class="pt-8">
+                <h1
+                  class="text-left text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-main-text-color"
+                >
+                  Do you own a business?
+                </h1>
+                <div
+                  class="pt-1 text-left text-[13px] leading-[18px] text-secondary-text-color"
+                >
+                  Share your business details to enhance your experience and
+                  unlock more features tailored just for you
+                </div>
+              </div>
+
+              <div class="pt-8">
+                <h1
+                  class="text-left text-[12px] font-semibold uppercase tracking-[0.06em] text-secondary-text-color"
+                >
+                  Required Documents
+                </h1>
+                <div class="mt-2.5 flex items-center gap-3">
+                  <img
+                    ngSrc="assets/icon/persona-v4/check_circle.svg"
+                    width="20"
+                    height="20"
+                    alt=""
+                  />
+                  <div
+                    class="text-left text-[13.5px] leading-normal text-main-text-color"
+                  >
+                    Formation Documents
+                  </div>
+                </div>
+                <!-- <div class="flex items-start gap-2">
+                  <img
+                    class="mt-1.5"
+                    ngSrc="assets/icon/persona-v4/check_circle.svg"
+                    width="16"
+                    height="16"
+                    alt=""
+                  />
+                  <div
+                    class="text-left text-[14px] leading-[28px] text-main-text-color"
+                  >
+                    EIN IRS Letter/ CP 575 FORM OR Any other docs
+                  </div>
+                </div> -->
+              </div>
+            </div>
+
+            <div class="mt-8 flex flex-col">
+              <button
+                type="submit"
+                [disabled]="
+                  fetchingInquiryId() ||
+                  personaLoading() ||
+                  waitingForPusherResponse()
+                "
+                class="persona-primary-btn"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed':
+                    fetchingInquiryId() ||
+                    personaLoading() ||
+                    waitingForPusherResponse()
+                }"
+                (click)="btnClick.emit('kyb')"
+              >
+                @if (
+                  fetchingInquiryId() ||
+                  personaLoading() ||
+                  waitingForPusherResponse()
+                ) {
+                  <span class="persona-btn-loader"></span>
+                } @else {
+                  {{ buttonText() }}
+                }
+              </button>
+
+              <button
+                type="button"
+                [disabled]="waitingForPusherResponse()"
+                class="persona-outline-btn"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed': waitingForPusherResponse()
+                }"
+                (click)="btnClick.emit('kyb-not-now')"
+              >
+                No, I don't
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Step: kyb-completed (finalize / EDD waiting) -->
+        @if (
+          currentStep() === "kyb-completed" &&
+          !isEddFlowInProgress() &&
+          !isShowEddModal()
+        ) {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col items-center justify-center px-7"
+          >
+            <div class="lds-ripple mb-6 block">
+              <div></div>
+              <div></div>
+            </div>
+            <p class="text-[20px] font-medium text-main-text-color">
+              Please wait while we finalize.
+            </p>
+            <p class="mt-1 text-[13px] text-secondary-text-color">
+              This window will automatically close shortly.
+            </p>
+          </div>
+        }
+
+        @if (
+          currentStep() === "kyb-completed" &&
+          (isEddFlowInProgress() || isShowEddModal())
+        ) {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col items-center justify-center px-7 text-center"
+          >
+            <div class="lds-ripple mb-6 block">
+              <div></div>
+              <div></div>
+            </div>
+            <p class="text-[20px] font-medium text-main-text-color">
+              Additional Verification Needed
+            </p>
+            <p class="mt-1 text-[13px] text-secondary-text-color">
+              Thank you for completing your business verification.
+            </p>
+            <p class="text-[13px] text-secondary-text-color">
+              To fully activate your account, please complete one more quick
+              verification.
+            </p>
+          </div>
+        }
+
+        <!-- Step: could-not-verify / kyc-rejected -->
+        @if (
+          currentStep() === "could-not-verify" ||
+          currentStep() === "kyc-rejected"
+        ) {
+          <div
+            class="mx-auto flex h-full w-full max-w-[440px] flex-col justify-between px-7 pb-6 pt-6"
+          >
+            <div class="flex flex-1 flex-col justify-center">
+              <div
+                class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-common-secondary-red-color"
+              >
+                <span
+                  class="text-[30px] font-semibold leading-none text-common-red-color"
+                  >!</span
+                >
+              </div>
+              <div class="mt-4 text-center text-main-text-color">
+                <span class="text-[20px] font-semibold tracking-[-0.015em]"
+                  >Error</span
+                ><br />
+                @if (currentStep() === "could-not-verify") {
+                  <span class="text-[13px] font-normal"
+                    >Could not verify your ID</span
+                  >
+                }
+                @if (currentStep() === "kyc-rejected") {
+                  <div class="px-8 py-3">
+                    <span class="text-[13px] font-normal">{{
+                      errorMssage()
+                    }}</span>
+                  </div>
+                }
+              </div>
+
+              <p
+                class="mt-8 text-center text-[14px] font-normal leading-[18px]"
+              >
+                Please
+                <button
+                  type="button"
+                  (click)="openSupportClick.emit()"
+                  class="cursor-pointer text-common-blue-color outline-none hover:underline"
+                >
+                  contact customer support
+                </button>
+                for further information.
+              </p>
+            </div>
+
+            <div class="flex flex-col">
+              @if (currentStep() === "could-not-verify") {
+                @if (!isCompletedRetryCount()) {
+                  <div class="pb-3 text-center text-[13px]">
+                    Attempts Left -
+                    <span class="text-common-red-color">{{
+                      maximumAllowedAttempt()
+                    }}</span>
+                  </div>
+                }
+                <button
+                  type="submit"
+                  [matTooltip]="
+                    isCompletedRetryCount()
+                      ? 'Maximum allowed attempts completed.'
+                      : ''
+                  "
+                  [disabled]="
+                    fetchingInquiryId() ||
+                    personaLoading() ||
+                    waitingForPusherResponse() ||
+                    isCompletedRetryCount()
+                  "
+                  class="persona-primary-btn"
+                  [ngClass]="{
+                    'opacity-50 cursor-not-allowed':
+                      fetchingInquiryId() ||
+                      personaLoading() ||
+                      waitingForPusherResponse() ||
+                      isCompletedRetryCount()
+                  }"
+                  (click)="btnClick.emit('try-again')"
+                >
+                  @if (
+                    fetchingInquiryId() ||
+                    personaLoading() ||
+                    waitingForPusherResponse()
+                  ) {
+                    <span class="persona-btn-loader"></span>
+                  } @else {
+                    Try Again
+                  }
+                </button>
+              }
+
+              <button
+                type="button"
+                [disabled]="waitingForPusherResponse()"
+                class="persona-outline-btn"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed': waitingForPusherResponse()
+                }"
+                (click)="btnClick.emit('close')"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

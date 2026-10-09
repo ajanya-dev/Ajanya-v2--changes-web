@@ -1,0 +1,435 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Add Attachments
+      </h1>
+    </div>
+    <div
+      role="presentation"
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <!-- Drag & Drop Upload Zone -->
+    <div
+      class="mb-4 border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors"
+      [ngClass]="{
+        'border-v4-primary-brand-bold-color bg-v4-secondary-background-color':
+          isDragging,
+        'border-v4-border-color hover:border-v4-subtle-text-color': !isDragging
+      }"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="triggerFileInput()"
+      (keyup.enter)="triggerFileInput()"
+      (keyup.space)="triggerFileInput()"
+      tabindex="0"
+      role="button"
+    >
+      <div class="flex flex-col items-center gap-2">
+        <div
+          class="w-10 h-10 rounded-full bg-v4-secondary-background-color flex items-center justify-center"
+        >
+          <lucide-icon
+            [img]="UploadIcon"
+            [size]="20"
+            class="text-v4-subtle-text-color"
+          ></lucide-icon>
+        </div>
+        <p class="text-sm text-v4-subtle-text-color">
+          Upload or drag a file here
+        </p>
+        @if (selectedFileName) {
+          <p class="text-sm font-medium text-v4-main-text-color">
+            {{ selectedFileName }}
+          </p>
+        } @else {
+          <p class="text-xs text-v4-subtle-text-color">No file chosen</p>
+        }
+        @if (submitting) {
+          <p class="text-xs text-v4-primary-brand-bold-color font-medium">
+            Uploading...
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- Upload from Phone (check mode only) -->
+    @if (
+      allowAttachFromPhone &&
+      staticWhiteLabelConditions?.checkAddAttachmentFromPhone
+    ) {
+      <div class="mb-6">
+        <!-- Upload from Phone toggle button -->
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Upload from Phone"
+          [lucideIcon]="SmartphoneIcon"
+          (clickEvent)="togglePhoneInput()"
+          textColorInput="white"
+        />
+
+        @if (showPhoneInput) {
+          <div
+            class="mt-4 p-4 bg-v4-secondary-background-color rounded-lg border border-v4-border-color"
+          >
+            <!-- Phone input + buttons row -->
+            <div class="flex gap-2 phone-input-row items-end">
+              <div class="flex-1">
+                <app-common-input-v4
+                  placeholder="Phone Number"
+                  [formControl]="phoneInput"
+                  [control]="phoneInput"
+                  [customMask]="'(000) 000-0000'"
+                  [isFieldRequired]="false"
+                  [fieldLabel]="'Phone Number'"
+                />
+              </div>
+
+              <!-- Send Link / Resend button -->
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                [text]="
+                  timerExist
+                    ? 'Resend (' + displayTimer + ')'
+                    : phoneNumberButton
+                "
+                (clickEvent)="sendPhoneLink()"
+                [disabled]="
+                  phoneInput.invalid || phoneNumberSending || timerExist
+                "
+                [ngClass]="{
+                  'opacity-50 pointer-events-none':
+                    phoneInput.invalid || phoneNumberSending || timerExist
+                }"
+                [lucideIcon]="SendIcon"
+              />
+              <app-common-button-v4
+                [type]="{ style: 'outline', name: 'main' }"
+                text="QR link"
+                (clickEvent)="openQrCodeModal()"
+                [lucideIcon]="QrCodeIcon"
+                [disabled]="
+                  phoneInput.invalid || phoneNumberSending || timerExist
+                "
+                [ngClass]="{
+                  'opacity-50 pointer-events-none':
+                    phoneInput.invalid || phoneNumberSending || timerExist
+                }"
+              />
+            </div>
+
+            <!-- Status messages -->
+            <div class="mt-3">
+              @if (sendSuccessfully) {
+                <div
+                  class="flex items-center gap-1.5 text-xs text-v4-common-green-color"
+                >
+                  <lucide-icon
+                    [img]="CircleCheckIcon"
+                    [size]="14"
+                  ></lucide-icon>
+                  <span>Link sent successfully</span>
+                </div>
+              } @else {
+                <div class="flex items-center gap-1.5 text-xs text-warning">
+                  <lucide-icon
+                    [img]="CircleAlertIcon"
+                    [size]="14"
+                  ></lucide-icon>
+                  <span>
+                    You will be charged
+                    <span class="font-semibold">$0.50</span>
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Group Payments Attachments -->
+    @if (
+      data?.mode === "group_payments" && groupPaymentsAttachments?.length > 0
+    ) {
+      <div
+        class="mb-4 p-3 bg-v4-secondary-background-color rounded-lg border border-v4-border-color max-h-[170px] overflow-y-auto flex flex-col gap-2"
+      >
+        @for (item of groupPaymentsAttachments; track item; let i = $index) {
+          <div
+            class="flex items-center justify-between bg-v4-tertiary-background-color p-2 rounded-lg"
+          >
+            <span class="truncate text-v4-main-text-color text-sm">{{
+              item.name
+            }}</span>
+            <button aria-label="Delete attachment"
+              class="p-1 rounded-md text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+              (click)="removeAttachment(i)"
+              matTooltip="Delete attachment"
+            >
+              <lucide-icon [img]="Trash2Icon" [size]="14"></lucide-icon>
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Attachments Table -->
+      <div class="border border-v4-border-color rounded-lg overflow-hidden">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col style="width: 50px" />
+            <col style="width: 120px" />
+            <col style="width: 120px" />
+            <col />
+            <col style="width: 80px" />
+          </colgroup>
+          <thead>
+            <tr
+              class="bg-v4-secondary-background-color border-b border-v4-border-color"
+            >
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-subtle-text-color"
+              >
+                #
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-subtle-text-color"
+              >
+                Date
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-subtle-text-color"
+              >
+                User
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-subtle-text-color"
+              >
+                File Name
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-subtle-text-color text-center"
+              >
+                Action
+              </td>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-v4-border-color">
+            @if (checkMode) {
+              @for (item of listData; track item; let i = $index) {
+                <tr
+                  class="hover:bg-v4-tertiary-background-color transition-colors"
+                  [matTooltip]="item.billAttach ? 'Bill attachment' : ''"
+                >
+                  <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                    {{ i + 1 }}
+                  </td>
+                  <td class="px-4 py-2.5">
+                    <div
+                      class="text-sm text-v4-main-text-color whitespace-nowrap"
+                    >
+                      {{ item.formated_date?.split("- ")[0] }}
+                    </div>
+                    @if (item.formated_date?.includes("- ")) {
+                      <div class="text-xs text-v4-subtle-text-color">
+                        {{ item.formated_date?.split("- ")[1] }}
+                      </div>
+                    }
+                  </td>
+                  <td
+                    class="px-4 py-2.5 text-sm text-v4-main-text-color font-medium"
+                  >
+                    {{ item.user_name }}
+                  </td>
+                  <td
+                    class="px-4 py-2.5 text-sm text-v4-main-text-color overflow-hidden"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span
+                        class="truncate"
+                        [matTooltip]="item?.fileName || item?.file_name"
+                        >{{ item?.fileName || item?.file_name }}</span
+                      >
+                      <button aria-label="Open attachment"
+                        class="p-0.5 rounded text-v4-primary-brand-bold-color hover:text-v4-primary-brand-color transition-colors flex-shrink-0"
+                        (click)="
+                          openAttachment(
+                            item.id,
+                            item.billAttach,
+                            item.encrypted_id
+                          )
+                        "
+                        matTooltip="Open attachment"
+                      >
+                        <lucide-icon
+                          [img]="ExternalLinkIcon"
+                          [size]="14"
+                        ></lucide-icon>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="px-4 py-2.5 text-center">
+                    @if (!item.billAttach) {
+                      <button
+                        class="p-1.5 rounded-md text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                        [ngClass]="{
+                          'opacity-50 pointer-events-none':
+                            attachmentDeletingId === item.id || hideDeleteBtn
+                        }"
+                        (click)="deleteAttachment(item.id, i)"
+                      >
+                        @if (attachmentDeletingId === item.id) {
+                          <span class="text-xs">Deleting...</span>
+                        } @else {
+                          <lucide-icon
+                            [img]="Trash2Icon"
+                            [size]="16"
+                          ></lucide-icon>
+                        }
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            } @else {
+              @for (item of listData; track item; let i = $index) {
+                <tr
+                  class="hover:bg-v4-tertiary-background-color transition-colors"
+                  [matTooltip]="item.billAttach ? 'Bill attachment' : ''"
+                >
+                  <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                    {{ i + 1 }}
+                  </td>
+                  <td class="px-4 py-2.5">
+                    <div
+                      class="text-sm text-v4-main-text-color whitespace-nowrap"
+                    >
+                      {{ item.formated_date?.split("- ")[0] }}
+                    </div>
+                    @if (item.formated_date?.includes("- ")) {
+                      <div class="text-xs text-v4-subtle-text-color">
+                        {{ item.formated_date?.split("- ")[1] }}
+                      </div>
+                    }
+                  </td>
+                  <td
+                    class="px-4 py-2.5 text-sm text-v4-main-text-color font-medium"
+                  >
+                    {{ item.user_name }}
+                  </td>
+                  <td
+                    class="px-4 py-2.5 text-sm text-v4-main-text-color overflow-hidden"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span
+                        class="truncate"
+                        [matTooltip]="item?.fileName || item?.file_name"
+                        >{{ item?.fileName || item?.file_name }}</span
+                      >
+                      <button aria-label="Open attachment"
+                        class="p-0.5 rounded text-v4-primary-brand-bold-color hover:text-v4-primary-brand-color transition-colors flex-shrink-0"
+                        (click)="
+                          openAttachment(
+                            item.id,
+                            item.encrypted_id,
+                            item.billAttach
+                          )
+                        "
+                        matTooltip="Open attachment"
+                      >
+                        <lucide-icon
+                          [img]="ExternalLinkIcon"
+                          [size]="14"
+                        ></lucide-icon>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="px-4 py-2.5 text-center">
+                    @if (!item.billAttach) {
+                      <button
+                        class="p-1.5 rounded-md text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                        [ngClass]="{
+                          'opacity-50 pointer-events-none':
+                            attachmentDeletingId ===
+                              (item.encrypted_id ?? item.id) || hideDeleteBtn
+                        }"
+                        (click)="
+                          deleteAttachment(item.id, i, item.encrypted_id)
+                        "
+                      >
+                        @if (
+                          attachmentDeletingId === item.encrypted_id ||
+                          attachmentDeletingId === item.id
+                        ) {
+                          <span class="text-xs">Deleting...</span>
+                        } @else {
+                          <lucide-icon
+                            [img]="Trash2Icon"
+                            [size]="16"
+                          ></lucide-icon>
+                        }
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+            @if (listData.length === 0) {
+              <tr>
+                <td
+                  colspan="5"
+                  class="px-4 py-12 text-center text-sm text-v4-subtle-text-color"
+                >
+                  No File Uploaded
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Notes -->
+    @if (autoAttachmentForCheckMail && checkMode) {
+      <p class="text-xs text-v4-subtle-text-color mt-3">
+        Note: Attachments are not sent with checks by default. Select them to
+        include when processing the check.
+      </p>
+    }
+    @if (isWalletCheckMail) {
+      <p class="text-xs text-v4-subtle-text-color mt-3">
+        Note: Attachments are sent with the check mail by default. Uncheck the
+        box on the payment page to keep them as personal notes.
+      </p>
+    }
+    @if (data.showNote) {
+      <p class="text-xs text-v4-subtle-text-color mt-3">
+        Note: Attachments will not be sent with checks; added attachments serve
+        as personal notes.
+      </p>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Done"
+      width="90px"
+      (clickEvent)="close()"
+    />
+  </div>
+</div>

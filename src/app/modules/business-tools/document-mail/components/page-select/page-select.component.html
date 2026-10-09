@@ -1,0 +1,302 @@
+<div class="bg-main-background-color min-h-screen h-auto mx-2.5">
+  <div class="max-w-[1400px] mx-auto px-12 py-10 min-h-screen flex flex-col">
+    <!-- Step Indicator -->
+    <div class="flex justify-center mb-6">
+      <div
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary-background-color"
+      >
+        <span class="text-xs font-medium text-common-blue-color font-inter">
+          Step {{ step }}
+        </span>
+        <span class="text-xs text-secondary-text-color font-inter">of</span>
+        <span class="text-xs text-secondary-text-color font-inter">
+          {{ totalSteps }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-6">
+      <button
+        class="w-10 h-10 rounded-lg bg-secondary-background-color border-none cursor-pointer text-main-text-color flex items-center justify-center transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--common-blue-color)_10%,var(--secondary-background-color))]"
+        (click)="onBack()"
+        aria-label="Go back"
+      >
+        <fa-icon [icon]="faArrowLeft" class="text-lg"></fa-icon>
+      </button>
+      <h1 class="text-2xl font-semibold text-main-text-color m-0 font-inter">
+        Select the pages you want to mail
+      </h1>
+    </div>
+
+    <!-- Divider -->
+    <div class="w-full h-px bg-input-border-color mb-10"></div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div
+        class="flex flex-col items-center justify-center gap-6 min-h-[400px] p-12"
+      >
+        <p class="text-main-text-color text-lg font-semibold animate-pulse">
+          Loading PDF pages...
+        </p>
+        <div class="loader-con">
+          <img
+            src="/assets/images/document-mail/pdf.png"
+            alt="PDF"
+            class="pdf-icon"
+            style="--i: 0"
+          />
+          <img
+            src="/assets/images/document-mail/pdf.png"
+            alt="PDF"
+            class="pdf-icon"
+            style="--i: 1"
+          />
+          <img
+            src="/assets/images/document-mail/pdf.png"
+            alt="PDF"
+            class="pdf-icon"
+            style="--i: 2"
+          />
+          <img
+            src="/assets/images/document-mail/pdf.png"
+            alt="PDF"
+            class="pdf-icon"
+            style="--i: 3"
+          />
+          <img
+            src="/assets/images/document-mail/pdf.png"
+            alt="PDF"
+            class="pdf-icon"
+            style="--i: 4"
+          />
+          <img
+            src="/assets/images/document-mail/pdf.png"
+            alt="PDF"
+            class="pdf-icon"
+            style="--i: 5"
+          />
+        </div>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+      <div
+        class="flex flex-col items-center justify-center gap-6 min-h-[400px] p-12 animate-shake"
+      >
+        <div class="text-6xl animate-bounce">⚠️</div>
+        <p
+          class="text-common-red-color text-lg font-semibold text-center max-w-[500px]"
+        >
+          {{ error() }}
+        </p>
+        <app-common-button-v35
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Go Back"
+          (click)="onBack()"
+        ></app-common-button-v35>
+      </div>
+    }
+
+    <!-- Content -->
+    @if (!loading() && !error()) {
+      <div class="flex flex-col gap-2 flex-1">
+        <!-- Action Bar -->
+        <div
+          class="flex justify-between items-center gap-4 px-6 py-4 bg-secondary-background-color rounded-2xl mb-6"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-lg bg-common-blue-color flex items-center justify-center"
+            >
+              <fa-icon
+                [icon]="faFileLines"
+                class="text-white text-lg"
+              ></fa-icon>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span
+                class="font-inter text-main-text-color font-semibold text-base leading-tight"
+              >
+                {{ selectedCount }}
+                {{ selectedCount === 1 ? "page" : "pages" }} selected
+              </span>
+              <span class="text-xs text-secondary-text-color font-inter">
+                You can select up to {{maxSelectablePages}} pages
+              </span>
+            </div>
+          </div>
+          <!-- Select All Checkbox -->
+          <div class="flex items-center gap-2.5 cursor-pointer group">
+            <input
+              type="checkbox"
+              id="select-all-checkbox"
+              [checked]="isAllSelected"
+              (change)="toggleSelectAll($event)"
+              class="w-5 h-5 rounded border-2 border-input-border-color cursor-pointer transition-all duration-200 checked:bg-common-blue-color checked:border-common-blue-color focus:ring-2 focus:ring-common-blue-color focus:ring-offset-2 accent-common-blue-color"
+            />
+            <label
+              for="select-all-checkbox"
+              class="text-sm font-medium text-main-text-color cursor-pointer select-none transition-colors duration-200 group-hover:text-common-blue-color"
+            >
+              Select all pages
+            </label>
+          </div>
+        </div>
+
+        <!-- Hidden File Input -->
+        <input
+          #fileInput
+          type="file"
+          accept="application/pdf"
+          class="hidden"
+          (change)="onFileSelected($event)"
+        />
+
+        <!-- PDF Pages Grid -->
+        <div class="flex gap-6 py-4 mb-8 justify-center flex-wrap">
+          @for (page of pdfPages(); track page.pageNumber) {
+            <div
+              role="presentation"
+              class="w-[170px] cursor-pointer rounded-xl overflow-hidden transition-all duration-300 ease-in-out relative border-2 animate-card-fade-in active:scale-95 group"
+              [ngClass]="{
+                'border-input-border-color hover:border-common-blue-color hover:-translate-y-1':
+                  !page.selected,
+                'border-common-blue-color -translate-y-1': page.selected
+              }"
+              (click)="togglePage(page.pageNumber)"
+            >
+              <div class="relative w-full h-full">
+                <!-- Thumbnail Container -->
+                <div class="relative aspect-[3/4] overflow-hidden bg-white">
+                  <div class="w-full h-full relative">
+                    <img
+                      [src]="page.thumbnail"
+                      [alt]="'Page ' + page.pageNumber"
+                      class="w-full h-full object-contain block transition-transform duration-300"
+                      [ngClass]="{
+                        'scale-95 opacity-80': page.selected
+                      }"
+                    />
+                  </div>
+
+                  <!-- Selection Overlay -->
+                  <div
+                    class="absolute inset-0 flex items-center justify-center transition-all duration-300"
+                    [ngClass]="{
+                      'opacity-0 scale-75': !page.selected,
+                      'opacity-100 scale-100': page.selected
+                    }"
+                  >
+                    <div
+                      class="w-16 h-16 rounded-full bg-common-blue-color flex items-center justify-center relative z-[2]"
+                    >
+                      <fa-icon
+                        [icon]="faCheck"
+                        class="text-white text-3xl"
+                      ></fa-icon>
+                    </div>
+                  </div>
+
+                  <!-- Page Number Badge -->
+                  <div
+                    class="absolute top-2 right-2 px-2.5 py-1 rounded-lg text-xs font-bold transition-all duration-300 z-[1]"
+                    [ngClass]="{
+                      'bg-secondary-background-color text-main-text-color':
+                        !page.selected,
+                      'bg-common-blue-color text-white': page.selected
+                    }"
+                  >
+                    {{ page.pageNumber }}
+                  </div>
+                </div>
+
+                <!-- Card Footer -->
+                <div
+                  class="px-3 py-2.5 text-center transition-all duration-300"
+                  [ngClass]="{
+                    'bg-secondary-background-color': !page.selected,
+                    'bg-common-blue-color': page.selected
+                  }"
+                >
+                  <div
+                    class="text-xs mb-1 whitespace-nowrap overflow-hidden text-ellipsis font-medium"
+                    [ngClass]="{
+                      'text-secondary-text-color': !page.selected,
+                      'text-white': page.selected
+                    }"
+                  >
+                    {{ getPdfFileName(page.pdfIndex) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add PDF Button -->
+            @if (isLastPageOverall(page)) {
+              <button
+                class="w-[170px] rounded-xl overflow-hidden transition-all duration-300 ease-in-out border-2 border-dashed cursor-pointer aspect-[3/4] relative animate-card-fade-in"
+                [ngClass]="{
+                  'border-common-blue-color bg-transparent hover:-translate-y-1 hover:bg-common-secondary-blue-color':
+                    canSelectMore,
+                  'border-input-border-color opacity-50 cursor-not-allowed':
+                    !canSelectMore,
+                  'active:scale-95': canSelectMore
+                }"
+                [disabled]="!canSelectMore"
+                (click)="canSelectMore && onAddPdf()"
+              >
+                <div
+                  class="flex flex-col items-center justify-center h-full gap-4 p-5"
+                >
+                  <div
+                    class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300"
+                    [ngClass]="{
+                      'bg-common-blue-color text-white': canSelectMore,
+                      'bg-input-border-color text-white': !canSelectMore
+                    }"
+                  >
+                    <fa-icon
+                      [icon]="faPlus"
+                      class="text-2xl transition-transform duration-300 text-white"
+                    ></fa-icon>
+                  </div>
+                  <div class="text-center">
+                    @if (canSelectMore) {
+                      <span
+                        class="text-xs text-common-blue-color font-semibold block"
+                      >
+                        Add PDF
+                      </span>
+                      <span class="text-[12px] text-secondary-text-color block mt-1">
+                        Click to browse
+                      </span>
+                    } @else {
+                      <span
+                        class="text-xs text-common-red-color font-semibold block"
+                      >
+                        Limit Reached
+                      </span>
+                    }
+                  </div>
+                </div>
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Continue Button -->
+        <div class="max-w-[540px] mx-auto w-full py-4">
+          <app-common-button-v35
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Continue"
+            width="100%"
+            (click)="onContinue()"
+          ></app-common-button-v35>
+        </div>
+      </div>
+    }
+  </div>
+</div>

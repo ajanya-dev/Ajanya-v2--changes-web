@@ -1,0 +1,140 @@
+<div class="h-full flex flex-col">
+  <div class="flex flex-col h-full overflow-y-auto thin-scroll">
+    @if (cardList().length > 0) {
+      <div
+        role="presentation"
+        class="card-list-item border-b border-v4-border-color border-l-4 border-l-transparent flex items-center text-xs font-semibold text-v4-main-text-color cursor-pointer py-3"
+        [ngClass]="[
+          resize ? 'justify-center px-1' : 'px-3',
+          !selectedCard()
+            ? 'bg-v4-input-background-color border-l-4 border-l-v4-primary-brand-bold-color'
+            : ''
+        ]"
+        (click)="selectAll()"
+        [matTooltip]="resize ? 'All Cards' : ''"
+      >
+        <div
+          class="flex items-center gap-2"
+          [ngClass]="{ 'justify-center w-full': resize }"
+        >
+          <div
+            class="w-7 h-7 rounded-md flex items-center justify-center bg-v4-badge-info-bg-color flex-shrink-0"
+          >
+            <lucide-icon
+              name="credit-card"
+              [size]="14"
+              class="text-v4-primary-brand-color"
+            ></lucide-icon>
+          </div>
+          @if (!resize) {
+            <div class="flex flex-col">
+              <h1 class="text-xs font-bold text-v4-main-text-color">
+                All Cards
+              </h1>
+              <h2 class="text-[12px] font-normal text-v4-secondary-text-color">
+                {{ cardList().length }} cards
+              </h2>
+            </div>
+          }
+        </div>
+      </div>
+
+      @for (card of cardList() | searchFilter: searchKey(); track $index) {
+        <button
+          class="card-list-item border-b border-v4-border-color w-full text-left"
+          [ngClass]="
+            matchSelectedCard(card)
+              ? 'selected-card bg-v4-input-background-color border-l-4 border-l-v4-primary-brand-bold-color'
+              : ''
+          "
+          [matTooltip]="card.nickName"
+          [matTooltipDisabled]="!resize"
+          matTooltipPosition="right"
+          matTooltipClass="v4-tertiary-tooltip"
+          (click)="selectCard(card)"
+        >
+          <div
+            class="px-4 py-2.5 flex gap-3 items-center"
+            [ngClass]="resize ? 'justify-center' : ''"
+          >
+            <div
+              class="flex justify-center items-center h-7 w-7 rounded-full shrink-0"
+              [style]="
+                'background: var(--common-secondary-' +
+                card.bgColor +
+                '-color);'
+              "
+            >
+              <lucide-icon
+                name="credit-card"
+                [size]="14"
+                [style]="'color: var(--common-' + card.bgColor + '-color);'"
+              />
+            </div>
+            @if (!resize) {
+              <div class="flex-1 min-w-0">
+                <h1
+                  class="text-xs font-medium text-v4-main-text-color truncate"
+                >
+                  {{ (card.nickName | truncate: 15) ?? "_" }}
+                </h1>
+                <p class="text-xs text-v4-tertiary-text-color mt-0.5">
+                  {{ card.cardMasked }}
+                </p>
+              </div>
+            }
+            @if (!resize) {
+              <div class="flex items-center">
+                <button
+                  class="flex items-center justify-center p-1 text-v4-tertiary-text-color hover:text-v4-main-text-color rounded"
+                  matTooltip="Actions"
+                  [matMenuTriggerFor]="menu"
+                  (click)="$event.stopPropagation()"
+                >
+                  <lucide-icon name="ellipsis-vertical" [size]="15" />
+                </button>
+                <mat-menu
+                  #menu="matMenu"
+                  xPosition="before"
+                  class="v4-action-menu"
+                >
+                  <button (click)="editCard(card)" mat-menu-item>
+                    <div>
+                      <lucide-icon name="square-pen" [size]="14" />
+                      <span>Edit Card</span>
+                    </div>
+                  </button>
+                  <button (click)="deleteCard(card)" mat-menu-item>
+                    <div class="v4-danger-item">
+                      <lucide-icon name="trash-2" [size]="14" />
+                      <span>Delete Card</span>
+                    </div>
+                  </button>
+                </mat-menu>
+              </div>
+            }
+          </div>
+        </button>
+      }
+
+      @if ((cardList() | searchFilter: searchKey() | json) === "[]") {
+        <div
+          class="h-full w-full flex items-center justify-center text-sm text-v4-tertiary-text-color"
+        >
+          Sorry! No Cards Found.
+        </div>
+      }
+    }
+    @if (cardList().length === 0) {
+      @if (loading()) {
+        <app-common-list-skelton [items]="14"></app-common-list-skelton>
+      } @else {
+        <div
+          class="h-full w-full flex items-center text-center justify-center text-sm text-v4-tertiary-text-color"
+        >
+          Sorry! No Cards Found.
+        </div>
+      }
+    }
+  </div>
+</div>

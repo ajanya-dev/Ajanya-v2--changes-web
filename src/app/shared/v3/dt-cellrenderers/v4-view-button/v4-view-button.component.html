@@ -1,0 +1,487 @@
+<div class="flex items-center gap-1 h-full">
+
+  <!-- Menu button -->
+  <div [class.hidden]="commonTransactionTableRowData?.hideMenuOption">
+    <button [attr.aria-label]="(isMaping ? 'Please map your bank account first.' : 'Actions') || null"
+      class="action-icon-btn"
+      [class.no-hover]="commonTransactionTableRowData?.disableHover"
+      [disabled]="shouldEyeDisabled"
+      [matTooltipDisabled]="shouldEyeDisabled"
+      [matTooltip]="
+        isMaping ? 'Please map your bank account first.' : 'Actions'
+      "
+      [matMenuTriggerFor]="menu"
+      (click)="$event.stopPropagation()"
+    >
+      <lucide-icon
+        name="ellipsis-vertical"
+        [size]="16"
+        class="v4-action-icon"
+      ></lucide-icon>
+    </button>
+
+    <mat-menu #menu="matMenu" class="v4-action-menu">
+      <!-- Non-check (payment) menu items — grouped Actions / Documents / Proof (design O5) -->
+      <div *ngIf="!isTypeCheck">
+        <div class="v4-menu-group-label">Actions</div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="onEditButtonClick()"
+            [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="pencil" [size]="16"></lucide-icon>
+              <span>Edit</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Edit')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Edit')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="voidPayment()"
+            [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="ban" [size]="16"></lucide-icon>
+              <span>Void</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Void')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Void')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            class="v4-menu-item-danger"
+            (click)="deletePayment()"
+            [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+              <span>Delete</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Delete')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Delete')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="clonePayment()"
+            [disabled]="isRtpPayment"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="copy" [size]="16"></lucide-icon>
+              <span>Clone</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Clone This Check')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Clone This Check')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="editPayee()"
+            [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="square-pen" [size]="16"></lucide-icon>
+              <span>Edit Payee</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Edit Payee')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Edit Payee')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+
+        <div class="v4-menu-group-label">Documents</div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="openCommentModal()"
+            [disabled]="
+              (isVerticalEllipsisDisabled || isRtpPayment) &&
+              !isFromInternationalPayment()
+            "
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="message-square" [size]="16"></lucide-icon>
+              <span>Add Comment</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Add Comment')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Add Comment')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="openAttachmentModal()"
+            [disabled]="
+              (isVerticalEllipsisDisabled || isRtpPayment) &&
+              !isFromInternationalPayment()
+            "
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="paperclip" [size]="16"></lucide-icon>
+              <span>Add Attachment</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Add Attachment')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Add Attachment')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+
+        <div class="v4-menu-group-label">Proof</div>
+        <div class="v4-menu-item-row">
+          <button
+            mat-menu-item
+            (click)="sendPaymentProof('pp')"
+            [disabled]="
+              (paymentCompleted || isRtpPayment) &&
+              !isFromInternationalPayment()
+            "
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="receipt" [size]="16"></lucide-icon>
+              <span>Send Payment Proof</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Send Payment Proof')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Send Payment Proof')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button mat-menu-item (click)="getReceipt()">
+            <div class="v4-menu-item">
+              <lucide-icon name="file-text" [size]="16"></lucide-icon>
+              @if (
+                this.commonTransactionTableRowData?.data
+                  ?.payment_receipts_id !== null
+              ) {
+                @if (this.commonTransactionTableRowData?.data?.signature_url) {
+                  <span>View Receipt</span>
+                } @else if (
+                  this.commonTransactionTableRowData?.data?.signature_url ===
+                  null
+                ) {
+                  <span>Receipt Request Sent, Try Again</span>
+                }
+              } @else {
+                <span>Get Signed Receipt</span>
+              }
+            </div>
+          </button>
+          @if (getActionTooltip('Get Signed Receipt')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Get Signed Receipt')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            appWhiteLabel
+            hiddenIf="isCSNHCRequirement"
+            mat-menu-item
+            (click)="sendPaymentProof('pod')"
+            [disabled]="paymentCompleted || isPodCompleted || isRtpPayment"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="truck" [size]="16"></lucide-icon>
+              <span>Send/Req Proof of Delivery</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Send/Req Proof of Delivery')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Send/Req Proof of Delivery')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+      </div>
+
+      <!-- Check menu items — grouped Actions / Documents / Proof (design O5) -->
+      <div *ngIf="isTypeCheck">
+        @if (checkItemsIn("ACTIONS").length) {
+          <div class="v4-menu-group-label">Actions</div>
+          <div *ngFor="let item of checkItemsIn('ACTIONS')">
+            <div class="v4-menu-item-row">
+              <button
+                mat-menu-item
+                [class.v4-menu-item-danger]="item.label === 'Delete'"
+                (click)="onActionButtonClick(item.label)"
+                [disabled]="IsActionDisable(item)"
+              >
+                <div class="v4-menu-item">
+                  <lucide-icon
+                    [name]="getLucideIcon(item.label)"
+                    [size]="16"
+                  ></lucide-icon>
+                  <span>{{ item.label }}</span>
+                </div>
+              </button>
+              @if (getActionTooltip(item.label)) {
+                <lucide-icon
+                  name="info"
+                  [size]="14"
+                  class="v4-menu-item-tooltip-icon"
+                  [matTooltip]="getActionTooltip(item.label)"
+                  matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+                ></lucide-icon>
+              }
+            </div>
+            @if (item.label === "Void" && isResentable) {
+              <button mat-menu-item (click)="onActionButtonClick('re-email')">
+                <div class="v4-menu-item">
+                  <lucide-icon name="send" [size]="16"></lucide-icon>
+                  <span>Re-Email this Check</span>
+                </div>
+              </button>
+            }
+            @if (item.label === "Cancel" && isResentable && emailTTP) {
+              <button
+                mat-menu-item
+                (click)="onActionButtonClick('force-email')"
+              >
+                <div class="v4-menu-item">
+                  <lucide-icon name="check" [size]="16"></lucide-icon>
+                  <span>Mark as Forcefully Printed</span>
+                </div>
+              </button>
+            }
+          </div>
+        }
+
+        @if (checkItemsIn("DOCUMENTS").length) {
+          <div class="v4-menu-group-label">Documents</div>
+          <div *ngFor="let item of checkItemsIn('DOCUMENTS')">
+            <div class="v4-menu-item-row">
+              <button
+                mat-menu-item
+                (click)="onActionButtonClick(item.label)"
+                [disabled]="IsActionDisable(item)"
+              >
+                <div class="v4-menu-item">
+                  <lucide-icon
+                    [name]="getLucideIcon(item.label)"
+                    [size]="16"
+                  ></lucide-icon>
+                  <span>{{ item.label }}</span>
+                </div>
+              </button>
+              @if (getActionTooltip(item.label)) {
+                <lucide-icon
+                  name="info"
+                  [size]="14"
+                  class="v4-menu-item-tooltip-icon"
+                  [matTooltip]="getActionTooltip(item.label)"
+                  matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+                ></lucide-icon>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="v4-menu-group-label">Proof</div>
+        <div *ngFor="let item of checkItemsIn('PROOF')">
+          <div class="v4-menu-item-row">
+            <button
+              mat-menu-item
+              (click)="onActionButtonClick(item.label)"
+              [disabled]="IsActionDisable(item)"
+            >
+              <div class="v4-menu-item">
+                <lucide-icon
+                  [name]="getLucideIcon(item.label)"
+                  [size]="16"
+                ></lucide-icon>
+                @if (item.label === "Get Signed Receipt") {
+                  @if (
+                    this.commonTransactionTableRowData?.data
+                      ?.payment_receipts_id !== null
+                  ) {
+                    @if (
+                      this.commonTransactionTableRowData?.data?.signature_url
+                    ) {
+                      <span>View Receipt</span>
+                    } @else {
+                      <span>Receipt Request Sent, Try Again</span>
+                    }
+                  } @else {
+                    <span>Get Signed Receipt</span>
+                  }
+                } @else {
+                  <span>{{ item.label }}</span>
+                }
+              </div>
+            </button>
+            @if (getActionTooltip(item.label)) {
+              <lucide-icon
+                name="info"
+                [size]="14"
+                class="v4-menu-item-tooltip-icon"
+                [matTooltip]="getActionTooltip(item.label)"
+                matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+              ></lucide-icon>
+            }
+          </div>
+        </div>
+        <div class="v4-menu-item-row">
+          <button
+            appWhiteLabel
+            hiddenIf="isCSNHCRequirement"
+            mat-menu-item
+            (click)="sendPaymentProof('pod')"
+            [disabled]="IsActionDisable(podItem)"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="truck" [size]="16"></lucide-icon>
+              <span>Send/Req Proof of Delivery</span>
+            </div>
+          </button>
+          @if (getActionTooltip('Send/Req Proof of Delivery')) {
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="v4-menu-item-tooltip-icon"
+              [matTooltip]="getActionTooltip('Send/Req Proof of Delivery')"
+              matTooltipPosition="above"
+              matTooltipClass="v4-menu-item-tooltip"
+            ></lucide-icon>
+          }
+        </div>
+      </div>
+    </mat-menu>
+  </div>
+
+  <!-- Eye icon -->
+  <button [attr.aria-label]="(isMaping ? 'Please map your bank account first.' : 'View') || null"
+    class="action-icon-btn"
+    [attr.aria-disabled]="shouldEyeDisabled || isMaping"
+    [class.no-hover]="commonTransactionTableRowData?.disableHover"
+    (click)="viewButtonAction(); $event.stopPropagation()"
+    [disabled]="shouldEyeDisabled"
+    [matTooltipDisabled]="
+      shouldEyeDisabled || commonTransactionTableRowData?.disableToolTip
+    "
+    [matTooltip]="isMaping ? 'Please map your bank account first.' : 'View'"
+  >
+    <lucide-icon name="eye" [size]="16" class="v4-action-icon"></lucide-icon>
+  </button>
+  <!-- Funding application download icon -->
+  @if (showFundingApplication) {
+    <button aria-label="Download Wire Instruction Form"
+      class="action-icon-btn"
+      [class.no-hover]="commonTransactionTableRowData?.disableHover"
+      [disabled]="isDownloadingApplication"
+      (click)="downloadFundingApplication(); $event.stopPropagation()"
+      matTooltip="Download Wire Instruction Form"
+    >
+      <lucide-icon
+        [name]="isDownloadingApplication ? 'loader-circle' : 'download'"
+        [size]="16"
+        class="v4-action-icon"
+        [class.animate-spin]="isDownloadingApplication"
+      ></lucide-icon>
+    </button>
+  }
+
+  <!-- Signed receipt icon -->
+  @if (
+    this.commonTransactionTableRowData?.data?.signature_url &&
+    this.commonTransactionTableRowData?.data?.signature_url !== null
+  ) {
+    <button [attr.aria-label]="(isMaping ? 'Please map your bank account first.' : 'View Signed Receipt') || null"
+      class="action-icon-btn"
+      [class.no-hover]="commonTransactionTableRowData?.disableHover"
+      (click)="viewSignedReceipt(); $event.stopPropagation()"
+      [matTooltipDisabled]="
+        shouldEyeDisabled || commonTransactionTableRowData?.disableToolTip
+      "
+      [matTooltip]="
+        isMaping ? 'Please map your bank account first.' : 'View Signed Receipt'
+      "
+    >
+      <lucide-icon
+        name="file-text"
+        [size]="16"
+        class="v4-action-icon"
+      ></lucide-icon>
+    </button>
+  }
+</div>

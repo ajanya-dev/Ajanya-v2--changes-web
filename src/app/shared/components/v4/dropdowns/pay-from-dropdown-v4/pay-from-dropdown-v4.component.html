@@ -1,0 +1,94 @@
+<div class="angular-ocw-v4-ng-select-dropdown relative font-funnel">
+  <ng-select
+    #ngSel
+    [ngClass]="isInvalid() ? 'v4-dropdown-invalid' : ''"
+    [appendTo]="append()"
+    id="pay_from_drop_down_{{ id() }}"
+    placeholder="{{ placeholder() }}"
+    [formControl]="selectedSource"
+    [clearable]="clearable()"
+    [searchable]="searchable()"
+    bindLabel="name"
+    (change)="getChange($event)"
+    (blur)="onTouched()"
+    [class]="'height-' + customHeight()"
+    class="ng-dropdown-panel-v4 text-sm"
+  >
+    @for (item of sources(); track item.id) {
+      <ng-option [value]="item" [disabled]="item.soon">{{ item.name }}</ng-option>
+    }
+    <!-- Live option template: event bindings (the star) only fire from ng-option-tmp,
+         not from <ng-option> content (which ng-select renders as static innerHTML). -->
+    <ng-template ng-option-tmp let-item="item">
+      <div
+        class="v4-option-row min-w-full flex items-center py-2"
+        [class.is-default-item]="showDefaultStar() && defaultItemId() === item.id"
+      >
+        @if (dropdownIconNeeded()) {
+          <div
+            class="mr-3 flex h-9 w-9 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-primary-brand-color shrink-0"
+          >
+            <lucide-icon [img]="getIcon(item.icon)" [size]="18"></lucide-icon>
+          </div>
+        }
+        <div
+          class="flex-1 truncate min-w-0 text-sm font-medium text-v4-main-text-color"
+        >
+          {{ item.name }}
+        </div>
+        @if (item.soon) {
+          <span
+            class="text-[12px] font-semibold uppercase tracking-wide ml-3 shrink-0 px-2 py-0.5 rounded-full bg-v4-badge-neutral-bg-color text-v4-badge-neutral-text-color"
+          >
+            Soon
+          </span>
+        }
+        @if (showDefaultStar() && !item.soon) {
+          <button
+            type="button"
+            class="ml-3 shrink-0 flex items-center justify-center p-1 rounded-md hover:bg-v4-badge-neutral-bg-color"
+            (mousedown)="$event.stopPropagation()"
+            (click)="onStar($event, item, ngSel)"
+            [attr.aria-label]="
+              defaultItemId() === item.id
+                ? 'Default source'
+                : 'Set as default source'
+            "
+            matTooltip="Set it as your default for next time"
+            matTooltipPosition="above"
+            matTooltipClass="v4-option-tooltip"
+          >
+            <lucide-icon
+              [img]="StarIcon"
+              [size]="16"
+              [attr.fill]="
+                defaultItemId() === item.id ? 'currentColor' : 'none'
+              "
+              [class]="
+                defaultItemId() === item.id
+                  ? 'text-v4-favorite-star-color'
+                  : 'text-v4-tertiary-text-color'
+              "
+            ></lucide-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+    <ng-template ng-label-tmp let-item="item">
+      <div class="min-w-0 flex items-center gap-2">
+        @if (labelIconNeeded()) {
+          <div
+            class="flex h-7 w-7 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-primary-brand-color shrink-0"
+          >
+            <lucide-icon [img]="getIcon(item.icon)" [size]="14"></lucide-icon>
+          </div>
+        }
+        <div
+          class="font-peridot font-medium text-sm text-v4-main-text-color truncate"
+        >
+          {{ item.name }}
+        </div>
+      </div>
+    </ng-template>
+  </ng-select>
+</div>

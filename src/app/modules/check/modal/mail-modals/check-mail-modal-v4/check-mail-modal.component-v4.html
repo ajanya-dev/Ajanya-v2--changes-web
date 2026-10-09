@@ -1,0 +1,1175 @@
+<div class="font-peridot flex flex-col max-h-[90vh] relative">
+  @if (isDisable || isChangeMailType()) {
+    <div
+      class="absolute inset-0 z-50 flex items-center justify-center bg-v4-popup-background-color/60 backdrop-blur-sm"
+    >
+      <lucide-icon
+        [img]="LoaderCircleIcon"
+        [size]="32"
+        class="animate-spin text-v4-primary-brand-color"
+      ></lucide-icon>
+    </div>
+  }
+  <!-- modal header -->
+  <div
+    class="sticky top-0 bg-v4-secondary-background-color border-b border-v4-border-color px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-0 z-10"
+  >
+    <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+      <h2
+        class="text-base sm:text-xl font-semibold text-v4-main-text-color font-funnel whitespace-nowrap"
+      >
+        Mail Your Checks
+      </h2>
+      <lucide-icon
+        matTooltip="Set your Default Shipping type from here"
+        [img]="SettingsIcon"
+        [size]="18"
+        class="text-v4-subtle-text-color hover:text-v4-main-text-color cursor-pointer transition-colors"
+        (click)="goToSetting()"
+      ></lucide-icon>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3">
+        @if (showCheckMailNotification() && !isSubscribed) {
+        <div
+          class="flex rounded-lg px-3 py-2 bg-v4-secondary-background-color border border-v4-border-color items-center gap-3"
+        >
+          <img
+            ngSrc="assets/images/check/check-mail-dark.svg"
+            alt="check-mail"
+            width="32"
+            height="36"
+          />
+          <div class="flex flex-col gap-0.5">
+            <span
+              class="text-v4-primary-brand-bold-color text-xs font-semibold uppercase"
+              >First Check Mail is Free</span
+            >
+            <p class="text-v4-secondary-text-color text-[12px]">
+              First Class, No Charge
+            </p>
+          </div>
+        </div>
+        }
+        <div class="flex flex-col items-end">
+          <span class="text-[12px] text-v4-subtle-text-color uppercase"
+            >MY CREDITS</span
+          >
+          <span class="text-sm sm:text-lg font-bold text-v4-main-text-color"
+            >{{ currentCredit | currency }}</span
+          >
+        </div>
+
+        <app-common-button-v4
+          [type]="{ style: 'neon', name: 'main' }"
+          [text]="'Recharge Now'"
+          [disabled]="isDisable || visibleLoading || disabled"
+          (clickEvent)="openRechargeModal()"
+        ></app-common-button-v4>
+      </div>
+
+      <div
+        class="w-9 h-9 rounded-lg border border-v4-border-color hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+        (click)="close()"
+        (keyup.enter)="close()"
+        (keyup.space)="close()"
+        tabindex="0"
+        role="button"
+        [mat-dialog-close]="false"
+      >
+        <lucide-icon
+          [img]="XIcon"
+          class="text-v4-subtle-text-color"
+        ></lucide-icon>
+      </div>
+    </div>
+
+    @if (nonmail) {
+    <div class="absolute top-16 left-1/2 -translate-x-1/2 z-20 toast-animation">
+      <div
+        class="flex items-center gap-2 px-4 py-2 bg-v4-badge-error-bg-color border-l-4 border-v4-common-red-color rounded-r-lg"
+      >
+        <lucide-icon
+          [img]="TriangleAlertIcon"
+          [size]="16"
+          class="text-v4-common-red-color"
+        ></lucide-icon>
+        <p class="text-sm text-v4-main-text-color">
+          Check #<span>{{ nonmailcheck() }}</span> are not eligible for check
+          mailing
+        </p>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="flex-1 overflow-y-auto p-4 sm:p-6 bg-v4-tertiary-background-color"
+  >
+    <form [formGroup]="mailForm" class="v4-check-mail-form">
+      <!-- Action Buttons -->
+      <div
+        class="flex justify-between items-center mb-4 sm:mb-5 flex-col md:flex-row gap-3"
+      >
+        <div class="flex flex-wrap gap-2 sm:gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-v4-primary-brand-bold-color text-v4-primary-brand-bold-color text-sm font-semibold rounded-full hover:bg-v4-primary-brand-color hover:text-white transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            [disabled]="disabled"
+            (click)="selectShippingTypeForAll()"
+          >
+            <lucide-icon [img]="TruckIcon" [size]="16"></lucide-icon>
+            Select Shipping Method
+          </button>
+
+          @if (payeeall) {
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'Edit Payee Address'"
+            [disabled]="disabled"
+            (clickEvent)="updateAllPayeeAddressModal()"
+          ></app-common-button-v4>
+          } @if (bankall) {
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'Edit From Address'"
+            [disabled]="disabled"
+            (clickEvent)="updateAllBankAddressModal()"
+          ></app-common-button-v4>
+          }
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div
+        class="rounded-xl border-2 border-v4-border-color overflow-auto max-h-[420px] relative"
+        (scroll)="closeAllShippingDropdowns()"
+      >
+        <table class="w-full table-fixed border-collapse min-w-[900px]">
+          <thead class="bg-v4-secondary-background-color sticky top-0 z-[5]">
+            <tr>
+              @if (fmails.length > 1) {
+                <th class="v4-th text-center" style="width: 3%">
+                  <div class="flex items-center justify-center w-full h-full">
+                    <input
+                      type="checkbox"
+                      id="mail_select_all"
+                      class="v4-checkbox-sm"
+                      [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                      [checked]="isAllRowsSelected"
+                      (change)="selectAllRowsForMailing($event.target.checked)"
+                    />
+                  </div>
+                </th>
+              }
+              <th class="v4-th text-left" style="width: 3%">#</th>
+              <th class="v4-th text-left" style="width: 20%">
+                SHIPPING METHOD
+              </th>
+              <th class="v4-th text-left" style="width: 12%">PAYEE NAME</th>
+              @if (fromValid) {
+              <th class="v4-th text-left" style="width: 12%">Bank Account</th>
+              }
+              <th class="v4-th text-left" style="width: 8%">
+                <div class="flex items-center gap-1">
+                  <lucide-icon
+                    [img]="BanknoteIcon"
+                    [size]="14"
+                    class="text-v4-common-blue-color"
+                  ></lucide-icon>
+                  CHECK NO
+                </div>
+              </th>
+              <th class="v4-th text-center" style="width: 3%">
+                <div class="flex items-center justify-center w-full h-full">
+                  <input
+                    type="checkbox"
+                    class="v4-checkbox-sm"
+                    name="sms"
+                    id="sms"
+                    [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                    (change)="checkAllSms($event)"
+                  />
+                </div>
+              </th>
+              <th class="v4-th text-left" style="width: 16%">
+                <div class="flex items-center gap-1">
+                  <lucide-icon
+                    [img]="MessageSquareIcon"
+                    [size]="12"
+                    class="text-v4-common-green-color"
+                  ></lucide-icon>
+                  SMS
+                </div>
+              </th>
+              <th class="v4-th text-center" style="width: 3%">
+                <div class="flex items-center justify-center w-full h-full">
+                  <input
+                    type="checkbox"
+                    name="email"
+                    id="email"
+                    class="v4-checkbox-sm"
+                    [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                    (change)="checkAllEmail($event)"
+                  />
+                </div>
+              </th>
+              <th class="v4-th text-left" style="width: 15%">
+                <div class="flex items-center gap-1">
+                  <lucide-icon
+                    [img]="MailIcon"
+                    [size]="12"
+                    class="text-v4-primary-brand-bold-color"
+                  ></lucide-icon>
+                  EMAIL ADDRESS
+                </div>
+              </th>
+              <th class="v4-th text-right" style="width: 8%">
+                <div class="flex items-center justify-end gap-1">
+                  <lucide-icon
+                    [img]="CircleDollarSignIcon"
+                    [size]="12"
+                    class="text-v4-common-yellow-color"
+                  ></lucide-icon>
+                  COST
+                </div>
+              </th>
+              <th class="v4-th text-center" style="width: 12%">
+                <div class="flex items-center justify-center gap-1">
+                  <lucide-icon
+                    [img]="PaperclipIcon"
+                    [size]="12"
+                    class="text-v4-common-violet-color"
+                  ></lucide-icon>
+                  ATTACHMENT
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody formArrayName="mails">
+            @for (item of mailForm?.controls['mails']['controls']; track $index)
+            {
+            <tr
+              [formGroupName]="$index"
+              class="hover:bg-transparent [&>td]:!align-top"
+            >
+              <!-- Row selection -->
+              @if (fmails.length > 1) {
+                <td class="v4-td text-center">
+                  <div class="h-8 flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      id="mail_select_{{ $index }}"
+                      class="v4-checkbox-sm"
+                      formControlName="isSelectedForPayment"
+                      (change)="
+                        toggleRowForMailing($event.target.checked, $index)
+                      "
+                    />
+                  </div>
+                </td>
+              }
+
+              <!-- # -->
+              <td class="v4-td text-v4-subtle-text-color">
+                <div class="h-8 flex items-center">{{ $index + 1 }}</div>
+              </td>
+
+              <!-- Shipping Method -->
+              <td class="v4-td">
+                <div class="shipping-method-cell">
+                  @if (item.value.country) {
+                  <div class="w-full angular-ocw-v4-ng-select-dropdown">
+                    <ng-select
+                      #shippingSelect
+                      class="height-1 ng-dropdown-panel-v4 text-sm"
+                      [clearable]="false"
+                      [searchable]="false"
+                      [disabled]="disabled || shipdisabled"
+                      [ngModel]="getShippingOptionsForDropdown(item.value.country).length === 0 ? '?' : selctedShippingType[item.value.enc_id]"
+                      [ngModelOptions]="{ standalone: true }"
+                      [compareWith]="compareShippingIds"
+                      (ngModelChange)="onShippingDropdownChange($event, item.value.enc_id, $index, item.value.country)"
+                      (open)="onShippingDropdownOpen(shippingSelect)"
+                      placeholder="Select Shipping Method"
+                      appendTo="body"
+                    >
+                      @for (type of
+                      getShippingOptionsForDropdown(item.value.country); track
+                      type.id) {
+                      <ng-option [value]="type.id">
+                        <span
+                          class="text-v4-main-text-color text-xs font-funnel"
+                          >{{ type.name }}</span
+                        >
+                      </ng-option>
+                      }
+                      <ng-template ng-label-tmp let-opt="item">
+                        <span
+                          class="text-v4-main-text-color text-xs font-funnel"
+                          >{{ opt?.label || getShippingLabelById(opt?.value ?? opt, item.value.country) }}</span
+                        >
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  } @else {
+                  <div class="w-full angular-ocw-v4-ng-select-dropdown">
+                    <ng-select
+                      #shippingSelect
+                      class="height-1 ng-dropdown-panel-v4 text-sm"
+                      [clearable]="false"
+                      [searchable]="false"
+                      [ngModel]="'?'"
+                      [ngModelOptions]="{ standalone: true }"
+                      matTooltip="Enter valid To address"
+                      appendTo="body"
+                    >
+                      <ng-option value="?">?</ng-option>
+                    </ng-select>
+                  </div>
+                  } @if ( invalidMailTypeChecks.includes(item.value.enc_id) &&
+                  customAddress ) {
+                  <div
+                    class="flex items-center gap-1 mt-1 text-v4-common-red-color text-sm font-semibold whitespace-nowrap"
+                  >
+                    <lucide-icon
+                      [img]="CircleAlertIcon"
+                      [size]="12"
+                    ></lucide-icon>
+                    This field is required.
+                  </div>
+                  }
+                </div>
+              </td>
+
+              <!-- Payee Name -->
+              <td class="v4-td overflow-hidden">
+                <div class="flex flex-col min-w-0">
+                  <button
+                    type="button"
+                    class="flex min-w-0 h-8 items-center text-left text-xs text-v4-main-text-color hover:text-v4-primary-brand-bold-color transition-colors"
+                    [ngClass]="{ 'opacity-50 pointer-events-none': disabled || editDisable }"
+                    [matTooltip]="
+                      item.value.payee_name.length > 30
+                        ? item.value.payee_name
+                        : ''
+                    "
+                    (click)="
+                      openEditPayeeAdress(
+                        item.value.enc_payee_id,
+                        item.value.cheque_serial_number,
+                        item.value.enc_id
+                      )
+                    "
+                  >
+                    <span class="truncate"
+                      >{{ item.value.payee_name | truncate: 30 }}</span
+                    >
+                    <lucide-icon
+                      class="ml-1.5 shrink-0 text-v4-subtle-text-color"
+                      [img]="PencilIcon"
+                      [size]="12"
+                    ></lucide-icon>
+                  </button>
+                  <div class="flex gap-1 mt-1">
+                    <!-- Driven solely by the payee-validation API verdict. `=== false`
+                         keeps a row that has not been validated yet from flashing the
+                         badge before the response lands. -->
+                    @if ( customAddress &&
+                    selectedChecksPayeeInfo?.[item.value.enc_id]?.success ===
+                    false ) {
+                    <div
+                      role="presentation"
+                      class="inline-flex items-center whitespace-nowrap bg-v4-badge-error-bg-color text-v4-common-red-color rounded-full px-2 py-0.5 text-[12px] font-medium cursor-pointer"
+                      [ngClass]="{ 'opacity-50 pointer-events-none': disabled || editDisable }"
+                      (click)="
+                        openEditPayeeAdress(
+                          item.value.enc_payee_id,
+                          item.value.cheque_serial_number,
+                          item.value.enc_id
+                        )
+                      "
+                    >
+                      Invalid To Address
+                    </div>
+                    }
+                  </div>
+                </div>
+              </td>
+
+              <!-- Bank Account (conditional) -->
+              @if (fromValid) {
+              <td class="v4-td overflow-hidden">
+                @if (validatedBankIds.includes(item.value.enc_id)) {
+                <div
+                  class="flex flex-col min-w-0"
+                  id="invalidFrom_{{ item.value.enc_id }}"
+                  [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                >
+                  <div
+                    role="presentation"
+                    class="flex min-w-0 h-8 items-center text-xs text-v4-primary-brand-bold-color cursor-pointer hover:opacity-80 transition-opacity"
+                    (click)="InvFromAddress(item.value.enc_bank_account_id, item.value.cheque_serial_number)"
+                  >
+                    <span
+                      class="truncate"
+                      [matTooltip]="
+                        selectedCheksBankInfo[item.value.enc_id]?.cheque
+                          ?.bank_account?.bank_account_nick_name?.length > 20
+                          ? selectedCheksBankInfo[item.value.enc_id]?.cheque
+                              ?.bank_account?.bank_account_nick_name
+                          : ''
+                      "
+                    >
+                      {{ selectedCheksBankInfo[item.value.enc_id]?.cheque
+                      ?.bank_account?.bank_account_nick_name | truncate: 20 }}
+                    </span>
+                    <lucide-icon
+                      class="ml-1.5 shrink-0"
+                      [img]="PencilIcon"
+                      [size]="12"
+                    ></lucide-icon>
+                  </div>
+                  <div
+                    role="presentation"
+                    class="inline-flex items-center whitespace-nowrap bg-v4-badge-error-bg-color text-v4-common-red-color rounded-full px-2 py-0.5 text-[12px] font-medium mt-1 w-fit cursor-pointer hover:opacity-80 transition-opacity"
+                    (click)="InvFromAddress(item.value.enc_bank_account_id, item.value.cheque_serial_number)"
+                  >
+                    Invalid From Address
+                  </div>
+                </div>
+                }
+              </td>
+              }
+
+              <!-- Check No -->
+              <td class="v4-td text-v4-main-text-color">
+                <div class="h-8 flex items-center">
+                  {{ item.value.cheque_serial_number }}
+                </div>
+              </td>
+
+              <!-- SMS Checkbox -->
+              <td class="v4-td text-center">
+                <div class="flex items-center justify-center w-full h-8">
+                  <input
+                    type="checkbox"
+                    id="sms_{{ $index }}"
+                    (change)="
+                      smscheck($event, $index);
+                      smscheckchange($event, item.value.enc_id, $index)
+                    "
+                    formControlName="informed_payee_sms"
+                    class="v4-checkbox-sm"
+                  />
+                </div>
+              </td>
+
+              <!-- Phone -->
+              <td class="v4-td">
+                <div
+                  class="hide-country-selector"
+                  [ngClass]="{ 'phone-invalid': isPhoneError($index) }"
+                >
+                  <app-phone-input-v4
+                    id="phone_{{ $index }}"
+                    formControlName="payee_phone"
+                    [isFieldRequired]="false"
+                    [control]="fmails?.controls[$index]?.controls?.payee_phone"
+                    placeholder="Phone"
+                    [fieldHeight]="'32px'"
+                    [showCountryDropdown]="false"
+                  ></app-phone-input-v4>
+                </div>
+                @if (isPhoneError($index)) {
+                <div
+                  class="flex items-center gap-1 mt-1 text-v4-common-red-color text-[12px] font-medium whitespace-nowrap"
+                >
+                  <lucide-icon [img]="CircleAlertIcon" [size]="10"></lucide-icon>
+                  Required
+                </div>
+                }
+              </td>
+
+              <!-- Email Checkbox -->
+              <td class="v4-td text-center">
+                <div class="flex items-center justify-center w-full h-8">
+                  <input
+                    type="checkbox"
+                    id="email_checkBox_{{ $index }}"
+                    [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                    formControlName="informed_payee_email"
+                    (change)="emailcheck($event, $index, item.value.enc_id)"
+                    class="v4-checkbox-sm"
+                  />
+                </div>
+              </td>
+
+              <!-- Email Address -->
+              <td class="v4-td compact-input email-input">
+                <div class="flex flex-col">
+                  <app-common-input-v4
+                    placeholder="Email"
+                    [type]="'email'"
+                    formControlName="payee_email"
+                    [isFieldRequired]="false"
+                    [control]="fmails?.controls[$index]?.controls?.payee_email"
+                    [fieldHeight]="'32px'"
+                  />
+                </div>
+              </td>
+
+              <!-- Cost -->
+              <td
+                class="v4-td text-right"
+                id="singleCost_{{ item.value.enc_id }}"
+              >
+                <div class="h-8 flex items-center justify-end">
+                  @if (item.value.enc_id) {
+                  <span class="text-xs font-bold text-v4-main-text-color">
+                    $ {{ shippingCalculation?.single_items?.[item.value.enc_id]
+                    ? shippingCalculation.single_items[ item.value.enc_id
+                    ].toFixed(2) : "0.00" }}
+                  </span>
+                  }
+                </div>
+              </td>
+
+              <!-- Attachment -->
+              <td
+                class="v4-td"
+                [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+              >
+                <div class="flex justify-center items-center gap-2">
+                  <div class="flex-1 flex justify-end">
+                    @if ( item.value.is_exisiting_attach &&
+                    !attachments[item.value.enc_id]?.length ) {
+                    <span
+                      class="fa-light fa-circle-info flash-animation"
+                      matTooltip="You have attachments with this check. Click on 'Add' and select to mail them with the check."
+                    ></span>
+                    }
+                  </div>
+                  <div class="shrink-0">
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'main' }"
+                      [text]="'Add'"
+                      [isAddIcon]="true"
+                      [customHeight]="'32px'"
+                      (clickEvent)="openAttachmentModal($index, item.value.enc_id, smsvalue)"
+                    ></app-common-button-v4>
+                  </div>
+                  <div class="flex-1 flex justify-start">
+                    @if ( !attachments[item.value.enc_id] &&
+                    item.value.added_attachments > 0 ) {
+                    <span
+                      class="inline-flex items-center justify-center w-5 h-5 text-[12px] font-bold rounded-full border border-v4-common-green-color text-v4-common-green-color"
+                    >
+                      {{ item.value.added_attachments }}
+                    </span>
+                    } @else if (attachments[item.value.enc_id]?.length > 0) {
+                    <span
+                      class="inline-flex items-center justify-center w-5 h-5 text-[12px] font-bold rounded-full border border-v4-common-green-color text-v4-common-green-color"
+                    >
+                      {{ attachments[item.value.enc_id]?.length }}
+                    </span>
+                    }
+                  </div>
+                </div>
+              </td>
+            </tr>
+            }
+
+            <!-- Summary Row -->
+            <tr
+              class="bg-v4-secondary-background-color border-t-2 border-v4-border-color [&>td]:!align-middle"
+            >
+              @if (trans) {
+              <td colspan="3" class="v4-td">
+                <app-common-button-v4
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Last 10 Transactions'"
+                  [disabled]="disabled"
+                  (clickEvent)="openLastTrans()"
+                ></app-common-button-v4>
+              </td>
+              }
+              <td
+                [attr.colspan]="mailTableColumnCount - (trans ? 6 : 3)"
+                class="v4-td"
+              >
+                @if (bankall || payeeall) {
+                <a
+                  href="https://tools.usps.com/zip-code-lookup.htm?byaddress"
+                  target="_blank"
+                  class="text-xs text-v4-primary-brand-bold-color transition-colors"
+                >
+                  Verify Address Details
+                </a>
+                }
+              </td>
+              @if (trans) {
+              <td colspan="3" class="v4-td text-right">
+                <p class="whitespace-nowrap text-sm text-v4-main-text-color">
+                  SUB TOTAL:
+                  <span class="font-bold text-v4-primary-brand-bold-color ml-1"
+                    >$ {{ subtotal ? subtotal : "0.00" }}</span
+                  >
+                </p>
+              </td>
+              } @if (trans === false) {
+              <td colspan="3" class="v4-td text-right">
+                <p class="whitespace-nowrap text-sm text-v4-main-text-color">
+                  SUB TOTAL:
+                  <span class="font-bold text-v4-primary-brand-bold-color ml-1"
+                    >$ {{ subtotal ? subtotal : "0.00" }}</span
+                  >
+                </p>
+              </td>
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Shipping Address Section -->
+      <div class="mt-5">
+        <div class="border border-v4-border-color rounded-xl p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div
+              class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6"
+            >
+              <label class="flex items-center gap-2 cursor-pointer">
+                <div class="v4-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="payee-address"
+                    id="to-payee-address"
+                    [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                    class="v4-radio-sm"
+                    (change)="onShippingAddressChange($event)"
+                    checked
+                  />
+                </div>
+                <span class="text-sm text-v4-main-text-color"
+                  >Ship to Payee Address</span
+                >
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <div class="v4-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="payee-address"
+                    id="to-custom-address"
+                    [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                    class="v4-radio-sm"
+                    (change)="onShippingAddressChange($event)"
+                  />
+                </div>
+                <span class="text-sm text-v4-main-text-color whitespace-nowrap"
+                  >Ship to Custom Address</span
+                >
+                <lucide-icon
+                  [img]="CircleQuestionMarkIcon"
+                  [size]="14"
+                  class="cursor-pointer text-v4-subtle-text-color"
+                  matTooltip="Send checks to a different address, such as an office, or mail multiple checks to one address. For privacy, each check can be sealed in its own envelope, then combined into one large envelope."
+                ></lucide-icon>
+              </label>
+            </div>
+
+            <div
+              class="flex items-center bg-v4-tertiary-background-color px-3 py-2 rounded-lg border border-v4-border-color"
+              [ngClass]="{
+                'pointer-events-none opacity-50': !shipdisabled
+              }"
+            >
+              <input
+                type="checkbox"
+                class="v4-checkbox-sm"
+                id="individual-envelope"
+                (change)="onChangeEnvelope($event)"
+                [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+                [(ngModel)]="isEnvelopeChecked"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <label
+                for="individual-envelope"
+                class="cursor-pointer text-sm text-v4-main-text-color ml-2"
+                >Individual Envelope Option</label
+              >
+              <lucide-icon
+                [img]="CircleQuestionMarkIcon"
+                [size]="14"
+                class="cursor-pointer text-v4-subtle-text-color ml-1"
+                matTooltip="For privacy, we seal each check in separate envelopes, then combine them into one envelope."
+              ></lucide-icon>
+            </div>
+          </div>
+
+          @if (!customAddress) {
+          <!-- Custom Shipping Details -->
+          <div class="mt-4 pt-4 border-t border-v4-border-color">
+            <div
+              class="shipping-address-section flex flex-col sm:flex-row w-full items-start justify-between gap-4"
+              [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+            >
+              <div class="flex flex-col flex-1 min-w-0 gap-1.5">
+                <div
+                  class="flex items-center gap-1.5 text-xs font-semibold text-v4-subtle-text-color uppercase"
+                >
+                  <lucide-icon
+                    [img]="MailIcon"
+                    [size]="12"
+                    class="text-v4-primary-brand-bold-color"
+                  ></lucide-icon>
+                  MAIL FROM
+                </div>
+                <div class="flex w-full gap-2 items-center">
+                  <app-v4-common-dropdown
+                    #mailFromDropdown
+                    [config]="mailFromConfig"
+                    [listData]="shippingAddressFrom"
+                    [(ngModel)]="currentMailFrom"
+                    [ngModelOptions]="{ standalone: true }"
+                    appendTo="body"
+                    class="flex-1 min-w-0"
+                    [isDisabled]="disabled"
+                    (buttonClick)="openAddMailAddressModal('mail-from', true)"
+                    (ngModelChange)="onMailFromChange($event, 'mail-from')"
+                  ></app-v4-common-dropdown>
+                  <div class="flex-shrink-0">
+                    @if (isMailFromEditable) {
+                    <button
+                      type="button"
+                      class="h-[44px] w-[44px] flex items-center justify-center text-xs bg-v4-secondary-background-color text-v4-main-text-color border border-v4-border-color rounded-lg hover:bg-v4-tertiary-background-color transition-colors ml-1"
+                      value="mail-from"
+                      (click)="openAddMailAddressModal('mail-from')"
+                    >
+                      <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
+                    </button>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-col flex-1 min-w-0 gap-1.5">
+                <div
+                  class="flex items-center gap-1.5 text-xs font-semibold text-v4-subtle-text-color uppercase"
+                >
+                  <lucide-icon
+                    [img]="MailIcon"
+                    [size]="12"
+                    class="text-v4-primary-brand-bold-color"
+                  ></lucide-icon>
+                  MAIL TO
+                </div>
+                <div
+                  class="flex gap-2 items-center"
+                  [ngClass]="{ 'animate-pulse opacity-50': isPayeeLoading }"
+                >
+                  <app-v4-common-dropdown
+                    #mailToDropdown
+                    [config]="mailToConfig"
+                    [listData]="shippingAddressTo"
+                    [(ngModel)]="currentMailTo"
+                    [ngModelOptions]="{ standalone: true }"
+                    appendTo="body"
+                    class="flex-1 min-w-0"
+                    [loading]="isPayeeLoading"
+                    [isDisabled]="disabled"
+                    (buttonClick)="openAddMailAddressModal('mail-to', true)"
+                    (ngModelChange)="onMailToChange($event, 'mail-to')"
+                  ></app-v4-common-dropdown>
+                  <div class="flex-shrink-0">
+                    @if (isMailToEditable) {
+                    <button
+                      type="button"
+                      class="h-[44px] w-[44px] flex items-center justify-center text-xs bg-v4-secondary-background-color text-v4-main-text-color border border-v4-border-color rounded-lg hover:bg-v4-tertiary-background-color transition-colors ml-1"
+                      value="mail-to"
+                      (click)="openAddMailAddressModal('mail-to')"
+                    >
+                      <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
+                    </button>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-col flex-1 min-w-0 gap-1.5">
+                <label
+                  for="shipping-type"
+                  class="flex items-center gap-1.5 text-xs font-semibold text-v4-subtle-text-color uppercase"
+                >
+                  <lucide-icon
+                    [img]="PackageOpenIcon"
+                    [size]="12"
+                    class="text-v4-common-yellow-color"
+                  ></lucide-icon>
+                  SHIPPING TYPE
+                </label>
+                <div class="angular-ocw-v4-ng-select-dropdown">
+                  <ng-select
+                    class="height-1 ng-dropdown-panel-v4 text-sm"
+                    [clearable]="false"
+                    [searchable]="false"
+                    [ngModel]="customShippingType"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="customShipingTypeChange($event)"
+                    placeholder="Select shipping type"
+                    [disabled]="disabled"
+                    appendTo="body"
+                  >
+                    @for (type of shippingvar; track type.id) {
+                    <ng-option [value]="type.id">
+                      <span class="text-v4-main-text-color text-sm font-funnel"
+                        >{{ type.name }}</span
+                      >
+                    </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 text-right">
+              <p class="text-sm text-v4-main-text-color">
+                Shipping Fee:
+                <span class="font-bold text-v4-primary-brand-bold-color"
+                  >{{ shippingFee }}</span
+                >
+              </p>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Mail Type Options -->
+      @if (bottomSection) {
+      <div
+        class="mt-5 border border-v4-border-color rounded-xl p-4"
+        [ngClass]="{ 'opacity-50 pointer-events-none': disabled }"
+      >
+        <div class="flex flex-col gap-4">
+          <!-- Send Now / Schedule / Recurring -->
+          <div class="flex flex-wrap gap-3">
+            <div
+              class="flex items-center gap-2 border border-v4-border-color rounded-lg px-4 py-2.5"
+            >
+              <div class="v4-radio-wrapper">
+                <input
+                  type="radio"
+                  name="mail-type"
+                  id="mail-now"
+                  value="mail now"
+                  (change)="mailTypeChange($event?.target?.value)"
+                  [checked]="selectedType === 'mail now'"
+                  class="v4-radio-input"
+                />
+              </div>
+              <label
+                for="mail-now"
+                class="text-sm text-v4-main-text-color cursor-pointer"
+                >Send Now</label
+              >
+            </div>
+            @if (customAddress) {
+            <div
+              class="flex items-center gap-2 border border-v4-border-color rounded-lg px-4 py-2.5"
+            >
+              <div class="v4-radio-wrapper">
+                <input
+                  type="radio"
+                  name="mail-type"
+                  id="schedule"
+                  value="schedule-it"
+                  class="v4-radio-input"
+                  (change)="mailTypeChange($event?.target?.value)"
+                  [checked]="selectedType === 'schedule-it'"
+                />
+              </div>
+              <label
+                for="schedule"
+                class="text-sm text-v4-main-text-color cursor-pointer"
+                >Schedule Payment</label
+              >
+            </div>
+            <div
+              class="flex items-center gap-2 border border-v4-border-color rounded-lg px-4 py-2.5"
+            >
+              <div class="v4-radio-wrapper">
+                <input
+                  type="radio"
+                  name="mail-type"
+                  id="recurring"
+                  class="v4-radio-input"
+                  value="recurring"
+                  (change)="mailTypeChange($event?.target?.value)"
+                  [checked]="selectedType === 'recurring'"
+                />
+              </div>
+              <label
+                for="recurring"
+                class="text-sm text-v4-main-text-color cursor-pointer"
+                >Recurring Payment</label
+              >
+            </div>
+            }
+          </div>
+
+          <!-- Recurring Options -->
+          @if (recurring) {
+          <div class="border border-v4-border-color rounded-xl p-5">
+            <!-- Row 1: Frequency + Start Date -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label for="frequency" class="text-sm text-v4-main-text-color"
+                  >Frequency</label
+                >
+                <app-v4-common-dropdown
+                  formControlName="frequency"
+                  [config]="{
+                    placeholder: 'Select Frequency',
+                    displayField: 'name',
+                    outputField: 'id'
+                  }"
+                  [listData]="frequencyOptions"
+                  [clearable]="false"
+                  [appendTo]="'body'"
+                />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="start_date"
+                  class="font-funnel text-sm text-v4-main-text-color"
+                  >Start Date</label
+                >
+                <app-v4-date-picker
+                  placeholder="Start Date"
+                  formControlName="start_date"
+                  [minDate]="mindate"
+                  [control]="mailForm.controls['start_date']"
+                  [isFieldRequired]="false"
+                  [hideTodayShortcut]="true"
+                />
+                @if (startdatevalid) {
+                <span class="text-v4-common-red-color text-[12px] mt-0.5"
+                  >Invalid Date</span
+                >
+                }
+              </div>
+            </div>
+
+            <!-- Row 2: Radio options -->
+            <div
+              class="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-3 mt-4 items-center"
+            >
+              <div class="flex items-center gap-2.5">
+                <div class="v4-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="recurring-types"
+                    id="transaction_months"
+                    checked
+                    value="transaction"
+                    (change)="Recurring($event)"
+                    class="v4-radio-input"
+                  />
+                </div>
+                <label
+                  for="transaction_months"
+                  class="text-sm text-v4-main-text-color cursor-pointer"
+                >
+                  Number of occurrences
+                </label>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  name="transaction_count"
+                  id="transaction_count"
+                  formControlName="count"
+                  min="1"
+                  max="99999"
+                  [attr.disabled]="recurringEndMode !== 1 ? true : null"
+                  (keypress)="numberOnly($event)"
+                  (input)="limitOccurrenceCount($event)"
+                  class="w-24 px-2.5 py-1.5 text-sm border border-v4-input-border-color rounded-lg bg-v4-popup-background-color text-v4-main-text-color focus:outline-none focus:ring-1 focus:ring-v4-primary-brand-bold-color text-center disabled:bg-v4-input-background-color disabled:text-v4-tertiary-text-color disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div class="flex items-center gap-2.5">
+                <div class="v4-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="recurring-types"
+                    value="Specific-date"
+                    (change)="Recurring($event)"
+                    id="specific_date"
+                    class="v4-radio-input"
+                  />
+                </div>
+                <label
+                  for="specific_date"
+                  class="text-sm text-v4-main-text-color cursor-pointer whitespace-nowrap"
+                >
+                  Specific Date (Until)
+                </label>
+              </div>
+              <div
+                class="flex flex-col w-44"
+                [class.opacity-50]="recurringEndMode !== 2"
+                [class.pointer-events-none]="recurringEndMode !== 2"
+              >
+                <app-v4-date-picker
+                  placeholder="Select Date"
+                  formControlName="until"
+                  [minDate]="mindate"
+                  [control]="mailForm.controls['until']"
+                  [isFieldRequired]="false"
+                  [fieldHeight]="'32px'"
+                  [disabled]="recurringEndMode !== 2"
+                  [hideTodayShortcut]="true"
+                />
+                @if (enddatevalid) {
+                <span class="text-v4-common-red-color text-[12px]"
+                  >Invalid Date</span
+                >
+                }
+              </div>
+
+              <div class="flex items-center gap-2.5">
+                <div class="v4-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="recurring-types"
+                    value="until"
+                    (change)="Recurring($event)"
+                    id="until-i-cancel"
+                    class="v4-radio-sm"
+                  />
+                </div>
+                <label
+                  for="until-i-cancel"
+                  class="text-sm text-v4-main-text-color cursor-pointer"
+                >
+                  Until Canceled
+                </label>
+              </div>
+              <div></div>
+            </div>
+
+            <!-- Row 3: Include This Payment -->
+            @if (recurring) {
+            <div class="flex items-center gap-2.5 mt-4">
+              <input
+                type="checkbox"
+                name="mail-type"
+                id="is_include"
+                formControlName="recurring_include_check"
+                checked
+                class="v4-checkbox-sm"
+              />
+              <label
+                for="is_include"
+                class="text-sm text-v4-main-text-color cursor-pointer"
+              >
+                Include This Payment
+              </label>
+              <lucide-icon
+                [img]="CircleQuestionMarkIcon"
+                [size]="14"
+                class="cursor-pointer text-v4-subtle-text-color ml-1"
+                matTooltip="Include this check in recurring mail. This check will be mailed on the first occurrence of recurring."
+              ></lucide-icon>
+            </div>
+            }
+          </div>
+          }
+
+          <!-- Schedule Options -->
+          @if (scheduleIt) {
+          <div class="max-w-xs">
+            <app-v4-date-picker
+              placeholder="Select Date"
+              fieldLabel="Select Date"
+              formControlName="scheduleDate"
+              [minDate]="mindate"
+              [control]="mailForm.controls['scheduleDate']"
+              [isFieldRequired]="false"
+              [hideTodayShortcut]="true"
+            />
+            @if (datevalid) {
+            <span class="text-v4-common-red-color text-[12px] ml-2"
+              >Invalid Date</span
+            >
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </form>
+
+    @if (autoAttachmentForMail) {
+    <div class="mt-3 text-xs text-v4-subtle-text-color">
+      Note: To include attachments, click 'Add' before sending the check.
+    </div>
+    }
+  </div>
+
+  <!-- modal footer -->
+  <div
+    class="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 p-4 sm:p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <div>
+      @if (skipprocess) {
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Skip'"
+        [width]="'100px'"
+        (clickEvent)="skip()"
+      ></app-common-button-v4>
+      }
+    </div>
+    <div class="flex items-center gap-3 sm:gap-4">
+      <p class="text-xs sm:text-sm text-v4-subtle-text-color">
+        TOTAL:
+        <span class="text-lg sm:text-xl font-bold text-v4-main-text-color ml-1"
+          >$ {{ total ? total : "0.00" }}</span
+        >
+      </p>
+
+      @if (!recurring && !scheduleIt) {
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Send Now'"
+        [width]="'140px'"
+        [disabled]="isDisable || loading || !hasSelectedRows"
+        [loading]="loading"
+        (clickEvent)="MailNow('')"
+      ></app-common-button-v4>
+      } @if (scheduleIt) {
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Schedule Payment'"
+        [width]="'170px'"
+        [disabled]="loading || !hasSelectedRows"
+        [loading]="loading"
+        (clickEvent)="MailNow('schedule')"
+      ></app-common-button-v4>
+      } @if (recurring) {
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Set Recurring Payment'"
+        [width]="'200px'"
+        [disabled]="loading || !hasSelectedRows"
+        [loading]="loading"
+        (clickEvent)="MailNow('recurring')"
+      ></app-common-button-v4>
+      }
+    </div>
+  </div>
+</div>
+

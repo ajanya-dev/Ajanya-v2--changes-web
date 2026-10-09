@@ -1,0 +1,186 @@
+<div class="flex-1 min-h-0 w-full flex flex-col gap-3">
+  <!-- Slot 1: Full-width Header -->
+  @if (headerComponent()) {
+    <div class="w-full">
+      <ng-container
+        *ngComponentOutlet="headerComponent(); inputs: headerInputs()"
+      ></ng-container>
+    </div>
+  }
+
+  <!-- Body -->
+  @if (isGridView()) {
+    @if (listComponent()) {
+      <!-- WITH LIST: Show list + detail split layout -->
+      @if (isSmallScreen()) {
+        <!-- MOBILE: Show either list OR detail -->
+        @if (!showMobileDetail()) {
+          <!-- Mobile List: full width -->
+          <div class="flex-1 overflow-hidden">
+            <div
+              class="relative h-full bg-v4-secondary-background-color border border-v4-border-color rounded-lg overflow-hidden"
+            >
+              <ng-container
+                *ngComponentOutlet="listComponent(); inputs: listInputs()"
+              ></ng-container>
+              @if (isLoading()) {
+                <div class="data_spinner absolute top-1/2 left-1/2"></div>
+              }
+            </div>
+          </div>
+        } @else {
+          <!-- Mobile Detail: full width with back button -->
+          <div class="flex-1 flex flex-col overflow-auto">
+            <div class="flex items-center pb-2">
+              <button
+                class="flex items-center gap-2 text-sm transition-colors cursor-pointer text-v4-secondary-text-color hover:text-v4-main-text-color"
+                (click)="goBackToList()"
+              >
+                <lucide-icon name="arrow-left" [size]="16" />
+                <span>{{ backButtonText() }}</span>
+              </button>
+            </div>
+            @if (transactionsComponent()) {
+              <!-- Details -->
+              @if (!detailsPanelEmpty()) {
+                <div
+                  class="w-full bg-main-background rounded-lg"
+                  [ngClass]="{ 'flex-1 min-h-0': transactionsPanelEmpty() }"
+                >
+                  <ng-container
+                    *ngComponentOutlet="
+                      detailsComponent();
+                      inputs: detailsInputs()
+                    "
+                  ></ng-container>
+                </div>
+              }
+              <!-- Transactions -->
+              <div
+                class="flex-1 rounded-lg mt-6"
+                [ngClass]="{ hidden: transactionsPanelEmpty() }"
+              >
+                <ng-container
+                  *ngComponentOutlet="
+                    transactionsComponent();
+                    inputs: transactionsInputs()
+                  "
+                ></ng-container>
+              </div>
+            } @else {
+              <div class="flex-1">
+                <ng-container
+                  *ngComponentOutlet="
+                    detailsComponent();
+                    inputs: detailsInputs()
+                  "
+                ></ng-container>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <!-- DESKTOP: Left list + Right split -->
+        <div class="flex flex-1 overflow-hidden gap-6">
+          <!-- Slot 2: Left List Panel -->
+          @if (!hideListPanel()) {
+            <div
+              [ngClass]="{
+                'min-w-[230px] w-[280px]': !isNarrow,
+                '!min-w-[60px] !w-[60px]': isNarrow,
+                'transition-width': true
+              }"
+              class="relative shrink-0"
+            >
+              @if (showToggle() && showCollapseIcon()) {
+                <div
+                  class="absolute top-3 -right-2.5 z-10 bg-v4-secondary-background-color border border-v4-border-color rounded-full p-0.5 shadow-sm text-v4-primary-brand-bold-color hide-on-small"
+                >
+                  <lucide-icon
+                    class="cursor-pointer"
+                    (click)="toggle()"
+                    [name]="isNarrow ? 'chevron-right' : 'chevron-left'"
+                    [matTooltip]="isNarrow ? 'Expand' : 'Collapse'"
+                    [size]="14"
+                  />
+                </div>
+              }
+              <div
+                class="relative h-full bg-v4-secondary-background-color border border-v4-border-color rounded-lg overflow-hidden"
+              >
+                <ng-container
+                  *ngComponentOutlet="listComponent(); inputs: listInputs()"
+                ></ng-container>
+                @if (isLoading()) {
+                  <div class="data_spinner absolute top-1/2 left-1/2"></div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Right Section (Details + Transactions) -->
+          <div
+            class="flex-1 flex flex-col overflow-auto"
+            [ngClass]="compactSpacing() ? 'gap-3' : 'gap-6'"
+          >
+            @if (transactionsComponent()) {
+              <!-- Details -->
+              @if (!detailsPanelEmpty()) {
+                <div
+                  class="w-full bg-v4-main-background-color rounded-lg"
+                  [ngClass]="{ 'flex-1 min-h-0': transactionsPanelEmpty() }"
+                >
+                  <ng-container
+                    *ngComponentOutlet="
+                      detailsComponent();
+                      inputs: detailsInputs()
+                    "
+                  ></ng-container>
+                </div>
+              }
+              <!-- Transactions -->
+              <div
+                class="flex-1 rounded-lg"
+                [ngClass]="{
+                  '-mt-2': detailsPanelEmpty(),
+                  hidden: transactionsPanelEmpty()
+                }"
+              >
+                <ng-container
+                  *ngComponentOutlet="
+                    transactionsComponent();
+                    inputs: transactionsInputs()
+                  "
+                ></ng-container>
+              </div>
+            } @else {
+              <!-- Details only — full height -->
+              <div class="flex-1 bg-v4-main-background-color rounded-lg">
+                <ng-container
+                  *ngComponentOutlet="
+                    detailsComponent();
+                    inputs: detailsInputs()
+                  "
+                ></ng-container>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <!-- WITHOUT LIST: Details component full-width -->
+      <div class="flex-1 overflow-auto">
+        <ng-container
+          *ngComponentOutlet="detailsComponent(); inputs: detailsInputs()"
+        ></ng-container>
+      </div>
+    }
+  } @else if (listviewComponent()) {
+    <!-- List View: Full-width listview component -->
+    <div class="flex-1 overflow-auto">
+      <ng-container
+        *ngComponentOutlet="listviewComponent(); inputs: listviewInputs()"
+      ></ng-container>
+    </div>
+  }
+</div>

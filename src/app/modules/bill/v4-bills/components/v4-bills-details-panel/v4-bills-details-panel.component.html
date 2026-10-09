@@ -1,0 +1,438 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [backdropZIndex]="backdropZIndex()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(100vw, max(960px, 60vw))'"
+  [panelId]="'bill-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [headerLoading]="isLoading()"
+  [subtitleTemplate]="billData() ? billSubtitle : undefined"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="onActionButtonClicked($event)"
+/>
+
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-v4-badge-success-bg-color text-v4-badge-success-text-color"
+  >
+    <lucide-icon name="file-text" [size]="18"></lucide-icon>
+  </div>
+</ng-template>
+
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #billSubtitle>
+  <span
+    class="mt-1 flex min-w-0 leading-snug"
+    [ngClass]="
+      isPanelExpanded()
+        ? 'items-center gap-2 whitespace-nowrap'
+        : 'flex-col gap-1'
+    "
+  >
+    <span class="shrink-0 whitespace-nowrap"
+      >Invoice ID:
+      <span class="font-semibold text-v4-main-text-color">{{
+        billData()?.invNo || "—"
+      }}</span></span
+    >
+    @if (isPanelExpanded()) {
+      <span
+        class="h-1 w-1 shrink-0 rounded-full bg-v4-secondary-text-color"
+      ></span>
+    }
+    <span class="min-w-0 truncate whitespace-nowrap"
+      >Payee:
+      <span class="font-semibold text-v4-main-text-color">{{
+        billData()?.payee?.payeeName || "—"
+      }}</span></span
+    >
+  </span>
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped panel-body--fill"
+    [class.panel-body--expanded]="isPanelExpanded()"
+    [style.grid-template-rows]="
+      isPanelExpanded() && !isLoading()
+        ? lineItems().length || summaryRows().length
+          ? 'auto auto 1fr'
+          : 'auto 1fr'
+        : null
+    "
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="6" [tiles]="3" [timeline]="0" />
+    } @else {
+      @if (billData(); as bill) {
+        <!-- Bill details -->
+        <div class="pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('info')"
+          >
+            <span class="pd-card-title">Bill Details</span>
+            <lucide-icon
+              [name]="isCardCollapsed('info') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("info")) {
+            <div class="pd-card-body bill-rows">
+              <div class="pd-row">
+                <span class="pd-row-label">Invoice #</span>
+                <span class="pd-row-value">{{ bill.invNo || "—" }}</span>
+              </div>
+              @if (isPanelExpanded()) {
+                <div class="pd-row">
+                  <span class="pd-row-label">Pay Status</span>
+                  <span
+                    class="inline-flex items-center rounded-xl px-2 py-0.5 text-[12px] font-bold leading-snug"
+                    [style.background-color]="payStatus().bgColor"
+                    [style.color]="payStatus().color"
+                    >{{ payStatus().text }}</span
+                  >
+                </div>
+              }
+              <div class="pd-row">
+                <span class="pd-row-label">Invoice Date</span>
+                <span class="pd-row-value tabular-nums">{{
+                  bill.invDate || "—"
+                }}</span>
+              </div>
+              <div class="pd-row">
+                <span class="pd-row-label">Due Date</span>
+                <span class="pd-row-value tabular-nums">{{
+                  bill.dueDate || "—"
+                }}</span>
+              </div>
+              <div class="pd-row">
+                <span class="pd-row-label">Account No</span>
+                <span class="pd-row-value tabular-nums">{{
+                  bill.accountNo || "—"
+                }}</span>
+              </div>
+              <div class="pd-row">
+                <span class="pd-row-label">Created Date</span>
+                <span class="pd-row-value tabular-nums">{{
+                  bill.invDate || "—"
+                }}</span>
+              </div>
+              <div class="pd-row">
+                <span class="pd-row-label">Memo</span>
+                <span class="pd-row-value break-words text-right">{{
+                  bill.memo || "—"
+                }}</span>
+              </div>
+              @if (bill.importedFrom) {
+                <div class="pd-row">
+                  <span class="pd-row-label">Imported From</span>
+                  <span class="pd-row-value break-words text-right">{{
+                    bill.importedFrom
+                  }}</span>
+                </div>
+              }
+              <div class="pd-row">
+                <span class="pd-row-label">Bill Amount</span>
+                <span class="pd-row-value tabular-nums">{{
+                  bill.amount | currency
+                }}</span>
+              </div>
+              <div
+                class="bill-total [.dark-mode_&]:!bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_12%,transparent)]"
+              >
+                <span
+                  class="text-[12px] font-bold text-v4-primary-brand-bold-color"
+                  >Bill Total</span
+                >
+                <span
+                  class="font-funnel text-sm font-bold tabular-nums text-v4-primary-brand-bold-color"
+                  >{{ bill.billTotal | currency }}</span
+                >
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Vendor information -->
+        <div class="pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('vendor')"
+          >
+            <span class="pd-card-title">Vendor Information</span>
+            <lucide-icon
+              [name]="isCardCollapsed('vendor') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("vendor")) {
+            @if (vendor(); as v) {
+              <div class="pd-card-body">
+                <div
+                  class="flex items-center gap-1.5 text-[12px] text-v4-tertiary-text-color"
+                >
+                  <lucide-icon name="building-2" [size]="13"></lucide-icon>
+                  Bill From
+                </div>
+                <div class="mt-1.5 flex items-start gap-2.5">
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color font-peridot text-[12px] font-bold text-white"
+                    >{{ v.initials }}</span
+                  >
+                  <div class="min-w-0 flex-1 leading-snug">
+                    <p
+                      class="m-0 break-words font-peridot text-xs font-semibold text-v4-main-text-color"
+                    >
+                      {{ v.name || "—" }}
+                    </p>
+                    @if (v.address) {
+                      <p
+                        class="m-0 mt-0.5 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                        [title]="v.address"
+                      >
+                        {{ v.address }}
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                <div class="mb-2 mt-2.5 border-t border-v4-border-color"></div>
+
+                <div
+                  class="flex items-center gap-1.5 text-[12px] text-v4-tertiary-text-color"
+                >
+                  <lucide-icon name="user" [size]="13"></lucide-icon>
+                  Bill To
+                </div>
+                @if (v.billTo) {
+                  <div class="mt-1.5 flex items-center gap-2.5">
+                    <span
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-v4-accent-violet-color font-peridot text-[12px] font-bold text-white"
+                      >{{ v.billToInitials }}</span
+                    >
+                    <p
+                      class="m-0 min-w-0 flex-1 break-words font-peridot text-xs font-semibold text-v4-main-text-color"
+                    >
+                      {{ v.billTo }}
+                    </p>
+                  </div>
+                } @else {
+                  <p
+                    class="m-0 mt-1 text-[12px] font-semibold text-v4-main-text-color"
+                  >
+                    —
+                  </p>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Line items — kept from the previous panel; the design omits it. -->
+        @if (lineItems().length || summaryRows().length) {
+          <div class="pd-card pd-full">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('items')"
+            >
+              <span class="pd-card-title">Line Items</span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('items') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+            @if (!isCardCollapsed("items")) {
+              <div class="pd-card-body">
+                @if (lineItems().length) {
+                  <div class="overflow-x-auto">
+                    <div class="max-h-[490px] overflow-y-auto">
+                      <table class="v4-ocw-table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Qty</th>
+                            @if (bill.isZohoBill === 1) {
+                              <th>Discount</th>
+                            }
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of lineItems(); track $index) {
+                            <tr>
+                              <td class="text-v4-tertiary-text-color">
+                                {{ $index + 1 }}
+                              </td>
+                              <td>
+                                <p class="m-0 font-semibold">
+                                  {{ item.itemName }}
+                                </p>
+                                @if (item.description) {
+                                  <p class="m-0 text-v4-tertiary-text-color">
+                                    {{ item.description }}
+                                  </p>
+                                }
+                              </td>
+                              <td>{{ item.cost | currency }}</td>
+                              <td>{{ item.qty }}</td>
+                              @if (bill.isZohoBill === 1) {
+                                <td>{{ item.discount || 0 | currency }}</td>
+                              }
+                              <td class="font-semibold">
+                                {{ item.total | currency }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                }
+                @for (row of summaryRows(); track row.label) {
+                  <div
+                    class="pd-row"
+                    [class.mt-2]="$first && lineItems().length"
+                  >
+                    <span class="pd-row-label">{{ row.label }}</span>
+                    <span class="pd-row-value tabular-nums">{{
+                      row.value | currency
+                    }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Actions — the tile row is the card head; the open section renders below. -->
+        <div
+          class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+        >
+          <div
+            class="pd-card-head-flush grid grid-cols-3 gap-1.5 px-3 py-2"
+            [class.border-b]="!!openActionSection()"
+            [class.border-v4-border-color]="!!openActionSection()"
+          >
+            @for (
+              tile of [
+                { key: "audit", icon: "activity", label: "Audit Logs" },
+                { key: "comments", icon: "message-square", label: "Comments" },
+                { key: "attachments", icon: "paperclip", label: "Attachments" }
+              ];
+              track tile.key
+            ) {
+              <button
+                type="button"
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+                [ngClass]="
+                  openActionSection() === tile.key
+                    ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                    : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+                "
+                (click)="selectSection($any(tile.key))"
+              >
+                <lucide-icon
+                  [name]="tile.icon"
+                  [size]="16"
+                  class="shrink-0"
+                ></lucide-icon>
+                <span
+                  class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                  >{{ tile.label }}</span
+                >
+              </button>
+            }
+          </div>
+
+          @if (openActionSection() === "audit") {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              <app-po-audit-log-list
+                [allowDeviceEdit]="false"
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                [logs]="auditLogsForList()"
+                [maxHeight]="null"
+                emptyHint="Changes to this bill will show up here."
+                (closed)="closeSection()"
+              />
+            </div>
+          }
+
+          @if (openActionSection() === "comments") {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading("comments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-comments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [comments]="commentsForList()"
+                  [maxHeight]="'420px'"
+                  [posting]="commentPosting()"
+                  [error]="commentError()"
+                  emptyHint="Notes you add here stay with the bill."
+                  (submitComment)="onSubmitComment($event)"
+                  (deleteComment)="onDeleteComment($event)"
+                  (closed)="closeSection()"
+                />
+              }
+            </div>
+          }
+
+          @if (openActionSection() === "attachments") {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading("attachments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-attachments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [attachments]="attachments()"
+                  [maxHeight]="'420px'"
+                  [deletingId]="deletingAttachmentId()"
+                  [uploading]="attachmentUploading()"
+                  [error]="attachmentError()"
+                  emptyHint="Files attached to this bill will show up here."
+                  (fileSelected)="onAttachmentSelected($event)"
+                  (deleteAttachment)="onDeleteAttachment($event)"
+                  (closed)="closeSection()"
+                />
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="pd-empty">
+          <p class="m-0 py-8 text-center text-sm text-v4-tertiary-text-color">
+            Couldn’t load this bill.
+          </p>
+        </div>
+      }
+    }
+  </div>
+</ng-template>

@@ -1,0 +1,160 @@
+<div class="flex flex-col max-h-[90vh] min-w-[700px]">
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      Sage Business Bank Account Mapping
+    </h1>
+    <div class="flex items-center gap-3">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Import Bank Accounts"
+        width="auto"
+        [toolTip]="'Import all bank accounts from your Sage Business company'"
+        [loading]="importing()"
+        [disabled]="importing()"
+        (clickEvent)="importBankAccounts()"
+      />
+      <div
+        (click)="close()"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+      >
+        <lucide-icon name="x" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-auto p-6 bg-v4-tertiary-background-color min-h-0">
+    @if (loading()) {
+      <div class="flex justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="32"
+          class="text-v4-primary-brand-color animate-spin"
+        />
+      </div>
+    }
+
+    @if (!loading() && bankAccountList().length === 0) {
+      <div class="text-center py-12 text-v4-tertiary-text-color">
+        No bank accounts found. Click "Import Bank Accounts" to get started.
+      </div>
+    }
+
+    @if (!loading() && bankAccountList().length) {
+      <div
+        class="border border-v4-input-border-color rounded-xl overflow-hidden bg-v4-secondary-background-color"
+      >
+        <div class="overflow-x-auto max-h-[60vh]">
+          <table class="w-full text-sm text-v4-main-text-color">
+            <thead>
+              <tr class="bg-v4-input-background-color">
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  SL No
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Sage Company Name
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Sage Bank Ac
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  OCW Bank Ac
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  OCW Bank Nick Name
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (bank of bankAccountList(); track bank.id; let i = $index) {
+                <tr
+                  class="border-b border-v4-input-border-color last:border-b-0 hover:bg-v4-input-background-color transition-colors"
+                >
+                  <td class="px-4 py-3">{{ i + 1 }}</td>
+                  <td class="px-4 py-3">{{ bank.company }}</td>
+                  <td class="px-4 py-3">{{ bank.thirdPartyName }}</td>
+                  <td class="px-4 py-3">
+                    @if (bank.isMapped) {
+                      <span>{{ bank.bankAccountName }}</span>
+                    } @else {
+                      <app-common-button-v4
+                        [type]="{ style: 'primary', name: 'main' }"
+                        text="Map Now"
+                        customHeight="32px"
+                        width="auto"
+                        [toolTip]="'Map your bank account.'"
+                        (clickEvent)="openMapModal(bank)"
+                      />
+                    }
+                  </td>
+                  <td class="px-4 py-3">{{ bank.bankAccountNick }}</td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <button aria-label="Edit"
+                        type="button"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        style="color: var(--v4-primary-brand-bold-color)"
+                        matTooltip="Edit"
+                        [disabled]="!bank.isMapped"
+                        (click)="openMapModal(bank, 'edit')"
+                      >
+                        <lucide-icon name="pencil" [size]="16" />
+                      </button>
+                      @if (!deleting()[bank.id]) {
+                        <button aria-label="Delete"
+                          type="button"
+                          class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+                          style="color: var(--v4-badge-error-text-color)"
+                          matTooltip="Delete"
+                          (click)="onDeleteRow(bank)"
+                        >
+                          <lucide-icon name="trash-2" [size]="16" />
+                        </button>
+                      } @else {
+                        <span class="w-8 h-8 flex items-center justify-center">
+                          <lucide-icon
+                            name="loader-circle"
+                            [size]="16"
+                            class="animate-spin"
+                            style="color: var(--v4-badge-error-text-color)"
+                          />
+                        </span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color flex-shrink-0"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Close"
+      (clickEvent)="close()"
+    />
+  </div>
+</div>

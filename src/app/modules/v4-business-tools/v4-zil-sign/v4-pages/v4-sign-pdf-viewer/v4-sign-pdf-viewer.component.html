@@ -1,0 +1,485 @@
+<div class="flex flex-col h-full w-full overflow-hidden bg-v4-main-background-color">
+  <!-- Page Header -->
+  <div class="flex-shrink-0 bg-v4-main-background-color shadow-sm border-b border-v4-border-color py-3">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-4 min-w-0">
+        @if (!isSignerMode) {
+          <div
+            class="w-9 h-9 rounded-lg border border-v4-border-color hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center flex-shrink-0"
+            (click)="goBack()"
+            (keyup.enter)="goBack()"
+            tabindex="0"
+            role="button"
+          >
+            <lucide-icon
+              name="arrow-left"
+              [size]="18"
+              class="text-v4-secondary-text-color"
+            ></lucide-icon>
+          </div>
+        }
+        <div class="min-w-0">
+          <h1 class="m-0 text-base font-semibold text-v4-main-text-color font-peridot truncate">
+            {{ documentName || 'Document' }}
+          </h1>
+          <p class="m-0 text-xs text-v4-secondary-text-color">
+            @if (isSignerMode) {
+              Sign the document
+            } @else {
+              Place fields and send for signatures
+            }
+          </p>
+        </div>
+      </div>
+
+      <!-- Page nav + zoom -->
+      <div class="flex items-center gap-2">
+        <button aria-label="Previous page"
+          type="button"
+          class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color disabled:opacity-50"
+          (click)="previousPage()"
+          [disabled]="currentPage() <= 1"
+          matTooltip="Previous page"
+        >
+          <lucide-icon name="chevron-left" [size]="16"></lucide-icon>
+        </button>
+        <span class="text-xs font-medium text-v4-main-text-color px-2">
+          Page {{ currentPage() }} / {{ totalPages() }}
+        </span>
+        <button aria-label="Next page"
+          type="button"
+          class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color disabled:opacity-50"
+          (click)="nextPage()"
+          [disabled]="currentPage() >= totalPages()"
+          matTooltip="Next page"
+        >
+          <lucide-icon name="chevron-right" [size]="16"></lucide-icon>
+        </button>
+        <div class="w-px h-5 bg-v4-border-color mx-1"></div>
+        <button aria-label="Zoom out"
+          type="button"
+          class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color"
+          (click)="zoomOut()"
+          matTooltip="Zoom out"
+        >
+          <lucide-icon name="zoom-out" [size]="16"></lucide-icon>
+        </button>
+        <span class="text-xs font-medium text-v4-main-text-color px-1 min-w-[44px] text-center">
+          {{ zoomLevel() }}%
+        </span>
+        <button aria-label="Zoom in"
+          type="button"
+          class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color"
+          (click)="zoomIn()"
+          matTooltip="Zoom in"
+        >
+          <lucide-icon name="zoom-in" [size]="16"></lucide-icon>
+        </button>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center gap-2">
+        @if (isSignerMode) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Submit"
+            lucideIcon="check"
+            [loading]="loadingSubmit()"
+            (clickEvent)="submitSignerFields()"
+          />
+        } @else {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Send"
+            lucideIcon="send"
+            (clickEvent)="send()"
+          />
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Body: 3-column layout (toolbar | canvas | recipients) -->
+  <div class="flex-1 flex flex-row overflow-hidden">
+    <!-- Left: Page thumbnail navigator -->
+    <div class="w-[140px] flex-shrink-0 border-r border-v4-border-color bg-v4-secondary-background-color h-full flex flex-col overflow-hidden">
+      <h3 class="m-0 px-3 pt-3 pb-2 text-xs font-semibold uppercase tracking-wide text-v4-secondary-text-color flex-shrink-0">
+        Pages
+      </h3>
+      <div class="flex-1 min-h-0 overflow-y-auto px-3 pb-3 flex flex-col gap-3">
+        @for (thumb of pageThumbnails(); track $index) {
+          <button
+            type="button"
+            class="relative w-full flex-shrink-0 rounded-md border bg-white overflow-hidden transition-colors"
+            [class.border-v4-primary-brand-color]="currentPage() === $index + 1"
+            [class.border-v4-input-border-color]="currentPage() !== $index + 1"
+            (click)="goToPage($index + 1)"
+            [matTooltip]="'Page ' + ($index + 1)"
+          >
+            @if (thumb) {
+              <img [src]="thumb" alt="Page {{ $index + 1 }}" class="w-full h-auto block" />
+            } @else {
+              <div class="aspect-[3/4] w-full bg-v4-tertiary-background-color"></div>
+            }
+            <span
+              class="absolute top-1 left-1 text-[11px] font-bold px-1.5 py-0.5 rounded leading-none"
+              [style.background-color]="
+                currentPage() === $index + 1
+                  ? 'var(--v4-badge-info-bg-color)'
+                  : 'var(--v4-popup-background-color)'
+              "
+              [style.color]="
+                currentPage() === $index + 1
+                  ? 'var(--v4-badge-info-text-color)'
+                  : 'var(--v4-main-text-color)'
+              "
+              [style.border]="'1px solid var(--v4-border-color)'"
+            >
+              {{ $index + 1 }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Center: PDF canvas -->
+    <div
+      #pdfContainer
+      class="flex-1 overflow-auto p-4 flex justify-center bg-v4-input-background-color"
+    >
+      @if (pdfLoading()) {
+        <div class="flex items-center justify-center w-full h-full text-sm text-v4-secondary-text-color">
+          Loading document...
+        </div>
+      } @else if (pdfError()) {
+        <div class="flex items-center justify-center w-full h-full text-sm text-v4-common-red-color">
+          {{ pdfError() }}
+        </div>
+      }
+      <div #pdfPagesContainer class="inline-flex flex-col items-center"></div>
+    </div>
+
+    <!-- Right: Recipients panel (default) OR Field Details panel (when a field is selected) -->
+    @if (!isSignerMode) {
+      <div class="w-[280px] flex-shrink-0 border-l border-v4-border-color bg-v4-secondary-background-color h-full flex flex-col overflow-hidden">
+        @if (selectedField(); as field) {
+          <!-- Header (fixed) -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-v4-border-color flex-shrink-0">
+            <h3 class="m-0 text-sm font-semibold text-v4-main-text-color">
+              {{ getSettingsPanelTitle() }}
+            </h3>
+            <div class="flex items-center gap-2">
+              @if (fieldSettingsSaved()) {
+                <span class="text-xs font-medium font-peridot text-v4-text-success flex items-center gap-1">
+                  Saved
+                  <lucide-icon name="check" [size]="12"></lucide-icon>
+                </span>
+              }
+              <button aria-label="Close"
+                type="button"
+                class="w-7 h-7 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color hover:text-v4-main-text-color transition-colors"
+                (click)="closeFieldSettings()"
+                matTooltip="Close"
+              >
+                <lucide-icon name="x" [size]="16"></lucide-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrollable form body (only shows scrollbar if content overflows) -->
+          <div class="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
+            <!-- Recipient -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-v4-secondary-text-color">Recipient</label>
+              <app-v4-select-dropdown
+                [items]="recipientOptions()"
+                placeholder="Select recipient"
+                [compact]="false"
+                [selectedValue]="field.recipientId != null ? field.recipientId.toString() : ''"
+                (selectionChange)="onFieldRecipientChange($event, field)"
+              />
+            </div>
+
+            <!-- Toggles -->
+            <div class="flex flex-col gap-2">
+              <label class="flex items-center gap-2 cursor-pointer text-sm text-v4-main-text-color">
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-sm flex-shrink-0"
+                  [ngModel]="field.required"
+                  (ngModelChange)="field.required = $event; onFieldSettingChange()"
+                />
+                <span>Required</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-sm text-v4-main-text-color">
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-sm flex-shrink-0"
+                  [ngModel]="field.fixedWidth"
+                  (ngModelChange)="field.fixedWidth = $event; onFieldSettingChange()"
+                />
+                <span>Fixed width</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-sm text-v4-main-text-color">
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-sm flex-shrink-0"
+                  [ngModel]="field.fixedHeight"
+                  (ngModelChange)="field.fixedHeight = $event; onFieldSettingChange()"
+                />
+                <span>Fixed height</span>
+              </label>
+            </div>
+
+            <!-- Default value — not applicable for signature/initial/sign_date/checkbox/radio/attachment -->
+            @if (hasDefaultValueSupport()) {
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-v4-secondary-text-color">Default value</label>
+                <input
+                  type="text"
+                  [ngModel]="field.defaultValue"
+                  (ngModelChange)="field.defaultValue = $event; onFieldSettingChange()"
+                  class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+                />
+              </div>
+            }
+
+            <!-- Field name -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-v4-secondary-text-color">Field name</label>
+              <input
+                type="text"
+                [ngModel]="field.fieldName"
+                (ngModelChange)="field.fieldName = $event; onFieldSettingChange()"
+                class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+              />
+            </div>
+
+            <!-- Group name + min/max — checkbox / radio fields only -->
+            @if (field.type === 'checkbox' || field.type === 'radio') {
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-v4-secondary-text-color">Group name</label>
+                <input
+                  type="text"
+                  [ngModel]="field.groupName"
+                  (ngModelChange)="field.groupName = $event; onFieldSettingChange()"
+                  [placeholder]="field.type === 'radio' ? 'e.g. gender, yes_no' : 'e.g. payment_method'"
+                  class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+                />
+                <span class="text-xs text-v4-secondary-text-color">
+                  @if (field.type === 'radio') {
+                    Radio fields sharing the same group name are mutually exclusive.
+                  } @else {
+                    Checkboxes sharing the same group name are validated together.
+                  }
+                </span>
+              </div>
+            }
+
+            @if (field.type === 'checkbox' && field.groupName) {
+              @if (getCheckboxGroupSize() > 1) {
+                <div class="flex gap-2">
+                  <div class="flex flex-col gap-1 flex-1">
+                    <label class="text-xs font-medium text-v4-secondary-text-color">Min required</label>
+                    <input
+                      type="number"
+                      [ngModel]="field.minRequired"
+                      (ngModelChange)="field.minRequired = $event; onFieldSettingChange()"
+                      min="0"
+                      [max]="getCheckboxGroupSize()"
+                      placeholder="0"
+                      class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1 flex-1">
+                    <label class="text-xs font-medium text-v4-secondary-text-color">Max allowed</label>
+                    <input
+                      type="number"
+                      [ngModel]="field.maxRequired"
+                      (ngModelChange)="field.maxRequired = $event; onFieldSettingChange()"
+                      min="0"
+                      [max]="getCheckboxGroupSize()"
+                      placeholder="∞"
+                      class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+                    />
+                  </div>
+                </div>
+                @if (getCheckboxGroupValidationError()) {
+                  <span class="text-xs font-medium text-v4-common-red-color">{{ getCheckboxGroupValidationError() }}</span>
+                }
+              } @else {
+                <span class="text-xs text-v4-secondary-text-color">Add more checkboxes to this group to enable min/max validation.</span>
+              }
+            }
+
+            <!-- Max file size — attachment only -->
+            @if (field.type === 'attachment') {
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-v4-secondary-text-color">Max file size (MB)</label>
+                <input
+                  type="number"
+                  [ngModel]="field.maxFileSizeMB"
+                  (ngModelChange)="field.maxFileSizeMB = $event; onFieldSettingChange()"
+                  min="1"
+                  placeholder="No limit"
+                  class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+                />
+              </div>
+            }
+
+            <!-- Character limit — text-type fields, excluding email (already format-validated) -->
+            @if (isTextTypeField() && field.type !== 'email') {
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-v4-secondary-text-color">Character limit</label>
+                <input
+                  type="number"
+                  [ngModel]="field.characterLimit"
+                  (ngModelChange)="field.characterLimit = $event; onFieldSettingChange()"
+                  min="1"
+                  class="w-full px-3 py-2 text-sm border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color"
+                />
+              </div>
+            }
+
+            <!-- Validation — text-type fields, excluding email -->
+            @if (isTextTypeField() && field.type !== 'email') {
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-v4-secondary-text-color">Validation</label>
+                <app-v4-select-dropdown
+                  [items]="validationOptions"
+                  placeholder="None"
+                  [compact]="false"
+                  [selectedValue]="field.validation || 'none'"
+                  (selectionChange)="onValidationChange($event, field)"
+                />
+              </div>
+            }
+          </div>
+
+          <!-- Footer (pinned to bottom of viewport) -->
+          <div class="px-4 py-3 border-t border-v4-border-color flex-shrink-0">
+            <button
+              type="button"
+              class="w-full h-11 px-3 rounded-md text-sm font-medium text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              [style.background-color]="'var(--v4-common-red-color)'"
+              (click)="deleteSelectedField()"
+            >
+              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+              <span>Delete</span>
+            </button>
+          </div>
+        } @else {
+          <!-- Recipients + Fields (default view) -->
+          <div class="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-4">
+            <!-- Recipients -->
+            <div>
+              <h3 class="m-0 mb-3 text-xs font-semibold uppercase tracking-wide text-v4-secondary-text-color">
+                Recipients
+              </h3>
+              <p class="m-0 mb-3 text-xs text-v4-secondary-text-color">
+                Select a recipient before placing fields.
+              </p>
+              <div class="flex flex-col gap-2">
+                @for (recipient of recipients(); track trackByRecipient($index, recipient)) {
+                  <button
+                    type="button"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors disabled:cursor-not-allowed"
+                    [class.recipient-selected]="selectedRecipientId() === recipient.id"
+                    [class.recipient-idle]="selectedRecipientId() !== recipient.id"
+                    [disabled]="!canAssignFields(recipient)"
+                    (click)="onRecipientChange(recipient.id)"
+                  >
+                    <span
+                      class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-semibold text-white"
+                      [style.background-color]="getRecipientColor(recipient.id)"
+                    >
+                      {{ getRecipientInitial(recipient.name) }}
+                    </span>
+                    <span class="flex-1 min-w-0 flex flex-col">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-v4-main-text-color truncate">
+                          {{ recipient.name }}
+                        </span>
+                        @if (canAssignFields(recipient) && selectedRecipientId() === recipient.id) {
+                          <span
+                            class="active-badge text-[11px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide leading-none shadow-sm"
+                          >
+                            Active
+                          </span>
+                        }
+                      </div>
+                      @if (recipient.email) {
+                        <span class="text-xs text-v4-secondary-text-color truncate">
+                          {{ recipient.email }}
+                        </span>
+                      } @else if (recipient.role === 'owner') {
+                        <span class="text-xs text-v4-secondary-text-color">
+                          You (sender)
+                        </span>
+                      }
+                      @if (canAssignFields(recipient)) {
+                        <span class="text-xs text-v4-secondary-text-color">
+                          {{ getFieldsForRecipient(recipient.id) }} field(s)
+                        </span>
+                      } @else {
+                        <span class="text-xs italic text-v4-secondary-text-color">
+                          No fields needed
+                        </span>
+                      }
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Fields (drag onto the PDF) -->
+            <div>
+              <h3 class="m-0 mb-3 text-xs font-semibold uppercase tracking-wide text-v4-secondary-text-color">
+                Fields
+              </h3>
+              <div class="grid grid-cols-2 gap-2">
+                @for (option of fieldTypes; track trackByFieldType($index, option)) {
+                  <div
+                    class="v4-zil-sign-field-card flex items-center justify-between gap-2 px-2 py-2 rounded-md border border-v4-input-border-color bg-v4-input-background-color cursor-grab text-xs text-v4-main-text-color transition-all"
+                    draggable="true"
+                    (dragstart)="onDragStart($event, option.type)"
+                    (dragend)="onDragEnd()"
+                  >
+                    <span class="flex items-center gap-2 min-w-0">
+                      <lucide-icon
+                        [name]="option.icon"
+                        [size]="14"
+                        class="text-v4-primary-brand-bold-color flex-shrink-0"
+                      ></lucide-icon>
+                      <span class="truncate">{{ option.label }}</span>
+                    </span>
+                    <lucide-icon
+                      name="plus"
+                      [size]="14"
+                      class="text-v4-secondary-text-color flex-shrink-0"
+                    ></lucide-icon>
+                  </div>
+                }
+              </div>
+              <p class="mt-2 text-xs text-v4-secondary-text-color">
+                Drag a field onto the document.
+              </p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Context menu for fields -->
+  @if (showContextMenu()) {
+    <app-v4-field-context-menu
+      [x]="contextMenuX"
+      [y]="contextMenuY"
+      [fieldId]="contextMenuFieldId"
+      [fieldType]="getContextMenuFieldType()"
+      (menuAction)="onContextMenuAction($event)"
+      (closeMenu)="closeContextMenu()"
+    />
+  }
+</div>

@@ -1,0 +1,252 @@
+<div class="flex flex-col h-full w-full overflow-hidden bg-v4-main-background-color">
+  <!-- Page Header -->
+  <div class="flex-shrink-0 bg-v4-main-background-color shadow-sm border-b border-v4-border-color px-6 py-4">
+    <div class="flex items-center gap-4">
+      <div
+        class="w-9 h-9 rounded-lg border border-v4-border-color hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+        (click)="goBack()"
+        (keyup.enter)="goBack()"
+        tabindex="0"
+        role="button"
+      >
+        <lucide-icon
+          name="arrow-left"
+          [size]="18"
+          class="text-v4-secondary-text-color"
+        ></lucide-icon>
+      </div>
+      <h1 class="m-0 text-xl font-semibold text-v4-main-text-color font-peridot">
+        Send for signatures
+      </h1>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-auto p-6">
+    <div class="max-w-[1100px] mx-auto flex flex-col gap-8">
+      <!-- Add Document -->
+      <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-6">
+        <div class="flex flex-col gap-1 mb-4">
+          <h2 class="m-0 text-lg font-semibold text-v4-main-text-color font-peridot">Add Document</h2>
+          <p class="m-0 text-sm text-v4-secondary-text-color">Upload documents for signing</p>
+        </div>
+
+        @if (!uploadedFile()) {
+          <div
+            class="rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors py-12 px-6"
+            [class.dropzone-idle]="!isDragOver()"
+            [class.dropzone-active]="isDragOver()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="openFileBrowser()"
+            (keyup.enter)="openFileBrowser()"
+            tabindex="0"
+            role="button"
+          >
+            <div
+              class="w-14 h-14 rounded-full flex items-center justify-center mb-3"
+              [style.background-color]="'var(--v4-badge-info-bg-color)'"
+            >
+              <lucide-icon
+                name="plus"
+                [size]="24"
+                [style.color]="'var(--v4-common-sky-color)'"
+              ></lucide-icon>
+            </div>
+            <p class="m-0 text-sm font-medium text-v4-main-text-color">
+              Upload or Drag files here
+            </p>
+            <p class="m-0 text-xs text-v4-secondary-text-color mt-1">
+              PDF up to 10MB
+            </p>
+          </div>
+          <input
+            #fileInput
+            type="file"
+            class="hidden"
+            accept="application/pdf"
+            (change)="onFileSelected($event)"
+          />
+        } @else {
+          <div class="rounded-xl border border-v4-border-color bg-v4-tertiary-background-color p-4 flex items-center gap-4">
+            @if (pdfThumbnailUrl()) {
+              <img
+                [src]="pdfThumbnailUrl()"
+                alt="PDF preview"
+                class="w-16 h-20 object-cover rounded border border-v4-border-color"
+              />
+            } @else {
+              <div class="w-16 h-20 rounded flex items-center justify-center bg-v4-tertiary-background-color">
+                <lucide-icon
+                  name="file-text"
+                  [size]="20"
+                  class="text-v4-secondary-text-color"
+                ></lucide-icon>
+              </div>
+            }
+            <div class="flex-1 min-w-0">
+              <p class="m-0 text-sm font-medium text-v4-main-text-color truncate">
+                {{ uploadedFile()?.name }}
+              </p>
+              <p class="m-0 text-xs text-v4-secondary-text-color">
+                {{ ((uploadedFile()?.size || 0) / 1024 / 1024).toFixed(2) }} MB
+              </p>
+            </div>
+            <button aria-label="Remove file"
+              type="button"
+              class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color hover:text-v4-common-red-color transition-colors"
+              (click)="removeFile()"
+              matTooltip="Remove file"
+            >
+              <lucide-icon name="x" [size]="16"></lucide-icon>
+            </button>
+          </div>
+        }
+
+        <!-- Document Name -->
+        <div class="flex flex-col gap-2 mt-6">
+          <label class="text-sm font-medium text-v4-main-text-color">
+            Document Name
+            <span class="text-v4-common-red-color">*</span>
+          </label>
+          <app-common-input-v4
+            [placeholder]="'Enter document name'"
+            [control]="documentNameControl"
+            [formControl]="documentNameControl"
+            [isFieldRequired]="true"
+            [errorLabel]="'Document Name'"
+          />
+        </div>
+      </section>
+
+      <!-- Recipients -->
+      <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-6">
+        <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+          <div class="flex flex-col gap-1">
+            <h2 class="m-0 text-lg font-semibold text-v4-main-text-color font-peridot">Add recipients</h2>
+            <p class="m-0 text-sm text-v4-secondary-text-color">Add People who need to sign the document</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              text="Add me"
+              toolTip="Add me as recipient"
+              (clickEvent)="addMe()"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              text="Add recipient"
+              [isAddIcon]="true"
+              [icon]="['fas', 'plus']"
+              (clickEvent)="addRecipient()"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          @for (recipient of recipientsFormArray.controls; track recipient; let i = $index) {
+            <div class="rounded-xl border border-v4-border-color bg-v4-tertiary-background-color p-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wide text-v4-secondary-text-color">
+                  Recipient {{ i + 1 }}
+                </span>
+                @if (recipientsFormArray.length > 1) {
+                  <button aria-label="Remove recipient"
+                    type="button"
+                    class="w-7 h-7 rounded-md flex items-center justify-center text-v4-insight-card-icon-red hover:bg-v4-insight-card-border-red transition-colors"
+                    (click)="removeRecipient(i)"
+                    matTooltip="Remove recipient"
+                  >
+                    <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                  </button>
+                }
+              </div>
+
+              <div [formGroup]="getRecipientFormGroup(i)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'Full name *'"
+                    [control]="getRecipientFormGroup(i).get('recipientName')!"
+                    formControlName="recipientName"
+                    [isFieldRequired]="true"
+                    [errorLabel]="'Name'"
+                  />
+                </div>
+                <div>
+                  <app-v4-common-dropdown
+                    formControlName="role"
+                    [config]="roleDropdownConfig"
+                    [listData]="roleOptions"
+                    [clearable]="false"
+                  ></app-v4-common-dropdown>
+                </div>
+                <div>
+                  <app-common-input-v4
+                    [placeholder]="'Email address'"
+                    [type]="'email'"
+                    [control]="getRecipientFormGroup(i).get('recipientEmail')!"
+                    formControlName="recipientEmail"
+                    [isFieldRequired]="false"
+                    [errorLabel]="'Email'"
+                  />
+                </div>
+                <div class="flex items-start gap-x-2">
+                  <div class="h-10 flex items-center shrink-0">
+                    <mat-checkbox
+                      class="v4-mat-check-box v4-checkbox text-xs text-v4-secondary-text-color whitespace-nowrap"
+                      formControlName="usePhone"
+                    >
+                      <span class="text-xs text-v4-secondary-text-color">SMS</span>
+                    </mat-checkbox>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <app-phone-input-v4
+                      [placeholder]="'Phone'"
+                      [control]="getRecipientFormGroup(i).get('recipientPhone')!"
+                      formControlName="recipientPhone"
+                      [isFieldRequired]="!!getRecipientFormGroup(i).get('usePhone')?.value"
+                    />
+                    @if (getRecipientFormGroup(i).get('recipientPhone')?.value) {
+                      <p class="mt-1 text-xs text-v4-common-green-color">
+                        SMS charge: ${{ SMS_CHARGE_PER_RECIPIENT | number: '1.2-2' }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (getPhoneRecipientsCount() > 0) {
+          <div class="mt-4 px-3 py-2 rounded-md bg-v4-input-background-color border border-v4-border-color text-xs text-v4-secondary-text-color flex items-center justify-between">
+            <span>
+              SMS will be sent to {{ getPhoneRecipientsCount() }} recipient(s)
+            </span>
+            <span class="font-semibold text-v4-main-text-color">
+              ${{ getTotalSmsCost() | number: '1.2-2' }} total
+            </span>
+          </div>
+        }
+      </section>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex-shrink-0 border-t border-v4-border-color bg-v4-main-background-color px-6 py-3">
+    <div class="max-w-[1100px] mx-auto flex items-center justify-end gap-3">
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Close"
+        (clickEvent)="goBack()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Continue"
+        [loading]="loading()"
+        (clickEvent)="continue()"
+      />
+    </div>
+  </div>
+</div>

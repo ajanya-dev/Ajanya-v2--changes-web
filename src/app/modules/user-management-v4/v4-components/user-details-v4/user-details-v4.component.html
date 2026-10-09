@@ -1,0 +1,240 @@
+@if (!selectedUser) {
+  <!-- Empty state -->
+  <div
+    class="flex flex-col items-center justify-center h-full gap-4 text-v4-secondary-text-color text-center px-6"
+  >
+  @if(loading.default){
+    <div class="flex justify-center items-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="animate-spin text-v4-primary-brand-color"
+      ></lucide-icon>
+    </div>
+  }@else {
+    <div
+      class="w-16 h-16 rounded-full bg-v4-badge-info-bg-color flex items-center justify-center"
+    >
+      <lucide-icon
+        name="users"
+        [size]="28"
+        class="text-v4-primary-brand-color"
+      ></lucide-icon>
+    </div>
+    @if (!usersDetails?.length) {
+      <div class="flex flex-col items-center gap-1">
+        <h3 class="text-base font-semibold text-v4-main-text-color">
+          No users yet
+        </h3>
+        <p class="text-sm font-medium">
+          Invite your first user to start managing your team
+        </p>
+      </div>
+    } @else {
+      <p class="text-sm font-medium">Select a user to view details</p>
+    }
+  }
+  </div>
+} @else if (showPermissions()) {
+  <!-- Permissions View -->
+  <div class="absolute inset-0 flex flex-col overflow-hidden">
+    <app-user-permissions-v4
+      [selectedUser]="selectedUser"
+      (goBack)="onPermissionsBack()"
+    />
+  </div>
+} @else {
+  <div class="h-full flex flex-col overflow-hidden overflow-y-auto">
+    <div class="space-y-4">
+      <!-- User info header card -->
+      <div
+        class="detail-header-bg p-3 sm:p-4 rounded-2xl border border-v4-border-color overflow-visible"
+      >
+        <div
+          class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+        >
+          <!-- Left Side — User Info -->
+          <div class="flex items-start gap-3 min-w-0 flex-1">
+            <!-- Avatar circle with initials -->
+            <div
+              class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base flex-shrink-0 overflow-hidden"
+              [ngClass]="getAvatarColorClass(selectedUser.client_name)"
+            >
+              @if (selectedUser.profile_pic) {
+                <img
+                  [src]="selectedUser.profile_pic"
+                  class="w-full h-full object-cover"
+                  alt="User avatar"
+                />
+              } @else {
+                {{ getInitials(selectedUser.client_name) }}
+              }
+            </div>
+
+            <!-- Text content -->
+            <div class="min-w-0 flex-1">
+              <!-- 1. Name -->
+              <h2
+                class="text-base sm:text-lg font-bold text-v4-main-text-color truncate"
+              >
+                {{ selectedUser.client_nick_name || selectedUser.client_name }}
+              </h2>
+
+              <!-- 2. Badges row: Role + Status -->
+              <div class="flex items-center gap-1.5 mt-1">
+                <!-- Role badge -->
+                <span
+                  class="px-1.5 py-0.5 rounded text-[12px] sm:text-xs font-semibold"
+                  [ngClass]="getRoleBadgeClass(selectedUser.client_type)"
+                >
+                  {{ clientType[selectedUser.client_type] }}
+                </span>
+                <!-- Status badge with dot -->
+                <span
+                  class="px-1.5 py-0.5 rounded text-[12px] sm:text-xs font-semibold flex items-center gap-1"
+                  [ngClass]="getStatusBadgeClass(selectedUser.status)"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [ngClass]="getStatusDotClass(selectedUser.status)"
+                  ></span>
+                  {{ getStatusLabel(selectedUser.status) }}
+                </span>
+              </div>
+
+              <!-- 3. Email row -->
+              <div
+                class="flex items-center gap-1 text-xs sm:text-sm text-v4-secondary-text-color mt-2"
+              >
+                <lucide-icon
+                  name="mail"
+                  [size]="12"
+                  class="flex-shrink-0"
+                ></lucide-icon>
+                <span class="truncate">{{ selectedUser.client_email }}</span>
+              </div>
+
+              <!-- 4. Dates row -->
+              <div
+                class="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-1 text-[12px] sm:text-xs text-v4-secondary-text-color mt-2"
+              >
+                <span class="flex items-center gap-1">
+                  <lucide-icon
+                    name="calendar"
+                    [size]="10"
+                    class="flex-shrink-0"
+                  ></lucide-icon>
+                  Created: {{ selectedUser.formatted_created_at }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <lucide-icon
+                    name="clock"
+                    [size]="10"
+                    class="flex-shrink-0"
+                  ></lucide-icon>
+                  Last Login: {{ selectedUser.client_last_login }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Side — Action Buttons -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <!-- IP Whitelist button (hidden on mobile) -->
+            <app-common-button-v4
+              class="hidden sm:flex"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'IP Whitelist'"
+              [lucideIcon]="'globe'"
+              [lucideIconSize]="14"
+              [customHeight]="'32px'"
+              [textClasses]="'text-xs font-semibold'"
+              [customClasses]="'rounded-lg px-3'"
+              [toolTip]="'Restrict this user\'s login access to specific IP addresses'"
+              (clickEvent)="openWhitelistIpModal()"
+            />
+
+            <!-- Edit button (hidden on mobile) -->
+            <app-common-button-v4
+              class="hidden sm:flex"
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Edit'"
+              [lucideIcon]="'pencil'"
+              [lucideIconSize]="14"
+              [customHeight]="'32px'"
+              [textClasses]="'text-xs font-semibold'"
+              [customClasses]="'rounded-lg px-3'"
+              (clickEvent)="openEditModal()"
+            />
+
+            <!-- 3-dot More menu -->
+            <button
+              class="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-v4-secondary-background-color transition-colors sm:hidden"
+              [matMenuTriggerFor]="moreMenu"
+              (click)="$event.stopPropagation()"
+            >
+              <lucide-icon
+                name="ellipsis-vertical"
+                [size]="16"
+                class="text-v4-secondary-text-color"
+              ></lucide-icon>
+            </button>
+
+            <mat-menu
+              #moreMenu="matMenu"
+              class="v4-action-menu"
+              xPosition="before"
+            >
+              <!-- Mobile-only: IP Whitelist -->
+              <button
+                mat-menu-item
+                class="sm:!hidden"
+                (click)="openWhitelistIpModal()"
+              >
+                <div class="flex items-center gap-2">
+                  <lucide-icon name="globe" [size]="14"></lucide-icon>
+                  <span>IP Whitelist</span>
+                </div>
+              </button>
+              <!-- Mobile-only: Edit -->
+              <button
+                mat-menu-item
+                class="sm:!hidden"
+                (click)="openEditModal()"
+              >
+                <div class="flex items-center gap-2">
+                  <lucide-icon name="pencil" [size]="14"></lucide-icon>
+                  <span>Edit User</span>
+                </div>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="overflow-x-auto px-1">
+        <app-common-tab-v4
+          [tabs]="tabs"
+          [(activeTab)]="selectedTab"
+          [variant]="'underline'"
+          (tabChange)="onTabChange($event)"
+        />
+      </div>
+    </div>
+
+    <!-- Tab content -->
+    <div class="flex-1 overflow-auto min-h-[400px]">
+      @if (selectedTab === "activity") {
+        <app-user-activity-v4
+          [selectedUser]="selectedUser"
+          (resendEvent)="onResend()"
+          (approveEvent)="onApprove()"
+          (deleteEvent)="onDelete()"
+        />
+      } @else if (selectedTab === "audit-trail") {
+        <app-user-audit-log-v4 />
+      }
+    </div>
+  </div>
+}

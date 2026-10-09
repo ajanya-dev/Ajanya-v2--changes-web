@@ -1,0 +1,281 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >Add Proof of Delivery</span
+        >
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="flex flex-col gap-5" [formGroup]="podForm">
+    <div>
+      <mat-radio-group
+        aria-label="Select an option"
+        (change)="changeType($event)"
+        class="v35-mat-radio flex gap-7"
+        [value]="sendType()"
+      >
+        <mat-radio-button value="email">Email</mat-radio-button>
+        <mat-radio-button value="phone">Phone</mat-radio-button>
+      </mat-radio-group>
+    </div>
+    <div>
+      @if (sendType() === "email") {
+        <div>
+          <app-common-input-field
+            placeholder="Enter Email"
+            formControlName="email"
+          />
+          <app-control-message-v35 [control]="podForm.controls.email" />
+        </div>
+      } @else {
+        <div class="single_input flex flex-col">
+          <app-new-phone-input formControlName="phone"></app-new-phone-input>
+          <div class="flex justify-between">
+            <app-control-message-v35 [control]="podForm.controls.phone" />
+            <p class="text-sm font-semibold">
+              Cost:
+              <span class="text-common-green-color">
+                ${{ podForm.controls.phone.value ? "0.50" : "0.00" }}
+              </span>
+            </p>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="flex flex-col">
+      <div
+        class="border relative flex justify-center items-center border-input-border-color w-full h-28 rounded"
+      >
+        <div
+          class="w-full h-full relative cursor-pointer"
+          role="presentation"
+          (click)="addSignature()"
+        >
+          @if (signaturePadImg() === "") {
+            <div class="flex justify-center items-center h-full w-full gap-1">
+              <fa-icon class="text-main-text-color font-inter text-xl font-semibold" [icon]="faPen" />
+              <p class="text-main-text-color font-inter text-sm font-semibold">Add Signature</p>
+            </div>
+          }
+          @if (signaturePadImg() !== "") {
+            <img
+              class="absolute top-3 left-[41%] right-0 h-24 w-32"
+              src="{{ signaturePadImg() }}"
+              alt=""
+            />
+          }
+        </div>
+      </div>
+      <div
+        class="flex px-1"
+        [ngClass]="{ 'justify-end': signaturePadImg() !== '' }"
+      >
+        @if (signaturePadImg() !== "") {
+          <span
+            role="presentation"
+            class="cursor-pointer text-common-red-color text-xs font-medium font-roboto"
+            (click)="removeSign($event)"
+            mat-raised-button
+            matTooltip="Delete Signature"
+          >
+            Clear
+          </span>
+        } @else if (showError().signError) {
+          <small
+            class="flex items-center gap-1 text-warning-color text-sm font-normal pl-1"
+          >
+            <fa-icon
+              class="text-common-red-color text-[12px]"
+              [icon]="faCircleExclamation"
+              animation="shake"
+              size="lg"
+              [matTooltip]="tooltip"
+            ></fa-icon>
+            <p class="text-common-red-color text-xs font-medium font-roboto">
+              This field is required
+            </p>
+          </small>
+        }
+      </div>
+    </div>
+    @if (podFromPhone()?.length > 0) {
+      <div
+        class="flex justify-center cursor-pointer items-center h-10 bg-common-secondary-blue-color rounded relative"
+      >
+        <div class="flex w-full px-3 justify-between">
+          <div class="flex gap-2 items-baseline">
+            <fa-icon
+              class="text-common-green-color"
+              [icon]="faCircleCheck"
+            ></fa-icon>
+            <span
+              class="font-roboto font-normal text-main-text-color"
+              [matTooltip]="
+                podFromPhone()[0].document_name?.length > 37
+                  ? podFromPhone()[0].document_name
+                  : ''
+              "
+              >{{ podFromPhone()[0].document_name | truncate: 37 }}</span
+            >
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div>
+        <app-common-upload-button-v35
+          buttonText="Upload image/video"
+          [FileSize]="10"
+          [acceptedFileTypes]="[
+            '.jpg',
+            '.jpeg',
+            '.png',
+            '.gif',
+            '.bmp',
+            '.webp',
+            '.mp4',
+            '.avi',
+            '.mov',
+            '.wmv',
+            '.flv',
+            '.webm',
+            '.mkv'
+          ]"
+          (selectedFileEvent)="filePicked($event)"
+          [isCustomePreviewNeed]="true"
+          (previewImageEvent)="onClickPreview($event)"
+        />
+        @if (mediaPreview() && showPreview()) {
+          <div
+            role="presentation"
+            class="cursor-pointer !mt-2 flex gap-1 justify-end"
+          >
+            <span
+              role="presentation"
+              (click)="closePreview()"
+              class="font-roboto font-normal text-xs text-common-red-color cursor-pointer pt-1 hover:underline"
+              >Close Preview</span
+            >
+          </div>
+          @if (showPreview()) {
+            <div class="w-full flex justify-center items-center">
+              <div class="w-[300px] !mt-0">
+                @if (mediaType() === "image") {
+                  <img
+                    class="w-full h-full object-cover"
+                    [src]="mediaPreview()"
+                    alt="Captured Image 1"
+                  />
+                }
+                @if (mediaType() === "video") {
+                  <video
+                    class="w-full h-full object-cover"
+                    [src]="mediaPreview()"
+                    controls
+                  ></video>
+                }
+              </div>
+            </div>
+          }
+        } @else if (showError().imageError) {
+          <small
+            class="flex items-center gap-1 text-warning-color text-sm font-normal pl-1"
+          >
+            <fa-icon
+              class="text-common-red-color text-[12px]"
+              [icon]="faCircleExclamation"
+              animation="shake"
+              size="lg"
+              [matTooltip]="tooltip"
+            ></fa-icon>
+            <p class="text-common-red-color text-xs font-medium font-roboto">
+              This field is required
+            </p>
+          </small>
+        }
+      </div>
+    }
+    <div class="w-full h-full flex justify-between flex-wrap gap-3">
+      @for (item of proofsList; track item) {
+        <div
+          [ngClass]="{
+            'pointer-events-none opacity-55':
+              (isQrLoading() && item.action === 'qr') ||
+              (isSmsLoading() && item.action === 'sms') ||
+              (item.action === 'sms' && smsCountdown() !== '')
+          }"
+          role="presentation"
+          (click)="sendProof(item.action)"
+          class="w-[210px] bg-secondary-background-color rounded-md min-h-10 px-5 flex gap-6 items-center cursor-pointer group hover:shadow-common-box-shadow"
+        >
+          <div>
+            <fa-icon
+              class="group-hover:pl-1 text-common-blue-color"
+              [icon]="item.icon"
+            ></fa-icon>
+          </div>
+          <div
+            class="text-common-blue-color font-inter text-sm font-semibold group-hover:pl-1"
+          >
+            @if (item.action === "sms") {
+              {{ isResendLink() ? "Resend Link" : "Send Link" }}
+              {{
+                smsCountdown() !== "" && item.action === "sms"
+                  ? "(" + smsCountdown() + ")"
+                  : ""
+              }}
+            } @else {
+              {{ item.name }}
+            }
+          </div>
+          @if (
+            (isQrLoading() && item.action === "qr") ||
+            (isSmsLoading() && item.action === "sms")
+          ) {
+            <fa-icon
+              [icon]="faSpinner"
+              [animation]="'spin'"
+              class="text-common-blue-color"
+            />
+          }
+        </div>
+      }
+    </div>
+    <div>
+      <app-common-input-field
+        placeholder="Note"
+        formControlName="notes"
+        [isFieldRequired]="false"
+        [maxLength]="100"
+      />
+    </div>
+  </div>
+  <!-- modal body end -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      [mat-dialog-close]="false"
+      width="125px"
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      width="125px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Submit"
+      (clickEvent)="submit()"
+      [disabled]="isSubmit()"
+      [loading]="isSubmit()"
+    ></app-common-button-v35>
+  </div>
+</div>

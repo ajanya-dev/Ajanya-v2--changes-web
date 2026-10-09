@@ -1,0 +1,352 @@
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<div
+  class="panel-body panel-body--surface panel-body--capped panel-body--fill"
+  [class.panel-body--expanded]="expanded()"
+  [style.grid-template-rows]="
+    expanded() && !loading()
+      ? 'auto ' +
+        (paymentUuId() ? 'auto ' : '') +
+        (hasBeneficiary() ? 'auto ' : '') +
+        '1fr'
+      : null
+  "
+>
+  @if (loading()) {
+    <app-pd-skeleton [rows]="8" [tiles]="4" [timeline]="2" [party]="false" />
+  } @else {
+    @if (paymentData(); as d) {
+      <!-- Transaction details -->
+      <div class="ip-txn pd-card" [class.pd-full]="!statements().length">
+        <button type="button" class="pd-card-head" (click)="toggleCard('txn')">
+          <span class="pd-card-title">Transaction details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('txn') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+        @if (!isCardCollapsed("txn")) {
+          <div class="pd-card-body ip-rows">
+            <div class="pd-row">
+              <span class="pd-row-label">Payee</span>
+              <span class="pd-row-value">{{
+                d.payee?.name || d.payee_name || "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Status</span>
+              <span class="pd-row-value" [style.color]="status().color">{{
+                status().label || "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">From</span>
+              <span class="pd-row-value uppercase">{{
+                d.sourceType || "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Sending Amount</span>
+              <span class="pd-row-value font-bold tabular-nums">{{
+                d.amount ? (d.amount | currency: sendingCurrency()) : ""
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Receiving Amount</span>
+              <span class="pd-row-value font-bold tabular-nums">{{
+                receivingAmount()
+                  ? (receivingAmount() | currency: receivingCurrency())
+                  : ""
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Recipient Type</span>
+              <span class="pd-row-value capitalize">{{
+                $any(d.transfer)?.payee_info?.beneficiary_type || "—"
+              }}</span>
+            </div>
+            @for (row of extraRows(); track row.label) {
+              <div class="pd-row">
+                <span class="pd-row-label">{{ row.label }}</span>
+                <span class="pd-row-value">{{ row.value }}</span>
+              </div>
+            }
+            <div class="pd-row">
+              <span class="pd-row-label">Memo</span>
+              <span class="pd-row-value break-words text-right">{{
+                d.description || "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Date</span>
+              <span class="pd-row-value text-right tabular-nums">{{
+                d.createdAt ? d.createdAt.replace("_", " ") : "—"
+              }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Transaction ID -->
+      @if (paymentUuId()) {
+        <div
+          class="ip-txn-id pd-card pd-full flex flex-wrap items-center gap-2.5 !px-4 !py-3.5"
+        >
+          <span class="text-xs text-v4-secondary-text-color"
+            >Transaction ID :</span
+          >
+          <span class="break-all text-xs font-bold text-v4-main-text-color">{{
+            paymentUuId()
+          }}</span>
+        </div>
+      }
+
+      <!-- Statement -->
+      @if (statements().length) {
+        <div class="ip-statement pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('statement')"
+          >
+            <span class="pd-card-title">Statement</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('statement') ? 'chevron-down' : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("statement")) {
+            <div class="pd-card-body">
+              <div
+                class="ip-statement-table overflow-x-auto rounded-lg border border-v4-border-color"
+              >
+                <table class="v4-ocw-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (entry of statements(); track $index) {
+                      <tr>
+                        <td>
+                          <span class="tabular-nums">{{
+                            entry.created_at?.replace("_", " ")
+                          }}</span>
+                        </td>
+                        <td
+                          class="font-semibold"
+                          [style.color]="statusColor(entry.status)"
+                        >
+                          {{ $any(entry.status)?.replaceAll("_", " ") }}
+                        </td>
+                        <td>{{ entry.description }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Beneficiary -->
+      @if (hasBeneficiary()) {
+        <div class="ip-beneficiary pd-card pd-full">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('beneficiary')"
+          >
+            <span class="pd-card-title">Beneficiary</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('beneficiary') ? 'chevron-down' : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("beneficiary")) {
+            <div class="pd-card-body">
+              <div
+                role="tablist"
+                class="mb-1 flex gap-3 border-b border-v4-border-subtle-color px-1"
+              >
+                @for (
+                  tab of [
+                    { key: "details", label: "Beneficiary Details" },
+                    { key: "bank", label: "Beneficiary Bank Details" }
+                  ];
+                  track tab.key
+                ) {
+                  <button
+                    type="button"
+                    role="tab"
+                    class="h-[30px] cursor-pointer whitespace-nowrap border-0 bg-transparent px-0.5 text-xs font-normal transition-colors"
+                    [attr.aria-selected]="beneficiaryTab() === tab.key"
+                    [ngClass]="
+                      beneficiaryTab() === tab.key
+                        ? 'font-semibold text-v4-primary-brand-bold-color shadow-[inset_0_-2px_0_var(--v4-primary-brand-bold-color)]'
+                        : 'text-v4-tertiary-text-color hover:text-v4-main-text-color'
+                    "
+                    (click)="beneficiaryTab.set($any(tab.key))"
+                  >
+                    {{ tab.label }}
+                  </button>
+                }
+              </div>
+              @for (row of visibleBeneficiaryRows(); track row.label) {
+                <div class="pd-row ip-ben-row">
+                  <span class="pd-row-label">{{ row.label }}</span>
+                  <span class="pd-row-value break-words text-right">{{
+                    row.value
+                  }}</span>
+                </div>
+              } @empty {
+                <div class="pd-empty">
+                  <p
+                    class="m-0 py-6 text-center text-xs text-v4-tertiary-text-color"
+                  >
+                    No details available.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Actions — the tile row is the card head; the open section renders below. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="pd-card-head-flush grid grid-cols-4 gap-1.5 px-3 py-2"
+          [class.border-b]="!!openActionSection()"
+          [class.border-v4-border-color]="!!openActionSection()"
+        >
+          @for (tile of tiles; track tile.key) {
+            <button
+              type="button"
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === tile.key
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="selectSection(tile.key)"
+            >
+              <lucide-icon
+                [name]="tile.icon"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >{{ tile.label }}</span
+              >
+            </button>
+          }
+        </div>
+
+        @if (openActionSection() === "comments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("comments")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-comments-list
+                variant="view-panel"
+                [collapsedCount]="4"
+                [forceExpand]="expanded()"
+                [bare]="true"
+                [comments]="comments()"
+                [maxHeight]="'400px'"
+                [posting]="commentPosting()"
+                [error]="commentError()"
+                emptyHint="Notes you add here stay with the payment."
+                (submitComment)="onSubmitComment($event)"
+                (deleteComment)="onDeleteComment($event)"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === "attachments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("attachments")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-attachments-list
+                variant="view-panel"
+                [collapsedCount]="4"
+                [forceExpand]="expanded()"
+                [bare]="true"
+                [attachments]="attachments()"
+                [maxHeight]="'400px'"
+                [deletingId]="deletingAttachmentId()"
+                [uploading]="attachmentUploading()"
+                [error]="attachmentError()"
+                emptyHint="Files attached to this payment will show up here."
+                (fileSelected)="onAttachmentSelected($event)"
+                (deleteAttachment)="onDeleteAttachment($event)"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === "signed-receipt") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-po-signed-receipt-list
+              [bare]="true"
+              [signatureUrl]="d.signatureUrl ?? null"
+              [viewing]="signedReceiptOpening()"
+              (viewReceipt)="viewSignedReceipt()"
+              [paymentReceiptsId]="d.payment_receipt_id ?? null"
+              [maxHeight]="'400px'"
+              emptyHint="The signed receipt appears once the beneficiary confirms the payment."
+              (requestSignedReceipt)="handleSignedReceipt()"
+              (sendSignedReceipt)="handleSignedReceipt()"
+              (closed)="closeSection()"
+            />
+          </div>
+        }
+
+        @if (openActionSection() === "pod") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("pod")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-pod-list
+                [collapsedCount]="4"
+                [forceExpand]="expanded()"
+                [bare]="true"
+                [podList]="podList()"
+                [maxHeight]="'400px'"
+                emptyHint="Delivery confirmation from the receiving bank will show up here."
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="pd-empty">
+        <p class="m-0 py-8 text-center text-sm text-v4-tertiary-text-color">
+          No payment data available.
+        </p>
+      </div>
+    }
+  }
+</div>

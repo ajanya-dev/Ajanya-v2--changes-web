@@ -1,0 +1,374 @@
+@if (!resize) {
+  <!-- Search & Filter Bar -->
+  <div
+    class="px-3 py-2 border-b border-v4-border-color bg-v4-secondary-background-color shrink-0"
+  >
+    <!-- Row 1: Search + Filter Toggle + Add User -->
+    <div class="flex items-center gap-2">
+      <!-- Search Input -->
+      <div class="relative flex-1 min-w-0">
+        <span
+          class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center text-v4-subtle-text-color"
+        >
+          <lucide-icon name="search" [size]="14" />
+        </span>
+        @if (searchInput) {
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-v4-subtle-text-color hover:text-v4-main-text-color cursor-pointer"
+            (click)="searchInput = ''; onSearchInputChange()"
+          >
+            <lucide-icon name="x" [size]="12" />
+          </button>
+        }
+        <input
+          type="text"
+          class="w-full rounded-lg border border-v4-input-border-color bg-v4-secondary-background-color text-xs text-v4-main-text-color pl-10 pr-3 py-3 placeholder:text-v4-subtle-text-color focus:outline-none focus:ring-1 focus:ring-v4-primary-brand-color/50 focus:border-v4-primary-brand-color"
+          [(ngModel)]="searchInput"
+          (ngModelChange)="onSearchInputChange()"
+          placeholder="Search users..."
+        />
+      </div>
+
+      <!-- Filter Toggle Button -->
+      <app-common-button-v4
+        [type]="{
+          style: showFilters || activeFiltersCount > 0 ? 'primary' : 'outline',
+          name: 'main'
+        }"
+        [text]="''"
+        [lucideIcon]="'filter'"
+        [lucideIconSize]="16"
+        [width]="'44px'"
+        [minWidth]="'44px'"
+        [toolTip]="'Filters'"
+        (clickEvent)="toggleFilters()"
+      />
+
+      <!-- Add User Button -->
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="''"
+        [lucideIcon]="'plus'"
+        [lucideIconSize]="18"
+        [width]="'44px'"
+        [minWidth]="'44px'"
+        [toolTip]="'Add User'"
+        (clickEvent)="onNew()"
+      />
+    </div>
+
+    <!-- Row 2: Filter Dropdowns -->
+    @if (showFilters) {
+      <div class="filter-dropdowns-section">
+        <div class="flex gap-2 mt-3 user-list-filter-row">
+          <div class="flex-1 min-w-0">
+            <app-v4-common-dropdown
+              [config]="roleFilterConfig"
+              [listData]="roleListData"
+              [(ngModel)]="selectedRoleValue"
+              (ngModelChange)="onRoleFilterChange()"
+              [clearable]="true"
+              [searchable]="false"
+              [smallFont]="true"
+            />
+          </div>
+          <div class="flex-1 min-w-0">
+            <app-v4-common-dropdown
+              [config]="statusFilterConfig"
+              [listData]="statusListData"
+              [(ngModel)]="selectedStatusValue"
+              (ngModelChange)="onStatusFilterChange()"
+              [clearable]="true"
+              [searchable]="false"
+              [smallFont]="true"
+            />
+          </div>
+        </div>
+
+        @if (activeFiltersCount > 0) {
+          <div class="mt-2">
+            <app-common-button-v4
+              [type]="{ style: 'secondary', name: 'main' }"
+              [text]="'Clear filters'"
+              [lucideIcon]="'x'"
+              [lucideIconSize]="12"
+              [customHeight]="'28px'"
+              [minWidth]="'0'"
+              [textClasses]="'text-xs'"
+              (clickEvent)="clearFilters()"
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <!-- Collapsed State: Only Add Button -->
+  <div
+    class="py-4 flex flex-col items-center gap-2 border-b border-v4-border-color"
+  >
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="''"
+      [lucideIcon]="'plus'"
+      [lucideIconSize]="16"
+      [width]="'32px'"
+      [minWidth]="'32px'"
+      [customHeight]="'32px'"
+      [toolTip]="'Add User'"
+      (clickEvent)="onNew()"
+    />
+  </div>
+}
+
+<div class="flex-1 flex flex-col overflow-x-hidden overflow-y-auto">
+  @if (!loading.default) {
+    @for (item of usersDetails; track item.id; let i = $index) {
+      <div
+        role="presentation"
+        class="user-list-item border-b border-v4-border-color border-l-4 border-l-transparent py-2.5 flex justify-between items-center text-xs font-semibold text-v4-main-text-color cursor-pointer transition-colors select-none"
+        [ngClass]="{
+          '!border-l-v4-primary-brand-bold-color bg-v4-input-background-color':
+            item?.id === selectedUser?.id,
+          'px-3': !resize,
+          'justify-center px-1': resize
+        }"
+        (click)="selectUser(item, i)"
+        [matTooltip]="resize ? item.client_name : ''"
+      >
+        <div
+          class="flex gap-2.5 items-center overflow-hidden flex-1 min-w-0"
+          [ngClass]="{ 'justify-center w-full': resize }"
+        >
+          <!-- Avatar -->
+          <div
+            class="relative flex justify-center items-center rounded-full h-8 w-8 bg-v4-badge-info-bg-color flex-shrink-0"
+          >
+            @if (item.profile_pic) {
+              <img
+                [src]="item.profile_pic"
+                class="rounded-full h-8 w-8 object-cover overflow-hidden"
+                alt="User avatar"
+              />
+            } @else {
+              <lucide-icon
+                name="user"
+                [size]="16"
+                class="text-v4-primary-brand-color"
+              ></lucide-icon>
+            }
+            <!-- Collapsed status dot -->
+            @if (resize) {
+              @if (item.status === 1) {
+                <span role="img" aria-label="Active" matTooltip="Active"
+                  class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-green-color border-2 border-v4-secondary-background-color"
+                ></span>
+              } @else if (item.status === 0) {
+                <span role="img" aria-label="Invitation pending" matTooltip="Invitation pending"
+                  class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-yellow-color border-2 border-v4-secondary-background-color"
+                ></span>
+              } @else if (item.status === 2) {
+                <span role="img" aria-label="Rejected" matTooltip="Rejected"
+                  class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-red-color border-2 border-v4-secondary-background-color"
+                ></span>
+              }
+            }
+          </div>
+
+          @if (!resize) {
+            <div class="flex flex-col overflow-hidden flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 overflow-hidden">
+                <span
+                  class="whitespace-nowrap truncate !text-xs font-bold max-w-[120px] min-w-0"
+                  [matTooltip]="item.client_name"
+                >
+                  {{ item.client_name }}
+                </span>
+                <span
+                  class="px-1.5 py-0.5 rounded text-[12px] font-semibold whitespace-nowrap flex-shrink-0"
+                  [ngClass]="getRoleBadgeClass(item.client_type)"
+                >
+                  {{ clientType[item.client_type] }}
+                </span>
+              </div>
+              <span
+                class="text-[12px] font-normal text-v4-secondary-text-color truncate"
+                [matTooltip]="item.client_email"
+              >
+                {{ item.client_email }}
+              </span>
+              @if (item.company_name) {
+                <span
+                  class="text-[12px] font-normal text-v4-secondary-text-color truncate"
+                >
+                  {{ item.company_name }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        @if (!resize) {
+          <div class="flex items-center flex-shrink-0 gap-1">
+            <!-- Status indicators -->
+            <div class="flex justify-end items-center whitespace-nowrap">
+              @switch (item.status) {
+                @case (0) {
+                  <button
+                  matTooltip="Request is pending. Please wait or resend"
+                  matTooltipPosition="above"
+                  class="w-16 flex items-center gap-1 bg-v4-surface-warning text-v4-text-warning cursor-pointer hover:shadow-common-button ocw-btn px-1 rounded hover:underline"
+                  (click)="onResend(item, i); $event.stopPropagation()"
+                >
+                  <lucide-icon name="circle-alert" [size]="12" />
+                  <span class="text-[12px] font-semibold">Resend</span>
+                </button>
+                }
+                @case (1) {
+                  <div
+                    class="flex items-center gap-1 text-v4-common-green-color"
+                  >
+                    <lucide-icon name="circle-check" [size]="12" />
+                    <span class="text-[12px] font-semibold">Active</span>
+                  </div>
+                }
+                @case (2) {
+                  <div class="flex items-center gap-1 text-v4-common-red-color">
+                    <lucide-icon name="circle" [size]="9" />
+                    <span class="text-[12px] font-semibold">Rejected</span>
+                  </div>
+                }
+                @default {
+                  <!-- Status >= 3: Approve/Delete -->
+                  <div class="flex flex-col gap-1 items-center">
+                    <button
+                      matTooltip="Approve and & Set permission"
+                      matTooltipPosition="above"
+                      class="w-16 flex items-center gap-1 bg-v4-insight-card-border-green text-v4-common-green-color cursor-pointer hover:shadow-common-button ocw-btn px-1 rounded hover:underline"
+                      (click)="onApprove(item, i); $event.stopPropagation()"
+                    >
+                      <lucide-icon name="check" [size]="9" />
+                      <span class="text-[12px] font-semibold">Approve</span>
+                    </button>
+                    <button
+                      matTooltip="Reject and remove this user's access"
+                      matTooltipPosition="above"
+                      class="w-16 flex items-center gap-1 bg-v4-insight-card-border-red text-v4-common-red-color cursor-pointer hover:shadow-common-button ocw-btn px-1 rounded hover:underline"
+                      (click)="onDelete(item, i); $event.stopPropagation()"
+                    >
+                      <lucide-icon name="trash" [size]="9" />
+                      <span class="text-[12px] font-semibold">Delete</span>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+
+            <!-- Actions menu -->
+            <div cdkOverlayOrigin #trigger="cdkOverlayOrigin">
+              <button aria-label="Actions"
+                matTooltip="Actions"
+                class="flex items-center justify-center w-7 h-7 rounded-md hover:bg-v4-secondary-background-color transition-colors"
+                (click)="togglePopover($event, item.id)"
+              >
+                <lucide-icon
+                  name="ellipsis-vertical"
+                  [size]="16"
+                  [strokeWidth]="2.5"
+                  class="text-v4-secondary-text-color"
+                ></lucide-icon>
+              </button>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayOrigin]="trigger"
+                [cdkConnectedOverlayOpen]="openPopoverItemId === item.id"
+                [cdkConnectedOverlayHasBackdrop]="true"
+                [cdkConnectedOverlayBackdropClass]="
+                  'cdk-overlay-transparent-backdrop'
+                "
+                (backdropClick)="closePopover()"
+                [cdkConnectedOverlayPositions]="popoverPositions"
+              >
+                <div
+                  class="bg-v4-popup-background-color rounded-lg border border-v4-border-color shadow-lg py-1 min-w-[200px]"
+                >
+                  @for (list of settings; track $index) {
+                    <button
+                      class="v4-menu-item"
+                      [class.v4-danger-item]="list.id === 'RId_delete'"
+                      (click)="onSettingClick(list.id, item, i)"
+                    >
+                      <lucide-icon
+                        [name]="list.lucideIcon"
+                        [size]="16"
+                      ></lucide-icon>
+                      <span>{{ list.name }}</span>
+                    </button>
+                  }
+                  @if (item.status === 2) {
+                    <button
+                      class="v4-menu-item"
+                      (click)="onSettingClick('RId_resend', item, i)"
+                    >
+                      <lucide-icon name="send" [size]="16"></lucide-icon>
+                      <span>Resend</span>
+                    </button>
+                  }
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @if (!usersDetails?.length && !resize) {
+      <div class="flex-1 flex flex-col justify-center items-center p-6">
+        <div
+          class="w-16 h-16 rounded-2xl bg-v4-badge-info-bg-color flex items-center justify-center mb-4"
+        >
+          <lucide-icon
+            name="users"
+            [size]="28"
+            class="text-v4-primary-brand-color"
+          ></lucide-icon>
+        </div>
+        <h3
+          class="text-lg font-semibold text-v4-main-text-color mb-1 font-peridot"
+        >
+          No users yet
+        </h3>
+        <p
+          class="text-sm text-v4-secondary-text-color mb-5 text-center font-peridot"
+        >
+          Invite your first user to start managing your team
+        </p>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Invite User'"
+          [lucideIcon]="'plus'"
+          [lucideIconSize]="16"
+          [customHeight]="'40px'"
+          [textClasses]="'text-sm font-semibold'"
+          [customClasses]="'rounded-lg hover:bg-v4-primary-brand-color/90 px-5'"
+          (clickEvent)="onNew()"
+        />
+      </div>
+    }
+  } @else {
+    <app-common-list-skelton [items]="14"></app-common-list-skelton>
+  }
+</div>
+
+<!-- Footer: User count -->
+@if (!resize) {
+  <div
+    class="px-3 py-2.5 border-t border-v4-border-color bg-v4-secondary-background-color shrink-0"
+  >
+    <span
+      class="text-[12px] text-v4-secondary-text-color text-center block font-peridot"
+    >
+      {{ usersDetails.length }} of {{ allUsersFromApi.length }} users
+    </span>
+  </div>
+}

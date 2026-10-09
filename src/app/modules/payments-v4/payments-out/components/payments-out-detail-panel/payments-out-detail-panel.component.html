@@ -1,0 +1,1336 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [backdropZIndex]="backdropZIndex()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'payments-out-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [titleSuffix]="panelTitleSuffix()"
+  [subtitleTemplate]="panelMetaLines().length ? panelMeta : undefined"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="onActionButtonClicked($event)"
+/>
+
+<!-- O3 header icon: navy circle -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon
+      [name]="isCheckPayment() ? 'file-text' : 'send'"
+      [size]="18"
+      color="white"
+    ></lucide-icon>
+  </div>
+</ng-template>
+
+<!-- Header meta: stacked lines collapsed, one dotted line expanded. -->
+<ng-template #panelMeta>
+  <app-pd-meta-lines
+    [lines]="panelMetaLines()"
+    [expanded]="isPanelExpanded()"
+  />
+</ng-template>
+
+<!-- Statement — status timeline (design O3/O4) -->
+<ng-template #statusTimelineTmpl>
+  @if (visibleStatements().length) {
+    <div
+      class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-3"
+    >
+      <button
+        type="button"
+        class="pd-card-head"
+        (click)="toggleCard('timeline')"
+      >
+        <span class="pd-card-title"> Payment status timeline </span>
+        <lucide-icon
+          [name]="isCardCollapsed('timeline') ? 'chevron-down' : 'chevron-up'"
+          [size]="15"
+          class="text-v4-tertiary-text-color"
+        ></lucide-icon>
+      </button>
+      @if (!isCardCollapsed("timeline")) {
+        <div>
+          @for (
+            s of visibleStatements();
+            track s.zil_payment_id;
+            let last = $last
+          ) {
+            <div class="flex gap-2.5">
+              <div class="flex flex-col items-center">
+                <span
+                  class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                  [style.background-color]="timelineStatusBg(s.status)"
+                ></span>
+                @if (!last) {
+                  <span class="mt-1 w-px flex-1 bg-v4-border-color"></span>
+                }
+              </div>
+              <div class="min-w-0 pb-2.5 leading-tight">
+                <p
+                  class="m-0 font-peridot text-xs font-bold uppercase text-v4-main-text-color"
+                >
+                  {{ s.status?.replaceAll("_", " ") }}
+                </p>
+                @if (s.description) {
+                  <p
+                    class="m-0 mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                  >
+                    {{ s.description }}
+                  </p>
+                }
+                <p
+                  class="m-0 mt-0.5 font-peridot text-[12px] text-v4-tertiary-text-color"
+                >
+                  {{ s.created_at?.replace("_", " ") }}
+                </p>
+              </div>
+            </div>
+          }
+          @if (!isPanelExpanded() && (statements()?.length ?? 0) > 2) {
+            <button
+              type="button"
+              class="mt-1 w-full cursor-pointer border-none bg-transparent py-1 font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+              (click)="timelineShowAll.set(!timelineShowAll())"
+            >
+              {{
+                timelineShowAll()
+                  ? "Show less"
+                  : "Show " + ((statements()?.length ?? 0) - 2) + " more"
+              }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</ng-template>
+
+<!-- O3 "Payee details": avatar + name + email·phone + Open payee -->
+<ng-template #payeeDetailsTmpl>
+  @if (payeeDisplay(); as p) {
+    @if (p.name || p.email || p.phone || p.address) {
+      <!-- Spans the row only when it is the odd tile out (see spanningTile);
+           on dense check panels it always stays a normal tile. -->
+      <div
+        [class.pd-full]="tileSpansRow('payee')"
+        class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-3"
+      >
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('payee')"
+        >
+          <span class="pd-card-title"> Payee details </span>
+          <lucide-icon
+            [name]="isCardCollapsed('payee') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+        @if (!isCardCollapsed("payee")) {
+          <div class="flex items-center gap-2.5">
+            <span
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color font-peridot text-[12px] font-bold text-white"
+            >
+              {{ p.initials }}
+            </span>
+            <div class="min-w-0 flex-1 leading-tight">
+              <p
+                class="m-0 truncate font-peridot text-xs font-semibold text-v4-main-text-color"
+              >
+                {{ p.name || "—" }}
+              </p>
+              @if (p.email || p.phone) {
+                <p
+                  class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                >
+                  {{ p.email }}{{ p.email && p.phone ? " · " : ""
+                  }}{{ p.phone }}
+                </p>
+              }
+              @if (p.address) {
+                <p
+                  class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                  [MatTooltip]="p.address"
+                >
+                  {{ p.address }}
+                </p>
+              }
+            </div>
+            @if (p.id) {
+              <button
+                type="button"
+                class="ml-auto shrink-0 whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                (click)="onOpenPayee()"
+              >
+                Open payee
+              </button>
+            }
+          </div>
+
+          <!-- Recent payments to this payee (nested; check-only, empty otherwise) -->
+          @if (transactionsForList().length) {
+            <div class="mt-3">
+              <app-transactions-list-v4
+                [bare]="true"
+                [transactions]="transactionsForList()"
+                [total]="totalForList()"
+                [title]="'Recent payments to this payee'"
+                [showStatus]="false"
+                [collapsedCount]="2"
+                [forceExpand]="isPanelExpanded()"
+                [maxHeight]="isPanelExpanded() ? '130px' : '490px'"
+                [descriptionHeading]="'MEMO'"
+                [methodHeading]="'ACCOUNT'"
+              />
+            </div>
+          }
+        }
+      </div>
+    }
+  }
+</ng-template>
+
+<!-- Panel-wide loading state: plain bars in the panel's own card shell. -->
+<ng-template #panelSkeleton>
+  <app-pd-skeleton [rows]="5" [tiles]="6" [partyFirst]="true" />
+</ng-template>
+
+<!-- Stand-in for a section/tab whose data is fetched on first open (loadSection). -->
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<!-- "Share" above an open section's list — hidden while that section is empty. -->
+<ng-template #shareBar let-section="section">
+  @if (canShare(section)) {
+    <div class="pd-share-bar mb-2 flex justify-end shrink-0">
+      <button
+        type="button"
+        class="flex cursor-pointer items-center gap-1 rounded-lg border border-v4-border-color bg-v4-secondary-background-color px-2 py-1 text-[12px] font-medium text-v4-secondary-text-color transition-colors hover:border-v4-primary-brand-bold-color hover:text-v4-primary-brand-bold-color"
+        [matTooltip]="shareTooltip(section)"
+        (click)="openShareModal(section)"
+      >
+        <lucide-icon name="share-2" [size]="13"></lucide-icon>
+        Share
+      </button>
+    </div>
+  }
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (isLoading()) {
+      <ng-container [ngTemplateOutlet]="panelSkeleton" />
+    } @else {
+      <!-- ════════════════════════════════════════════════════
+         CHECK PAYMENT LAYOUT
+         ════════════════════════════════════════════════════ -->
+      @if (isCheckPayment()) {
+        <!-- O4 left column: Payment details + Statement timeline -->
+        <div class="o4-left-col">
+          <!-- 2. Payment Details Card -->
+          <div class="pd-card">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('payment')"
+            >
+              <span class="pd-card-title"> Payment details </span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('payment') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+            @if (!isCardCollapsed("payment")) {
+              <div class="pd-row">
+                <span class="pd-row-label">Reference ID</span>
+                <span class="pd-row-value">{{
+                  row()?.reference_no ??
+                    details()?.referenceNo ??
+                    $any(row())?.cheque_serial_number ??
+                    "—"
+                }}</span>
+              </div>
+
+              @if (uuid()) {
+                <div class="pd-row">
+                  <span class="pd-row-label">Transaction ID</span>
+                  <span class="pd-row-value text-end">{{ uuid() }}</span>
+                </div>
+              }
+
+              <div class="pd-row">
+                <span class="pd-row-label">Method</span>
+                <span class="pd-row-value">Check</span>
+              </div>
+
+              <div class="pd-row">
+                <span class="pd-row-label">Source</span>
+                <span class="pd-row-value">{{
+                  row()?.source_name ?? details()?.source?.name ?? "—"
+                }}</span>
+              </div>
+
+              @if (checkData()?.memo) {
+                <div class="pd-row-block">
+                  <span class="pd-row-label">Memo</span>
+                  <p class="pd-row-value">
+                    {{ checkData()?.memo }}
+                  </p>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Statement — status timeline (design O3) -->
+          <ng-container [ngTemplateOutlet]="statusTimelineTmpl"></ng-container>
+          <!-- Payee Details card (O3) -->
+          <ng-container [ngTemplateOutlet]="payeeDetailsTmpl"></ng-container>
+        </div>
+        <!-- /O4 left column -->
+
+        <!-- Check Preview — after Payment details (per request) -->
+        @if (isCheckPreviewVisible()) {
+          <div class="o4-check-preview">
+            <app-check-preview-v4
+              [checkData]="checkDataForPreview()"
+              [checkStatus]="checkData()?.status ?? null"
+              [templateJson]="checkData()?.template ?? null"
+            />
+          </div>
+        }
+
+        <!-- Check Mail Preview — a proper "downloadable file" card: title, a soft
+           icon badge, a one-line helper, and the Download CTA, centered. Fills
+           its row height so it matches the row-mate (Summary tabs). -->
+        @if (checkData()?.preview_file) {
+          <div class="pd-card flex flex-col">
+            <div class="pd-card-head">
+              <span class="pd-card-title">Check mail preview</span>
+            </div>
+            <div
+              class="flex flex-1 flex-col items-center justify-center gap-3 py-4 text-center"
+            >
+              <span
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_12%,transparent)]"
+              >
+                <lucide-icon
+                  name="file-text"
+                  [size]="20"
+                  class="text-v4-primary-brand-bold-color"
+                />
+              </span>
+              <p
+                class="m-0 max-w-[220px] font-peridot text-[12px] leading-snug text-v4-tertiary-text-color"
+              >
+                A copy of the mailed check is ready to download.
+              </p>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-v4-primary-brand-bold-color px-3.5 py-2 font-peridot text-[12px] font-semibold text-white transition-colors hover:opacity-95"
+                (click)="downloadFile(checkData()!.preview_file!)"
+              >
+                <lucide-icon
+                  name="download"
+                  [size]="14"
+                  class="shrink-0"
+                ></lucide-icon>
+                Download Preview
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- 3. Three-tab section — underline tabs + content as ONE card.
+             o4-tab-card → a normal tile in the expanded (⤢) grid, ordered after
+             the mail cards so it back-fills whatever slot they leave open. -->
+        <div
+          class="o4-tab-card rounded-xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden"
+          [class.pd-full]="tabCardSpansRow()"
+        >
+          <div
+            class="pd-card-head-flush flex items-center justify-between border-b border-v4-border-color px-3"
+          >
+            <div class="flex gap-6">
+              <button
+                class="-mb-px border-0 border-b-2 border-solid border-transparent bg-transparent px-0.5 pb-2 pt-2 text-xs font-normal text-v4-tertiary-text-color cursor-pointer transition-colors duration-150 whitespace-nowrap"
+                [ngClass]="{
+                  '!border-v4-primary-brand-bold-color !text-v4-primary-brand-bold-color !font-semibold':
+                    activeTab() === 'summary'
+                }"
+                (click)="setTab('summary')"
+              >
+                Summary
+              </button>
+              <button
+                class="-mb-px border-0 border-b-2 border-solid border-transparent bg-transparent px-0.5 pb-2 pt-2 text-xs font-normal text-v4-tertiary-text-color cursor-pointer transition-colors duration-150 whitespace-nowrap"
+                [ngClass]="{
+                  '!border-v4-primary-brand-bold-color !text-v4-primary-brand-bold-color !font-semibold':
+                    activeTab() === 'vendor-credit'
+                }"
+                (click)="setTab('vendor-credit')"
+              >
+                Vendor credit
+              </button>
+            </div>
+            <button
+              type="button"
+              class="shrink-0 cursor-pointer border-none bg-transparent px-1"
+              (click)="toggleCard('tabs')"
+            >
+              <lucide-icon
+                [name]="isCardCollapsed('tabs') ? 'chevron-down' : 'chevron-up'"
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+          </div>
+
+          @if (!isCardCollapsed("tabs")) {
+            <!-- Summary Tab -->
+            @if (activeTab() === "summary") {
+              <div class="p-3 bg-v4-secondary-background-color">
+                <div class="pd-row">
+                  <span class="pd-row-label">Total Paid This Month</span>
+                  <span class="text-[12px] font-bold text-v4-main-text-color"
+                    >${{ payeeSummary()?.total_paid_in_month ?? "0.00" }}</span
+                  >
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Total Paid This Year</span>
+                  <span class="text-[12px] font-bold text-v4-main-text-color"
+                    >${{ payeeSummary()?.total_paid_in_year ?? "0.00" }}</span
+                  >
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Total Paid (All-time)</span>
+                  <span class="text-[12px] font-bold text-v4-main-text-color"
+                    >${{ payeeSummary()?.total_paid ?? "0.00" }}</span
+                  >
+                </div>
+              </div>
+            }
+
+            <!-- Vendor Credit Tab -->
+            @if (activeTab() === "vendor-credit") {
+              <div class="p-3 bg-v4-secondary-background-color">
+                @if (isSectionLoading("vendor-credit")) {
+                  <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+                } @else {
+                  <div class="overflow-x-auto">
+                    @if (vendorCreditData()?.length) {
+                      <table class="v4-ocw-table w-full">
+                        <thead>
+                          <tr>
+                            <th>Vendor credit no</th>
+                            <th class="text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @if (vendorCreditData()?.length) {
+                            @for (item of vendorCreditData(); track $index) {
+                              <tr>
+                                <td>{{ item.vendor_credit_no ?? "—" }}</td>
+                                <td class="text-right font-semibold">
+                                  ${{ item.amount }}
+                                </td>
+                              </tr>
+                            }
+                          }
+                        </tbody>
+                        <tfoot>
+                          <tr class="border-t border-v4-border-color">
+                            <td
+                              class="py-2.5 px-2 text-[13px] font-bold text-v4-main-text-color"
+                            >
+                              Total applied
+                            </td>
+                            <td
+                              class="py-2.5 px-2 text-right text-[13px] font-bold text-v4-main-text-color"
+                            >
+                              {{ vendorCreditTotal() }}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    } @else {
+                      <p
+                        class="m-0 py-6 text-center text-sm text-v4-tertiary-text-color"
+                      >
+                        No vendor credits.
+                      </p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+        <!-- /tab card -->
+
+        <!-- Mail Details (standalone section) -->
+        @if (isMailSectionVisible()) {
+          <div>
+            <app-po-mail-details-list
+              [mailDetails]="mailTrackDetails()"
+              [customFromAddress]="checkData()?.customFromAddress ?? null"
+              [customToAddress]="checkData()?.customToAddress ?? null"
+              [payeeAddress]="payeeAddressForMail()"
+              [groupMailingDetails]="checkData()?.check_mailing_group ?? null"
+              [maxHeight]="'none'"
+              (trackClicked)="onTrackClicked()"
+              (groupMailingClicked)="onGroupMailingClicked($event)"
+            />
+          </div>
+        }
+
+        <!-- Mailed Attachments (standalone section) -->
+        @if (isMailSectionVisible()) {
+          <div>
+            <app-po-mailed-attachments-list
+              [attachments]="mailTrackDetails()?.mailedAttachments ?? null"
+              [maxHeight]="'none'"
+              (viewAttachment)="onViewMailedAttachment($event)"
+            />
+          </div>
+        }
+
+        <!-- 4. Actions — buttons (tabs) + selected panel merged into one card -->
+        <div
+          class="o4-actions-card rounded-xl border border-v4-border-color overflow-hidden pd-full bg-v4-secondary-background-color"
+        >
+          <div
+            class="grid gap-1.5 px-3 py-2 pd-card-head-flush"
+            [ngClass]="
+              (row()?.status === 'COMPLETED' ? 'grid-cols-6' : 'grid-cols-5') +
+              (openActionSection() ? ' border-b border-v4-border-color' : '')
+            "
+          >
+            <!-- Audit Logs -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'audit'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleAuditLogs()"
+              [matTooltip]="getCardTooltip('Audit Logs')"
+            >
+              <lucide-icon
+                name="activity"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Audit<br />Logs</span
+              >
+            </button>
+
+            <!-- Comments -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'comments'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleComments()"
+              [matTooltip]="getCardTooltip('Comments')"
+            >
+              <lucide-icon
+                name="message-square"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Comments</span
+              >
+            </button>
+
+            <!-- Attachments -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'attachments'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="openAttachments()"
+              [matTooltip]="getCardTooltip('Attachments')"
+            >
+              <lucide-icon
+                name="paperclip"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Attachments</span
+              >
+            </button>
+
+            <!-- Remittance -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'remittance'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleRemittance()"
+              [matTooltip]="getCardTooltip('Remittance')"
+            >
+              <lucide-icon
+                name="file-text"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Remittance</span
+              >
+            </button>
+
+            <!-- Signed Receipt -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'signed-receipt'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="openSignedReceipt()"
+              [matTooltip]="getCardTooltip('Signed Receipt')"
+            >
+              <lucide-icon
+                name="receipt"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Signed<br />Receipt</span
+              >
+            </button>
+
+            <!-- Proof of Delivery -->
+            @if (row()?.status === "COMPLETED") {
+              <button
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+                [ngClass]="
+                  openActionSection() === 'pod'
+                    ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                    : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+                "
+                (click)="openPod()"
+              >
+                <lucide-icon
+                  name="truck"
+                  [size]="16"
+                  class="shrink-0"
+                ></lucide-icon>
+                <span
+                  class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                  >Proof of<br />Delivery</span
+                >
+              </button>
+            }
+          </div>
+
+          <!-- Action panels (audit / comments / attachments / …) render at the
+             very bottom, directly under the action grid above them. -->
+          <!-- Inline: Audit Logs -->
+          @if (openActionSection() === "audit") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'audit' }"
+              />
+              @if (isSectionLoading("audit")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-audit-log-list
+                  [collapsedCount]="2"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [logs]="auditLogs()"
+                  [maxHeight]="'400px'"
+                  (closed)="closeAuditLogs()"
+                  (deviceUpdated)="reloadAuditLogs()"
+                />
+              }
+            </div>
+          }
+
+          <!-- Inline: Comments -->
+          @if (openActionSection() === "comments") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'comments' }"
+              />
+              @if (isSectionLoading("comments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-comments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [comments]="comments()"
+                  [maxHeight]="'400px'"
+                  [posting]="commentPosting()"
+                  [error]="commentError()"
+                  emptyHint="Notes you add here stay with the payment."
+                  (submitComment)="onSubmitComment($event)"
+                  (deleteComment)="onDeleteComment($event)"
+                  (closed)="closeComments()"
+                />
+              }
+            </div>
+          }
+
+          <!-- Inline: Attachments -->
+          @if (openActionSection() === "attachments") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'attachments' }"
+              />
+              @if (isSectionLoading("attachments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-attachments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [attachments]="attachments()"
+                  [maxHeight]="'400px'"
+                  [deletingId]="deletingAttachmentId()"
+                  [uploading]="attachmentUploading()"
+                  [accept]="attachmentAccept()"
+                  [allowMobile]="isCheckPayment()"
+                  [phoneSending]="attachmentPhoneSending()"
+                  [phoneSent]="attachmentPhoneSent()"
+                  [qrLoading]="attachmentQrLoading()"
+                  [error]="attachmentError()"
+                  [phoneError]="attachmentPhoneError()"
+                  emptyHint="Files attached to this payment will show up here."
+                  (fileSelected)="onAttachmentSelected($event)"
+                  (sendPhoneLink)="onSendAttachmentPhoneLink($event)"
+                  (openQr)="onOpenAttachmentQr()"
+                  (closed)="closeAttachments()"
+                  (deleteAttachment)="onDeleteAttachment($event)"
+                />
+              }
+            </div>
+          }
+
+          <!-- Inline: Remittance -->
+          @if (openActionSection() === "remittance") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'remittance' }"
+              />
+              <app-po-remittance-list
+                [bare]="true"
+                [remittanceItems]="checkData()?.remittance"
+                [total]="checkData()?.remittanceTotalAmount ?? null"
+                [maxHeight]="'400px'"
+                (closed)="closeRemittance()"
+              />
+            </div>
+          }
+
+          <!-- Inline: Signed Receipt -->
+          @if (openActionSection() === "signed-receipt") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <app-po-signed-receipt-list
+                [bare]="true"
+                [signatureUrl]="checkData()?.signatureUrl ?? null"
+                [viewing]="signedReceiptOpening()"
+                (viewReceipt)="viewSignedReceipt()"
+                [paymentReceiptsId]="checkData()?.payment_receipts_id ?? null"
+                [maxHeight]="'400px'"
+                (requestSignedReceipt)="handleSignedReceipt()"
+                (sendSignedReceipt)="handleSignedReceipt()"
+                (closed)="closeSignedReceipt()"
+              />
+            </div>
+          }
+
+          <!-- Inline: POD -->
+          @if (openActionSection() === "pod") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'pod' }"
+              />
+              @if (isSectionLoading("pod")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-pod-list
+                  [bare]="true"
+                  [podList]="podForList()"
+                  [maxHeight]="'400px'"
+                  [canSend]="canSendPod()"
+                  (sendProof)="openSendPod()"
+                  (closed)="closePod()"
+                />
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ════════════════════════════════════════════════════
+         NON-CHECK PAYMENT LAYOUT (ACH, Wire, Virtual Card…)
+         ════════════════════════════════════════════════════ -->
+      @if (!isCheckPayment()) {
+        <!-- O4 left column: Payment details + Statement timeline -->
+        <div class="o4-left-col">
+          <!-- Payment Details Card -->
+          <div class="pd-card" [class.pd-full]="tileSpansRow('payment')">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('payment')"
+            >
+              <span class="pd-card-title"> Payment details </span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('payment') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+            @if (!isCardCollapsed("payment")) {
+              <div class="pd-row">
+                <span class="pd-row-label">Reference ID</span>
+                <span class="pd-row-value">{{
+                  row()?.reference_no ?? details()?.referenceNo ?? "—"
+                }}</span>
+              </div>
+
+              @if (uuid()) {
+                <div class="pd-row">
+                  <span class="pd-row-label">Transaction ID</span>
+                  <span class="pd-row-value text-end">{{ uuid() }}</span>
+                </div>
+              }
+
+              <div class="pd-row">
+                <span class="pd-row-label">Method</span>
+                <span class="pd-row-value">{{
+                  row()?.transfer_type ?? "—"
+                }}</span>
+              </div>
+
+              <div class="pd-row">
+                <span class="pd-row-label">Created Date</span>
+                <span class="pd-row-value">{{ createdDateText() }}</span>
+              </div>
+
+              <div class="pd-row">
+                <span class="pd-row-label">Updated Date</span>
+                <span class="pd-row-value">{{ updatedDateText() }}</span>
+              </div>
+
+              <div class="pd-row">
+                <span class="pd-row-label">Created By</span>
+                <span class="pd-row-value">{{
+                  row()?.created_by?.nick_name ?? row()?.created_by?.name ?? "—"
+                }}</span>
+              </div>
+
+              <div class="pd-row">
+                <span class="pd-row-label">Source</span>
+                <span class="pd-row-value">{{
+                  row()?.source_name ?? details()?.source?.name ?? "—"
+                }}</span>
+              </div>
+
+              @if (row()?.description ?? details()?.description) {
+                <div class="pd-row-block">
+                  <span class="pd-row-label">Memo</span>
+                  <p class="pd-row-value">
+                    {{ row()?.description ?? details()?.description }}
+                  </p>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Statement — status timeline (design O3) -->
+          <ng-container [ngTemplateOutlet]="statusTimelineTmpl"></ng-container>
+          <!-- Payee Details card (O3) -->
+          <ng-container [ngTemplateOutlet]="payeeDetailsTmpl"></ng-container>
+        </div>
+        <!-- /O4 left column -->
+
+        <!-- Shipping Details (conditional) -->
+        @if (hasShippingCard()) {
+          <div class="pd-card" [class.pd-full]="tileSpansRow('shipping')">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('shipping')"
+            >
+              <span class="pd-card-title">Shipping details</span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('shipping') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+            @if (!isCardCollapsed("shipping")) {
+              @if (shippingMethod()) {
+                <div class="pd-row">
+                  <span class="pd-row-label">Shipping Method</span>
+                  <span class="pd-row-value">{{ shippingMethod() }}</span>
+                </div>
+              }
+              @if (details()?.transfer?.shipping?.carrier_tracking_number) {
+                <div class="flex justify-between items-center py-2.5 gap-3">
+                  <span class="pd-row-label">Tracking Number</span>
+                  <span class="pd-row-value">{{
+                    details()?.transfer?.shipping?.carrier_tracking_number
+                  }}</span>
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- International Payment Bank Details (conditional) -->
+        @if (isInternationalPayment()) {
+          <div class="pd-card" [class.pd-full]="tileSpansRow('bank')">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('bank')"
+            >
+              <span class="pd-card-title">Bank Details</span>
+              <lucide-icon
+                [name]="isCardCollapsed('bank') ? 'chevron-down' : 'chevron-up'"
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+            @if (!isCardCollapsed("bank")) {
+              <div class="pd-row">
+                <span class="pd-row-label">Bank Name</span>
+                <span class="pd-row-value">{{
+                  details()?.transfer?.payee_bank_info?.bank_name ?? "—"
+                }}</span>
+              </div>
+              @if (
+                details()?.transfer?.payee_bank_info
+                  ?.beneficiary_bank_address_line_1
+              ) {
+                <div class="py-2.5 border-b border-v4-border-color">
+                  <span class="pd-row-label block mb-1">Bank Address</span>
+                  <p class="pd-row-value leading-relaxed">
+                    {{
+                      details()?.transfer?.payee_bank_info
+                        ?.beneficiary_bank_address_line_1
+                    }}
+                    @if (
+                      details()?.transfer?.payee_bank_info
+                        ?.beneficiary_bank_address_line_2
+                    ) {
+                      <br />{{
+                        details()?.transfer?.payee_bank_info
+                          ?.beneficiary_bank_address_line_2
+                      }}
+                    }
+                    <br />
+                    {{
+                      details()?.transfer?.payee_bank_info
+                        ?.beneficiary_bank_city
+                        ? details()?.transfer?.payee_bank_info
+                            ?.beneficiary_bank_city + ", "
+                        : ""
+                    }}{{
+                      details()?.transfer?.payee_bank_info
+                        ?.beneficiary_bank_state
+                        ? details()?.transfer?.payee_bank_info
+                            ?.beneficiary_bank_state + ", "
+                        : ""
+                    }}{{
+                      details()?.transfer?.payee_bank_info?.beneficiary_bank_zip
+                        ? details()?.transfer?.payee_bank_info
+                            ?.beneficiary_bank_zip + ", "
+                        : ""
+                    }}{{
+                      details()?.transfer?.payee_bank_info
+                        ?.beneficiary_bank_country ?? ""
+                    }}
+                  </p>
+                </div>
+              }
+              <div class="pd-row">
+                <span class="pd-row-label">Receiving Amount</span>
+                <span class="pd-row-value">{{
+                  details()?.transfer?.receiving_amount
+                    | currency
+                      : details()?.transfer?.receiving_currency_code ?? "USD"
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center py-2.5 gap-3">
+                <span class="pd-row-label">Currency</span>
+                <span class="pd-row-value">{{
+                  details()?.transfer?.receiving_currency_code ?? "—"
+                }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Statement now rendered as the O3 vertical timeline above (statusTimelineTmpl). -->
+
+        <!-- Actions — buttons (tabs) + selected panel merged into one card -->
+        <div
+          class="rounded-xl border border-v4-border-color overflow-hidden pd-full"
+        >
+          <div
+            class="grid gap-1.5 px-3 py-2 pd-card-head-flush"
+            [ngClass]="
+              (row()?.status === 'COMPLETED' ? 'grid-cols-6' : 'grid-cols-5') +
+              (openActionSection() ? ' border-b border-v4-border-color' : '')
+            "
+          >
+            <!-- Comments -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'comments'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleComments()"
+              [matTooltip]="getCardTooltip('Comments')"
+            >
+              <lucide-icon
+                name="message-square"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Comments</span
+              >
+            </button>
+
+            <!-- Attachments -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'attachments'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="openAttachments()"
+              [matTooltip]="getCardTooltip('Attachments')"
+            >
+              <lucide-icon
+                name="paperclip"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Attachments</span
+              >
+            </button>
+
+            <!-- Remittance -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'remittance'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleRemittance()"
+              [matTooltip]="getCardTooltip('Remittance')"
+            >
+              <lucide-icon
+                name="file-text"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Remittance</span
+              >
+            </button>
+
+            <!-- Cleared Check -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'cleared-check'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleClearedCheck()"
+            >
+              <lucide-icon
+                name="file-check"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Cleared<br />Check</span
+              >
+            </button>
+
+            <!-- Signed Receipt -->
+            <button
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === 'signed-receipt'
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="openSignedReceipt()"
+              [matTooltip]="getCardTooltip('Signed Receipt')"
+            >
+              <lucide-icon
+                name="receipt"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >Signed<br />Receipt</span
+              >
+            </button>
+
+            <!-- Proof of Delivery -->
+            @if (row()?.status === "COMPLETED") {
+              <button
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 group transition-[border-color,background-color] duration-150"
+                [ngClass]="
+                  openActionSection() === 'pod'
+                    ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                    : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+                "
+                (click)="openPod()"
+              >
+                <lucide-icon
+                  name="truck"
+                  [size]="16"
+                  class="shrink-0"
+                ></lucide-icon>
+                <span
+                  class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                  >Proof of<br />Delivery</span
+                >
+              </button>
+            }
+          </div>
+
+          <!-- Inline: Comments -->
+          @if (openActionSection() === "comments") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'comments' }"
+              />
+              @if (isSectionLoading("comments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-comments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [comments]="comments()"
+                  [maxHeight]="'400px'"
+                  [posting]="commentPosting()"
+                  [error]="commentError()"
+                  emptyHint="Notes you add here stay with the payment."
+                  (submitComment)="onSubmitComment($event)"
+                  (deleteComment)="onDeleteComment($event)"
+                  (closed)="closeComments()"
+                />
+              }
+            </div>
+          }
+
+          <!-- Inline: Attachments -->
+          @if (openActionSection() === "attachments") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'attachments' }"
+              />
+              @if (isSectionLoading("attachments")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-attachments-list
+                  variant="view-panel"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  [attachments]="attachments()"
+                  [maxHeight]="'400px'"
+                  [deletingId]="deletingAttachmentId()"
+                  [uploading]="attachmentUploading()"
+                  [accept]="attachmentAccept()"
+                  [allowMobile]="isCheckPayment()"
+                  [phoneSending]="attachmentPhoneSending()"
+                  [phoneSent]="attachmentPhoneSent()"
+                  [qrLoading]="attachmentQrLoading()"
+                  [error]="attachmentError()"
+                  [phoneError]="attachmentPhoneError()"
+                  emptyHint="Files attached to this payment will show up here."
+                  (fileSelected)="onAttachmentSelected($event)"
+                  (sendPhoneLink)="onSendAttachmentPhoneLink($event)"
+                  (openQr)="onOpenAttachmentQr()"
+                  (closed)="closeAttachments()"
+                  (deleteAttachment)="onDeleteAttachment($event)"
+                />
+              }
+            </div>
+          }
+
+          <!-- Inline: Remittance -->
+          @if (openActionSection() === "remittance") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'remittance' }"
+              />
+              @if (isSectionLoading("remittance")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-remittance-list
+                  [bare]="true"
+                  [remittanceItems]="remittance()?.items_by_array"
+                  [total]="remittance()?.total ?? null"
+                  [maxHeight]="'400px'"
+                  (closed)="closeRemittance()"
+                />
+              }
+            </div>
+          }
+
+          <!-- Inline: Cleared Check Details -->
+          @if (openActionSection() === "cleared-check") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              @if (
+                clearedCheckDetails().previewFile ||
+                clearedCheckDetails().clearingFile
+              ) {
+                @if (clearedCheckDetails().previewFile) {
+                  <div
+                    class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+                  >
+                    <span class="text-[14px] text-v4-main-text-color"
+                      >Preview File</span
+                    >
+                    <button
+                      class="cursor-pointer border-none bg-transparent text-v4-primary-brand-bold-color hover:text-v4-main-text-color"
+                      (click)="downloadFile(clearedCheckDetails().previewFile!)"
+                    >
+                      <lucide-icon name="download" [size]="18"></lucide-icon>
+                    </button>
+                  </div>
+                }
+                @if (clearedCheckDetails().clearingFile) {
+                  <div class="flex justify-between items-center py-2.5">
+                    <span class="text-[14px] text-v4-main-text-color"
+                      >Clearing File</span
+                    >
+                    <button
+                      class="cursor-pointer border-none bg-transparent text-v4-primary-brand-bold-color hover:text-v4-main-text-color"
+                      (click)="
+                        downloadFile(clearedCheckDetails().clearingFile!)
+                      "
+                    >
+                      <lucide-icon name="download" [size]="18"></lucide-icon>
+                    </button>
+                  </div>
+                }
+              } @else {
+                <div class="pd-empty">
+                  <p
+                    class="text-center py-8 text-v4-secondary-text-color text-sm m-0"
+                  >
+                    No cleared check details available.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Inline: Signed Receipt -->
+          @if (openActionSection() === "signed-receipt") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <app-po-signed-receipt-list
+                [bare]="true"
+                [signatureUrl]="details()?.signatureUrl ?? null"
+                [viewing]="signedReceiptOpening()"
+                (viewReceipt)="viewSignedReceipt()"
+                [paymentReceiptsId]="details()?.payment_receipt_id ?? null"
+                [maxHeight]="'400px'"
+                (requestSignedReceipt)="handleSignedReceipt()"
+                (sendSignedReceipt)="handleSignedReceipt()"
+                (closed)="closeSignedReceipt()"
+              />
+            </div>
+          }
+
+          <!-- Inline: POD -->
+          @if (openActionSection() === "pod") {
+            <div class="pd-action-panel p-3 bg-v4-secondary-background-color">
+              <ng-container
+                [ngTemplateOutlet]="shareBar"
+                [ngTemplateOutletContext]="{ section: 'pod' }"
+              />
+              @if (isSectionLoading("pod")) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-pod-list
+                  [bare]="true"
+                  [podList]="podForList()"
+                  [maxHeight]="'400px'"
+                  [canSend]="canSendPod()"
+                  (sendProof)="openSendPod()"
+                  (closed)="closePod()"
+                />
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</ng-template>

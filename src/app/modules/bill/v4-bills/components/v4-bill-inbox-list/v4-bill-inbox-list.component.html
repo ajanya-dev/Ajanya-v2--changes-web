@@ -1,0 +1,170 @@
+<div class="h-full flex flex-col">
+  <!-- Header: Select All + Sort -->
+  <div
+    class="flex items-center justify-between px-4 py-3 border-b border-v4-border-color bg-v4-secondary-background-color flex-shrink-0"
+  >
+    <div class="flex items-center gap-2">
+      @if (emailBills().length > 0) {
+        <input
+          type="checkbox"
+          class="inbox-checkbox"
+          [checked]="isSelectAll()"
+          (change)="onSelectAllToggle()"
+        />
+      }
+      <span class="text-xs font-peridot text-v4-secondary-text-color"
+        >Select All</span
+      >
+      @if (showBulkDelete() && emailBills().length > 0) {
+        <button aria-label="Delete selected"
+          (click)="bulkDelete()"
+          class="p-1.5 text-v4-common-red-color hover:text-v4-common-red-color/80 rounded cursor-pointer transition-colors"
+          matTooltip="Delete selected"
+        >
+          <lucide-icon name="trash-2" [size]="14" />
+        </button>
+      }
+    </div>
+
+    <div class="w-[150px]">
+      <app-v4-common-dropdown
+        [config]="viewByDropdownConfig"
+        [listData]="viewByOptions"
+        [ngModel]="selectedViewBy()"
+        (ngModelChange)="onViewByChange($event)"
+        [clearable]="false"
+        [searchable]="false"
+        [smallFont]="true"
+      />
+    </div>
+  </div>
+
+  <!-- Email Bills List -->
+  <div
+    class="email-list flex-1 flex flex-col overflow-x-hidden overflow-y-auto bg-v4-secondary-background-color"
+    appScrollToEnd
+    (scrollToEnd)="onScrollToEnd()"
+  >
+    @if (isLoading()) {
+      <app-common-list-skelton [items]="14" />
+    } @else if (emailBills().length === 0) {
+      <!-- Empty State -->
+      <app-v4-data-table-empty-state
+        icon="mail"
+        [title]="'No bill emails yet'"
+        [description]="
+          mappedEmail()
+            ? 'Forwarded invoices will appear here once received'
+            : 'Connect your email to turn invoices into payable bills instantly'
+        "
+        [buttonText]="mappedEmail() ? 'Refresh Inbox' : 'Email to Bill'"
+        (actionClick)="onEmptyStateAction()"
+      />
+    } @else {
+      @for (item of emailBills(); track item.id) {
+        <div
+          role="presentation"
+          class="inbox-item border-b border-v4-input-background-color hover:bg-v4-tertiary-background-color cursor-pointer transition-colors"
+          [class.selected-item]="item.isSelected"
+          [class.bg-v4-tertiary-background-color]="item.isSelected"
+          (click)="onItemSelect(item)"
+        >
+          <div class="px-4 py-3">
+            <!-- Row 1: Checkbox + Vendor Name + Amount -->
+            <div class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                class="inbox-checkbox shrink-0"
+                [checked]="item.isSelected"
+                (click)="$event.stopPropagation()"
+                (change)="onItemSelect(item)"
+              />
+              <span
+                class="flex-1 text-[13px] font-semibold font-funnel text-v4-main-text-color truncate"
+                [matTooltip]="transformName(item.from_name)"
+              >
+                {{ transformName(item.from_name) }}
+              </span>
+              @if (item.extraction_status !== "failed") {
+                <span
+                  class="text-[13px] font-semibold font-funnel shrink-0"
+                  [ngClass]="{
+                    'text-v4-main-text-color': !item.is_converted_to_bill,
+                    'text-v4-common-green-color': item.is_converted_to_bill
+                  }"
+                >
+                  {{
+                    getTotalAmount(item) | currency: "USD" : "symbol" : "1.2-2"
+                  }}
+                </span>
+              } @else {
+                <span
+                  class="text-[12px] font-semibold font-peridot text-v4-common-yellow-color shrink-0"
+                >
+                  FAILED TO EXTRACT
+                </span>
+              }
+            </div>
+
+            <!-- Row 2: Subject + Status -->
+            <div class="flex items-center gap-1.5 mt-1.5 ml-[30px]">
+              <lucide-icon
+                name="file-text"
+                [size]="12"
+                class="text-v4-tertiary-text-color shrink-0"
+              />
+              <span
+                class="text-[12px] font-peridot text-v4-secondary-text-color truncate"
+              >
+                {{ item.subject }}
+              </span>
+              @if (item.is_converted_to_bill) {
+                <lucide-icon
+                  name="circle-check"
+                  [size]="12"
+                  class="text-v4-common-green-color shrink-0"
+                  matTooltip="Converted to bill"
+                />
+              }
+            </div>
+
+            <!-- Row 3: Date + Delete -->
+            <div class="flex items-center justify-between mt-1 ml-[30px]">
+              <div class="flex items-center gap-1.5">
+                <lucide-icon
+                  name="calendar"
+                  [size]="12"
+                  class="text-v4-tertiary-text-color shrink-0"
+                />
+                <span
+                  class="text-[12px] font-peridot text-v4-secondary-text-color"
+                >
+                  {{ item.received_at | date: "MM/dd/yyyy" }}
+                </span>
+              </div>
+              <button aria-label="Delete"
+                (click)="onDeleteItem(item, $event)"
+                class="p-1 text-v4-tertiary-text-color hover:text-v4-common-red-color rounded cursor-pointer transition-colors"
+                matTooltip="Delete"
+              >
+                <lucide-icon name="trash-2" [size]="12" />
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Loading More -->
+      @if (isLoadingMore()) {
+        <div class="flex items-center justify-center p-4">
+          <div
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-v4-primary-brand-color"
+          ></div>
+          <span class="ml-2 text-xs font-peridot text-v4-tertiary-text-color">
+            Loading more...
+          </span>
+        </div>
+      }
+    }
+  </div>
+</div>

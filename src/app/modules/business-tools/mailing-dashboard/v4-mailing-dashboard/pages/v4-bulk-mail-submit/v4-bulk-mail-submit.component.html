@@ -1,0 +1,256 @@
+<div
+  class="bg-v4-main-background-color w-full relative"
+>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <button
+          type="button"
+          class="flex items-center gap-2 text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color transition-colors mb-2"
+          (click)="onBack()"
+        >
+          <lucide-angular name="arrow-left" [size]="18" />
+          <span class="text-sm font-peridot font-medium">Back to Dashboard</span>
+        </button>
+        <h1 class="text-xl font-funnel font-semibold text-v4-main-text-color">
+          Bulk Mailing System
+        </h1>
+        <p class="text-sm text-v4-secondary-text-color font-peridot mt-0.5">
+          Create and manage bulk mailings with ease
+        </p>
+      </div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="flex gap-3 mb-6">
+      <div class="flex-1">
+        <div class="h-1.5 rounded-full mb-2 bg-v4-secondary-brand-color"></div>
+        <span class="text-xs font-peridot text-v4-secondary-text-color">
+          Group Details
+        </span>
+      </div>
+      <div class="flex-1">
+        <div class="h-1.5 rounded-full mb-2 bg-v4-secondary-brand-color"></div>
+        <span class="text-xs font-peridot font-semibold text-v4-main-text-color">
+          Review &amp; Submit
+        </span>
+      </div>
+    </div>
+
+    <!-- Loading skeleton -->
+    @if (isLoading()) {
+      <div class="step-card animate-pulse space-y-4">
+        <div class="h-6 bg-v4-tertiary-background-color rounded w-48"></div>
+        <div class="h-4 bg-v4-tertiary-background-color rounded w-64"></div>
+        <div class="h-24 bg-v4-tertiary-background-color rounded"></div>
+        <div class="h-32 bg-v4-tertiary-background-color rounded"></div>
+        <div class="h-40 bg-v4-tertiary-background-color rounded"></div>
+      </div>
+    } @else if (bulkMailData() && checkDetailsResponse()) {
+      <!-- Review Card -->
+      <div class="step-card mb-4">
+        <h2 class="text-lg font-funnel font-semibold text-v4-main-text-color">
+          Review Your Order
+        </h2>
+        <p class="text-sm font-peridot text-v4-secondary-text-color mt-0.5">
+          Confirm details before submitting
+        </p>
+      </div>
+
+      <!-- Group + Addresses -->
+      <div class="step-card mb-4 space-y-5">
+        <div>
+          <label class="field-label-sm">GROUP NAME</label>
+          <div class="text-sm font-peridot font-medium text-v4-main-text-color mt-1">
+            {{ bulkMailData()?.shippingForm?.groupName }}
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-v4-border-color">
+          <label class="block text-[16px] font-funnel font-bold text-v4-main-text-color">Address</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
+            <div>
+              <label class="field-label-sm !text-[12px]">FROM</label>
+              <div class="mt-1 text-sm font-peridot text-v4-main-text-color space-y-0.5">
+                <div class="font-semibold">
+                  {{ bulkMailData()?.shippingForm?.shippingAddressFrom?.name }}
+                </div>
+                <div class="text-v4-secondary-text-color">
+                  {{ bulkMailData()?.shippingForm?.shippingAddressFrom?.address?.address_line_1 }}
+                </div>
+                <div class="text-v4-secondary-text-color">
+                  {{ bulkMailData()?.shippingForm?.shippingAddressFrom?.address?.city }},
+                  {{ bulkMailData()?.shippingForm?.shippingAddressFrom?.address?.state }}
+                  {{ bulkMailData()?.shippingForm?.shippingAddressFrom?.address?.zip }}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="field-label-sm !text-[12px]">TO</label>
+              <div class="mt-1 text-sm font-peridot text-v4-main-text-color space-y-0.5">
+                <div class="font-semibold">
+                  {{ bulkMailData()?.shippingForm?.shippingAddressTo?.name }}
+                </div>
+                <div class="text-v4-secondary-text-color">
+                  {{ bulkMailData()?.shippingForm?.shippingAddressTo?.address?.address_line_1 }}
+                </div>
+                <div class="text-v4-secondary-text-color">
+                  {{ bulkMailData()?.shippingForm?.shippingAddressTo?.address?.city }},
+                  {{ bulkMailData()?.shippingForm?.shippingAddressTo?.address?.state }}
+                  {{ bulkMailData()?.shippingForm?.shippingAddressTo?.address?.zip }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shipping Type -->
+      <div class="step-card mb-4">
+        <label class="block text-[16px] font-funnel font-bold text-v4-main-text-color mb-3">Shipping Details</label>
+        <label class="field-label-sm !text-[12px]">SHIPPING TYPE</label>
+        <div class="text-sm font-peridot font-medium text-v4-main-text-color mt-1">
+          {{ bulkMailData()?.shippingForm?.shippingType?.name }}
+        </div>
+      </div>
+
+      <!-- Payment Checks Table -->
+      <div class="step-card mb-4">
+        <label class="block text-[16px] font-funnel font-bold text-v4-main-text-color">Payment Checks ({{ checkCount() }})</label>
+        <div class="mt-3 overflow-x-auto">
+          <table class="v4-table w-full">
+            <thead>
+              <tr>
+                <th class="text-left">Payee</th>
+                <th class="text-right">Amount</th>
+                <th class="text-right">Cost</th>
+                <th class="text-center w-12 !text-v4-primary-brand-bold-color">
+                  <lucide-angular name="paperclip" [size]="14" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of checkDetailsResponse()?.datas; track item.enc_id) {
+                <tr>
+                  <td>{{ item?.payee_name }}</td>
+                  <td class="text-right">
+                    ${{ (item?.cheque_amount || '0') | number: '1.2-2' }}
+                  </td>
+                  <td class="text-right">
+                    @if (isLoadingCostCalculation()) {
+                      <div class="h-4 rounded bg-v4-tertiary-background-color w-12 ml-auto animate-pulse"></div>
+                    } @else {
+                      ${{ (item?.cost || '0') | number: '1.2-2' }}
+                    }
+                  </td>
+                  <td class="text-center align-middle w-12">
+                    <button [attr.aria-label]="getAttachmentCount(item?.enc_id) > 0
+                          ? 'View ' + getAttachmentCount(item?.enc_id) + ' attachment(s)'
+                          : 'No attachments'"
+                      type="button"
+                      class="inline-flex items-center justify-center text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity relative"
+                      [matBadge]="getAttachmentCount(item?.enc_id)"
+                      matBadgeSize="small"
+                      matBadgeOverlap="false"
+                      [matBadgeHidden]="getAttachmentCount(item?.enc_id) < 1"
+                      [matTooltip]="
+                        getAttachmentCount(item?.enc_id) > 0
+                          ? 'View ' + getAttachmentCount(item?.enc_id) + ' attachment(s)'
+                          : 'No attachments'
+                      "
+                      (click)="openAttachmentModal(item?.enc_id)"
+                    >
+                      <lucide-angular name="paperclip" [size]="14" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Cost Summary -->
+      <!-- Total Payment Amount Card -->
+      <div class="cost-summary-card mb-3">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-base font-funnel font-bold text-v4-main-text-color">
+              Total Payment Amount
+            </h3>
+            <p class="text-xs font-peridot text-v4-secondary-text-color mt-0.5">
+              This is the total being sent to recipients
+            </p>
+          </div>
+          <span class="text-lg font-bold text-v4-main-text-color">
+            @if (isLoadingCostCalculation()) {
+              <span class="inline-block h-5 w-20 rounded bg-v4-tertiary-background-color animate-pulse"></span>
+            } @else {
+              ${{ getTotalChequeAmount() | number: '1.2-2' }}
+            }
+          </span>
+        </div>
+      </div>
+
+      <!-- Service Fees Card -->
+      <div class="cost-summary-card mb-5">
+        <h3 class="text-base font-funnel font-bold text-v4-main-text-color mb-4">
+          Service Fees (What You Pay)
+        </h3>
+        <div class="space-y-2.5 text-sm font-peridot">
+          <div class="flex justify-between items-center">
+            <span class="text-v4-secondary-text-color">
+              Sub Total
+            </span>
+            <span class="font-semibold text-v4-main-text-color">
+              @if (isLoadingCostCalculation()) {
+                <span class="inline-block h-4 w-16 rounded bg-v4-tertiary-background-color animate-pulse"></span>
+              } @else {
+                ${{ shippingCalculation()?.subtotal || '0.00' | number: '1.2-2' }}
+              }
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-v4-secondary-text-color">Shipping Cost</span>
+            <span class="font-semibold text-v4-main-text-color">
+              @if (isLoadingCostCalculation()) {
+                <span class="inline-block h-4 w-16 rounded bg-v4-tertiary-background-color animate-pulse"></span>
+              } @else {
+                ${{ shippingCalculation()?.group_shipping_fee || '0.00' | number: '1.2-2' }}
+              }
+            </span>
+          </div>
+          <hr class="cost-summary-divider my-1" />
+          <div class="flex justify-between items-center pt-1">
+            <span class="text-base font-bold text-v4-main-text-color">Total You Will Pay</span>
+            <span class="text-lg font-bold text-v4-primary-brand-bold-color">
+              @if (isLoadingCostCalculation()) {
+                <span class="inline-block h-5 w-20 rounded bg-v4-tertiary-background-color animate-pulse"></span>
+              } @else {
+                ${{ shippingCalculation()?.total || '0.00' | number: '1.2-2' }}
+              }
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end gap-3">
+        <app-common-button-v4
+          text="Cancel"
+          width="120px"
+          [type]="{ style: 'outline', name: 'main' }"
+          (clickEvent)="onBack()"
+          [disabled]="isSendingMail()"
+        />
+        <app-common-button-v4
+          text="Confirm & Submit"
+          width="180px"
+          [type]="{ style: 'primary', name: 'main' }"
+          (clickEvent)="createChecks()"
+          [loading]="isSendingMail()"
+          [disabled]="isSendingMail()"
+        />
+      </div>
+    }
+</div>

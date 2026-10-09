@@ -1,0 +1,130 @@
+@if (fieldLabel()) {
+<label
+  for="{{ inputId() ? inputId() : placeholder() }}"
+  class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+>
+  {{ fieldLabel() }} @if (isFieldRequired()) {
+  <span class="text-v4-common-red-color">*</span>
+  } @if (showInfoIcon() && infoInLabel()) {
+  <span
+    class="ml-1 inline-flex align-middle cursor-help text-v4-tertiary-text-color"
+    [matTooltip]="tooltip()"
+    matTooltipClass="v4-info-tooltip"
+    matTooltipPosition="above"
+  >
+    <lucide-icon [img]="InfoIcon" [size]="14" />
+  </span>
+  }
+</label>
+}
+<div class="relative">
+  @if (!fieldLabel() && placeholder().endsWith(' *')) {
+  <div
+    class="absolute inset-y-0 left-4 flex items-center pointer-events-none"
+    [class.hidden]="inputValue.value"
+  >
+    <span class="text-base md:text-sm text-v4-tertiary-text-color font-peridot"
+      >{{ placeholder().slice(0, -2) }}</span
+    >
+    <span class="text-base md:text-sm text-v4-common-red-color font-peridot">
+      *</span
+    >
+  </div>
+  }
+  <input
+    #commonInput
+    class="v4-input-style focus:outline-none focus:border-v4-brand-border-color touch-manipulation font-peridot placeholder:font-peridot placeholder:text-v4-tertiary-text-color"
+    [style.height]="fieldHeight() === '34px' ? '40px' : fieldHeight()"
+    [ngClass]="{
+      'px-4 py-3 border border-input-border-color text-base md:text-sm shadow-sm focus:ring-2 focus:ring-v4-brand-border-color': variant() === 'default',
+      'px-3 py-0 border border-input-border-color text-sm rounded-lg focus:ring-2 focus:ring-v4-brand-border-color': variant() === 'compact',
+      'px-2.5 py-0 border border-input-border-color text-[13px] rounded-lg focus:ring-2 focus:ring-v4-brand-border-color': variant() === 'table',
+      'border-common-red-color': !inputValue.value,
+      '!border-v4-common-red-color': isInvalid(),
+      '!pr-10': showInfoIcon() || (isSearchInput() && inputValue.value),
+      '!opacity-50': disabled(),
+      'cursor-pointer': type() === 'date',
+      'input-read-only': isApprovedReadOnly()
+    }"
+    [readonly]="readOnly()"
+    [type]="type()"
+    [formControl]="inputValue"
+    id="{{ inputId() ? inputId() : placeholder() }}"
+    (blur)="onTouched($event)"
+    (keypress)="isNumberOnly() && !customMask() ? utils.numberOnly($event, numberType(),isAllowHyphen()) : undefined"
+    (keydown)="preventCharacter($event)"
+    [maxlength]="maxLength() ? maxLength() : ''"
+    [mask]="customMask()"
+    [patterns]="patterns()"
+    [hiddenInput]="hiddenInput()"
+    (input)="onInput(commonInput)"
+    (focus)="onFocus(commonInput)"
+    (focusout)="onFocusOut(commonInput)"
+    (copy)="preventCopy() ? $event.preventDefault() : null"
+    (cut)="preventCopy() ? $event.preventDefault() : null"
+    (paste)="preventPaste() ? $event.preventDefault() : null"
+    [thousandSeparator]="customMask() === 'separator.2' ? ',' : undefined"
+    [placeholder]="(!fieldLabel() && placeholder().endsWith(' *')) ? '' : placeholder()"
+    [max]="type() === 'date' && maxDate() ? maxDate() : undefined"
+    [min]="type() === 'date' && minDate() ? minDate() : undefined"
+    [disabled]="disabled()"
+    [autocomplete]="autocomplete()"
+  />
+  @if (isCalculator()) {
+  <div
+    class="absolute top-[1px] right-[1px] h-[42px] w-[42px] bg-secondary-background-color border-l border-input-border-color"
+    [style.border-radius]="'0px 10px 10px 0px'"
+  >
+    <div
+      role="presentation"
+      class="flex justify-center items-center w-full h-full cursor-pointer"
+      (click)="openCalculator()"
+    >
+      <fa-icon
+        class="text-secondary-text-color"
+        [icon]="['fas', 'calculator']"
+      ></fa-icon>
+    </div>
+  </div>
+  } @if (isSearchInput() && inputValue.value) {
+  <div
+    class="absolute inset-y-0 right-0 flex items-center pr-3"
+    [ngClass]="{ '!pr-12': isCalculator(), '!pr-10': showInfoIcon() }"
+  >
+    <button
+      type="button"
+      class="flex items-center justify-center w-5 h-5 rounded-full hover:bg-v4-secondary-background-color transition-colors cursor-pointer"
+      (click)="onClearSearch($event)"
+    >
+      <lucide-icon
+        name="x"
+        [size]="14"
+        class="text-v4-secondary-text-color"
+      ></lucide-icon>
+    </button>
+  </div>
+  } @if(showInfoIcon() && !infoInLabel()){
+  <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+    <span
+      class="text-gray-500 cursor-pointer"
+      [matTooltip]="tooltip()"
+      matTooltipClass="v4-info-tooltip"
+      matTooltipPosition="before"
+    >
+      <lucide-icon
+        class="text-v4-tertiary-text-color"
+        [img]="InfoIcon"
+        [size]="14"
+      />
+    </span>
+  </div>
+  }
+</div>
+
+<app-control-message-v4
+  [control]="control()"
+  [label]="errorLabel()"
+  [customMessages]="customMessages()"
+  [isMarginTopEnabled]="false"
+  [marginTopOverride]="errorMarginTop()"
+></app-control-message-v4>

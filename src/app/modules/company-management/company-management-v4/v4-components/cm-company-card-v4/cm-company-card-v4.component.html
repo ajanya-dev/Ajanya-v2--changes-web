@@ -1,0 +1,209 @@
+<div
+  class="rounded-xl border p-4 bg-v4-secondary-background-color transition-all"
+  [ngClass]="
+    company().isActive
+      ? 'border-v4-primary-brand-color ring-1 ring-v4-primary-brand-color'
+      : 'border-v4-border-color'
+  "
+>
+  <!-- Header -->
+  <div class="flex items-start gap-3">
+    <div
+      class="w-10 h-10 rounded-lg bg-v4-primary-brand-color flex items-center justify-center flex-shrink-0"
+    >
+      @if (company().companyLogoUrl) {
+        <img
+          [src]="company().companyLogoUrl"
+          class="w-10 h-10 rounded-lg object-cover"
+          alt="Logo"
+        />
+      } @else {
+        <lucide-icon
+          name="building-2"
+          [size]="18"
+          class="text-v4-secondary-brand-color"
+        />
+      }
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span
+          class="text-sm font-semibold text-v4-main-text-color"
+          [matTooltip]="company().companyName"
+          [matTooltipDisabled]="company().companyName.length <= 20"
+        >
+          {{
+            company().companyName.length > 20
+              ? (company().companyName | slice: 0 : 20) + "..."
+              : company().companyName
+          }}
+        </span>
+        @if (company().isActive) {
+          <lucide-icon
+            name="check-circle-2"
+            [size]="14"
+            class="text-v4-common-green-color flex-shrink-0"
+          />
+        }
+        <span
+          class="px-2 py-0.5 rounded-full text-[12px] font-semibold"
+          [ngClass]="statusClasses"
+        >
+          {{ statusLabel }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div
+    class="flex items-center gap-2 mt-4 pt-3 border-t border-v4-border-color flex-wrap"
+  >
+    @if (company().type === "own") {
+      @if (company().customerRef) {
+        <app-common-button-v4
+          class="basis-full"
+          [type]="{ style: 'secondary', name: 'main' }"
+          text="Onboarding Link"
+          [lucideIcon]="'link'"
+          [lucideIconSize]="14"
+          [width]="'100%'"
+          [backGroundInput]="'transparent'"
+          [textColorInput]="'var(--v4-secondary-text-color)'"
+          [hoverStyle]="{
+            bgColor: 'var(--v4-badge-info-bg-color)',
+            textColor: 'var(--v4-primary-brand-bold-color)',
+            fontSize: '12px'
+          }"
+          (clickEvent)="onboardingLink.emit(company())"
+        />
+      }
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'secondary', name: 'main' }"
+        text="Edit"
+        [lucideIcon]="'pencil'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        [backGroundInput]="'transparent'"
+        [textColorInput]="'var(--v4-secondary-text-color)'"
+        [hoverStyle]="{
+          bgColor: 'var(--v4-badge-info-bg-color)',
+          textColor: 'var(--v4-primary-brand-bold-color)',
+          fontSize: '12px'
+        }"
+        [loading]="editingCompanyId() === company().id"
+        (clickEvent)="edit.emit(company())"
+      />
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'secondary', name: 'main' }"
+        text="Delete"
+        [lucideIcon]="'trash-2'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        [backGroundInput]="'transparent'"
+        [textColorInput]="'var(--v4-secondary-text-color)'"
+        [hoverStyle]="{
+          bgColor: 'var(--v4-badge-error-bg-color)',
+          textColor: 'var(--v4-badge-error-text-color)',
+          fontSize: '12px'
+        }"
+        (clickEvent)="delete.emit(company())"
+      />
+      @if (company().isActive) {
+        <span
+          class="flex-1 text-xs font-semibold text-v4-common-green-color flex items-center justify-center gap-1 py-2"
+        >
+          <lucide-icon name="check-circle-2" [size]="12" />
+          Active
+        </span>
+      } @else {
+        <app-common-button-v4
+          class="flex-1"
+          [type]="{ style: 'neon', name: 'main' }"
+          text="Switch To"
+          [lucideIcon]="'arrow-right'"
+          [lucideIconSize]="14"
+          [width]="'100%'"
+          (clickEvent)="switchTo.emit(company())"
+        />
+      }
+    }
+
+    @if (company().type === "invited" && company().invitedStatus === 0) {
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'filled-green', name: 'action' }"
+        text="Accept"
+        [lucideIcon]="'check'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        (clickEvent)="acceptInvite.emit(company())"
+      />
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'filled-red', name: 'action' }"
+        text="Reject"
+        [lucideIcon]="'x'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        (clickEvent)="rejectInvite.emit(company())"
+      />
+    }
+
+    @if (company().type === "invited" && company().invitedStatus === 1) {
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'destructive', name: 'main' }"
+        text="Remove My Access"
+        [lucideIcon]="'trash-2'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        (clickEvent)="removeAccess.emit(company())"
+      />
+      @if (company().isActive) {
+        <span
+          class="flex-1 text-xs font-semibold text-v4-common-green-color flex items-center justify-center gap-1"
+        >
+          <lucide-icon name="check-circle-2" [size]="14" />
+          Active
+        </span>
+      } @else {
+        <app-common-button-v4
+          class="flex-1"
+          [type]="{ style: 'neon', name: 'main' }"
+          text="Switch To"
+          [lucideIcon]="'arrow-right'"
+          [lucideIconSize]="14"
+          [width]="'100%'"
+          (clickEvent)="switchTo.emit(company())"
+        />
+      }
+    }
+
+    @if (company().type === "requested") {
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'blue', name: 'action' }"
+        text="Resend"
+        [lucideIcon]="'send'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        [customHeight]="'44px'"
+        toolTip="Resend your access request to the company owner"
+        (clickEvent)="resendRequest.emit(company())"
+      />
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'destructive', name: 'main' }"
+        text="Remove My Access"
+        [lucideIcon]="'trash-2'"
+        [lucideIconSize]="14"
+        [width]="'100%'"
+        toolTip="Cancel your pending access request"
+        (clickEvent)="removeAccess.emit(company())"
+      />
+    }
+  </div>
+</div>

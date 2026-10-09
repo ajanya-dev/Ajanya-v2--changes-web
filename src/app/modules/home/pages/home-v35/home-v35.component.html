@@ -1,0 +1,464 @@
+<div class="flex w-full h-full main-container">
+  <div class="flex w-full h-full">
+    <div class="flex w-full h-full bg-secondary-background-color px-2.5">
+      <div
+        class="main-section flex justify-center items-start h-full w-full bg-main-background-color rounded"
+      >
+        @if (env.env_id === "compass") {
+          <div class="flex justify-center items-center h-full compass">
+            <div>
+              <h1>Welcome to COMPASS</h1>
+            </div>
+          </div>
+        } @else if (env.env_id === "csnhc" && isLoginAsClient()) {
+          <div class="flex justify-center items-center h-full w-full csnhc-welcome">
+            <div class="csnhc-welcome-content">
+              <div class="csnhc-welcome-logo" [class.has-logo]="activeCompanyLogo() && !logoUploading()">
+                @if (logoUploading()) {
+                  <div class="csnhc-logo-skeleton"></div>
+                } @else if (activeCompanyLogo()) {
+                  <img [src]="activeCompanyLogo()" alt="Company Logo" />
+                } @else {
+                  <fa-icon [icon]="faBuilding"></fa-icon>
+                }
+                <button class="csnhc-logo-camera-btn" matTooltip="Upload Logo" (click)="logoFileInput.click()">
+                  <fa-icon [icon]="faCamera"></fa-icon>
+                </button>
+                <input
+                  #logoFileInput
+                  type="file"
+                  onclick="this.value=null"
+                  class="absolute hidden opacity-0"
+                  (change)="imgUpload($event)"
+                  accept="image/png, image/jpeg"
+                />
+              </div>
+              <p class="csnhc-welcome-label font-roboto">Welcome to</p>
+              <h1 class="csnhc-welcome-title font-roboto">{{ activeCompanyName() }}</h1>
+              <div class="csnhc-welcome-line"></div>
+            </div>
+          </div>
+        } @else {
+          <app-payments-main-v35
+            [isHomePage]="true"
+            (payeeDetailsOpen)="handlePayeeDetailsAndMyRequests($event)"
+            [isHomeNotificationsShown]="{ showMyRequests, newNotifications }"
+            class="flex h-full w-full overflow-auto"
+            (isKycDoneFromCard)="isKycDoneFromCard($event)"
+          ></app-payments-main-v35>
+        }
+      </div>
+      <!-- <app-common-button-v35
+        class="bottom-8 right-28 pr-3 z-10 fixed cursor-pointer hidden xl:flex "
+        textClasses="text-common-blue-color text-sm font-normal"
+        (clickEvent)="suggestFeedback()"
+        type="borderless"
+        text="Suggest a feedback"
+        [disableHoverEffect]="true"
+        customClasses="!font-inter !font-medium !p-0"
+      >
+      </app-common-button-v35> -->
+      @if (showMyRequests) {
+        <div
+          appWhiteLabel
+          hiddenIf="hidePaymentTableFilter"
+          class="notifications-bar-wrapper hidden xl:flex flex-col gap-1 justify-start items-center overflow-hidden w-72 min-w-[18rem] max-w-[18rem] font-inter p-3 h-full bg-main-background-color rounded"
+        >
+          @if (newNotifications || isPayeeDetailsOpen) {
+            <div
+              class="v35-small-tabs rounded flex gap-3 cursor-pointer text-sm font-semibold w-full"
+            >
+              @if (newNotifications) {
+                <button
+                  tabindex="0"
+                  [ngClass]="{ selected: selectedNotificationBarTab === 'new' }"
+                  (click)="toggleNotificationTab('new')"
+                >
+                  <h1>New</h1>
+                </button>
+              }
+              @if (isPayeeDetailsOpen) {
+                <button
+                  (click)="toggleNotificationTab('details')"
+                  tabindex="0"
+                  [ngClass]="{
+                    selected: selectedNotificationBarTab === 'details'
+                  }"
+                >
+                  <h1>Payment Details</h1>
+                </button>
+              }
+            </div>
+          }
+
+          <div
+            class="notifications-bar flex flex-col gap-2 w-full overflow-auto h-[41.5rem]"
+            appWhiteLabel hiddenIf="isCSNHCRequirement"
+          >
+            <!-- <div
+              class="maintenance-notice font-inter relative overflow-hidden rounded-md p-3.5 border border-common-yellow-color bg-common-secondary-yellow-color shadow-common-button"
+              role="alert"
+            >
+              <div
+                class="pointer-events-none absolute -top-7 -right-7 w-24 h-24 rounded-full bg-common-yellow-color opacity-10 blur-[6px]"
+              ></div>
+              <div class="relative z-10 flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="shrink-0 w-[26px] h-[26px] rounded-full flex items-center justify-center bg-common-yellow-color"
+                  >
+                    <fa-icon
+                      [icon]="faWarning"
+                      class="text-[12px] text-white"
+                    ></fa-icon>
+                  </span>
+                  <span
+                    class="text-[12px] font-semibold uppercase tracking-wide text-common-yellow-color"
+                  >
+                    Scheduled Maintenance
+                  </span>
+                </div>
+                <p class="text-xs leading-relaxed text-main-text-color">
+                  ACH and Wire transfers will be temporarily unavailable from
+                  <span
+                    class="font-semibold text-common-yellow-color whitespace-nowrap"
+                    >June 23 to June 25</span
+                  >
+                  due to scheduled maintenance. We apologize for the inconvenience and appreciate your patience.
+                </p>
+              </div>
+            </div> -->
+            <!-- @if(trueCount !== 2 && !gettingStartedLoading){ -->
+            @if (loaded && !kybDone) {
+              <div
+                class="border h-[150px] rounded-[5px] border-solid border-common-violet-color p-2"
+              >
+                <div
+                  class="text-[13px] font-semibold text-center pt-2.5 text-main-text-color"
+                >
+                  @if (!kycDone) {
+                    <div>
+                      Complete the Setup to Activate<br />
+                      Your Preferred Payment Methods
+                    </div>
+                  } @else if (userVerfied && kycDone && !kybDone) {
+                    <div>
+                      View Accounts to Activate <br />
+                      Your Preferred Payment Methods
+                    </div>
+                  } @else if (userVerfied && kycDone && kybDone) {
+                    <div>
+                      View Accounts to Activate <br />
+                      Your Preferred Payment Methods
+                    </div>
+                  }
+                </div>
+
+                <div class="flex justify-center py-2.5">
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] text-center text-[14px] flex justify-center items-center"
+                    [ngClass]="
+                      userVerfied
+                        ? 'bg-common-secondary-green-color'
+                        : 'bg-common-secondary-yellow-color'
+                    "
+                  >
+                    <fa-icon
+                      [ngClass]="
+                        userVerfied
+                          ? 'text-common-green-color'
+                          : 'text-common-yellow-color'
+                      "
+                      [icon]="userVerfied ? faCheck : faLoack"
+                    />
+                  </div>
+
+                  <div
+                    class="w-5 h-[3px] my-auto bg-input-border-color"
+                    [ngClass]="{ '!bg-common-blue-color': userVerfied }"
+                  ></div>
+
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] text-center text-[14px] flex justify-center items-center"
+                    [ngClass]="
+                      kycDone
+                        ? 'bg-common-secondary-green-color'
+                        : 'bg-common-secondary-yellow-color'
+                    "
+                  >
+                    <fa-icon
+                      [ngClass]="
+                        kycDone
+                          ? 'text-common-green-color'
+                          : 'text-common-yellow-color'
+                      "
+                      [icon]="kycDone ? faCheck : faLoack"
+                    />
+                  </div>
+
+                  <div
+                    class="w-5 h-[3px] my-auto bg-input-border-color"
+                    [ngClass]="{ '!bg-common-blue-color': kycDone }"
+                  ></div>
+
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] text-center text-[14px] flex justify-center items-center"
+                    [ngClass]="
+                      this.kybDone
+                        ? 'bg-common-secondary-green-color'
+                        : 'bg-common-secondary-yellow-color'
+                    "
+                  >
+                    <fa-icon
+                      [ngClass]="
+                        this.kybDone
+                          ? 'text-common-green-color'
+                          : 'text-common-yellow-color'
+                      "
+                      [icon]="kybDone ? faCheck : faLoack"
+                    />
+                  </div>
+
+                  <div
+                    class="w-5 h-[3px] my-auto bg-input-border-color"
+                    [ngClass]="{ '!bg-common-blue-color': kybDone }"
+                  ></div>
+
+                  <div
+                    class="w-[25px] h-[25px] rounded-[50%] bg-common-blue-color text-center text-[14px] flex justify-center items-center"
+                  >
+                    <fa-icon
+                      class="text-common-yellow-color pt-[1px]"
+                      [icon]="faCrown"
+                    />
+                  </div>
+                </div>
+
+                <app-common-button-v35
+                  [type]="{ style: 'blue', name: 'money-action' }"
+                  [text]="
+                    isAllVerificationDone
+                      ? 'My Payment Methods'
+                      : 'Complete Setup Now'
+                  "
+                  width="100%"
+                  customClasses="!h-[38px]"
+                  (clickEvent)="buttonClickEvent()"
+                />
+              </div>
+            } @else {
+              <div class="skelton"></div>
+            }
+            <!-- @if (trueCount !== 2 && !gettingStartedLoading) {
+              <ng-container>
+                <button
+                  class="verification_status flex flex-col justify-center items-center w-full h-20 py-3 px-4 bg-common-secondary-blue-color rounded"
+                  (click)="gotoVerification()"
+                >
+                  <div class="flex flex-col justify-start items-center">
+                    <p class="font-semibold text-base text-main-text-color">
+                      Complete your setup now
+                    </p>
+                    <div
+                      class="status_bar flex justify-center w-full gap-1 pt-3"
+                    >
+                      <div class="bar-item" [ngClass]="statusClass[1]"></div>
+                      <div class="bar-item" [ngClass]="statusClass[2]"></div>
+                    </div>
+                  </div>
+                </button>
+              </ng-container>
+            } -->
+            @if (rewards?.id && !headerService.refillData && showRewardCard) {
+              <div class="flex flex-col relative">
+                <div
+                  class="rounded flex flex-col gap-2 p-4 font-inter text-white items-center reward-info justify-between"
+                >
+                  <div class="text-xl font-semibold">Here is</div>
+                  <div class="flex flex-row gap-1 w-full justify-between">
+                    <div class="font-bold credits">${{ rewards?.amount }}</div>
+                    <div class="flex flex-col justify-center">
+                      <span
+                        class="bg-common-green-color rounded-sm text-center text-xl font-medium"
+                        >Free</span
+                      >
+                      <span class="text-xl font-medium">Credits</span>
+                    </div>
+                  </div>
+                  <div class="w-full">
+                    <app-common-button-v35
+                      width="100%"
+                      textColorInput="var(--common-violet-color)"
+                      backGroundInput="#FFFFFF"
+                      [type]="{ style: 'general', name: 'main' }"
+                      text="Grab It"
+                      boxshadow="0px 4px 4px 0px rgba(0, 0, 0, 0.25)"
+                      (clickEvent)="onGrabRewards(rewards?.id)"
+                      [loading]="isLoading"
+                    ></app-common-button-v35>
+                  </div>
+                </div>
+                <div class="absolute reward-img">
+                  <img
+                    ngSrc="./../../../../../assets/images/reward.svg"
+                    alt="reward"
+                    width="100"
+                    height="100"
+                  />
+                </div>
+              </div>
+            }
+            @if(showCheckMailNotification() && !isSubscribed()) {
+              <div
+                class="font-inter rounded-md p-4 shadow-common-button flex flex-col gap-6 relative !pb-5"
+              >
+                <div class="absolute -left-4 -top-0 w-[212px] h-[79px] bg-common-secondary-blue-color opacity-60 blur-[14px] rounded-full"></div>
+                <div class="flex items-center gap-3 flex-wrap z-10">
+                  <div>
+                    <img [ngSrc]="isDarkMode ? 'assets/images/check/check-mail-dark.svg' : 'assets/images/check/check-mail.svg'" alt="check-mail" width="38" height="42">
+                  </div>
+                  <div class="font-inter flex flex-col gap-1">
+                    <span class="font-inter text-common-blue-color text-[13px] font-medium uppercase">First Check Mail is Free</span>
+                    <p class="font-inter text-main-text-color text-xs font-normal">First Class, No Charge</p>
+                  </div>
+                </div>
+              </div>
+            }
+            <!-- Temporarily hidded -->
+            <!-- <ng-container *ngIf="isShowPlexeNotification">
+            <div
+              class="plexe-app-notification font-inter rounded-sm bg-no-repeat bg-cover p-4"
+              [ngClass]="
+                isDarkMode
+                  ? 'bg-[url(/assets/images/plexe/notification-dark-bg.svg)]'
+                  : 'bg-[url(/assets/images/plexe/user-notification-bg.svg)]'
+              "
+              appWhiteLabel
+              hiddenIf="hideWorkingCaptal"
+            >
+              <div class="font-bold">
+                <h2 class="text-2xl">Hey!</h2>
+                <h3 class="text-3xl">Get Credit,</h3>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h6 class="font-extrabold">Up to</h6>
+                <h1
+                  class="text-2xl font-black text-common-blue-color 2xl:text-3xl"
+                >
+                  $25,000
+                </h1>
+              </div>
+              <div
+                class="cursor-pointer"
+                routerLink="/manage/working-capital/intro"
+              >
+                <p class="underline font-medium text-sm text-common-blue-color">
+                  Start your application Now
+                </p>
+              </div>
+            </div>
+          </ng-container> -->
+            @if (isPlexeNotification) {
+              <ng-container>
+                <div
+                  class="plexe-notification font-inter bg-main-background-color border border-solid border-secondary-text-color rounded-sm bg-[url(/assets/images/plexe/notification-bg.svg)] bg-no-repeat bg-cover p-2 flex flex-col gap-2"
+                  appWhiteLabel
+                  hiddenIf="hideWorkingCaptal"
+                >
+                  <div>
+                    <span class="font-extrabold text-common-blue-color text-2xl"
+                      >Congratulations!</span
+                    >
+                  </div>
+                  <div>
+                    <p class="text-3xl font-medium">
+                      ${{ plexeCreditLimit | number: "1.0-2" }}
+                    </p>
+                  </div>
+                  <div class="flex">
+                    <div class="pt-1">
+                      <span
+                        class="flex gap-1 items-center justify-center text-common-blue-color"
+                      >
+                        <fa-icon [icon]="['fas', 'circle-check']"></fa-icon>
+                      </span>
+                    </div>
+                    <span class="font-normal text-main-text-color text-base"
+                      >You got a pre approved line of credit.</span
+                    >
+                  </div>
+                  <button
+                    class="claim-btn bg-common-blue-color text-center rounded animate-pulse"
+                    routerLink="/manage/working-capital/intro"
+                  >
+                    <div class="py-1">
+                      <span class="font-normal text-base text-white"
+                        >Redeem Now</span
+                      >
+                    </div>
+                  </button>
+                </div>
+              </ng-container>
+            }
+            <div class="w-full">
+              @if (notifications.length > 0) {
+                <button
+                  class="text-sm my-2 font-semibold w-full h-8 bg-common-secondary-blue-color text-common-blue-color rounded"
+                  (click)="clearAll()"
+                >
+                  Clear All
+                </button>
+              }
+            </div>
+
+            @for (item of notifications; track trackByIndex; let i = $index) {
+              <div>
+                <div
+                  class="flex justify-between items-center w-full group relative min-h-[40px] rounded p-1.5 text-sm bg-main-background-color"
+                  [ngStyle]="
+                    getNotificationStyle(item?.notification?.color ?? 'blue')
+                  "
+                >
+                  <span class="text-sm leading-4">{{
+                    item?.notification?.discription
+                  }}</span>
+                  @if (item?.notification?.action_link) {
+                    <div class="text-common-blue-color">
+                      click
+                      <button
+                        (click)="redirectToPage(item)"
+                        class="font-semibold"
+                      >
+                        here
+                      </button>
+                    </div>
+                  }
+                  @if (
+                    item?.notification?.application_type ===
+                    "Requested Attachment"
+                  ) {
+                    <div class="w-full flex items-center justify-center">
+                      <app-common-button-v35
+                        type="list"
+                        width="100%"
+                        [text]="'Upload'"
+                        (clickEvent)="openDocumentUpload(item)"
+                      ></app-common-button-v35>
+                    </div>
+                  }
+                  <button
+                    title="clear"
+                    class="close-button hidden group-hover:flex justify-center items-center h-6 w-6 rounded shadow-common-button text-main-text-color bg-secondary-background-color"
+                    (click)="clearNotification(item)"
+                  >
+                    <fa-icon [icon]="['fas', 'xmark']"></fa-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

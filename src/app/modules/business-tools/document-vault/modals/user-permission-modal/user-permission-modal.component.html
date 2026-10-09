@@ -1,0 +1,246 @@
+<div class="px-[6px] pb-[6px] flex flex-col h-full max-h-[80vh] md:max-h-[85vh]">
+  <!-- Header -->
+  <div class="flex justify-between pb-4 md:pb-6 border-b border-input-border-color flex-shrink-0">
+    <div>
+      <span class="mt-18 w-full text-base text-main-text-color align-middle flex items-center\">
+        <!-- <fa-icon class="!text-sm pt-1" [icon]="faUpload"></fa-icon> -->
+        <span class="pl-1 font-inter font-semibold text-lg md:text-xl pb-0.5"> User Permission Management </span>
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon class="text-secondary-text-color cursor-pointer" [icon]="faXmark"></fa-icon>
+    </div>
+  </div>
+
+  <!-- Modal Body -->
+  <div class="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
+    <!-- Left Side - User Management -->
+    <div class="w-full md:w-64 lg:w-80 xl:w-96 bg-main-background-color border-r-0 md:border-r border-input-border-color border-b md:border-b-0 flex flex-col font-roboto h-full md:h-auto">
+      <div class="p-4 md:p-6 flex-shrink-0">
+        <h2 class="text-base md:text-lg font-semibold text-main-text-color mb-3 md:mb-4">User Management</h2>
+        
+        <!-- Search Box -->
+        <div class="relative mb-3 md:mb-4">
+          <fa-icon 
+            [icon]="faMagnifyingGlass" 
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-text-color text-sm"
+          ></fa-icon>
+          <input
+            type="text"
+            placeholder="Search users..."
+            class="w-full pl-10 pr-4 py-2 md:py-2.5 border border-input-border-color rounded-xl text-sm text-main-text-color bg-main-background-color focus:ring-2 focus:ring-common-blue-color focus:border-common-blue-color outline-none transition-colors"
+            [(ngModel)]="searchTerm"
+            (input)="searchTerm.set($any($event.target).value); onSearchUser($any($event.target).value)"
+          />
+        </div>
+
+        <div class="mb-3 md:mb-4">
+          <app-common-button-v35
+            type="list"
+            width="100%"
+            [text]="'New'"
+            [isAddIcon]="true"
+            (clickEvent)="openNewUserModal()"
+          ></app-common-button-v35>
+        </div>
+      </div>
+
+      <!-- Users List -->
+      <div class="flex-1 overflow-y-auto min-h-[200px] pb-5 md:min-h-[350px]"
+          [ngClass]="{'flex items-center justify-center': !filteredUsers()?.length && !loading.default}">
+        <div class="text-main-text-color text-xs font-normal w-full">
+          <!-- Single User start -->
+          @if (!loading.default && !loadingPermissions()) {
+            @for (item of filteredUsers(); track item.id; let i = $index) {
+              <div
+                role="presentation"
+                class="border border-input-border-color rounded-xl mb-2.5 md:mb-2 hover:shadow-lg hover:bg-secondary-background-color cursor-pointer bg-main-background-color"
+                [ngClass]="{
+                  '!border-common-blue-color shadow-common-button bg-secondary-background-color': item?.client_id === selectedUser?.client_id
+                }"
+                (click)="onRowClick(item, i)"
+              >
+                <div class="pl-3 md:pl-4 py-2.5 md:py-2 flex items-center">
+                  <div class="flex items-center justify-center pr-2.5 md:pr-3 flex-shrink-0">
+                    <input 
+                    type="checkbox" 
+                    [checked]="isSelected(item)"
+                    (click)="$event.stopPropagation()"
+                    (change)="onUserCheckboxToggle(item, i, $event)" 
+                    class="mr-2 md:mr-2 w-4 h-4 md:w-4 md:h-4"/>
+                    <div
+                      class="flex justify-center items-center h-7 w-7 md:h-7 md:w-7 rounded-full flex-shrink-0"
+                      [ngClass]="
+                        item?.client_id === selectedUser?.client_id
+                          ? 'bg-main-background-color'
+                          : 'bg-secondary-background-color hover:bg-main-background-color'
+                      "
+                    >
+                      @if (item.profile_pic) {
+                        <img
+                          [src]="item.profile_pic"
+                          class="rounded-full h-7 w-7 md:h-7 md:w-7 object-cover"
+                          alt="User info"
+                        />
+                      } @else {
+                        <fa-icon
+                          [icon]="['fas', 'user']"
+                          class="rounded-full text-secondary-text-color text-sm"
+                        ></fa-icon>
+                      }
+                    </div>
+                  </div>
+                  <div class="flex-1 flex flex-col md:flex-row gap-2 md:gap-3 min-w-0">
+                    <div class="flex-1 flex flex-col gap-1.5 md:gap-1 text-secondary-text-color min-w-0">
+                      <div class="truncate">
+                        <span class="font-semibold text-main-text-color text-sm md:text-sm">{{ item.client_name }}</span>
+                        &nbsp;&nbsp;<span class="text-xs md:text-xs">({{ clientType[item.client_type] }})</span>
+                      </div>
+                      <p class="text-xs md:text-xs truncate">{{ item.client_email }}</p>
+                      @if (item.company_name !== null) {
+                        <div class="company-name truncate text-xs md:text-xs">
+                          <i class="fas fa-briefcase text-xs"></i>&nbsp;&nbsp;<span>{{ item.company_name | titlecase }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="flex flex-col justify-end items-start md:items-end w-full md:w-fit pr-2 md:pr-4 flex-shrink-0">
+                      @switch (item.status) {
+                        @case (0) {
+                          <!-- Resend Start -->
+                          <button
+                            class="flex justify-center items-center gap-2"
+                            (click)="onResend(item, i); $event.stopPropagation()"
+                            [ngClass]="{ disable_btn: loading.sending === i }"
+                          >
+                            <div class="flex justify-center items-center gap-1" matTooltip="Request is pending. Please wait or resend">
+                              <span class="text-common-blue-color underline hover:no-underline text-xs md:text-xs font-medium">Resend</span>
+                            </div>
+                          </button>
+                          <!-- Resend End -->
+                        }
+                        @case (1) {
+                          <div class="flex justify-center items-center gap-1.5 md:gap-1 text-common-green-color">
+                            <fa-icon [icon]="faCircle" class="text-[12px] md:text-[8px]"></fa-icon>
+                            <span class="text-common-green-color text-xs md:text-xs font-medium">Active</span>
+                          </div>
+                        }
+                        @case (2) {
+                          @if (loading.sending === i) {
+                            <span class="loadingSpinner after:border-y-common-blue-color"></span>
+                          } @else {
+                            <div class="flex justify-center items-center gap-1.5 md:gap-1 text-common-red-color">
+                              <fa-icon [icon]="faCircle" class="text-[12px] md:text-[8px]"></fa-icon>
+                              <span class="text-common-red-color text-xs md:text-xs font-medium">Rejected</span>
+                            </div>
+                          }
+                        }
+                        @default {
+                          <!-- Approve Start -->
+                          <button
+                            class="flex justify-center items-center gap-1 text-common-green-color underline hover:no-underline text-xs md:text-xs font-medium py-0.5"
+                            matTooltip="Approve and & Set permission"
+                            matTooltipPosition="above"
+                            (click)="onApprove(item, i); $event.stopPropagation()"
+                            [ngClass]="{ disable_btn: loading.accepting === i }"
+                          >
+                            <span>Approve</span>
+                          </button>
+                          <!-- Approve End -->
+                          <!-- Delete Start -->
+                          <button
+                            class="flex justify-center items-center gap-1 text-common-red-color underline hover:no-underline text-xs md:text-xs font-medium py-0.5"
+                            (click)="onDelete(item, i); $event.stopPropagation()"
+                            [ngClass]="{ disable_btn: loading.deleting === i }"
+                          >
+                            <span>Delete</span>
+                          </button>
+                          <!-- Delete End -->
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          } @else {
+            <app-common-list-skelton [items]="14"></app-common-list-skelton>
+          }
+          @if (!filteredUsers()?.length && !loading.default && !loadingPermissions()) {
+            <div class="flex justify-center items-center gap-2">
+              <fa-icon [icon]="['fas', 'magnifying-glass']"></fa-icon>
+              <span class="text-sm">No user found!</span>
+            </div>
+          }
+          <!-- Single User end -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Permissions Management -->
+    <div class="flex-1 bg-main-background-color flex flex-col font-roboto h-full min-h-0 md:min-h-[400px]">
+      <div class="p-4 md:p-6 border-b border-input-border-color flex-shrink-0">
+        <h2 class="text-base md:text-lg font-semibold text-main-text-color mb-3 md:mb-4">Manage Permissions</h2>
+        <p class="text-xs md:text-sm text-secondary-text-color mt-1">
+          Select permissions for the selected user.
+        </p>
+      </div>
+
+      <!-- Permissions List -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+        @if (loading.default || loadingPermissions()) {
+          <div class="flex justify-center items-center h-full min-h-[200px] md:min-h-[300px]">
+            <span class="loadingSpinner after:border-y-common-blue-color"></span>
+          </div>
+        } @else {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 p-4 md:p-6">
+          @for (permission of permissions(); track permission.id) {
+            <div class="bg-main-background-color border border-input-border-color rounded-lg p-3 md:p-4 hover:border-common-blue-color transition-colors permission-card"
+                [class.checked]="hasPermission(permission.id)"
+                [class.border-common-blue-color]="hasPermission(permission.id)"
+                [class.bg-common-secondary-blue-color]="hasPermission(permission.id)">
+              <label class="flex items-start cursor-pointer">
+                <input
+                  type="checkbox"
+                  class="w-4 h-4 mt-0.5 md:mt-1 text-common-blue-color bg-main-background-color border-input-border-color rounded focus:ring-common-blue-color focus:ring-2 flex-shrink-0"
+                  [checked]="hasPermission(permission.id)"
+                  (change)="onPermissionChange(permission.id, $event)"
+                />
+                <div class="ml-2 md:ml-3 flex-1 min-w-0">
+                  <h3 class="text-xs md:text-sm font-semibold text-main-text-color">
+                    {{ permission.name }}
+                  </h3>
+                  <p class="text-xs text-secondary-text-color mt-0.5 md:mt-1 leading-relaxed">
+                    {{ permission.description }}
+                  </p>
+                </div>
+              </label>
+            </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  <!-- Footer -->
+  <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 md:pt-8 flex-shrink-0">
+      <div class="w-full sm:w-[125px]">
+        <app-common-button-v35
+          [type]="{ style: 'bordered', name: 'main' }"
+          [text]="'Cancel'"
+          [disabled]="setPermissionsLoading()"
+          [mat-dialog-close]="false"
+          width="100%"
+        />
+      </div>
+      <div class="w-full sm:w-[125px]">
+        <app-common-button-v35
+          [type]="{ style: 'modal', name: 'main' }"
+          [text]="setPermissionsLoading() ? 'Saving...' : 'Save Changes'"
+          [loading]="setPermissionsLoading()"
+          [disabled]="setPermissionsLoading()"
+          (click)="saveChanges()"
+          width="100%"
+        />
+      </div>
+    </div>
+</div>

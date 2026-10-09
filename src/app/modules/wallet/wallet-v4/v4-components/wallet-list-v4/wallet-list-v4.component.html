@@ -1,0 +1,300 @@
+@if (!resize) {
+  <app-list-header-v4
+    header=""
+    [searchPlaceholder]="'Search wallets...'"
+    [isSwitchOption]="false"
+    [isAddButton]="false"
+    (searchEvent)="onWalletSearch($event)"
+  />
+}
+
+<div
+  cdkDropList
+  (cdkDropListDropped)="dropListSort($event)"
+  [cdkDropListSortPredicate]="sortPredicate()"
+  [ngClass]="{
+    '!cursor-grabbing': grabbing
+  }"
+  class="wallet-list-container flex-1 flex flex-col overflow-x-hidden overflow-y-auto"
+  appScrollToEnd
+  (scrollToEnd)="onScrollToEnd()"
+>
+  @if (
+    !isSearchLoading && this.walletDataService.walletDataSignal()
+  ) {
+    <div
+      role="presentation"
+      class="flex justify-between items-center text-xs font-semibold text-v4-main-text-color cursor-pointer hover:bg-v4-secondary-background-color"
+      [ngClass]="{
+        'cursor-grabbing': grabbing,
+        'bg-v4-input-background-color border-l-4 border-l-v4-primary-brand-bold-color':
+          this.walletDataService.walletDataSignal()?.uuId === ''
+      }"
+      (click)="onSelectAllWallets()"
+    >
+      @if (resize) {
+        <div class="py-2 flex justify-center w-full">
+          <div
+            class="flex justify-center items-center h-7 w-7 wallet-icon-bg rounded-lg"
+            matTooltip="All Wallets"
+          >
+            <lucide-icon
+              [img]="WalletIcon"
+              [size]="14"
+              class="text-v4-primary-brand-bold-color"
+            />
+          </div>
+        </div>
+      } @else {
+        <div class="p-4 flex flex-col gap-1 w-full">
+          <h1 class="text-sm font-bold text-v4-main-text-color">All Wallets</h1>
+          <div class="flex items-center justify-between gap-1">
+            <div class="flex items-center gap-1">
+              <lucide-icon
+                [img]="WalletIcon"
+                [size]="14"
+                class="text-v4-tertiary-text-color"
+              />
+              <span class="text-xs font-normal text-v4-tertiary-text-color">
+                {{ activeCount() }}
+                wallets
+              </span>
+            </div>
+            <span class="text-xs text-v4-tertiary-text-color">
+              ${{
+                walletDataService.walletAccountsSignal()?.totalAvailableBalance
+              }}
+            </span>
+          </div>
+          @if (securityDeposit) {
+            <div class="flex items-center gap-2">
+              <lucide-icon
+                name="lock"
+                [size]="12"
+                class="text-v4-primary-brand-bold-color"
+              />
+              <span
+                class="text-xs font-normal text-v4-primary-brand-bold-color"
+              >
+                Security Deposit: ${{ securityDeposit.available_balance }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @for (
+      item of walletDataService.walletAccountsSignal()?.data;
+      track item.id
+    ) {
+      <div
+        class="cursor-pointer"
+        [ngClass]="{
+          '!cursor-grab': item.isFavorite && !grabbing,
+          '!cursor-grabbing': grabbing
+        }"
+        cdkDragLockAxis="y"
+        cdkDragBoundary=".wallet-list-container"
+        cdkDrag
+        (cdkDragStarted)="dragEvents('start')"
+        (cdkDragEnded)="dragEvents('end')"
+        [cdkDragDisabled]="!item.isFavorite"
+      >
+        <div
+          role="presentation"
+          class="border-b border-v4-input-border-color select-none wallet-item"
+          [ngClass]="{
+            'bg-v4-input-background-color border-l-4 border-l-v4-primary-brand-bold-color':
+              item?.uuId === this.walletDataService.walletDataSignal()?.uuId
+          }"
+          (click)="selectWallet(item)"
+        >
+          <div
+            class="px-4 py-2.5 flex gap-3 items-center"
+            [ngClass]="{ 'justify-center !pl-0 !pr-0': resize }"
+          >
+            <div class="flex items-center justify-center relative">
+              <div
+                class="flex justify-center items-center h-7 w-7 wallet-icon-bg rounded-lg"
+                [matTooltip]="item.walletName"
+              >
+                @if (item.logo) {
+                  <img
+                    [ngSrc]="item.logo"
+                    alt="logo"
+                    class="rounded-lg"
+                    width="28"
+                    height="28"
+                  />
+                } @else {
+                  <lucide-icon
+                    [img]="WalletIcon"
+                    [size]="14"
+                    class="text-v4-primary-brand-bold-color"
+                  />
+                }
+              </div>
+              @if (item.isFavorite) {
+                <fa-icon
+                  class="absolute -top-1 -right-1 text-v4-favorite-star-color text-[12px]"
+                  [icon]="faStar"
+                />
+              }
+            </div>
+            @if (!resize) {
+              <div class="w-full min-w-0">
+                <h1
+                  class="text-xs font-medium text-v4-main-text-color truncate"
+                  [matTooltip]="item.walletName"
+                >
+                  {{ item.walletName }}
+                </h1>
+                <div class="flex justify-between mt-0.5">
+                  <h2
+                    class="text-xs font-normal text-v4-tertiary-text-color !font-peridot"
+                  >
+                    {{ item.bankAccountNumber }}
+                  </h2>
+                  @if (!resize) {
+                    <h2
+                      class="text-xs font-normal text-v4-secondary-text-color !font-peridot"
+                    >
+                      ${{ item.availableBalance }}
+                    </h2>
+                  }
+                </div>
+              </div>
+            }
+            @if (!resize) {
+              <div class="flex justify-center text-v4-main-text-color">
+                @if (!resize) {
+                  <button aria-label="Actions"
+                    class="flex items-center justify-center p-1 text-v4-tertiary-text-color hover:text-v4-main-text-color rounded"
+                    matTooltip="Actions"
+                    [matMenuTriggerFor]="menu"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <lucide-icon name="ellipsis-vertical" [size]="15" />
+                  </button>
+                }
+                <mat-menu
+                  #menu="matMenu"
+                  xPosition="before"
+                  class="v4-action-menu"
+                >
+                  <button mat-menu-item (click)="menuAction(item, 2)">
+                    <div>
+                      <lucide-icon name="CircleArrowUp" [size]="16" />
+                      <span>Recharge My Credits</span>
+                    </div>
+                  </button>
+                  <button mat-menu-item (click)="menuAction(item, 3)">
+                    <div>
+                      <lucide-icon name="arrow-left-right" [size]="16" />
+                      <span>Transfer Fund</span>
+                    </div>
+                  </button>
+                  <button mat-menu-item (click)="menuAction(item, 4)">
+                    <div>
+                      <lucide-icon name="CircleArrowDown" [size]="16" />
+                      <span>Withdraw Fund</span>
+                    </div>
+                  </button>
+                  <button mat-menu-item (click)="menuAction(item, 1)">
+                    <div>
+                      <lucide-icon name="plus" [size]="16" />
+                      <span>Fund Your Wallet</span>
+                    </div>
+                  </button>
+                  <button mat-menu-item (click)="menuAction(item, 5)">
+                    <div>
+                      <lucide-icon name="download" [size]="16" />
+                      <span>Download Statement</span>
+                    </div>
+                  </button>
+                  <button mat-menu-item (click)="menuAction(item, 6)">
+                    <div>
+                      <lucide-icon
+                        name="star"
+                        [size]="16"
+                        [ngClass]="{
+                          '!text-v4-favorite-star-color': item.isFavorite === 0
+                        }"
+                      />
+                      <span>{{
+                        item.isFavorite === 1 ? "Unfavorite" : "Add to Favorites"
+                      }}</span>
+                    </div>
+                  </button>
+                  <button mat-menu-item (click)="openLogoUpdateModal(item)">
+                    <div>
+                      <lucide-icon name="file-text" [size]="16" />
+                      <span>
+                        @if (item.logo) {
+                          Update Logo
+                        } @else {
+                          Add Logo For Wallet
+                        }
+                      </span>
+                    </div>
+                  </button>
+                  @if (
+                    env.env_id === "buckzy" || env.env_id === "buckzy-sandbox"
+                  ) {
+                    <button
+                      (click)="menuAction(item, 7)"
+                      mat-menu-item
+                      [disabled]="isDownload()"
+                    >
+                      <div>
+                        <lucide-icon
+                          [name]="isDownload() ? 'loader-circle' : 'download'"
+                          [size]="16"
+                          [ngClass]="{ 'animate-spin': isDownload() }"
+                        />
+                        <span
+                          [matTooltip]="
+                            isDownload()
+                              ? 'Downloading...'
+                              : 'Download Account Funding Details'
+                          "
+                          >Account Funding Details</span
+                        >
+                      </div>
+                    </button>
+                  }
+                </mat-menu>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+    @if (isWalletListLoading) {
+      <div>
+        <app-common-list-skelton [items]="3"></app-common-list-skelton>
+      </div>
+    }
+  }
+  @if (
+    isSearchLoading ||
+    (walletDataService.isLoading && walletDataService.page === 1)
+  ) {
+    <div>
+      <app-common-list-skelton [items]="14"></app-common-list-skelton>
+    </div>
+  }
+  @if (
+    (walletDataService.walletAccountsSignal()?.data ?? [] | json) === "[]" &&
+    !walletDataService.isLoading &&
+    !isWalletListLoading &&
+    !isSearchLoading
+  ) {
+    <div
+      class="h-full w-full flex items-center text-center justify-center text-sm text-v4-tertiary-text-color"
+    >
+      Sorry! No results Found.
+    </div>
+  }
+</div>

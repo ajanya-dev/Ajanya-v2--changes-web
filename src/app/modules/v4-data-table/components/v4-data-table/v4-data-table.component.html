@@ -1,0 +1,1065 @@
+<div
+  class="main-v4-data-table-container v4-data-table-wrapper"
+  [class.v4-dt-fill-height]="isCompactEmptyStateVisible"
+>
+  @if (showPermssionDenied()) {
+    <app-permission-denied-v4 [actAsChildCompoent]="true" />
+  } @else {
+    <div
+      class="header-buttons-container flex-col"
+      [ngClass]="{ flex: !headerElements() }"
+    >
+      @if (dynamicHeaderText) {
+        <app-v4-page-header
+          class="mb-3 w-full"
+          [title]="dynamicHeaderText"
+          [subtitle]="headerSubtitle()"
+          [actions]="headerActions()"
+          (actionClick)="onHeaderButtonClick($event)"
+        >
+          <div headerLead class="flex items-center gap-2">
+            @if (backButtonEnabled()) {
+              <app-common-back-button-v35
+                type="takeEvent"
+                (backEvent)="onBackButtonClick()"
+              ></app-common-back-button-v35>
+            }
+            @if (headerElements()?.titleButtons) {
+              @for (btn of headerElements()?.titleButtons; track $index) {
+                <app-common-button-v4
+                  (clickEvent)="onHeaderButtonClick(btn.id)"
+                  class="whitespace-nowrap"
+                  [text]="btn.text"
+                  [type]="btn.type"
+                  [lucideIcon]="btn.lucideIcon"
+                  [backGroundInput]="btn.backGroundInput"
+                  [textColorInput]="btn.textColorInput"
+                  [textClasses]="btn.textClasses ?? ''"
+                  [disabled]="btn.disabled ?? false"
+                  [loading]="btn.loading ?? false"
+                  [toolTip]="btn.toolTip ?? ''"
+                ></app-common-button-v4>
+              }
+            }
+            @if (
+              dynamicHeaderText === "Payees" ||
+              dynamicHeaderText === "Vendors" ||
+              dynamicHeaderText === "Bank Accounts"
+            ) {
+              <app-list-view-toggle
+                (viewToggleEvent)="viewToggle($event)"
+                [isGridView]="false"
+              ></app-list-view-toggle>
+            }
+          </div>
+          <div headerActions class="flex items-center gap-2">
+            @if (dynamicHeaderText === "Payments") {
+              <div class="help-video">
+                <app-demo-video slug="v3Payment"></app-demo-video>
+              </div>
+            }
+            @if (headerElements()?.videoButton) {
+              <div class="help-video">
+                <app-demo-video
+                  [slug]="headerElements()?.videoButton[0].slug"
+                ></app-demo-video>
+              </div>
+            }
+          </div>
+        </app-v4-page-header>
+      }
+      <!-- Panel Buttons / Action Buttons row -->
+      @if (showActionButtonContainer && !shouldShowFullEmptyState) {
+        <div class="action-button-container">
+          <div class="flex justify-start gap-2 items-center w-full">
+            <!-- Panel Buttons (always shown when panelButtons data exists) -->
+            @if (headerElements() && headerElements()?.panelButtons) {
+              @if (headerButtonType === "panelButtons") {
+                <!-- Underline Tabs style -->
+                <div class="v4-underline-tabs flex-1">
+                  @for (item of headerElements()?.panelButtons; track $index) {
+                    @if (!item?.options?.isItButton) {
+                      <button
+                        class="v4-underline-tab"
+                        [ngClass]="{
+                          active: item.id === selectedPanelButton()
+                        }"
+                        (click)="onPanelButtonClick(item.id)"
+                      >
+                        {{ item.name }}
+                      </button>
+                    }
+                  }
+                </div>
+              } @else {
+                <!-- Pill Buttons style -->
+                <div class="flex gap-2 overflow-x-auto items-center">
+                  @for (item of headerElements()?.panelButtons; track $index) {
+                    @if (!item?.options?.isItButton) {
+                      <button
+                        class="v4-panel-pill-btn"
+                        [ngClass]="{
+                          active: item.id === selectedPanelButton()
+                        }"
+                        (click)="onPanelButtonClick(item.id)"
+                      >
+                        {{ item.name }}
+                      </button>
+                    }
+                  }
+                </div>
+              }
+              <!-- Action-like buttons (isItButton) -->
+              @for (item of headerElements()?.panelButtons; track $index) {
+                @if (item?.options?.isItButton) {
+                  <button
+                    class="v4-panel-action-btn"
+                    (click)="onPanelButtonClick(item.id)"
+                  >
+                    @if (item.lucideIcon) {
+                      <lucide-icon
+                        [name]="item.lucideIcon"
+                        [size]="14"
+                      ></lucide-icon>
+                    }
+                    {{ item.name }}
+                  </button>
+                }
+              }
+            }
+            <!-- Dynamic Header Button (e.g. "Create New" route button) -->
+            @if (dynamicHeaderButtonText) {
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                [text]="dynamicHeaderButtonText"
+                [toolTip]="dynamicHeaderButtonTooltip"
+                [customClasses]="'v4-action-pill-btn v4-action-pill-btn-active'"
+                [isAddIcon]="!!iconClass"
+                [icon]="['fas', 'plus']"
+                [customHeight]="'32px'"
+                (clickEvent)="headerButtonClick(dynamicHeaderButtonRoute)"
+              ></app-common-button-v4>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    @if (shouldShowFullEmptyState && emptyStateConfig) {
+      <ng-container [ngTemplateOutlet]="emptyStateTmpl"></ng-container>
+    } @else {
+      @if (toolbarPinned) {
+        <div #toolbarSpacer [style.height.px]="pinnedHeight"></div>
+      }
+      <div
+        #toolbarRow
+        class="flex justify-between items-center py-2 px-1"
+        [class.dt-toolbar-pinned]="toolbarPinned"
+        [style.top.px]="toolbarPinned ? pinnedTop : null"
+        [style.left.px]="toolbarPinned ? pinnedLeft : null"
+        [style.width.px]="toolbarPinned ? pinnedWidth : null"
+        [ngClass]="{
+          '!hidden':
+            !isPaymentTableHavePermission || (!showFilterBar && !showActionBar)
+        }"
+      >
+        @if (showActionBar) {
+          <!-- Bulk-selection action bar, inline (replaces the alert/warning) -->
+          <app-v4-floating-action-bar
+            @inlineActionBar
+            class="flex min-w-0 flex-1"
+            [buttons]="headerElements()?.buttons"
+            [selectedRowCount]="selectedRowCount"
+            (buttonClick)="onHeaderButtonClick($event)"
+            (clearSelection)="clearSelection()"
+          />
+        } @else if (showPendingApprovalBadge) {
+          <div
+            class="mr-3 flex flex-1 items-center gap-2 rounded-xl bg-v4-badge-warning-bg-color px-3 py-1.5"
+          >
+            <lucide-icon
+              name="clipboard-check"
+              [size]="15"
+              class="shrink-0 text-v4-badge-warning-text-color"
+            ></lucide-icon>
+            <span
+              class="whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-badge-warning-text-color"
+            >
+              You have
+              {{ headerElements()?.pendingItems?.pendingCount }} pending
+              {{ pendingApprovalLabel }} to approve
+            </span>
+            <button
+              type="button"
+              class="ml-auto shrink-0 rounded-lg bg-v4-primary-brand-color px-2.5 py-1 font-peridot text-[12px] font-semibold text-white hover:opacity-95"
+              (click)="onPanelButtonClick(headerElements()?.pendingItems?.id)"
+            >
+              Review<span class="hidden min-[769px]:inline">&nbsp;approvals</span>
+            </button>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              class="v4-pending-badge-clear shrink-0 text-v4-badge-warning-text-color"
+              (click)="dismissPendingBadge($event)"
+            >
+              <lucide-icon name="x" [size]="14"></lucide-icon>
+            </button>
+          </div>
+        } @else if (toolbarAlertTemplate()) {
+          <ng-container
+            [ngTemplateOutlet]="toolbarAlertTemplate()"
+          ></ng-container>
+        } @else if (toolbarLeftTemplate()) {
+          <ng-container
+            [ngTemplateOutlet]="toolbarLeftTemplate()"
+          ></ng-container>
+        }
+        <div
+          class="flex items-center gap-2 ml-auto"
+          [ngClass]="{ '!hidden': !showFilterBar }"
+        >
+          @if (showScrollHint) {
+            <span class="dt-scroll-hint">
+              {{ displayedColumnCount }} columns
+              <span class="dt-scroll-hint-sep">·</span>
+              scroll
+              <lucide-icon name="arrow-right" [size]="12"></lucide-icon>
+              for more
+            </span>
+          }
+          @if (toolbarRightTemplate(); as rightTmpl) {
+            <ng-container [ngTemplateOutlet]="rightTmpl"></ng-container>
+          }
+          <div
+            class="v4-data-table-filter-buttons-container"
+            [ngClass]="forceHorizontalActions ? 'flex' : 'hidden md:flex'"
+          >
+            <div class="filter-button">
+              <lucide-icon
+                role="presentation"
+                matTooltip="Refresh Table"
+                name="refresh-cw"
+                [size]="16"
+                [ngClass]="{ 'animate-spin': isV4DataTableLoading }"
+                (click)="refreshV3DataTable()"
+                class="cursor-pointer"
+              ></lucide-icon>
+            </div>
+            <app-v4-select-dropdown
+              matTooltip="Rows per page"
+              [items]="paginationSizeFilterOptions"
+              placeholder="Rows"
+              [compact]="true"
+              [autoWidth]="true"
+              [extraStyle]="paginationDropdownStyle"
+              [(ngModel)]="paginationSizeSelection"
+              (ngModelChange)="goToSpecificPage(1)"
+            ></app-v4-select-dropdown>
+            <div class="filter-button">
+              <button aria-label="Manage Columns"
+                [matMenuTriggerFor]="columnFilterMatMenu"
+                (menuOpened)="onColumnMenuOpened()"
+                (menuClosed)="onColumnMenuClosed()"
+                matTooltip="Manage Columns"
+              >
+                <lucide-icon name="list-filter" [size]="16"></lucide-icon>
+              </button>
+            </div>
+            <div class="filter-button">
+              <button aria-label="Export Table"
+                [matMenuTriggerFor]="exportTableMatMenu"
+                (menuClosed)="exportMenuClosed()"
+                matTooltip="Export Table"
+              >
+                @if (
+                  !filterAndExportLoading && !filterAndExportLoadingInput()
+                ) {
+                  <lucide-icon name="upload" [size]="16"></lucide-icon>
+                }
+                @if (filterAndExportLoading || filterAndExportLoadingInput()) {
+                  <lucide-icon
+                    name="loader-circle"
+                    [size]="16"
+                    class="animate-spin"
+                  ></lucide-icon>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          class="-mt-1"
+          [ngClass]="[
+            forceHorizontalActions ? 'hidden' : 'md:hidden',
+            showFilterBar ? '' : '!hidden'
+          ]"
+        >
+          <div
+            class="flex justify-center items-center w-8 h-8 bg-v4-tertiary-background-color rounded"
+          >
+            <div
+              role="presentation"
+              class="flex justify-center items-center gap-1"
+              [matMenuTriggerFor]="filterMenu"
+            >
+              <lucide-icon name="ellipsis-vertical" [size]="18"></lucide-icon>
+            </div>
+          </div>
+          <mat-menu
+            #filterMenu="matMenu"
+            xPosition="before"
+            class="minimum-width-40px v4-action-menu"
+          >
+            <div class="flex items-center gap-3 px-3 py-1">
+              <div
+                class="filter-button flex justify-center hover:bg-v4-tertiary-background-color"
+              >
+                <lucide-icon
+                  name="refresh-cw"
+                  [size]="16"
+                  role="presentation"
+                  matTooltip="Refresh Table"
+                  [ngClass]="{ 'animate-spin': isV4DataTableLoading }"
+                  (click)="refreshV3DataTable()"
+                ></lucide-icon>
+              </div>
+              <div
+                role="presentation"
+                class="filter-button flex justify-center hover:bg-v4-tertiary-background-color"
+                (click)="$event.stopPropagation()"
+              >
+                <button aria-label="Manage Columns"
+                  [matMenuTriggerFor]="columnFilterMatMenu"
+                  (menuOpened)="onColumnMenuOpened()"
+                  (menuClosed)="onColumnMenuClosed()"
+                  matTooltip="Manage Columns"
+                >
+                  <lucide-icon name="list-filter" [size]="16"></lucide-icon>
+                </button>
+              </div>
+              <div
+                role="presentation"
+                class="filter-button flex justify-center hover:bg-v4-tertiary-background-color"
+                (click)="$event.stopPropagation()"
+              >
+                <button aria-label="Export Table"
+                  [matMenuTriggerFor]="exportTableMatMenu"
+                  (menuClosed)="exportMenuClosed()"
+                  matTooltip="Export Table"
+                >
+                  @if (!filterAndExportLoading) {
+                    <lucide-icon name="upload" [size]="16"></lucide-icon>
+                  }
+                  @if (filterAndExportLoading) {
+                    <ng-container>
+                      <lucide-icon
+                        name="loader-circle"
+                        [size]="16"
+                        class="animate-spin"
+                      ></lucide-icon>
+                    </ng-container>
+                  }
+                </button>
+              </div>
+              <app-v4-select-dropdown
+                matTooltip="Rows per page"
+                (click)="$event.stopPropagation()"
+                (keydown)="$event.stopPropagation()"
+                [items]="paginationSizeFilterOptions"
+                placeholder="Rows"
+                [compact]="true"
+                [autoWidth]="true"
+                [extraStyle]="paginationDropdownStyle"
+                [(ngModel)]="paginationSizeSelection"
+                (ngModelChange)="goToSpecificPage(1)"
+              ></app-v4-select-dropdown>
+            </div>
+          </mat-menu>
+        </div>
+      </div>
+      <div
+        [ngStyle]="
+          tableHeight && !shouldShowInlineEmptyState
+            ? {
+                height: tableHeight,
+                overflow: adjustHeightCondition ? 'visible' : null
+              }
+            : null
+        "
+        class="w-full v4-data-table-grid-container"
+        [class.v4-dt-virtualised]="virtualisedRows"
+        [class.v4-dt-grid-collapsed]="shouldShowInlineEmptyState"
+      >
+        @if (scrollHintRight && !hasRightPinnedColumn) {
+          <span class="dt-scroll-fade" aria-hidden="true"></span>
+        }
+        @if (isPaymentTableHavePermission) {
+          <ng-container>
+            @if (gridOptions) {
+              <ag-grid-angular
+                [class.v4-dt-compact]="compact"
+                class="ag-theme-v4 ag-theme-alpine w-full"
+                [ngClass]="{
+                  'body-view-scroll': !tableHeight,
+                  'body-view-no-scroll': tableHeight,
+                  'ag-inside-modal': isInsideModal()
+                }"
+                [suppressColumnVirtualisation]="suppressColumnVirtualisation"
+                [gridOptions]="gridOptions"
+                [columnDefs]="filteredColumnDefs"
+                [rowModelType]="rowModelType"
+                (gridReady)="onGridReady($event)"
+                [domLayout]="domLayout"
+                [defaultColDef]="defaultColDef"
+                [pagination]="true"
+                [suppressPaginationPanel]="true"
+                [paginationPageSize]="paginationPageSize"
+                (paginationChanged)="onPaginationChanged($event)"
+                (rowSelected)="onRowSelected($event)"
+                [isRowSelectable]="isRowSelectable"
+                (sortChanged)="onSortChange($event)"
+                [rowSelection]="rowSelection"
+                [rowMultiSelectWithClick]="!suppressRowClickSelection"
+                [suppressRowClickSelection]="suppressRowClickSelection"
+                [rowHeight]="rowHeight"
+                [rowBuffer]="virtualisedRows ? rowBufferSize : +paginationSizeSelection"
+                (columnMoved)="onColumnMoved()"
+                (rowClicked)="onRowClick($event)"
+              >
+              </ag-grid-angular>
+            }
+          </ng-container>
+        } @else {
+          <ng-container>
+            <div
+              class="flex items-center justify-center w-full h-full bg-v4-secondary-background-color"
+            >
+              <div
+                class="flex flex-col items-center text-center px-6 py-10 max-w-[540px]"
+              >
+                <!-- Image -->
+                <img
+                  class="w-[280px] mb-8"
+                  src="../../../../assets/images/access-denied.svg"
+                  alt="Access Denied"
+                />
+
+                <!-- Title -->
+                <h1
+                  class="text-2xl font-bold text-v4-main-text-color font-funnel mb-3"
+                >
+                  Access Denied
+                </h1>
+
+                <!-- Description -->
+                <p
+                  class="text-sm text-v4-secondary-text-color font-funnel leading-relaxed mb-8 max-w-[440px]"
+                >
+                  You don't have permission to access this page. This may be due
+                  to your account role or a restricted resource. Please contact
+                  your administrator if you believe this is a mistake.
+                </p>
+              </div>
+            </div>
+          </ng-container>
+        }
+
+        <div
+          class="pagination"
+          [ngClass]="{
+            '!hidden':
+              !isPaymentTableHavePermission || shouldShowInlineEmptyState
+          }"
+        >
+          <div class="results">
+            @if (paginationTotalRowCount === 1) {
+              <h2>Showing 1 of 1 result</h2>
+            }
+            @if (paginationTotalRowCount === 0) {
+              <h2>Showing 0 results</h2>
+            }
+            @if (paginationTotalRowCount > 1) {
+              <h2>
+                @if (
+                  v3DataTableService.defaultPayload?.startRow + 1 ===
+                  (v3DataTableService?.defaultPayload?.endRow <
+                  paginationTotalRowCount
+                    ? v3DataTableService.defaultPayload?.endRow
+                    : paginationTotalRowCount)
+                ) {
+                  Showing
+                  {{ v3DataTableService.defaultPayload?.startRow + 1 }} of
+                  {{ paginationTotalRowCount }} results
+                } @else {
+                  Showing
+                  {{ v3DataTableService.defaultPayload?.startRow + 1 }} to
+                  {{
+                    v3DataTableService?.defaultPayload?.endRow <
+                    paginationTotalRowCount
+                      ? v3DataTableService.defaultPayload?.endRow
+                      : paginationTotalRowCount
+                  }}
+                  of {{ paginationTotalRowCount }} results
+                }
+              </h2>
+            }
+            @if (isCheckTotalSumPluginEnabled) {
+              <p class="total-check-amount">
+                <span class="font-semibold">Total Check Amount:</span>
+                {{ totalCheckSum | currency: "USD" : "symbol" : "1.2-2" }}
+              </p>
+            }
+          </div>
+
+          <div
+            class="dt-footer-scroll"
+            [class.is-idle]="!scrollHintLeft && !scrollHintRight"
+            aria-hidden="true"
+          >
+            <div class="dt-footer-scroll-thumb"></div>
+          </div>
+
+          @if (paginationTotalRowCount !== 0) {
+            <div class="controls text-sm">
+              <!-- Previous Page -->
+              <button aria-label="Previous Page"
+                matTooltip="Previous Page"
+                aria-label="Previous page"
+                class="control-item"
+                [ngClass]="{
+                  disabled:
+                    isV4DataTableLoading || paginationCurrentPageNumber === 1
+                }"
+                (click)="goToPreviousPage()"
+                [disabled]="
+                  isV4DataTableLoading || paginationCurrentPageNumber === 1
+                "
+              >
+                <lucide-icon name="chevron-left" [size]="16"></lucide-icon>
+              </button>
+
+              <!-- Pagination Box One -->
+              @if (paginationBoxOneNumber) {
+                <button
+                  [matTooltip]="'Go to page ' + paginationBoxOneNumber"
+                  class="control-item"
+                  [ngClass]="{
+                    'current-page':
+                      paginationBoxOneNumber === paginationCurrentPageNumber
+                  }"
+                  (click)="goToSpecificPage(paginationBoxOneNumber)"
+                >
+                  {{ paginationBoxOneNumber }}
+                </button>
+              }
+              <!-- Pagination Box Two -->
+              @if (paginationBoxTwoNumber) {
+                <button
+                  [matTooltip]="'Go to page ' + paginationBoxTwoNumber"
+                  class="control-item"
+                  [ngClass]="{
+                    'current-page':
+                      paginationBoxTwoNumber === paginationCurrentPageNumber
+                  }"
+                  (click)="goToSpecificPage(paginationBoxTwoNumber)"
+                >
+                  {{ paginationBoxTwoNumber }}
+                </button>
+              }
+
+              <!-- Divider -->
+              @if (
+                paginationBoxThreeNumber &&
+                paginationBoxThreeNumber -
+                  (paginationBoxTwoNumber ?? paginationBoxOneNumber) >
+                  1
+              ) {
+                <button class="control-static-item">...</button>
+              }
+
+              <!-- Pagination Box 3 -->
+              @if (paginationBoxThreeNumber) {
+                <button
+                  [matTooltip]="'Go to page ' + paginationBoxThreeNumber"
+                  class="control-item"
+                  (click)="goToSpecificPage(paginationBoxThreeNumber)"
+                  [ngClass]="{
+                    'current-page':
+                      paginationBoxThreeNumber === paginationCurrentPageNumber
+                  }"
+                >
+                  {{ paginationBoxThreeNumber }}
+                </button>
+              }
+              <!-- Pagination Box 4 -->
+              @if (paginationBoxFourNumber) {
+                <button
+                  [matTooltip]="'Go to page ' + paginationBoxFourNumber"
+                  class="control-item"
+                  (click)="goToSpecificPage(paginationBoxFourNumber)"
+                  [ngClass]="{
+                    'current-page':
+                      paginationBoxFourNumber === paginationCurrentPageNumber
+                  }"
+                >
+                  {{ paginationBoxFourNumber }}
+                </button>
+              }
+
+              <!-- Next Ppage -->
+              <button
+                matTooltip="Next Page"
+                aria-label="Next page"
+                class="control-item"
+                [ngClass]="{
+                  disabled:
+                    paginationCurrentPageNumber === paginationTotalPageCount ||
+                    isV4DataTableLoading ||
+                    paginationTotalPageCount <= 1
+                }"
+                [disabled]="
+                  isV4DataTableLoading ||
+                  paginationCurrentPageNumber >= paginationTotalPageCount ||
+                  paginationTotalPageCount <= 1
+                "
+                (click)="goToNextPage()"
+              >
+                <lucide-icon name="chevron-right" [size]="16"></lucide-icon>
+              </button>
+
+              @if (paginationTotalPageCount > 1) {
+                <div class="specific-page-input-container">
+                  <input
+                    matTooltip="Go To Specific Page"
+                    [(ngModel)]="specificPageInput"
+                    type="number"
+                    min="1"
+                    [max]="paginationTotalPageCount"
+                    (keyup.enter)="goToSpecificPage()"
+                    (input)="validatePageInput()"
+                    placeholder="Page"
+                    class="font-peridot"
+                  />
+                  <button
+                    class="font-peridot"
+                    (click)="goToSpecificPage()"
+                    [disabled]="!specificPageInput"
+                  >
+                    Go
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      @if (shouldShowInlineEmptyState && emptyStateConfig) {
+        <ng-container [ngTemplateOutlet]="emptyStateTmpl"></ng-container>
+      }
+    }
+  }
+</div>
+
+<!-- Shared by both flavours: the full-table empty state above, and the inline one
+     that sits under a live toolbar in the collapsed grid's place. -->
+<ng-template #emptyStateTmpl>
+  @if (emptyStateConfig; as config) {
+    <app-v4-data-table-empty-state
+      [icon]="config.icon"
+      [title]="config.title"
+      [description]="config.description"
+      [buttonText]="config.buttonText"
+      [buttonIcon]="config.buttonIcon ?? 'plus'"
+      [links]="config.links ?? []"
+      [sourceChip]="config.sourceChip ?? ''"
+      [howItWorks]="config.howItWorks ?? null"
+      [compact]="config.compact ?? false"
+      (actionClick)="onEmptyStateAction()"
+      (linkClick)="emptyStateLinkClick.emit($event)"
+      (videoClick)="emptyStateVideoClick.emit()"
+    />
+  }
+</ng-template>
+
+<mat-menu #columnFilterMatMenu class="v4-action-menu v4-column-menu">
+  <div
+    class="v4-col-panel font-funnel"
+    role="presentation"
+    (click)="preventEventPropagation($event)"
+    (keydown)="preventEventPropagation($event)"
+  >
+    <div class="v4-col-head">
+      <h3 class="v4-col-title">Columns</h3>
+      <span class="v4-col-count"
+        >{{ shownColumnCount }} of {{ totalColumnCount }} shown</span
+      >
+    </div>
+
+    <div class="v4-col-search">
+      <lucide-icon name="search" [size]="14"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Search Columns"
+        [(ngModel)]="columnSearch"
+        (keydown)="preventEventPropagation($event)"
+      />
+      @if (columnSearch) {
+        <button aria-label="Clear search"
+          type="button"
+          matTooltip="Clear search"
+          (click)="columnSearch = ''"
+        >
+          <lucide-icon name="x" [size]="14"></lucide-icon>
+        </button>
+      }
+    </div>
+
+    <div class="v4-col-bulk">
+      <button type="button" (click)="showAllColumns()">Show All</button>
+      <span class="v4-col-bulk-sep"></span>
+      <button type="button" (click)="hideAllColumns()">Hide All</button>
+    </div>
+
+    <div class="v4-col-list">
+      @if (lockedColumnFields.length) {
+        <div class="v4-col-group">Always Visible</div>
+        @for (field of lockedColumnFields; track field.id) {
+          <div class="v4-col-row is-locked">
+            <span class="v4-col-box is-on">
+              <lucide-icon name="check" [size]="12"></lucide-icon>
+            </span>
+            <span class="v4-col-name">{{ field.name }}</span>
+            <lucide-icon
+              name="lock"
+              [size]="12"
+              class="v4-col-lock"
+            ></lucide-icon>
+          </div>
+        }
+      }
+
+      @if (visibleColumnFields.length) {
+        <div class="v4-col-group">Visible</div>
+        @for (field of visibleColumnFields; track field.id) {
+          <button
+            type="button"
+            class="v4-col-row"
+            (click)="toggleColumnFields(field.id)"
+          >
+            <span class="v4-col-box is-on">
+              <lucide-icon name="check" [size]="12"></lucide-icon>
+            </span>
+            <span class="v4-col-name">{{ field.name }}</span>
+          </button>
+        }
+      }
+
+      @if (hiddenColumnFields.length) {
+        <div class="v4-col-group">Hidden</div>
+        @for (field of hiddenColumnFields; track field.id) {
+          <button
+            type="button"
+            class="v4-col-row"
+            (click)="toggleColumnFields(field.id)"
+          >
+            <span class="v4-col-box"></span>
+            <span class="v4-col-name">{{ field.name }}</span>
+          </button>
+        }
+      }
+
+      @if (!hasColumnSearchResults) {
+        <p class="v4-col-empty">No columns match “{{ columnSearch }}”</p>
+      }
+    </div>
+  </div>
+  <div class="filter-btn-container">
+    <app-common-button-v4
+      text="Reset To Default"
+      [type]="{ style: 'outline', name: 'main' }"
+      class="flex-1"
+      [customHeight]="'32px'"
+      width="100%"
+      (clickEvent)="resetColumnDefs(true)"
+    />
+    <app-common-button-v4
+      text="Apply"
+      [type]="{ style: 'primary', name: 'main' }"
+      class="flex-1"
+      [customHeight]="'32px'"
+      width="100%"
+      (clickEvent)="updateColumnDefs()"
+    />
+  </div>
+</mat-menu>
+
+<mat-menu
+  #exportTableMatMenu
+  class="v4-action-menu v4-export-mat-menu"
+  xPosition="before"
+>
+  <div class="font-peridot export-menu-container">
+    <!-- ═══ MAIN VIEW ═══ -->
+    @if (!isFilterAndExportShown) {
+      <ng-container>
+        <!-- Export All Data section -->
+        @if (isPaymentTable || isShowFilterMenu(tableId) || tableId === 8) {
+          <div class="px-3 py-2 border-b border-v4-border-color">
+            <h4
+              class="text-xs font-bold text-v4-main-text-color mb-2"
+              role="presentation"
+              (click)="preventEventPropagation($event)"
+            >
+              Export All Data
+            </h4>
+            <div class="flex gap-2">
+              <button
+                class="export-option-btn flex-1"
+                (click)="
+                  tableId === 8
+                    ? importFilteredPayeeData('csv')
+                    : filterAndExport('csv', true)
+                "
+              >
+                CSV
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Filter and Export link -->
+        @if (
+          (isPaymentTable || isShowFilterMenu(tableId)) &&
+          tableId !== 93 &&
+          tableId !== 94
+        ) {
+          <button
+            role="presentation"
+            (click)="switchFilterAndExport($event)"
+            class="w-full whitespace-nowrap flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-v4-main-text-color hover:bg-v4-hover-color transition-colors border-b border-v4-border-color"
+          >
+            <span class="flex items-center gap-2">
+              <lucide-icon name="filter" [size]="14"></lucide-icon>
+              Filter and Export
+            </span>
+            <lucide-icon name="chevron-right" [size]="14"></lucide-icon>
+          </button>
+        }
+
+        <!-- Export Current Table section -->
+        <div class="px-3 py-2">
+          <h4
+            class="text-xs font-bold text-v4-main-text-color mb-2"
+            role="presentation"
+            (click)="preventEventPropagation($event)"
+          >
+            Export Current Table
+          </h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="export-option-btn" (click)="exportCsv()">CSV</button>
+            <button class="export-option-btn" (click)="exportExcel()">
+              Excel
+            </button>
+            <button class="export-option-btn" (click)="exportPdf('download')">
+              PDF
+            </button>
+            <button class="export-option-btn" (click)="exportPdf('print')">
+              Print
+            </button>
+            <button class="export-option-btn col-span-2" (click)="sendEmail()">
+              Email
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    }
+
+    <!-- ═══ FILTER & EXPORT VIEW ═══ -->
+    @if (
+      (isPaymentTable || isShowFilterMenuOptions(tableId)) &&
+      isFilterAndExportShown
+    ) {
+      <ng-container>
+        <form [formGroup]="filterAndExportForm" class="p-3 font-peridot">
+          <div
+            role="presentation"
+            class="flex gap-2 items-center mb-3"
+            (click)="preventEventPropagation($event)"
+          >
+            <button
+              class="p-1 hover:bg-v4-hover-color rounded transition-colors"
+              (click)="switchFilterAndExport($event)"
+            >
+              <lucide-icon
+                name="arrow-left"
+                [size]="16"
+                class="text-v4-secondary-text-color"
+              ></lucide-icon>
+            </button>
+            <h4 class="text-sm font-bold text-v4-main-text-color">
+              Filter and Export
+            </h4>
+          </div>
+          <div class="flex flex-col gap-2">
+            @if (!isHideSourceType(tableId)) {
+              <div>
+                <label
+                  for="v4flt-source"
+                  class="block text-xs font-medium text-v4-secondary-text-color mb-1.5"
+                  >Source</label
+                >
+                <select
+                  id="v4flt-source"
+                  formControlName="sourceType"
+                  class="input_style"
+                  (click)="preventEventPropagation($event)"
+                >
+                  <option value="all">All</option>
+                  <option value="BANK">Bank</option>
+                  <option value="CARD">Card</option>
+                  <option value="WALLET">Wallet</option>
+                </select>
+              </div>
+            }
+            @if (tableId === 86 || tableId === 87) {
+              <div>
+                <label
+                  for="v4flt-status"
+                  class="block text-xs font-medium text-v4-secondary-text-color mb-1.5"
+                  >Status</label
+                >
+                <select
+                  id="v4flt-status"
+                  formControlName="statusType"
+                  class="input_style"
+                  (click)="preventEventPropagation($event)"
+                >
+                  @for (item of achTransferStatus; track item.id) {
+                    <option [value]="item?.id">{{ item.status }}</option>
+                  }
+                </select>
+              </div>
+            }
+            @if (filterAndExportForm.controls.sourceType.value === "BANK") {
+              <div class="single_input">
+                <app-drop-down-bank
+                  class="drop_style"
+                  (click)="preventEventPropagation($event)"
+                  (selectionEvent)="bankDropDownChange($event)"
+                  [placeholder]="'All Bank Accounts'"
+                >
+                </app-drop-down-bank>
+              </div>
+            }
+            @if (filterAndExportForm.controls.sourceType.value === "CARD") {
+              <div class="single_input">
+                <app-drop-down-card
+                  class="drop_style"
+                  (click)="preventEventPropagation($event)"
+                  (selectionEvent)="cardDropDownChange($event)"
+                  [placeholder]="'All Cards'"
+                >
+                </app-drop-down-card>
+              </div>
+            }
+            @if (filterAndExportForm.controls.sourceType.value === "WALLET") {
+              <div class="single_input">
+                <app-wallet-dropdown-v4
+                  [formControl]="walletDropdownControl"
+                  placeholder="All Wallets"
+                  [labelIconNeeded]="false"
+                  [dropdownIconNeeded]="false"
+                  [append]="'body'"
+                  [showLogoUpdateModal]="false"
+                  [enableAddNew]="false"
+                  (click)="preventEventPropagation($event)"
+                />
+              </div>
+            }
+            @if (tableId === 3) {
+              <div class="single_input w-full">
+                <label
+                  for="v4flt-recv-status"
+                  class="block text-xs font-medium text-v4-secondary-text-color mb-1.5"
+                  >Status</label
+                >
+                <select
+                  id="v4flt-recv-status"
+                  [(ngModel)]="selectedStatus"
+                  [ngModelOptions]="{ standalone: true }"
+                  class="input_style"
+                  (click)="preventEventPropagation($event)"
+                >
+                  @for (item of receivePaymentsStatus; track $index) {
+                    <option
+                      class="font-peridot text-sm text-v4-main-text-color"
+                      [ngValue]="item.value"
+                    >
+                      {{ item.name }}
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+            @if (tableId === 29 || tableId === 38) {
+              <div class="single_input w-full">
+                <app-drop-down-bank-cash
+                  (selectionEvent)="bankDropDownChange($event)"
+                  (click)="preventEventPropagation($event)"
+                  class="drop_style"
+                  [placeholder]="'All Accounts'"
+                />
+              </div>
+            }
+            <div>
+              <span
+                class="block text-xs font-medium text-v4-secondary-text-color mb-1.5"
+                >Date Range</span
+              >
+              <app-v4-date-range-selector
+                (dateEmiter)="filterAndExportDateChange($event)"
+                (click)="preventEventPropagation($event)"
+              ></app-v4-date-range-selector>
+            </div>
+            <div class="flex gap-2 pt-1">
+              @if (
+                tableId !== 2 &&
+                tableId !== 3 &&
+                tableId !== 4 &&
+                tableId !== 16 &&
+                tableId !== 21
+              ) {
+                <app-common-button-v4
+                  text="Excel"
+                  [type]="{ style: 'outline', name: 'compact' }"
+                  class="flex-1"
+                  (clickEvent)="filterAndExport('xlsx', false)"
+                />
+              }
+              <app-common-button-v4
+                text="CSV"
+                [type]="{ style: 'primary', name: 'compact' }"
+                class="flex-1"
+                (clickEvent)="filterAndExport('csv', false)"
+              />
+            </div>
+            @if (
+              tableId === 85 ||
+              tableId === 2 ||
+              tableId === 3 ||
+              tableId === 4 ||
+              tableId === 16 ||
+              tableId === 21
+            ) {
+              <app-common-button-v4
+                text="PDF"
+                [type]="{ style: 'outline', name: 'compact' }"
+                class="flex-1"
+                (clickEvent)="filterAndExport('pdf', false)"
+              />
+            }
+          </div>
+        </form>
+      </ng-container>
+    }
+  </div>
+</mat-menu>

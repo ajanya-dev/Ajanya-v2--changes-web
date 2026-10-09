@@ -1,0 +1,541 @@
+﻿@if (selectedApp && !noSearchResult) {
+  <div
+    class="h-full flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-[5px] [&::-webkit-scrollbar]:h-[5px]"
+  >
+    <div
+      class="pt-0 pb-2 [&_.underline-tab-container]:!border-b-0 [&_.underline-tab-container]:w-fit"
+    >
+      <app-common-tab-v4
+        [tabs]="[
+          { label: selectedApp.name, value: 'details' },
+          { label: 'Transactions', value: 'transactions' }
+        ]"
+        [(activeTab)]="activePayrollTab"
+        [variant]="'underline'"
+        (tabChange)="toggleAccountDetails($event === 'details')"
+      />
+    </div>
+    @if (isAccountDetails) {
+      <div>
+        <div class="flex w-full gap-1.5 py-2 md:py-3">
+          <div class="flex-1 rounded relative min-w-0">
+            @if (isLoading) {
+              <!-- V4 Skeleton Loader -->
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4 w-full animate-pulse"
+              >
+                <!-- Bank Account skeleton -->
+                <div class="flex flex-col gap-2">
+                  <div
+                    class="h-4 w-40 bg-v4-tertiary-background-color rounded"
+                  ></div>
+                  <div
+                    class="h-10 w-full bg-v4-tertiary-background-color rounded-lg"
+                  ></div>
+                </div>
+                <!-- Credit Card skeleton -->
+                <div class="flex flex-col gap-2">
+                  <div
+                    class="h-4 w-32 bg-v4-tertiary-background-color rounded"
+                  ></div>
+                  <div
+                    class="h-10 w-full bg-v4-tertiary-background-color rounded-lg"
+                  ></div>
+                </div>
+                <!-- Payment Method skeleton -->
+                <div class="flex flex-col gap-2">
+                  <div
+                    class="h-4 w-36 bg-v4-tertiary-background-color rounded"
+                  ></div>
+                  <div
+                    class="h-10 w-full bg-v4-tertiary-background-color rounded-lg"
+                  ></div>
+                </div>
+              </div>
+            } @else {
+              <!-- @if (kycCompleted !== 3 &&  (kybStatus === null || kybStatus === undefined)) { -->
+              @if (kycCompleted !== 3 && kybStatus !== 3) {
+                <div class="flex gap-3 flex-wrap items-center">
+                  <div
+                    class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4 w-full items-start"
+                  >
+                    @if (
+                      !kycCompleted &&
+                      kycCompleted !== 0 &&
+                      !isKycKybBypassed &&
+                      (kybStatus === null || kybStatus === undefined)
+                    ) {
+                      <div
+                        class="flex items-center w-full bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 gap-4 md:col-span-2 xl:col-span-3"
+                      >
+                        <div
+                          class="w-10 h-10 rounded-full bg-v4-badge-info-bg-color flex items-center justify-center shrink-0"
+                        >
+                          <lucide-icon
+                            name="shield-check"
+                            [size]="20"
+                            class="text-v4-primary-brand-color"
+                          ></lucide-icon>
+                        </div>
+                        <div class="flex flex-col flex-1 min-w-0">
+                          <span
+                            class="text-sm font-semibold text-v4-main-text-color"
+                          >
+                            Complete Verification
+                          </span>
+                          <span class="text-xs text-v4-secondary-text-color">
+                            Complete verification steps to process payment
+                          </span>
+                        </div>
+                        <app-common-button-v4
+                          text="Complete Verification"
+                          [type]="{ style: 'primary', name: 'main' }"
+                          (clickEvent)="getUserData()"
+                        />
+                      </div>
+                    }
+                    <div class="flex flex-col justify-between min-w-0">
+                      @if (!isBankLoaded) {
+                        <div class="flex flex-col gap-2 animate-pulse">
+                          <div
+                            class="h-4 w-40 bg-v4-tertiary-background-color rounded"
+                          ></div>
+                          <div
+                            class="h-10 w-full bg-v4-tertiary-background-color rounded-lg"
+                          ></div>
+                        </div>
+                      } @else if (!hasBank) {
+                        <div
+                          class="w-full flex flex-col justify-between h-full"
+                        >
+                          <span
+                            class="block text-[13px] font-medium text-v4-secondary-text-color pb-2 truncate"
+                            >Select a bank account to deposit</span
+                          >
+                          <app-common-button-v4
+                            text="Bank Account"
+                            [isAddIcon]="true"
+                            [type]="{ style: 'primary', name: 'main' }"
+                            width="100%"
+                            (clickEvent)="addbankAc()"
+                          ></app-common-button-v4>
+                        </div>
+                      } @else {
+                        <div class="flex flex-col">
+                          <span
+                            class="block text-[13px] font-medium pb-2 text-v4-secondary-text-color truncate"
+                            >Select a bank account to deposit</span
+                          >
+                          <div class="text-sm w-full">
+                            <app-bank-ac-dropdown-v4
+                              #bankDropDown
+                              [(ngModel)]="bankAccountChange"
+                              (ngModelChange)="changeBankAccount($event)"
+                              append=""
+                              permissionContext="forPayment"
+                            ></app-bank-ac-dropdown-v4>
+                          </div>
+                          @if (selectedBankItem) {
+                            <ng-container>
+                              @if (notVerified) {
+                                <button
+                                  class="flex items-center mt-2"
+                                  (click)="openBankVerify()"
+                                >
+                                  <lucide-icon
+                                    name="info"
+                                    [size]="14"
+                                    class="inline-flex text-v4-badge-warning-text-color"
+                                  ></lucide-icon>
+                                  <p
+                                    class="ml-2 font-sm change-method text-xs text-v4-brand-border-color cursor-pointer"
+                                  >
+                                    Verify Account
+                                  </p>
+                                </button>
+                              }
+                              @if (confirmMicroDeposit) {
+                                <button
+                                  class="flex items-center mt-2"
+                                  (click)="microDeposit()"
+                                >
+                                  <lucide-icon
+                                    name="info"
+                                    [size]="14"
+                                    class="inline-flex text-v4-badge-warning-text-color"
+                                  ></lucide-icon>
+                                  <p
+                                    class="ml-2 font-sm change-method text-xs text-v4-brand-border-color cursor-pointer"
+                                  >
+                                    Confirm MD
+                                  </p>
+                                </button>
+                              }
+                              @if (verificationPending) {
+                                <div
+                                  class="flex items-center mt-2 approval-pending"
+                                  matTooltip="Requested for Bank Account Verification"
+                                >
+                                  <lucide-icon
+                                    name="info"
+                                    [size]="14"
+                                    class="inline-flex text-v4-badge-warning-text-color pr-1"
+                                  ></lucide-icon>
+                                  <p
+                                    class="font-sm text-xs text-v4-badge-warning-text-color"
+                                  >
+                                    Pending
+                                  </p>
+                                </div>
+                              }
+                              @if (rejectedVerificationWithVerifyInstantly) {
+                                <div class="flex items-center mt-2 w-full">
+                                  <span
+                                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                                  >
+                                    <lucide-icon
+                                      name="info"
+                                      [size]="14"
+                                      class="inline-flex text-v4-badge-error-text-color"
+                                    ></lucide-icon>
+                                    <p class="font-semibold text-sm">
+                                      Rejected
+                                    </p>
+                                  </span>
+                                </div>
+                              }
+                              @if (rejectedVerification) {
+                                <div class="flex items-center mt-2 w-full">
+                                  <span
+                                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                                  >
+                                    <lucide-icon
+                                      name="info"
+                                      [size]="14"
+                                      class="inline-flex text-v4-badge-error-text-color"
+                                    ></lucide-icon>
+                                    <p class="font-semibold text-sm">
+                                      Rejected
+                                    </p>
+                                  </span>
+                                  <button
+                                    class="mx-2 flex items-center"
+                                    (click)="openBankVerify()"
+                                  >
+                                    <p
+                                      class="ml-1 font-sm change-method text-xs text-v4-brand-border-color hover:underline"
+                                    >
+                                      Verify Account
+                                    </p>
+                                  </button>
+                                </div>
+                              }
+                              @if (failedVerification) {
+                                <div class="flex items-center mt-2 w-full">
+                                  <span
+                                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                                  >
+                                    <lucide-icon
+                                      name="info"
+                                      [size]="14"
+                                      class="inline-flex text-v4-badge-error-text-color"
+                                    ></lucide-icon>
+                                    <p class="font-semibold text-sm">Failed</p>
+                                  </span>
+                                </div>
+                              }
+                              @if (
+                                !isRtpAllowed() &&
+                                selectedMethodId() === 12 &&
+                                !notVerified &&
+                                !confirmMicroDeposit &&
+                                !verificationPending &&
+                                !rejectedVerificationWithVerifyInstantly &&
+                                !rejectedVerification &&
+                                !failedVerification
+                              ) {
+                                <div class="flex items-center mt-2 w-full">
+                                  <span
+                                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                                  >
+                                    <lucide-icon
+                                      name="info"
+                                      [size]="14"
+                                      class="inline-flex text-v4-badge-error-text-color"
+                                    ></lucide-icon>
+                                    <p
+                                      class="font-medium text-[13px] font-peridot"
+                                    >
+                                      RTP not supported for this bank account.
+                                    </p>
+                                  </span>
+                                </div>
+                              }
+                            </ng-container>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    @if (!isCardsLoaded) {
+                      <div class="flex flex-col gap-2 animate-pulse">
+                        <div
+                          class="h-4 w-32 bg-v4-tertiary-background-color rounded"
+                        ></div>
+                        <div
+                          class="h-10 w-full bg-v4-tertiary-background-color rounded-lg"
+                        ></div>
+                      </div>
+                    } @else if (!hasCreditCard) {
+                      <div class="w-full flex flex-col justify-between min-w-0">
+                        <span
+                          class="block font-medium text-[13px] text-v4-secondary-text-color pb-2 truncate"
+                          >Select Credit Card</span
+                        >
+                        <app-common-button-v4
+                          text="Add Card"
+                          [isAddIcon]="true"
+                          [type]="{ style: 'primary', name: 'main' }"
+                          width="100%"
+                          [loading]="openAddCardService.isLoading()"
+                          [disabled]="openAddCardService.isLoading()"
+                          (clickEvent)="addCard()"
+                        ></app-common-button-v4>
+                      </div>
+                    } @else {
+                      <div class="flex flex-col justify-between min-w-0">
+                        <div class="flex items-center gap-[7px] pb-2 min-w-0">
+                          <span
+                            class="block font-medium text-[13px] text-v4-secondary-text-color truncate"
+                            >Select Credit Card</span
+                          >
+                          <!-- Rich hover tooltip: choosing a credit card -->
+                          <lucide-icon
+                            name="info"
+                            [size]="17"
+                            class="inline-flex flex-shrink-0 cursor-pointer text-v4-subtle-text-color"
+                            [appInfoTooltipV4]="creditCardTooltip"
+                            tooltipWidth="300px"
+                            tooltipPadding="13px 16px"
+                          ></lucide-icon>
+                        </div>
+                        <div class="text-sm w-full">
+                          <app-cards-dropdown-v4
+                            #cardDropDown
+                            [(ngModel)]="cardChange"
+                            append=""
+                            [showAllCards]="true"
+                            [gatewayType]="gatewayType"
+                            (cardMapped)="onCardMapped()"
+                            [isPayroll]="true"
+                          ></app-cards-dropdown-v4>
+                        </div>
+                      </div>
+                    }
+                    <div
+                      class="bank-selct flex flex-col justify-between min-w-0"
+                    >
+                      <div class="flex items-center gap-[7px] pb-2 min-w-0">
+                        <span
+                          class="block font-peridot font-medium text-[13px] text-v4-secondary-text-color truncate"
+                          >Select Payment Method</span
+                        >
+                        <!-- Rich hover tooltip: how funds reach the bank -->
+                        <lucide-icon
+                          name="info"
+                          [size]="17"
+                          class="inline-flex flex-shrink-0 cursor-pointer text-v4-subtle-text-color"
+                          [appInfoTooltipV4]="paymentMethodTooltip"
+                          tooltipWidth="352px"
+                        ></lucide-icon>
+                      </div>
+                      <div class="text-sm w-full">
+                        <app-v4-common-dropdown
+                          [config]="paymentMethodDropdownConfig"
+                          [listData]="paymentMethodListData"
+                          [clearable]="false"
+                          [(ngModel)]="selectedPaymentMethod"
+                          (ngModelChange)="
+                            onPaymentMethodDropdownChange($event)
+                          "
+                        ></app-v4-common-dropdown>
+                      </div>
+                    </div>
+                    @if (showExtension()) {
+                      <div class="absolute top-0 right-0">
+                        <div class="py-2 px-6">
+                          <p class="v35-labels hover:underline">
+                            Download Extension
+                          </p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="flex gap-1 pt-3 md:pt-4 justify-between flex-wrap">
+                  <div
+                    class="payroll-info-banner flex items-center text-xs md:text-sm text-v4-primary-brand-bold-color bg-v4-badge-info-bg-color rounded-xl py-2 px-3 md:py-3 md:px-4 w-full"
+                  >
+                    <lucide-icon
+                      name="info"
+                      [size]="16"
+                      class="inline-flex text-v4-primary-brand-bold-color shrink-0"
+                    ></lucide-icon>
+                    <p class="ml-2">
+                      To ensure timely crediting of funds in account, kindly
+                      proceed with the payment at least three days prior to the
+                      payroll date.
+                    </p>
+                  </div>
+                  @if (showExtension()) {
+                    <div>
+                      <div
+                        class="rounded-2xl border border-v4-input-border-color bg-v4-main-background-color py-1 px-2 gap-7 flex items-center relative overflow-hidden"
+                        [ngClass]="{
+                          'fill-animation': true,
+                          'active !text-main-background-color':
+                            extensionMode === 'generate' && generatedKey,
+                          '!bg-v4-primary-brand-color !text-main-background-color':
+                            extensionMode === 'get' && generatedKey,
+                          skelton: extensionMode === 'get' && isGenerate
+                        }"
+                      >
+                        @if (generatedKey) {
+                          <span
+                            class="font-peridot font-normal text-sm"
+                            matTooltip="Chrome Extension Key"
+                            >{{ generatedKey }}</span
+                          >
+                          <div
+                            role="presentation"
+                            class="flex justify-center items-center w-6 cursor-pointer"
+                            matTooltip="Copy Key"
+                            #tooltip="matTooltip"
+                            (click)="copyKey(generatedKey)"
+                          >
+                            <lucide-icon name="copy" [size]="14"></lucide-icon>
+                          </div>
+                        } @else {
+                          <span
+                            class="font-peridot font-normal text-v4-main-text-color text-sm"
+                            >Generate chrome extension key</span
+                          >
+                          <div
+                            role="presentation"
+                            class="flex justify-center items-center bg-v4-primary-brand-color text-main-background-color rounded-[50%] w-6 cursor-pointer"
+                            [matTooltip]="
+                              isGenerate ? 'Generating...' : 'Generate Key'
+                            "
+                            (click)="getChromeExtensionKey('generate')"
+                          >
+                            @if (isGenerate) {
+                              <lucide-icon
+                                name="loader-circle"
+                                [size]="14"
+                                class="animate-spin"
+                              ></lucide-icon>
+                            } @else {
+                              <lucide-icon
+                                name="arrow-right"
+                                [size]="14"
+                              ></lucide-icon>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="h-full w-full flex items-center justify-center">
+                  <span class="text-v4-badge-error-text-color">{{
+                    "Your KYC verification has been rejected"
+                  }}</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+        @if (tableReady) {
+          <div class="flex-1 min-w-0">
+            <ng-template #payrollDetailsHeadingTmpl>
+              <div
+                class="table-header flex items-center gap-3 mr-3 !font-peridot text-[13px] font-semibold text-v4-main-text-color"
+              >
+                Payroll Details
+                @if (isManual) {
+                  <app-common-button-v4
+                    class="whitespace-nowrap"
+                    text="New payroll"
+                    toolTip="Add a new payroll entry for this company"
+                    [type]="{ name: 'v2-1', size: 'md', style: 'primary' }"
+                    lucideIcon="plus"
+                    [lucideIconSize]="15"
+                    [customHeight]="'36px'"
+                    (clickEvent)="openAddPayrollModal()"
+                  ></app-common-button-v4>
+                }
+              </div>
+            </ng-template>
+            <div class="overflow-x-auto">
+              <app-payroll-transactions-table-v4
+                [selectedApp]="selectedApp"
+                [paymentMethodChanged]="paymentMethodChanged()"
+                [toolbarLeftTemplate]="payrollDetailsHeadingTmpl"
+                [toolbarRightTemplate]="!isManual ? syncPayrollDataTmpl : null"
+                (newPayrollClick)="openAddPayrollModal()"
+              ></app-payroll-transactions-table-v4>
+            </div>
+            <ng-template #syncPayrollDataTmpl>
+              <app-common-button-v4
+                class="whitespace-nowrap"
+                text="Sync payroll data"
+                [type]="{ name: 'v2-1', size: 'md', style: 'primary' }"
+                customClasses=""
+                lucideIcon="refresh-cw"
+                [lucideIconSize]="15"
+                [customHeight]="'36px'"
+                [spinIconOnLoading]="true"
+                [toolTip]="!isManual ? '' : !isSync ? 'Syncing..' : ''"
+                (clickEvent)="syncData()"
+                [loading]="(!isSync ? true : false) || isSyncing"
+              >
+              </app-common-button-v4>
+            </ng-template>
+          </div>
+        }
+      </div>
+    }
+    @if (!isAccountDetails) {
+      <div>
+        <div class="overflow-x-auto">
+          <!-- Keyed on the company id: the grid writes its payload into the
+               shared v3DataTableService, so a stale instance can be left showing
+               the previous company's rows. Tracking the id rebuilds it on every
+               switch, which reruns ngOnInit -> initializeAccountDataTable(). -->
+          @for (companyId of [selectedApp.id]; track companyId) {
+            <app-payroll-data-table-v4
+              [selectedApp]="selectedApp"
+            ></app-payroll-data-table-v4>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@if (selectedApp && noSearchResult) {
+  <div class="w-full h-full flex justify-center px-5">
+    <div class="h-full flex flex-col justify-center items-center">
+      <img
+        width="119"
+        height="97"
+        ngSrc="assets/images/warning/empty-activity.svg"
+        alt="Data not found"
+        width="120"
+        height="100"
+      />
+      <div class="text-lg font-normal">Sorry! no results found.</div>
+    </div>
+  </div>
+}

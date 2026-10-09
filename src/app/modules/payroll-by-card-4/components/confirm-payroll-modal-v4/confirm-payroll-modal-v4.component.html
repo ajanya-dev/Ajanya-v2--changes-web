@@ -1,0 +1,516 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <div class="flex items-center gap-2">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          Payroll by Credit Card
+        </h1>
+        @if (mode === "View" && statusText) {
+          <span
+            [ngClass]="{
+              'bg-v4-badge-warning-bg-color text-v4-badge-warning-text-color':
+                status === 0 || status === 3,
+              'bg-v4-badge-info-bg-color text-v4-badge-info-text-color':
+                status === 1,
+              'bg-v4-badge-success-bg-color text-v4-badge-success-text-color':
+                status === 2 || status === 5,
+              'bg-v4-badge-error-bg-color text-v4-badge-error-text-color':
+                status === 4 || status === 6
+            }"
+            class="px-2 py-0.5 rounded-md text-[12px] font-semibold uppercase whitespace-nowrap"
+            >{{ statusText }}</span
+          >
+        }
+      </div>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        {{ companyName || "—" }}
+        @if (payDate) {
+          • Pay Date: {{ payDate }}
+        }
+      </h2>
+    </div>
+    @if (!loading) {
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    }
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="p-6 bg-v4-tertiary-background-color overflow-y-auto"
+    style="max-height: 65vh"
+    [ngClass]="detailsLoading ? 'opacity-50 pointer-events-none' : ''"
+  >
+    <div class="space-y-4">
+      <!-- Summary Card -->
+      <div
+        class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 md:p-5 space-y-4"
+      >
+        <!-- Amount Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+          <!-- Total Amount - green -->
+          <div
+            class="rounded-lg p-3"
+            style="
+              border: 1px solid
+                color-mix(
+                  in srgb,
+                  var(--v4-secondary-brand-color) 30%,
+                  transparent
+                );
+              background: color-mix(
+                in srgb,
+                var(--v4-secondary-brand-color) 8%,
+                transparent
+              );
+            "
+          >
+            <div class="flex items-center gap-2 mb-1">
+              <lucide-icon
+                name="dollar-sign"
+                [size]="14"
+                class="text-v4-secondary-brand-color"
+              ></lucide-icon>
+              <span
+                class="text-xs text-v4-secondary-brand-color font-semibold font-peridot"
+                >Total Amount</span
+              >
+            </div>
+            <div class="text-xl font-bold text-v4-main-text-color font-funnel">
+              {{ grossPay | currency }}
+            </div>
+          </div>
+
+          <!-- Pay Date - purple/brand -->
+          <div
+            class="rounded-lg p-3"
+            style="
+              border: 1px solid
+                color-mix(
+                  in srgb,
+                  var(--v4-primary-brand-color) 30%,
+                  transparent
+                );
+              background: color-mix(
+                in srgb,
+                var(--v4-primary-brand-color) 8%,
+                transparent
+              );
+            "
+          >
+            <div class="flex items-center gap-2 mb-1">
+              <lucide-icon
+                name="calendar"
+                [size]="14"
+                class="text-v4-primary-brand-bold-color"
+              ></lucide-icon>
+              <span
+                class="text-xs text-v4-primary-brand-bold-color font-semibold font-peridot"
+                >Pay Date</span
+              >
+            </div>
+            <div class="text-xl font-bold text-v4-main-text-color font-funnel">
+              {{ payDate || "—" }}
+            </div>
+          </div>
+        </div>
+
+        <div class="h-px bg-v4-border-color"></div>
+
+        <!-- Info Cards -->
+        <div class="grid grid-cols-2 gap-3 md:gap-4">
+          <!-- Company -->
+          <div
+            class="rounded-lg border border-v4-border-color bg-v4-tertiary-background-color p-3"
+          >
+            <div class="text-xs text-v4-secondary-text-color font-peridot mb-1">
+              Company
+            </div>
+            <div
+              class="text-sm font-semibold text-v4-main-text-color font-peridot truncate"
+            >
+              {{ companyName || "—" }}
+            </div>
+          </div>
+
+          <!-- Source -->
+          <!-- <div
+            class="rounded-lg border border-v4-border-color bg-v4-tertiary-background-color p-3"
+          >
+            <div
+              class="text-xs text-v4-secondary-text-color font-peridot mb-1"
+            >
+              Source
+            </div>
+            <div
+              class="text-sm font-semibold text-v4-main-text-color font-peridot truncate"
+            >
+              {{ source || "—" }}
+            </div>
+          </div> -->
+
+          <!-- Frequency -->
+          <!-- <div
+            class="rounded-lg border border-v4-border-color bg-v4-tertiary-background-color p-3"
+          >
+            <div
+              class="text-xs text-v4-secondary-text-color font-peridot mb-1"
+            >
+              Frequency
+            </div>
+            <div
+              class="text-sm font-semibold text-v4-main-text-color font-peridot truncate"
+            >
+              {{ frequency || "—" }}
+            </div>
+          </div> -->
+
+          <!-- Due Date -->
+          <div
+            class="rounded-lg border border-v4-border-color bg-v4-tertiary-background-color p-3"
+          >
+            <div class="text-xs text-v4-secondary-text-color font-peridot mb-1">
+              Due Date
+            </div>
+            <div
+              class="text-sm font-semibold text-v4-main-text-color font-peridot truncate"
+            >
+              {{ dueDate || "—" }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Setup -->
+      <div
+        class="border-2 border-v4-border-color rounded-xl p-4 bg-v4-secondary-background-color"
+      >
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel mb-3">
+          Payment Setup
+        </h4>
+
+        <div class="space-y-3">
+          <!-- Deposit Bank Account -->
+          <div>
+            <label
+              class="block text-xs text-v4-secondary-text-color font-peridot mb-1"
+              >Deposit Bank Account</label
+            >
+            <div
+              class="text-sm w-full"
+              [class.pointer-events-none]="isViewMode"
+              [class.opacity-60]="isViewMode"
+            >
+              <app-bank-ac-dropdown-v4
+                [(ngModel)]="bankAccountChange"
+                (ngModelChange)="changeBankAccount($event)"
+                append="body"
+                permissionContext="forPayment"
+              ></app-bank-ac-dropdown-v4>
+            </div>
+            @if (bankAccountChange) {
+              @if (notVerified) {
+                <button
+                  class="flex items-center mt-2"
+                  (click)="openBankVerify()"
+                >
+                  <lucide-icon
+                    name="info"
+                    [size]="14"
+                    class="inline-flex text-v4-badge-warning-text-color"
+                  ></lucide-icon>
+                  <p
+                    class="ml-2 font-sm change-method text-xs text-v4-brand-border-color cursor-pointer"
+                  >
+                    Verify Account
+                  </p>
+                </button>
+              }
+              @if (confirmMicroDeposit) {
+                <button class="flex items-center mt-2" (click)="microDeposit()">
+                  <lucide-icon
+                    name="info"
+                    [size]="14"
+                    class="inline-flex text-v4-badge-warning-text-color"
+                  ></lucide-icon>
+                  <p
+                    class="ml-2 font-sm change-method text-xs text-v4-brand-border-color cursor-pointer"
+                  >
+                    Confirm MD
+                  </p>
+                </button>
+              }
+              @if (verificationPending) {
+                <div
+                  class="flex items-center mt-2"
+                  matTooltip="Requested for Bank Account Verification"
+                >
+                  <lucide-icon
+                    name="info"
+                    [size]="14"
+                    class="inline-flex text-v4-badge-warning-text-color pr-1"
+                  ></lucide-icon>
+                  <p class="font-sm text-xs text-v4-badge-warning-text-color">
+                    Pending
+                  </p>
+                </div>
+              }
+              @if (rejectedVerificationWithVerifyInstantly) {
+                <div class="flex items-center mt-2 w-full">
+                  <span
+                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                  >
+                    <lucide-icon
+                      name="info"
+                      [size]="14"
+                      class="inline-flex text-v4-badge-error-text-color"
+                    ></lucide-icon>
+                    <p class="font-semibold text-sm">Rejected</p>
+                  </span>
+                  <button
+                    class="ml-2 font-sm change-method text-xs text-v4-brand-border-color hover:underline"
+                    (click)="openBankVerify()"
+                  >
+                    Verify Instantly
+                  </button>
+                </div>
+              }
+              @if (rejectedVerification) {
+                <div class="flex items-center mt-2 w-full">
+                  <span
+                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                  >
+                    <lucide-icon
+                      name="info"
+                      [size]="14"
+                      class="inline-flex text-v4-badge-error-text-color"
+                    ></lucide-icon>
+                    <p class="font-semibold text-sm">Rejected</p>
+                  </span>
+                  <button
+                    class="mx-2 flex items-center"
+                    (click)="openBankVerify()"
+                  >
+                    <p
+                      class="ml-1 font-sm change-method text-xs text-v4-brand-border-color hover:underline"
+                    >
+                      Verify Account
+                    </p>
+                  </button>
+                </div>
+              }
+              @if (failedVerification) {
+                <div class="flex items-center mt-2 w-full">
+                  <span
+                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                  >
+                    <lucide-icon
+                      name="info"
+                      [size]="14"
+                      class="inline-flex text-v4-badge-error-text-color"
+                    ></lucide-icon>
+                    <p class="font-semibold text-sm">Failed</p>
+                  </span>
+                  <button
+                    class="ml-2 font-sm change-method text-xs text-v4-brand-border-color hover:underline"
+                    (click)="openBankVerify()"
+                  >
+                    Verify Instantly
+                  </button>
+                </div>
+              }
+              @if (
+                !isRtpAllowed &&
+                selectedPayymentMethod === 12 &&
+                !notVerified &&
+                !confirmMicroDeposit &&
+                !verificationPending &&
+                !rejectedVerificationWithVerifyInstantly &&
+                !rejectedVerification &&
+                !failedVerification
+              ) {
+                <div class="flex items-center mt-2 w-full">
+                  <span
+                    class="flex items-center gap-1 text-v4-badge-error-text-color"
+                  >
+                    <lucide-icon
+                      name="info"
+                      [size]="14"
+                      class="inline-flex text-v4-badge-error-text-color"
+                    ></lucide-icon>
+                    <p class="font-medium text-[13px] font-peridot">
+                      RTP not supported for this bank account.
+                    </p>
+                  </span>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Credit Card -->
+          <div>
+            <label
+              class="block text-xs text-v4-secondary-text-color font-peridot mb-1"
+              >Credit Card</label
+            >
+            <div class="text-sm w-full">
+              <div
+                [class.pointer-events-none]="isViewMode"
+                [class.opacity-60]="isViewMode"
+              >
+                <app-cards-dropdown-v4
+                  [(ngModel)]="cardChange"
+                  appendTo="body"
+                  [showAllCards]="true"
+                  [gatewayType]="gatewayType"
+                  [isPayroll]="true"
+                ></app-cards-dropdown-v4>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transfer Method -->
+          <div>
+            <label
+              class="block text-xs text-v4-secondary-text-color font-peridot mb-1"
+              >Transfer Method</label
+            >
+            <div class="text-sm w-full">
+              <app-v4-common-dropdown
+                [config]="paymentMethodDropdownConfig"
+                [listData]="paymentMethodListData"
+                [clearable]="false"
+                [appendTo]="'body'"
+                [isDisabled]="isViewMode"
+                [(ngModel)]="selectedPaymentMethodValue"
+                (ngModelChange)="onPaymentMethodDropdownChange($event)"
+              ></app-v4-common-dropdown>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estimated Charges -->
+      <div
+        class="border-2 rounded-xl p-4"
+        style="
+          border-color: var(--v4-primary-brand-color);
+          background: linear-gradient(
+            135deg,
+            color-mix(in srgb, var(--v4-primary-brand-color) 5%, transparent),
+            color-mix(in srgb, var(--v4-secondary-brand-color) 3%, transparent)
+          );
+        "
+      >
+        <h4
+          class="text-sm font-bold text-v4-main-text-color font-funnel mb-3 flex items-center gap-2"
+        >
+          <lucide-icon
+            name="credit-card"
+            [size]="16"
+            class="text-v4-primary-brand-bold-color"
+          ></lucide-icon>
+          Estimated Charges
+        </h4>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-sm">
+            <span
+              class="text-v4-secondary-text-color font-peridot tracking-[-0.011em]"
+              >Payroll Amount</span
+            >
+            <span class="font-semibold text-v4-main-text-color font-peridot">{{
+              grossPay | currency
+            }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span
+              class="text-v4-secondary-text-color font-peridot tracking-[-0.011em]"
+            >
+              Card Processing
+              <span class="text-v4-tertiary-text-color"
+                >(xxxx
+                {{
+                  card?.cardMasked ? card?.cardMasked.slice(-4) : "xxxx"
+                }})</span
+              >
+            </span>
+            <span class="font-semibold text-v4-main-text-color font-peridot">{{
+              paymentAmount | currency
+            }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span
+              class="text-v4-secondary-text-color font-peridot tracking-[-0.011em]"
+              >Total Fees</span
+            >
+            <span class="font-semibold text-v4-main-text-color font-peridot">{{
+              fee | currency
+            }}</span>
+          </div>
+
+          <div class="h-px bg-v4-border-color my-2"></div>
+
+          <div class="flex items-center justify-between">
+            <span
+              class="text-base font-bold text-v4-main-text-color font-funnel"
+              >Total Charged</span
+            >
+            <span
+              class="text-xl font-bold text-v4-secondary-brand-color font-funnel"
+              >{{ totalAmount | currency }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      class="flex-1"
+      [ngClass]="{ 'pointer-events-none opacity-50': detailsLoading }"
+      mat-dialog-close=""
+      width="100%"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      [disabled]="loading"
+    />
+    @if (
+      status !== 0 && status !== 3 && rowData.transaction_id && mode !== "Pay"
+    ) {
+      <app-common-button-v4
+        class="flex-1"
+        [ngClass]="{ 'pointer-events-none opacity-50': detailsLoading }"
+        width="100%"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Download"
+        (clickEvent)="process('View')"
+        [disabled]="loading"
+        [loading]="loading"
+      />
+    } @else {
+      <app-common-button-v4
+        class="flex-1"
+        [ngClass]="{ 'pointer-events-none opacity-50': detailsLoading }"
+        width="100%"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Confirm"
+        (clickEvent)="process('Pay')"
+        [disabled]="loading"
+        [loading]="loading"
+      />
+    }
+  </div>
+</div>

@@ -1,0 +1,263 @@
+<div
+  class="attachments-list flex flex-col rounded-xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden"
+  [style.max-height]="maxHeight()"
+  [class.is-bare]="bare()"
+>
+  <!-- Inline native file picker (industry-standard: no modal) -->
+  <input
+    #fileInput
+    type="file"
+    class="hidden"
+    [accept]="accept() === '*' ? '' : accept()"
+    (change)="onFileChange($event)"
+  />
+  <!-- View-panel design: no title (the tile labels it); the button moves into the empty state when there are no files. -->
+  @if (variant() !== "view-panel" || attachments()?.length) {
+    <div
+      class="flex shrink-0 items-center py-2.5 border-b border-v4-border-color bg-v4-secondary-background-color"
+      [ngClass]="
+        variant() === 'view-panel'
+          ? 'justify-end px-0'
+          : 'justify-between px-3.5'
+      "
+    >
+      @if (variant() !== "view-panel") {
+        <h3
+          class="text-[13px] font-semibold text-v4-main-text-color font-funnel m-0"
+        >
+          Attachments
+        </h3>
+      }
+      <div class="flex shrink-0 items-center gap-2">
+        @if (allowMobile()) {
+          <app-common-button-v4
+            [type]="{ style: 'muted', name: 'v2-1', size: 'sm' }"
+            [text]="'From phone'"
+            [lucideIcon]="'smartphone'"
+            [lucideIconSize]="14"
+            [customClasses]="showPhone() ? 'bg-v4-list-hover-color' : ''"
+            (clickEvent)="showPhone.set(!showPhone())"
+          ></app-common-button-v4>
+        }
+        <app-common-button-v4
+          [type]="{
+            style: variant() === 'view-panel' ? 'navy' : 'primary',
+            name: 'v2-1',
+            size: 'sm'
+          }"
+          [text]="
+            uploading()
+              ? 'Uploading…'
+              : variant() === 'view-panel'
+                ? 'Upload attachment'
+                : 'Add file'
+          "
+          [lucideIcon]="
+            uploading()
+              ? undefined
+              : variant() === 'view-panel'
+                ? 'upload'
+                : 'plus'
+          "
+          [lucideIconSize]="14"
+          [loading]="uploading()"
+          [customClasses]="variant() === 'view-panel' ? '!text-[12px]' : ''"
+          [disabled]="uploading()"
+          (clickEvent)="triggerPicker()"
+        ></app-common-button-v4>
+      </div>
+    </div>
+  }
+
+  <!-- Inline file validation/error -->
+  @if (displayError(); as message) {
+    <div
+      class="flex shrink-0 items-center gap-1.5 px-3.5 py-2 border-b border-v4-border-color text-[12px] font-medium text-v4-common-red-color"
+    >
+      <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+      {{ message }}
+    </div>
+  }
+
+  <!-- Upload-from-phone (SMS link / QR) — check-only -->
+  @if (allowMobile() && showPhone()) {
+    <div class="shrink-0 px-3.5 py-2.5 border-b border-v4-border-color">
+      <div class="flex items-center gap-2">
+        <input
+          type="tel"
+          [(ngModel)]="phone"
+          placeholder="Phone number"
+          (keydown.enter)="submitPhone()"
+          class="min-w-0 flex-1 rounded-lg border border-[color-mix(in_srgb,var(--v4-main-text-color)_18%,transparent)] bg-v4-secondary-background-color px-3 py-2 text-[12px] text-v4-main-text-color placeholder:text-v4-tertiary-text-color focus:border-v4-primary-brand-color focus:outline-none"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'v2-1', size: 'sm' }"
+          [text]="
+            phoneSent() ? 'Resend' : phoneSending() ? 'Sending…' : 'Send link'
+          "
+          [loading]="phoneSending()"
+          [disabled]="!phone.trim() || phoneSending()"
+          (clickEvent)="submitPhone()"
+        ></app-common-button-v4>
+        <app-common-button-v4
+          [type]="{ style: 'muted', name: 'v2-1', size: 'sm' }"
+          [text]="'QR'"
+          [lucideIcon]="qrLoading() ? undefined : 'qr-code'"
+          [lucideIconSize]="14"
+          [loading]="qrLoading()"
+          [disabled]="qrLoading()"
+          [toolTip]="'Show QR code'"
+          (clickEvent)="openQr.emit()"
+        ></app-common-button-v4>
+      </div>
+      @if (phoneError()) {
+        <p
+          class="m-0 mt-1.5 flex items-center gap-1.5 text-[12px] font-medium text-v4-common-red-color"
+        >
+          <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+          {{ phoneError() }}
+        </p>
+      } @else if (phoneSent()) {
+        <p class="m-0 mt-1.5 text-[12px] font-medium text-v4-text-success">
+          Link sent — upload from the phone and it will appear here
+          automatically.
+        </p>
+      } @else {
+        <p class="m-0 mt-1.5 text-[12px] text-v4-tertiary-text-color">
+          Sends a secure link (or scan the QR) to upload a document from a
+          phone.
+        </p>
+      }
+    </div>
+  }
+  <div class="min-h-0 flex-1 overflow-y-auto bg-v4-secondary-background-color">
+    @if (attachments()?.length) {
+      <div class="overflow-x-auto">
+        <div class="max-h-[490px] overflow-y-auto">
+          <table class="v4-ocw-table">
+            <thead>
+              <tr>
+                <th [class.text-center]="variant() !== 'view-panel'">#</th>
+                <th>Date</th>
+                <th>User</th>
+                <th>File</th>
+                <th [class.text-center]="variant() !== 'view-panel'">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of visibleAttachments(); track $index) {
+                <tr>
+                  <td [class.text-center]="variant() !== 'view-panel'">
+                    <span class="text-xs text-v4-tertiary-text-color">{{
+                      $index + 1
+                    }}</span>
+                  </td>
+                  <td>
+                    <app-pd-date-time [value]="entry.formated_date" />
+                  </td>
+                  <td
+                    class="truncate"
+                    [matTooltip]="entry.user_name ?? ''"
+                  >
+                    {{ entry.user_name }}
+                  </td>
+                  <td>
+                    @if (entry.public_url) {
+                      <a
+                        [href]="entry.public_url"
+                        [matTooltip]="entry.fileName ?? entry.file_name"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-v4-primary-brand-bold-color hover:underline truncate block w-full"
+                      >
+                        {{ entry.fileName ?? entry.file_name }}
+                      </a>
+                    } @else if (entry.encrypted_id) {
+                      <button
+                        type="button"
+                        class="text-left text-v4-primary-brand-bold-color hover:underline truncate block w-full cursor-pointer bg-transparent border-none p-0"
+                        [matTooltip]="entry.fileName ?? entry.file_name"
+                        (click)="openAttachment.emit(entry)"
+                      >
+                        {{ entry.fileName ?? entry.file_name }}
+                      </button>
+                    } @else {
+                      <span
+                        [matTooltip]="entry.fileName ?? entry.file_name"
+                        class="truncate block w-full"
+                        >{{ entry.fileName ?? entry.file_name }}</span
+                      >
+                    }
+                  </td>
+                  <td [class.text-center]="variant() !== 'view-panel'">
+                    <div
+                      class="flex items-center"
+                      [ngClass]="
+                        variant() === 'view-panel'
+                          ? 'justify-start'
+                          : 'justify-center'
+                      "
+                    >
+                      @if (deletingId() === entry.encrypted_id) {
+                        <span class="text-xs text-v4-secondary-text-color"
+                          >Deleting…</span
+                        >
+                      } @else {
+                        <button aria-label="Delete attachment"
+                          type="button"
+                          class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                          matTooltip="Delete attachment"
+                          (click)="deleteAttachment.emit(entry)"
+                        >
+                          <lucide-icon
+                            [img]="Trash2Icon"
+                            [size]="14"
+                          ></lucide-icon>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      @if (canShowMore()) {
+        <div class="px-3.5 pb-2">
+          <app-pd-show-more
+            [hiddenCount]="hiddenCount()"
+            [showingAll]="showAll()"
+            (toggled)="showAll.set(!showAll())"
+          />
+        </div>
+      }
+    } @else if (emptyHint()) {
+      <app-pd-empty-state
+        icon="paperclip"
+        [title]="'No attachments yet'"
+        [hint]="emptyHint()"
+      >
+        @if (variant() === "view-panel") {
+          <app-common-button-v4
+            class="mt-3"
+            [type]="{ style: 'navy', name: 'v2-1', size: 'sm' }"
+            [text]="uploading() ? 'Uploading…' : 'Upload attachment'"
+            [lucideIcon]="uploading() ? undefined : 'upload'"
+            [lucideIconSize]="14"
+            [loading]="uploading()"
+            [customClasses]="'!text-[12px]'"
+            [disabled]="uploading()"
+            (clickEvent)="triggerPicker()"
+          ></app-common-button-v4>
+        }
+      </app-pd-empty-state>
+    } @else {
+      <div class="pd-empty">
+        <p class="text-center py-8 text-v4-secondary-text-color text-sm m-0">
+          No attachments yet.
+        </p>
+      </div>
+    }
+  </div>
+</div>

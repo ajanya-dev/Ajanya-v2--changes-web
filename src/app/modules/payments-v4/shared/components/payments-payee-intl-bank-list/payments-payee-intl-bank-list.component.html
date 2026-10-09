@@ -1,0 +1,111 @@
+<!-- ── Selected Bank View ── -->
+@if (selectedBank(); as bank) {
+  <div class="flex items-center gap-3 rounded-lg border-2 border-v4-primary-brand-bold-color bg-v4-secondary-background-color px-4 py-3">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-common-secondary-blue-color">
+      <i-lucide [img]="Building2Icon" [size]="18" class="text-v4-primary-brand-bold-color"></i-lucide>
+    </div>
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2 flex-wrap">
+        <p class="truncate text-sm font-medium text-v4-main-text-color">{{ getDisplayName(bank) || bank._label || 'Bank Account' }}</p>
+        @if (isDefault(bank)) {
+          <span class="inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[12px] font-semibold bg-v4-badge-success-bg-color text-v4-badge-success-text-color">
+            DEFAULT
+          </span>
+        }
+      </div>
+      <p class="truncate text-xs text-v4-tertiary-text-color">{{ getSubLine(bank) }}</p>
+      @if (getAccountType(bank)) {
+        <p class="text-xs text-v4-tertiary-text-color">{{ getAccountType(bank) }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="shrink-0 text-v4-tertiary-text-color transition-colors hover:text-v4-main-text-color"
+      (click)="removeSelectedBank()"
+    >
+      <i-lucide [img]="XIcon" [size]="18"></i-lucide>
+    </button>
+  </div>
+
+} @else {
+  <!-- ── Dropdown — unselected state ── -->
+  @if (noBanksFound()) {
+    <!-- Empty state: no banks found -->
+    <div class="rounded-xl border border-v4-primary-brand-bold-color bg-v4-secondary-background-color px-4 py-3 text-sm text-v4-tertiary-text-color">
+      No international bank accounts found for this payee
+    </div>
+
+    <!-- Warning card -->
+    <div class="mt-3 rounded-xl border border-v4-border-warning bg-v4-surface-warning px-5 py-4">
+      <div class="flex items-start gap-3">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-v4-surface-warning-bold">
+          <i-lucide [img]="CircleAlertIcon" [size]="18" class="text-v4-text-warning"></i-lucide>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-v4-text-warning">No International Bank Account</p>
+          <p class="mt-0.5 text-xs text-v4-text-warning/80">
+            This payee doesn't have any international bank accounts on file. Add one to proceed with the payment.
+          </p>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Add International Bank Account"
+            [lucideIcon]="PlusIcon"
+            [lucideIconSize]="16"
+            [customClasses]="'mt-3'"
+            (clickEvent)="showAddForm.set(true)"
+          />
+        </div>
+      </div>
+    </div>
+  } @else {
+    <app-v4-common-dropdown
+      [config]="bankDropdownConfig()"
+      [listData]="banksForDropdown()"
+      [loading]="loading()"
+      [ngModel]="null"
+      [appendTo]="'body'"
+      (ngModelChange)="onDropdownChange($event)"
+      (buttonClick)="showAddForm.set(true)"
+    />
+  }
+}
+
+<!-- ── Loading skeleton ── -->
+@if (loading()) {
+  <div class="mt-3 space-y-2">
+    @for (i of [1, 2]; track i) {
+      <div class="flex items-center gap-3 rounded-lg px-4 py-3">
+        <div class="shimmer h-10 w-10 shrink-0 rounded-lg"></div>
+        <div class="flex-1 space-y-2">
+          <div class="shimmer h-3.5 w-3/4 rounded"></div>
+          <div class="shimmer h-3 w-1/2 rounded"></div>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Add New Bank Account ── -->
+<!-- @if (!showAddForm() && !noBanksFound()) {
+  <button
+    type="button"
+    class="mt-3 flex items-center gap-2 text-sm font-medium text-v4-primary-brand-bold-color transition-colors hover:text-v4-primary-brand-bold-color"
+    (click)="showAddForm.set(true)"
+  >
+    <i-lucide [img]="PlusIcon" [size]="16"></i-lucide>
+    Add New International Bank Account
+  </button>
+} -->
+
+<!-- ── Inline Add International Bank Form ── -->
+@if (showAddForm()) {
+  <div class="mt-4 rounded-xl border border-v4-border-color p-4">
+    <app-add-payee-international-bank-v4
+      [payeeId]="state.selectedPayee()?.id ?? ''"
+      [paymentRecipientType]="recipientType()"
+      [showHeader]="false"
+      (InternationalBankSetupFinished)="onBankAdded($event)"
+      (back)="showAddForm.set(false)"
+    />
+  </div>
+}

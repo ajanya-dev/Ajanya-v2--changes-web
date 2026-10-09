@@ -1,0 +1,105 @@
+<div class="bg-v4-main-background-color">
+  <div>
+    <app-v4-page-header [title]="'Batch Details'" [showBackButton]="true" />
+    <app-v4-data-table
+      class="flex-1 flex flex-col min-h-0 bg-v4-main-background-color rounded-lg overflow-hidden"
+      [columnDefs]="columnDefs"
+      [tableId]="tableId"
+      [frameworkComponents]="frameworkComponents"
+      [defaultColumnFields]="defaultColumnFields"
+      [deselectedColumns]="deselectedColumns"
+      [toolbarAlertTemplate]="logsBtnTmpl"
+      (cellRendererViewEvent)="onCellActionView($event)"
+    ></app-v4-data-table>
+  </div>
+</div>
+
+<!-- Logs button injected into the data-table toolbar -->
+<ng-template #logsBtnTmpl>
+  <app-common-button-v4
+    [type]="{ style: 'outline', name: 'main' }"
+    text="Logs"
+    lucideIcon="file-text"
+    (clickEvent)="viewLog()"
+  />
+</ng-template>
+
+<!-- Check Detail Side Panel -->
+<app-v4-single-mail-detail-panel
+  [checkId]="selectedCheckId()"
+  [row]="selectedRow()"
+  [isOpen]="isPanelOpen()"
+  (closed)="onPanelClosed()"
+/>
+
+<!-- Activity Logs Side Panel (shared component) -->
+<app-detail-side-panel
+  [isOpen]="showLogsPanel()"
+  [title]="'Activity Logs'"
+  [subtitle]="'Batch activity history'"
+  [icon]="'file-text'"
+  [width]="'560px'"
+  [contentTemplate]="logsContent"
+  (closed)="closeLogsPanel()"
+/>
+
+<ng-template #logsContent>
+  <div class="px-6 py-4">
+    @if (logsLoading()) {
+      <div class="flex flex-col items-center justify-center py-12 gap-3">
+        <div class="animate-spin rounded-full h-8 w-8 border-2 border-v4-border-color border-t-v4-primary-brand-bold-color"></div>
+        <span class="text-sm text-v4-subtle-text-color font-peridot">Loading logs...</span>
+      </div>
+    } @else if (activityLogs().length === 0) {
+      <div class="flex flex-col items-center justify-center py-12 gap-3">
+        <lucide-icon name="inbox" [size]="40" class="text-v4-subtle-text-color opacity-50"></lucide-icon>
+        <p class="text-sm text-v4-subtle-text-color font-peridot">No activity logs found for this batch.</p>
+      </div>
+    } @else {
+      <div class="space-y-3">
+        @for (log of activityLogs(); track $index) {
+          <div class="bg-v4-main-background-color rounded-lg border border-v4-border-color p-4">
+            <div class="flex items-start justify-between mb-2">
+              <span
+                class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-semibold font-peridot leading-none whitespace-nowrap"
+                [style.background-color]="'var(--v4-badge-info-bg-color)'"
+                [style.color]="'var(--v4-common-blue-color)'"
+              >
+                {{ log.status || 'N/A' }}
+              </span>
+              <span class="text-xs text-v4-subtle-text-color font-peridot">
+                {{ log.formatted_date || (log.created_at | date:'MM/dd/yyyy hh:mm a') }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-sm font-peridot mt-3">
+              <div>
+                <span class="text-v4-subtle-text-color text-xs">User</span>
+                <p class="text-v4-main-text-color">{{ log.user_name || 'System' }}</p>
+              </div>
+              <div>
+                <span class="text-v4-subtle-text-color text-xs">Display Name</span>
+                <p class="text-v4-main-text-color">{{ log.display_name || 'N/A' }}</p>
+              </div>
+            </div>
+
+            @if (log.note) {
+              <div class="mt-3 pt-3 border-t border-v4-border-color">
+                <div class="flex items-center gap-4 text-sm font-peridot">
+                  <div>
+                    <span class="text-v4-subtle-text-color text-xs">Batch</span>
+                    <p class="text-v4-main-text-color">{{ log.note.batch_name || 'N/A' }}</p>
+                  </div>
+                  <div>
+                    <span class="text-v4-subtle-text-color text-xs">Rows</span>
+                    <p class="text-v4-main-text-color">{{ log.note.row_count || 0 }}</p>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

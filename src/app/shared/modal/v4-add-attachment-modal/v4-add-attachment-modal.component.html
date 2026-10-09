@@ -1,0 +1,214 @@
+<div class="v4-attachment-modal">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Add Attachments
+      </h1>
+      <span class="text-xs text-v4-subtle-text-color">
+        Upload and manage files for this record
+      </span>
+    </div>
+    <button
+      type="button"
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center border-0 bg-transparent p-0"
+      aria-label="Close"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <!-- Drag & Drop Upload Zone -->
+    <div
+      role="button"
+      [tabindex]="submitting ? -1 : 0"
+      class="mb-4 border-2 border-dashed rounded-lg p-12 text-center transition-colors"
+      [ngClass]="{
+        'border-primary bg-v4-secondary-background-color': isDragging,
+        'border-v4-border-color hover:border-v4-subtle-text-color cursor-pointer':
+          !isDragging && !submitting,
+        'border-v4-border-color opacity-50 cursor-not-allowed': submitting
+      }"
+      (dragover)="!submitting && onDragOver($event)"
+      (dragleave)="!submitting && onDragLeave($event)"
+      (drop)="!submitting && onDrop($event)"
+      (click)="!submitting && triggerFileInput()"
+      (keydown.enter)="!submitting && triggerFileInput()"
+      (keydown.space)="!submitting && triggerFileInput()"
+    >
+      <div class="flex flex-col items-center gap-2">
+        <div
+          class="w-10 h-10 rounded-full bg-v4-secondary-background-color flex items-center justify-center"
+        >
+          <lucide-icon
+            [img]="UploadIcon"
+            [size]="20"
+            class="text-v4-subtle-text-color"
+          ></lucide-icon>
+        </div>
+        <p class="text-sm text-v4-subtle-text-color">
+          Upload or drag a file here
+        </p>
+        @if (selectedFileName) {
+          <p class="text-sm font-medium text-v4-main-text-color">
+            {{ selectedFileName }}
+          </p>
+        } @else {
+          <p class="text-xs text-v4-subtle-text-color">No file chosen</p>
+        }
+        @if (submitting) {
+          <p class="text-xs text-v4-primary-brand-bold-color font-medium">
+            Uploading...
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- Attachments Table.
+         Single-mail caller passes `isMail: true` and wants the table hidden when there are no rows.
+         Every other caller keeps the original "Sorry, No attachment Found!!" empty-state. -->
+    @if (!data.isMail || loading || listData.length > 0) {
+      <div
+        class="border border-v4-border-color rounded-lg overflow-hidden max-h-[320px] overflow-auto"
+      >
+        <table class="w-full min-w-[600px]">
+          <thead>
+            <tr
+              class="bg-v4-secondary-background-color border-b border-v4-border-color sticky top-0 z-10"
+            >
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-secondary-text-color"
+              >
+                Date
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-secondary-text-color"
+              >
+                User
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-secondary-text-color"
+              >
+                File Name
+              </td>
+              <td
+                class="px-4 py-2.5 text-sm font-bold text-v4-secondary-text-color text-center"
+              >
+                Action
+              </td>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-v4-border-color">
+            @for (item of listData; track item; let i = $index) {
+              <tr
+                class="hover:bg-v4-secondary-background-color transition-colors"
+              >
+                <td
+                  class="px-4 py-2.5 text-sm text-v4-main-text-color whitespace-nowrap"
+                >
+                  {{ item.formated_date }}
+                </td>
+                <td
+                  class="px-4 py-2.5 text-sm text-v4-main-text-color font-medium"
+                >
+                  {{ item.user_name }}
+                </td>
+                <td
+                  class="px-4 py-2.5 text-sm text-v4-main-text-color max-w-[200px]"
+                >
+                  <span
+                    class="truncate block"
+                    matTooltip="{{ item?.fileName || item?.file_name }}"
+                    >{{ item?.fileName || item?.file_name }}</span
+                  >
+                </td>
+                <td class="px-4 py-2.5 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button aria-label="Open attachment"
+                      type="button"
+                      class="p-1 rounded text-v4-primary-brand-bold-color hover:text-v4-primary-brand-bold-color/80 transition-colors"
+                      (click)="openAttachment(item)"
+                      matTooltip="Open attachment"
+                    >
+                      <lucide-icon
+                        [img]="ExternalLinkIcon"
+                        [size]="14"
+                      ></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="p-1.5 rounded-md text-common-red-color hover:bg-common-red-color/10 transition-colors"
+                      [ngClass]="{
+                        'opacity-50 pointer-events-none':
+                          attachmentDeletingId === item.encrypted_id || submitting
+                      }"
+                      (click)="deleteAttachment(item, i)"
+                      matTooltip="Delete attachment"
+                    >
+                      @if (attachmentDeletingId === item.encrypted_id) {
+                        <span class="text-xs">Deleting...</span>
+                      } @else {
+                        <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
+                      }
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (loading) {
+              <tr>
+                <td colspan="4" class="px-4 py-8">
+                  <div class="flex justify-center items-center">
+                    <lucide-icon [img]="LoaderCircleIcon" [size]="24" class="animate-spin text-v4-subtle-text-color" />
+                  </div>
+                </td>
+              </tr>
+            } @else if (listData.length === 0) {
+              <tr>
+                <td
+                  colspan="4"
+                  class="px-4 py-12 text-center text-sm text-v4-subtle-text-color"
+                >
+                  Sorry, No attachment Found!!
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (data.isMail) {
+      <p class="text-xs text-v4-subtle-text-color mt-3">
+        Note: Attachments are not sent with checks by default. Select them to
+        include when processing the check.
+      </p>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      width="120px"
+      [disabled]="submitting"
+      (clickEvent)="close()"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Done"
+      width="120px"
+      [disabled]="submitting"
+      [loading]="submitting"
+      (clickEvent)="close()"
+    />
+  </div>
+</div>

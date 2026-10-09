@@ -1,0 +1,900 @@
+<div class="px-[6px] pb-[6px] relative">
+  <!-- modal header -->
+  <div
+    class="flex justify-between pb-6 border-b border-input-border-color mb-4"
+  >
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <i
+          role="presentation"
+          (click)="backbutton()"
+          class="fa-solid fa-arrow-left !text-base cursor-pointer mr-2"
+        ></i>
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5">
+          {{
+            editMode || IsEditMode
+              ? "Edit International Bank Account"
+              : "Add International Bank Account"
+          }}
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Bank List View -->
+  @if (
+    payeeInternationalBankDetails?.length !== 0 &&
+    !IsTableRemoved &&
+    !IsEditMode &&
+    !editMode
+  ) {
+    <div class="flex flex-col items-center p-2 mt-8 w-full list">
+      <div class="h-full w-full flex flex-col gap-4 overflow-auto items-start">
+        <app-common-button-v35
+          class="px-4 py-1 rounded-sm bg-common-blue-color text-white"
+          (clickEvent)="NewBankAcc()"
+          text="New"
+          type="list"
+        >
+        </app-common-button-v35>
+        @if (payeeInternationalBankDetails?.length !== 0) {
+          <div class="w-full">
+            @for (
+              bank of payeeInternationalBankDetails;
+              track bank.id || $index;
+              let i = $index
+            ) {
+              <span
+                class="flex justify-between items-center w-full px-2 py-3 mb-3 rounded bg-secondary-background-color"
+              >
+                <div class="flex gap-2 w-full">
+                  @if (bank?.bank_name) {
+                    <h1>{{ bank?.bank_name }}</h1>
+                  }
+                  @if (!bank?.bank_name) {
+                    <h1>{{ bank?.bankName }}</h1>
+                  }
+                </div>
+                <button class="mx-2" (click)="editbtn(bank, i)">
+                  <i
+                    class="fa-solid fa-pen-to-square text-common-blue-color text-lg"
+                  ></i>
+                </button>
+                <button class="mx-2" (click)="onBankModalDelete(bank.id, i)">
+                  <i
+                    class="fa-solid fa-trash text-common-red-color text-lg"
+                  ></i>
+                </button>
+              </span>
+            }
+          </div>
+        }
+
+        @if (payeeInternationalBankDetails?.length === 0) {
+          <div class="h-20 w-full flex justify-center items-center">
+            <h1>No bank account found.</h1>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Form View -->
+  @if (
+    payeeInternationalBankDetails?.length === 0 ||
+    newInternationalAcc ||
+    IsEditMode ||
+    editMode
+  ) {
+    <!-- modal body start -->
+    <form [formGroup]="internationalBankAcForm">
+      <!-- Bank Details Section -->
+      <div class="flex flex-col gap-4 mb-4 w-full">
+        <button
+          class="flex p-4 justify-between cursor-pointer w-full rounded-lg bg-secondary-background-color hover:bg-common-secondary-blue-color font-inter"
+          (click)="toggleCollapse('bankDetails')"
+        >
+          <span
+            class="font-inter font-medium text-main-text-color text-sm flex items-center gap-2"
+          >
+            <fa-icon
+              [icon]="faBuilding"
+              class="text-secondary-text-color"
+            ></fa-icon>
+            Bank Details
+          </span>
+          <span
+            class="text-sm text-main-text-color duration-300 transition-all rotate-0 w-5 h-5 rounded-full"
+            [ngClass]="{ '!rotate-180': !bankDetailsCollapsed() }"
+          >
+            <fa-icon [icon]="faAngleDown"></fa-icon>
+          </span>
+        </button>
+
+        <div [ngClass]="{ hidden: bankDetailsCollapsed() }">
+          <!-- Bank Details Form - Single column layout -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+            <!-- Beneficiary Bank Country (beneficiaryBankDetails formGroup) -->
+            <div formGroupName="beneficiaryBankDetails" class="md:col-span-2">
+              <div
+                class="single_input"
+                [ngClass]="{ skelton: isEnabledCountriesLoading() }"
+              >
+                <small
+                  class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                  [ngClass]="{
+                    '!opacity-100':
+                      beneficiaryBankForm.controls['country'].value
+                  }"
+                  >Beneficiary Bank Country<span class="required"
+                    >*</span
+                  ></small
+                >
+                <select
+                  class="input_style !text-secondary-text-color"
+                  formControlName="country"
+                  (change)="onBankCountryChange()"
+                >
+                  <option [ngValue]="null" disabled hidden>
+                    Beneficiary Bank Country
+                  </option>
+                  @for (
+                    item of internationalPaymentsEnabledCountries() | keyvalue;
+                    track item.key
+                  ) {
+                    <option [value]="item.value.countryCode">
+                      {{ item.key }}
+                    </option>
+                  }
+                </select>
+                <app-control-message-v35
+                  [control]="beneficiaryBankForm.controls['country']"
+                ></app-control-message-v35>
+              </div>
+            </div>
+            @if (isCountryChanged() || editMode || IsEditMode) {
+              <!-- Account Type (main form control) -->
+              <div class="single_input">
+                <small
+                  class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                  [ngClass]="{
+                    '!opacity-100':
+                      internationalBankAcForm.controls['accountType'].value
+                  }"
+                  >Account Type<span class="required">*</span></small
+                >
+                <select
+                  class="input_style !text-secondary-text-color"
+                  formControlName="accountType"
+                >
+                  <option [ngValue]="null" disabled hidden>Account Type</option>
+                  <option value="business">Business</option>
+                  <option value="personal">Personal</option>
+                </select>
+                <app-control-message-v35
+                  [control]="internationalBankAcForm.controls['accountType']"
+                >
+                </app-control-message-v35>
+              </div>
+
+              <!-- Account Number (main form control) -->
+              <div>
+                <app-common-input-field
+                  [placeholder]="isIbanCountry() ? 'IBAN' : 'Account No'"
+                  [maxLength]="40"
+                  formControlName="accountNumber"
+                  inputId="accountNumber"
+                  [showInfoIcon]="isIbanCountry()"
+                  tooltip="IBAN must follow international format: starts with 2-letter country code, 2 check digits, followed by up to 30 alphanumeric characters. Example: GB82WEST12345698765432"
+                >
+                </app-common-input-field>
+                @if (isInvalidIban()) {
+                  <small class="flex gap-1 pl-1 pt-1">
+                    <fa-icon
+                      [icon]="faCircleExclamation"
+                      class="text-common-red-color text-[12px]"
+                      size="lg"
+                      animation="shake"
+                    />
+                    <p
+                      class="text-common-red-color text-xs font-medium font-roboto"
+                    >
+                      Invalid IBAN number
+                    </p>
+                  </small>
+                } @else {
+                  <app-control-message-v35
+                    [control]="
+                      internationalBankAcForm.controls['accountNumber']
+                    "
+                  >
+                  </app-control-message-v35>
+                }
+              </div>
+
+              <!-- Bank Name (main form control) -->
+              <div>
+                <app-common-input-field
+                  placeholder="Bank Name"
+                  [maxLength]="50"
+                  formControlName="bankName"
+                  inputId="bankName"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="internationalBankAcForm.controls['bankName']"
+                ></app-control-message-v35>
+              </div>
+
+              <!-- Beneficiary Relationship (main form control) -->
+              <div
+                class="single_input"
+                [ngClass]="{ skelton: isRelationshipLoading() }"
+              >
+                <small
+                  class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                  [ngClass]="{
+                    '!opacity-100':
+                      internationalBankAcForm.controls['relationship'].value
+                  }"
+                  >Beneficiary Relationship to Originator<span class="required"
+                    >*</span
+                  >
+                </small>
+                <select
+                  class="input_style !text-secondary-text-color"
+                  formControlName="relationship"
+                >
+                  <option [ngValue]="null" disabled hidden>
+                    Beneficiary Relationship to Originator
+                  </option>
+                  @if (relationshipList() && relationshipList().length > 0) {
+                    @for (type of relationshipList(); track type.value) {
+                      <option [value]="type.value">{{ type.name }}</option>
+                    }
+                  }
+                </select>
+                <app-control-message-v35
+                  [control]="internationalBankAcForm.controls['relationship']"
+                >
+                </app-control-message-v35>
+              </div>
+
+              @if(isUkCountry()){
+                <div formGroupName="beneficiaryBankDetails">
+                  <app-common-input-field
+                    placeholder="Routing Code / Sort Code"
+                    [maxLength]="50"
+                    formControlName="routingOrSortCode"
+                    inputId="routingOrSortCode"
+                  >
+                  </app-common-input-field>
+                  <app-control-message-v35
+                    [control]="beneficiaryBankForm.controls['routingOrSortCode']"
+                  ></app-control-message-v35>
+                </div>
+              }
+
+              <!-- IFSC Code/Bank List (beneficiaryBankDetails formGroup) -->
+              @if (
+                isShowIfsc ||
+                ((businessBanks.length > 0 || isBusinessBanksLoading()) &&
+                  beneficiaryBankForm.controls.country.value === "PH")
+              ) {
+                 <div formGroupName="beneficiaryBankDetails" class="contents">
+                   @if (isShowIfsc) {
+                     <div>
+                       <app-common-input-field
+                         placeholder="IFSC Code"
+                         [maxLength]="11"
+                         formControlName="branchCode"
+                         [showInfoIcon]="true"
+                         tooltip="IFSC code must be 11 characters. Format: 4 letters (bank code) + 0 + 6 digits (branch code). Example: SBIN0001234"
+                         inputId="branchCode"
+                       >
+                       </app-common-input-field>
+                       @if (isInvalidIfsc()) {
+                         <small class="flex gap-1 pl-1 pt-1">
+                           <fa-icon
+                             [icon]="faCircleExclamation"
+                             class="text-common-red-color text-[12px]"
+                             size="lg"
+                             animation="shake"
+                           />
+                           <p
+                             class="text-common-red-color text-xs font-medium font-roboto"
+                           >
+                             Invalid IFSC number
+                           </p>
+                         </small>
+                       } @else {
+                         <app-control-message-v35
+                           [control]="beneficiaryBankForm.controls['branchCode']"
+                         ></app-control-message-v35>
+                       }
+                     </div>
+                   } @else if (
+                     (businessBanks.length > 0 || isBusinessBanksLoading()) &&
+                     beneficiaryBankForm.controls.country.value === "PH"
+                   ) {
+                     <div
+                       class="single_input"
+                       [ngClass]="{ skelton: isBusinessBanksLoading() }"
+                     >
+                       <small
+                         class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                         [ngClass]="{
+                           '!opacity-100':
+                             beneficiaryBankForm.controls['branchCode'].value
+                         }"
+                         >Bank List<span class="required">*</span></small
+                       >
+                       <select
+                         class="input_style !text-secondary-text-color"
+                         formControlName="branchCode"
+                       >
+                         <option [ngValue]="null" disabled hidden>
+                           Bank List
+                         </option>
+                         @for (item of businessBanks; track item.value) {
+                           <option [value]="item.value">{{ item.label }}</option>
+                         }
+                       </select>
+                       <app-control-message-v35
+                         [control]="beneficiaryBankForm.controls['branchCode']"
+                       ></app-control-message-v35>
+                     </div>
+                     @if (beneficiaryBankForm.controls.country.value === "PH") {
+                       <div
+                         class="single_input "
+                         [ngClass]="{ skelton: isBusinessBanksLoading() }"
+                       >
+                         <small
+                           class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                           [ngClass]="{
+                             '!opacity-100':
+                               beneficiaryBankForm.controls['identifierCode'].value
+                           }"
+                           >Beneficiary Bank BIC code<span class="required">*</span></small
+                         >
+                         <select
+                           class="input_style !text-secondary-text-color"
+                           formControlName="identifierCode"
+                         >
+                           <option [ngValue]="null" disabled hidden>
+                             Beneficiary Bank BIC code
+                           </option>
+                           @for (item of bicfiBanks; track item.value) {
+                             <option [value]="item.value">{{ item.label }}</option>
+                           }
+                         </select>
+                         <app-control-message-v35
+                           [control]="beneficiaryBankForm.controls['identifierCode']"
+                         ></app-control-message-v35>
+                       </div>
+                     }
+                   }
+                 </div>
+               }
+            }
+          </div>
+          @if (isCountryChanged() || editMode || IsEditMode) {
+            <!-- Bank Address -->
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pt-4"
+              formGroupName="beneficiaryBankDetails"
+            >
+              <div [ngClass]="{ skelton: isAddressLoading() }">
+                <app-common-input-field
+                  placeholder="Address Line 1"
+                  [maxLength]="40"
+                  formControlName="addressLine1"
+                  name="beneficiaryBankFormStreet1"
+                  (inputFocusEvent)="loadBeneficiaryBankAddress($event)"
+                  inputId="beneficiaryBankStreet1"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="beneficiaryBankForm.controls['addressLine1']"
+                ></app-control-message-v35>
+              </div>
+
+              <div [ngClass]="{ skelton: isAddressLoading() }">
+                <app-common-input-field
+                  placeholder="Address Line 2"
+                  [maxLength]="40"
+                  formControlName="addressLine2"
+                  [isFieldRequired]="false"
+                  inputId="beneficiaryBankStreet2"
+                >
+                </app-common-input-field>
+              </div>
+
+              <div class="col-span-2">
+                <div class="grid grid-cols-4 gap-4">
+                  <div [ngClass]="{ skelton: isAddressLoading() }">
+                    <app-common-input-field
+                      placeholder="City"
+                      [maxLength]="23"
+                      formControlName="city"
+                      inputId="beneficiaryBankCity"
+                    >
+                    </app-common-input-field>
+                    <app-control-message-v35
+                      [control]="beneficiaryBankForm.controls['city']"
+                    ></app-control-message-v35>
+                  </div>
+
+                  <div [ngClass]="{ skelton: isAddressLoading() }">
+                    <app-common-state-select
+                      formControlName="state"
+                      [country]="beneficiaryBankForm.controls['country'].value"
+                      [isRequired]="true"
+                      placeholder="State"
+                    ></app-common-state-select>
+                  </div>
+
+                  <div [ngClass]="{ skelton: isAddressLoading() }">
+                    <app-common-input-field
+                      placeholder="Zip"
+                      [maxLength]="10"
+                      formControlName="zip"
+                      inputId="beneficiaryBankZip"
+                    >
+                    </app-common-input-field>
+                    <app-control-message-v35
+                      [control]="beneficiaryBankForm.controls['zip']"
+                    ></app-control-message-v35>
+                  </div>
+
+                  <div>
+                    <!-- Placeholder div to maintain grid layout -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Beneficiary Details Section -->
+      <div class="flex flex-col gap-4 mb-4 w-full">
+        <button
+          class="flex p-4 justify-between cursor-pointer w-full font-inter rounded-lg bg-secondary-background-color hover:bg-common-secondary-blue-color"
+          (click)="toggleCollapse('beneficiaryDetails')"
+        >
+          <span
+            class="font-inter font-medium text-main-text-color text-sm flex items-center gap-2"
+          >
+            <fa-icon
+              [icon]="faUser"
+              class="text-secondary-text-color"
+            ></fa-icon>
+            Beneficiary Details
+          </span>
+          <span
+            class="text-sm text-main-text-color duration-300 transition-all rotate-0 w-5 h-5 rounded-full"
+            [ngClass]="{ '!rotate-180': !beneficiaryDetailsCollapsed() }"
+          >
+            <fa-icon [icon]="faAngleDown"></fa-icon>
+          </span>
+        </button>
+        <div [ngClass]="{ hidden: beneficiaryDetailsCollapsed() }">
+          @if(userHasBeneficiaryDetails()) {
+          <div class="flex items-center px-4 mb-4">
+            <input type="checkbox" id="useExistingRecipientDetails" class="text-sm text-main-text-color mr-2" [checked]="useExistingRecipientDetails()" (change)="toggleUseExistingRecipientDetails($event)" />
+            <label for="useExistingRecipientDetails" class="text-sm text-main-text-color">Use Existing Recipient Details</label>
+          </div>
+          @if(userHasMultipleBeneficiaryDetails() && useExistingRecipientDetails()) {
+          <div class="mt-2 !px-4 mb-4">
+            <select class="!text-secondary-text-color !w-1/2 input_style" [formControl]="selectedAddressId">
+              <option [ngValue]="null">Select Address</option>
+              @for (address of existingList(); track address.id) {
+                <option [ngValue]="address.id">{{ address.bank_name }}</option>
+              }
+            </select>
+          </div>
+          }
+        }
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4"
+            formGroupName="beneficiary"
+          >
+            <!-- Business Fields - Show when account type is business -->
+            @if (
+              internationalBankAcForm.get("accountType")?.value === "business"
+            ) {
+              <div>
+                <app-common-input-field
+                  placeholder="Business Legal Name"
+                  formControlName="businessLegalName"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['businessLegalName']"
+                ></app-control-message-v35>
+              </div>
+
+              <div class="single_input">
+                <small
+                  class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                  [ngClass]="{
+                    '!opacity-100':
+                      beneficiaryForm.controls['organisationIdType'].value
+                  }"
+                  >Business Organization ID Type<span class="required"
+                    >*</span
+                  ></small
+                >
+                <select
+                  class="input_style !text-secondary-text-color"
+                  formControlName="organisationIdType"
+                >
+                  <option [ngValue]="null" disabled hidden>
+                    Business Organization ID Type
+                  </option>
+                  @if (
+                    organisationIdTypes() && organisationIdTypes().length > 0
+                  ) {
+                    @for (type of organisationIdTypes(); track type.value) {
+                      <option [value]="type.value">{{ type.label }}</option>
+                    }
+                  }
+                </select>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['organisationIdType']"
+                >
+                </app-control-message-v35>
+              </div>
+
+              <div>
+                <app-common-input-field
+                  placeholder="Business Organization ID Number"
+                  formControlName="organisationIdNumber"
+                  inputId="organisationIdNumber"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['organisationIdNumber']"
+                >
+                </app-control-message-v35>
+              </div>
+            }
+
+            <!-- Personal Fields - Show when account type is personal -->
+            @if (
+              internationalBankAcForm.get("accountType")?.value === "personal"
+            ) {
+                <div>
+                  <app-common-input-field
+                    placeholder="Beneficiary Given Name"
+                    [maxLength]="50"
+                    formControlName="givenName"
+                  >
+                  </app-common-input-field>
+                  <app-control-message-v35
+                    [control]="beneficiaryForm.controls['givenName']"
+                    [customMessages]="{
+                      required: 'Beneficiary given name is required',
+                      pattern: 'Only letters and spaces are allowed'
+                    }"
+                  ></app-control-message-v35>
+                </div>
+
+                <div>
+                  <app-common-input-field
+                    placeholder="Beneficiary Family Name"
+                    [maxLength]="50"
+                    formControlName="familyName"
+                  >
+                  </app-common-input-field>
+                  <app-control-message-v35
+                    [control]="beneficiaryForm.controls['familyName']"
+                    [customMessages]="{
+                      required: 'Beneficiary family name is required',
+                      pattern: 'Only letters and spaces are allowed'
+                    }"
+                  ></app-control-message-v35>
+                </div>
+
+              <!-- ID Document fields - Show for all personal accounts -->
+              <div class="single_input">
+                <small
+                  class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                  [ngClass]="{
+                    '!opacity-100':
+                      beneficiaryForm.controls['beneficiaryIdDocumentType']
+                        .value
+                  }"
+                  >Beneficiary ID Document Type<span class="required"
+                    >*</span
+                  ></small
+                >
+                <select
+                  class="input_style !text-secondary-text-color"
+                  formControlName="beneficiaryIdDocumentType"
+                >
+                  <option [ngValue]="null" disabled hidden>
+                    Beneficiary ID Document Type
+                  </option>
+                  @if (
+                    beneficiaryIdDocumentTypes() &&
+                    beneficiaryIdDocumentTypes().length > 0
+                  ) {
+                    @for (
+                      type of beneficiaryIdDocumentTypes();
+                      track type.value
+                    ) {
+                      <option [value]="type.value">{{ type.label }}</option>
+                    }
+                  }
+                </select>
+                <app-control-message-v35
+                  [control]="
+                    beneficiaryForm.controls['beneficiaryIdDocumentType']
+                  "
+                >
+                </app-control-message-v35>
+              </div>
+
+              <div>
+                <app-common-input-field
+                  placeholder="Beneficiary ID Document Number"
+                  [maxLength]="50"
+                  formControlName="beneficiaryIdNumber"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['beneficiaryIdNumber']"
+                ></app-control-message-v35>
+              </div>
+            }
+
+          <!-- Phone field (all countries) -->
+          <div>
+            <app-new-phone-input
+              formControlName="payeePhone"
+              [isRequiredField]="true"
+              placeholder="Phone"
+            ></app-new-phone-input>
+            <app-control-message-v35
+              [control]="beneficiaryForm.controls['payeePhone']"
+              [customMessages]="phoneErrorMessages"
+            ></app-control-message-v35>
+          </div>
+
+            <!-- Philippines specific fields -->
+          @if (beneficiaryBankForm.controls.country.value === "PH") {
+            <div>
+              <app-common-input-field
+                placeholder="Beneficiary Email"
+                formControlName="payeeEmail"
+                type="email"
+              >
+              </app-common-input-field>
+              <app-control-message-v35
+                [control]="beneficiaryForm.controls['payeeEmail']"
+              ></app-control-message-v35>
+            </div>
+
+            <!-- Date of Birth (Personal only) -->
+            @if (
+              internationalBankAcForm.get("accountType")?.value === "personal"
+            ) {
+              <div>
+                <app-common-input-field
+                  placeholder="Date of Birth"
+                  formControlName="dateOfBirth"
+                  type="date"
+                  [maxDate]="getMaxDateOfBirth()"
+                  [minDate]="getMinDateOfBirth()"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['dateOfBirth']"
+                  [customMessages]="{
+                    required: 'Date of birth is required',
+                    futureDate: 'Date of birth cannot be in the future',
+                    minAge: 'Person must be at least 18 years old',
+                    maxAge: 'Please enter a valid date of birth'
+                  }"
+                ></app-control-message-v35>
+              </div>
+            }
+
+            <!-- PO Box -->
+            <div>
+              <app-common-input-field
+                placeholder="PO Box"
+                [maxLength]="50"
+                formControlName="poBox"
+              >
+              </app-common-input-field>
+              <app-control-message-v35
+                [control]="beneficiaryForm.controls['poBox']"
+              ></app-control-message-v35>
+            </div>
+          }
+
+            <!-- Beneficiary Address -->
+            <div>
+              <app-common-input-field
+                placeholder="Address Line 1"
+                [maxLength]="40"
+                formControlName="addressLine1"
+                inputId="beneficiaryStreet1"
+                name="beneficiaryStreet1"
+                (inputFocusEvent)="loadGoogleAddress($event)"
+              >
+              </app-common-input-field>
+              <app-control-message-v35
+                [control]="beneficiaryForm.controls['addressLine1']"
+              ></app-control-message-v35>
+            </div>
+
+            <div>
+              <app-common-input-field
+                placeholder="Address Line 2"
+                [maxLength]="40"
+                formControlName="addressLine2"
+                [isFieldRequired]="false"
+                inputId="beneficiaryStreet2"
+              >
+              </app-common-input-field>
+            </div>
+
+            <div class="col-span-2">
+              <div class="grid grid-cols-4 gap-4">
+                <div>
+                  <app-common-input-field
+                    placeholder="City"
+                    [maxLength]="23"
+                    formControlName="city"
+                    inputId="beneficiaryCity"
+                  >
+                  </app-common-input-field>
+                  <app-control-message-v35
+                    [control]="beneficiaryForm.controls['city']"
+                  ></app-control-message-v35>
+                </div>
+
+                <div>
+                  <app-common-state-select
+                    formControlName="state"
+                    [country]="beneficiaryForm.controls['country'].value"
+                    [isRequired]="true"
+                    placeholder="State"
+                  ></app-common-state-select>
+                </div>
+
+                <div>
+                  <app-common-input-field
+                    placeholder="Zip"
+                    [maxLength]="10"
+                    formControlName="zip"
+                    inputId="beneficiaryZip"
+                  >
+                  </app-common-input-field>
+                  <app-control-message-v35
+                    [control]="beneficiaryForm.controls['zip']"
+                  ></app-control-message-v35>
+                </div>
+
+                <div class="single_input">
+                  <app-common-country-select
+                    formControlName="country"
+                    [isRequired]="true"
+                    placeholder="Country"
+                    (countryChange)="onBeneficiaryCountryChange()"
+                  ></app-common-country-select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Details Section (Optional) -->
+      @if (internationalBankAcForm.get("accountType")?.value === "business") {
+        <div class="flex flex-col gap-4 mb-4 w-full">
+          <button
+            class="flex p-4 justify-between cursor-pointer w-full font-inter rounded-lg bg-secondary-background-color hover:bg-common-secondary-blue-color"
+            (click)="toggleCollapse('businessDetails')"
+          >
+            <span
+              class="font-inter font-medium text-main-text-color text-sm flex items-center gap-2"
+            >
+              <fa-icon
+                [icon]="faBuilding"
+                class="text-secondary-text-color"
+              ></fa-icon>
+              Business Details
+            </span>
+            <span
+              class="text-sm text-main-text-color duration-300 transition-all rotate-0 w-5 h-5 rounded-full"
+              [ngClass]="{ '!rotate-180': !businessDetailsCollapsed() }"
+            >
+              <fa-icon [icon]="faAngleDown"></fa-icon>
+            </span>
+          </button>
+          <div [ngClass]="{ hidden: businessDetailsCollapsed() }">
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4"
+              formGroupName="beneficiary"
+            >
+              <div>
+                <app-common-input-field
+                  placeholder="Date of Incorporation"
+                  [maxLength]="50"
+                  formControlName="dateOfIncorporation"
+                  type="date"
+                >
+                </app-common-input-field>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['dateOfIncorporation']"
+                ></app-control-message-v35>
+              </div>
+
+              <div class="single_input">
+                <small
+                  class="small_floating_label bg-main-background-color !text-secondary-text-color"
+                  [ngClass]="{
+                    '!opacity-100':
+                      beneficiaryForm.controls['countryOfIncorporation'].value
+                  }"
+                  >Country of Incorporation<span class="required"
+                    >*</span
+                  ></small
+                >
+                <select
+                  class="input_style !text-secondary-text-color"
+                  formControlName="countryOfIncorporation"
+                >
+                  <option [ngValue]="null" disabled hidden>
+                    Country of Incorporation
+                  </option>
+                  @for (item of allowedcountries | keyvalue; track item.key) {
+                    <option [value]="item.key">{{ item.value }}</option>
+                  }
+                </select>
+                <app-control-message-v35
+                  [control]="beneficiaryForm.controls['countryOfIncorporation']"
+                >
+                </app-control-message-v35>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- modal footer -->
+      <div class="flex justify-end gap-3 pt-8">
+        <app-common-button-v35
+          width="100px"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Cancel"
+          (clickEvent)="backbutton()"
+        />
+
+        <app-common-button-v35
+          width="100px"
+          [type]="{ style: 'modal', name: 'main' }"
+          [text]="editMode || IsEditMode ? 'Update' : 'Add'"
+          [disabled]="isSubmit() || isEnabledCountriesLoading()"
+          [loading]="isSubmit()"
+          (clickEvent)="onSubmit()"
+        />
+      </div>
+    </form>
+  }
+
+  @if (isLoading()) {
+    <div
+      class="absolute w-full h-full left-0 top-0 flex justify-center items-center bg-transparent z-10"
+    >
+      <div class="data_spinner"></div>
+    </div>
+  }
+</div>

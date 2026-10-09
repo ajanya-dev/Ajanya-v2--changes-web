@@ -1,0 +1,282 @@
+<div class="flex flex-col rounded-2xl overflow-hidden max-h-[85vh]" [formGroup]="checkForm">
+
+  <!-- Header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">Add Remittance</h1>
+      <h2 class="text-xs text-v4-subtle-text-color">Manage invoice details for this payment</h2>
+    </div>
+    <div
+      (click)="close()"
+      tabindex="0"
+      role="presentation"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="p-6 bg-v4-tertiary-background-color overflow-y-auto">
+
+    <!-- Switch Format -->
+    @if (!hideSwitchFormat) {
+      <div class="flex justify-end mb-3">
+        <button
+          class="flex items-center gap-1.5 text-sm text-v4-primary-brand-bold-color hover:underline"
+          (click)="switchFormat()"
+        >
+          <lucide-icon [img]="ArrowLeftRightIcon" [size]="14" />
+          Switch To {{ !newFormat ? 'New' : 'Old' }} Format
+        </button>
+      </div>
+    }
+
+    <!-- Table -->
+    <div class="rounded-lg border border-v4-border-color overflow-hidden">
+
+      <!-- Table Header -->
+      <div class="flex gap-2 px-3 py-2.5 bg-v4-secondary-background-color border-b border-v4-border-color">
+        @if (newFormat) {
+          <div class="w-[17%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Invoice Date</div>
+        }
+        <div class="text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color"
+          [class]="newFormat ? 'w-[13%]' : 'w-[19%]'">Invoice #</div>
+        @if (!newFormat) {
+          <div class="w-[19%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Item</div>
+        }
+        <div class="w-[19%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Description</div>
+        @if (!newFormat) {
+          <div class="w-[13%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Quantity</div>
+          <div class="w-[13%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Unit Cost</div>
+          <div class="w-[13%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Total</div>
+        }
+        @if (newFormat) {
+          <div class="w-[11%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Gross</div>
+          <div class="w-[11%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Discount</div>
+          <div class="w-[11%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">Net</div>
+          <div class="w-[11%] text-xs uppercase tracking-wider font-bold text-v4-tertiary-text-color">This Payment</div>
+        }
+        <div class="w-[4%]"></div>
+      </div>
+
+      <!-- Table Rows -->
+      <div formArrayName="remittance" class="divide-y divide-v4-border-color">
+        @for (data of getRemittanceFormControl().controls; let i = $index; track i) {
+          <div class="flex gap-2 px-3 py-2 items-center bg-v4-tertiary-background-color" [formGroupName]="i">
+
+            <!-- Invoice Date (new format) -->
+            @if (newFormat) {
+              <div class="w-[17%]">
+                <app-v4-date-picker
+                  formControlName="invoiceDate"
+                  placeholder="Choose a date"
+                  fieldHeight="32px"
+                />
+              </div>
+            }
+
+            <!-- Invoice # -->
+            <div [class]="newFormat ? 'w-[13%]' : 'w-[19%]'">
+              <app-common-input-v4
+                formControlName="invoiceNumber"
+                type="text"
+                placeholder=""
+                fieldHeight="32px"
+              />
+            </div>
+
+            <!-- Item (old format) -->
+            @if (!newFormat) {
+              <div class="w-[19%]">
+                <app-v4-common-dropdown
+                  formControlName="itemName"
+                  [config]="itemDropdownConfig"
+                  [listData]="remittanceItem"
+                  [addTag]="addTagFn"
+                  [addTagText]="'Add item'"
+                  appendTo="body"
+                  (scrollToEnd)="onScrollItems()"
+                  (searchEvent)="onSearchV4($event)"
+                />
+              </div>
+            }
+
+            <!-- Description -->
+            <div class="w-[19%]">
+              <app-common-input-v4
+                formControlName="itemDescription"
+                type="text"
+                placeholder=""
+                [maxLength]="45"
+                fieldHeight="32px"
+              />
+            </div>
+
+            <!-- Quantity (old format) -->
+            @if (!newFormat) {
+              <div class="w-[13%]">
+                <app-common-input-v4
+                  formControlName="itemQuantity"
+                  type="text"
+                  placeholder=""
+                  [maxLength]="10"
+                  [isNumberOnly]="true"
+                  numberType="numeric"
+                  fieldHeight="32px"
+                  (keyup)="total(i)"
+                />
+              </div>
+            }
+
+            <!-- Unit Cost (old format) -->
+            @if (!newFormat) {
+              <div class="w-[13%]">
+                <app-common-amount-input-v4
+                  formControlName="itemUnitCost"
+                  height="32px"
+                  (keyup)="total(i)"
+                  [maxLength]="11"
+                ></app-common-amount-input-v4>
+              </div>
+            }
+
+            <!-- Total (old format) -->
+            @if (!newFormat) {
+              <div class="w-[13%]">
+                <app-common-amount-input-v4
+                  formControlName="totalSingleRow"
+                  height="32px"
+                  [isReadOnly]="true"
+                  [maxLength]="11"
+                ></app-common-amount-input-v4>
+              </div>
+            }
+
+            <!-- Gross (new format) -->
+            @if (newFormat) {
+              <div class="w-[11%]">
+                <app-common-amount-input-v4
+                  formControlName="grossAmount"
+                  height="32px"
+                  (keyup)="total(i)"
+                  [maxLength]="11"
+                ></app-common-amount-input-v4>
+              </div>
+            }
+
+            <!-- Discount (new format) -->
+            @if (newFormat) {
+              <div class="w-[11%]">
+                <app-common-amount-input-v4
+                  formControlName="discountAmount"
+                  height="32px"
+                  (keyup)="total(i)"
+                ></app-common-amount-input-v4>
+              </div>
+            }
+
+            <!-- Net (new format) -->
+            @if (newFormat) {
+              <div class="w-[11%]">
+                <app-common-amount-input-v4
+                  [isReadOnly]="true"
+                  formControlName="netAmount"
+                  height="32px"
+                  [maxLength]="11"
+                ></app-common-amount-input-v4>
+              </div>
+            }
+
+            <!-- This Payment (new format) -->
+            @if (newFormat) {
+              <div class="w-[11%]">
+                <app-common-amount-input-v4
+                  formControlName="thisPayment"
+                  height="32px"
+                  [maxLength]="11"
+                ></app-common-amount-input-v4>
+              </div>
+            }
+
+            <!-- Delete -->
+            <div class="w-[4%] flex justify-center">
+              <button aria-label="Remove"
+                matTooltip="Remove"
+                (click)="removeSelectedRow(i)"
+                class="text-v4-common-red-color hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <lucide-icon [img]="Trash2Icon" [size]="16" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Actions row -->
+    <div class="flex justify-between items-center mt-4">
+      <div class="flex items-center gap-2">
+        @if (!disableRemittanceAddBtn) {
+          <button aria-label="Add Row"
+            (click)="addRow()"
+            class="flex items-center justify-center w-8 h-8 rounded-lg bg-v4-insight-card-sub-number-green text-v4-secondary-background-color hover:opacity-80 transition-opacity cursor-pointer"
+            matTooltip="Add Row"
+          >
+            <lucide-icon [img]="PlusIcon" [size]="16" />
+          </button>
+        }
+        <button aria-label="Remove Row"
+          (click)="removeSelectedRow(getRemittanceFormControl().controls.length - 1)"
+          class="flex items-center justify-center w-8 h-8 rounded-lg bg-v4-insight-card-sub-number-red text-v4-secondary-background-color hover:opacity-80 transition-opacity cursor-pointer"
+          [class.opacity-50]="getRemittanceFormControl().controls.length <= 1"
+          [class.pointer-events-none]="getRemittanceFormControl().controls.length <= 1"
+          matTooltip="Remove Row"
+        >
+          <lucide-icon [img]="MinusIcon" [size]="16" />
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-lg text-sm font-medium border border-v4-border-color text-v4-main-text-color bg-v4-secondary-background-color hover:bg-v4-tertiary-background-color transition-colors cursor-pointer"
+          (click)="clearAllRow()"
+        >
+          Clear
+        </button>
+      </div>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 text-sm text-v4-main-text-color cursor-pointer">
+          <input
+            type="checkbox"
+            class="accent-v4-primary-brand-color w-4 h-4 rounded"
+            [attr.checked]="insertToCheck === true ? true : undefined"
+            (change)="insertIntoCheck($event)"
+          />
+          {{ isNotCheck ? 'Insert into payment' : 'Insert into checks' }}
+        </label>
+        <span class="text-sm font-semibold text-v4-main-text-color">
+          @if (!newFormat) {
+            Total: $ {{ grandTotal ? grandTotal?.toFixed(2) : '0.00' }}
+          } @else {
+            Total: $ {{ paymentTotal ? paymentTotal?.toFixed(2) : '0.00' }}
+          }
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color">
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="close()"
+    />
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Save"
+      (clickEvent)="submit()"
+    />
+  </div>
+
+</div>

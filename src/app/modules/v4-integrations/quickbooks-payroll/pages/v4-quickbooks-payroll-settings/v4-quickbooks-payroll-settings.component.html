@@ -1,0 +1,217 @@
+<div class="space-y-6 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  } @else if (!isConnected()) {
+    <!-- Disconnected state -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl"
+      style="background-color: var(--v4-badge-error-bg-color)"
+    >
+      <lucide-icon
+        name="x-circle"
+        [size]="20"
+        [color]="'var(--v4-badge-error-text-color)'"
+      ></lucide-icon>
+      <span
+        class="text-sm font-semibold"
+        style="color: var(--v4-badge-error-text-color)"
+      >
+        Status: <span class="font-bold">{{ status() || "Disconnected" }}</span>
+      </span>
+    </div>
+
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          QuickBooks Online Payroll Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Connect to QuickBooks Online Payroll to import payroll runs and create
+          checks.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="loading().connecting ? 'Connecting...' : 'Connect'"
+        width="140px"
+        [loading]="loading().connecting"
+        [disabled]="loading().connecting"
+        (clickEvent)="onConnect()"
+      />
+    </div>
+  } @else {
+    <!-- Status banner -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl bg-v4-badge-success-bg-color"
+    >
+      <lucide-icon
+        name="circle-check"
+        [size]="24"
+        class="flex-shrink-0 text-v4-badge-success-text-color"
+      ></lucide-icon>
+      <div>
+        <p class="font-semibold text-v4-badge-success-text-color">
+          {{ status() || "Connected" }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Heading + Disconnect -->
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          QuickBooks Online Payroll Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Manage QuickBooks Online Payroll companies and import payroll checks.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'destructive', name: 'main' }"
+        text="Disconnect"
+        width="140px"
+        [loading]="loading().disconnecting"
+        [disabled]="loading().disconnecting"
+        (clickEvent)="onDisconnect()"
+      />
+    </div>
+
+    <!-- Connected companies -->
+    <div
+      class="border border-v4-input-border-color rounded-xl bg-main-background p-4 space-y-3"
+    >
+      <div class="flex items-center justify-between">
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+          Connected Companies
+        </h4>
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="
+            loading().connecting ? 'Connecting...' : 'Connect New Company'
+          "
+          width="200px"
+          [isAddIcon]="true"
+          [icon]="['fas', 'plus']"
+          [loading]="loading().connecting"
+          [disabled]="loading().connecting"
+          (clickEvent)="onConnect()"
+        />
+      </div>
+
+      @if (companies().length) {
+        <div
+          class="border border-v4-input-border-color rounded-xl overflow-hidden bg-v4-secondary-background-color"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-v4-main-text-color">
+              <thead>
+                <tr class="bg-v4-input-background-color">
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                  >
+                    Company Name
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                  >
+                    Last Run
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (company of companies(); track company.companyId) {
+                  <tr
+                    class="border-b border-v4-input-border-color last:border-b-0 hover:bg-v4-input-background-color/50 transition-colors"
+                  >
+                    <td class="px-4 py-3">{{ company.companyName }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      {{ company.lastUpdated || "-" }}
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <app-common-button-v4
+                          [type]="{ style: 'primary', name: 'main' }"
+                          text="Payroll Checks"
+                          customHeight="32px"
+                          width="auto"
+                          (clickEvent)="openPayrollList(company)"
+                        />
+                        @if (
+                          loading().deletingCompany === company.companyId
+                        ) {
+                          <span class="inline-block p-2">
+                            <lucide-icon
+                              name="loader-circle"
+                              [size]="18"
+                              class="animate-spin"
+                              style="color: var(--v4-badge-error-text-color)"
+                            />
+                          </span>
+                        } @else {
+                          <button aria-label="Remove company"
+                            type="button"
+                            class="p-2 rounded-lg hover:bg-v4-tertiary-background-color transition-colors cursor-pointer"
+                            style="color: var(--v4-badge-error-text-color)"
+                            matTooltip="Remove company"
+                            (click)="deleteCompany(company)"
+                          >
+                            <lucide-icon name="trash-2" [size]="18" />
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @else {
+        <p class="text-sm text-v4-tertiary-text-color">
+          No companies connected yet. Use "Connect New Company" to add one from
+          QuickBooks Online Payroll.
+        </p>
+      }
+    </div>
+
+    <!-- Bank mapping -->
+    <div class="mt-6">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Bank Account Mapping"
+        [width]="'100%'"
+        (clickEvent)="openBankMappingModal()"
+      />
+    </div>
+
+    <!-- Short on cash -->
+    <div
+      class="mt-6 flex items-center justify-between gap-3 p-4 rounded-xl border border-v4-input-border-color bg-main-background"
+    >
+      <div class="min-w-0">
+        <h3 class="text-sm font-bold text-v4-badge-error-text-color font-funnel">
+          Short on Cash?
+        </h3>
+        <p class="text-xs text-v4-tertiary-text-color mt-1">
+          Fund your payroll account with credit card.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Add Fund"
+        width="120px"
+      />
+    </div>
+  }
+</div>

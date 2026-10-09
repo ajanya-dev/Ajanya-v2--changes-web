@@ -1,0 +1,399 @@
+:host {
+  display: block;
+}
+
+// The head (title + chevron) is a normal card head and themes like every
+// other one — only the cheque body below is pinned to light.
+.check-preview-head {
+  background: color-mix(in srgb, var(--v4-border-color) 18%, transparent);
+}
+
+/*
+ * A cheque is printed on white paper and its design is drawn for white paper,
+ * so the cheque body itself is not themed. Under a dark surface the pale
+ * artwork lost its edges and read as broken, and half-theming it only moved
+ * the seam. The tokens are pinned to their light values here, which keeps
+ * every class inside it — Tailwind's and this file's alike — resolving to
+ * the same thing in either mode.
+ */
+.check-preview-body {
+  --v4-main-background-color: #ffffff;
+  --v4-secondary-background-color: #ffffff;
+  --v4-tertiary-background-color: #fbfbfb;
+  --v4-border-color: #e5e7eb;
+  --v4-input-border-color: #d0d0d0;
+  --v4-main-text-color: #111827;
+  --v4-secondary-text-color: #4b5563;
+  --v4-tertiary-text-color: #6b7280;
+  --v4-subtle-text-color: #9ca3af;
+
+  color-scheme: light;
+}
+
+/* Responsive wrapper — canvas is uniformly scaled via JS to fill width (matches V3 check-view) */
+.fabric-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 675 / 295;
+  overflow: hidden;
+  border: 1px solid var(--v4-input-border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--v4-main-background-color, #fff);
+
+  canvas {
+    display: block;
+    border-radius: 4px;
+  }
+
+  /* Held back until `scaleCanvasToFit` has run — Fabric paints at the authored
+     675×295 first, and that overflowing frame is the "broken design" flash.
+     `visibility`, so the box keeps its size and nothing moves. */
+  .canvas-container {
+    visibility: hidden;
+  }
+
+  &.canvas-ready .canvas-container {
+    visibility: visible;
+  }
+}
+
+// Placeholder/error state (aligned with CheckPreviewCanvas dimensions 506×221)
+.check-preview-placeholder {
+  width: 100%;
+  max-width: 506px;
+  height: 221px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--v4-tertiary-background-color);
+  border-radius: 8px;
+}
+
+.check-preview-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--v4-secondary-background-color);
+  border-radius: 8px;
+}
+
+/*
+ * A cheque taking shape, rather than a spinner over an empty box. The bars sit
+ * where the design's own fields land, so the wait reads as the same object
+ * arriving instead of a blank panel that suddenly becomes one.
+ */
+.cp-skel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  padding: 9% 7%;
+}
+
+.cp-skel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6%;
+}
+
+.cp-skel-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--v4-border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.cp-skel-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 70%), transparent);
+  animation: cp-skel-shimmer 1.3s ease-in-out infinite;
+}
+
+/* Staggered, so it reads as one sheet filling in rather than four bars blinking. */
+.cp-skel-row:nth-child(2) .cp-skel-bar::after { animation-delay: 0.1s; }
+.cp-skel-words::after { animation-delay: 0.2s; }
+.cp-skel-foot .cp-skel-bar::after { animation-delay: 0.3s; }
+
+.cp-skel-address { width: 34%; height: 22px; }
+.cp-skel-date { width: 20%; }
+.cp-skel-payto { align-items: flex-end; }
+.cp-skel-name { width: 46%; height: 12px; }
+.cp-skel-amount { width: 18%; height: 18px; border-radius: 5px; }
+.cp-skel-words { width: 78%; }
+.cp-skel-foot { align-items: flex-end; }
+.cp-skel-memo { width: 30%; }
+.cp-skel-sign { width: 32%; height: 12px; }
+
+@keyframes cp-skel-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+// Check layout (adapted from recieved-checks-show reference) – small font sizes to fit within check
+.cheque-sub-headers {
+  font-weight: 600;
+  font-size: 12px;
+  font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+}
+
+.cheque-details-text {
+  font-size: 8px;
+  font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+}
+
+.check-design {
+  position: relative;
+  max-width: 506px;
+  margin: 0 auto;
+  // No fixed min-height: size is driven by the image so overlay aligns within it
+  .check-design-sec {
+    position: relative;
+    display: block;
+    line-height: 0;
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .check-body-sec {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    // Percentage padding so content scales with image; reduced to minimize gap (green area in inspect)
+    padding: 3% 5% 3% 5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0;
+    transition: 0.5s;
+    box-sizing: border-box;
+
+    .addres-bank-date {
+      margin-top: 0;
+      margin-bottom: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
+      flex-shrink: 0;
+
+      .address {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 0;
+        h6 {
+          margin: 0 0 4px 0;
+          padding: 0;
+        }
+        p {
+          margin: 0;
+          padding: 0;
+          line-height: 1.35;
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 4;
+          line-clamp: 4;
+          -webkit-box-orient: vertical;
+        }
+      }
+      .names_dates {
+        flex: 1 1 calc(50% - 10px);
+        .name_date {
+          display: flex;
+          align-items: flex-end;
+          justify-content: flex-start;
+          flex-direction: column;
+          width: 100%;
+          h5 {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 0;
+            flex-wrap: wrap;
+            span {
+              font-size: 8px;
+              line-height: 1.2;
+              padding-bottom: 3px;
+              border-bottom: 1px solid var(--v4-border-color, currentColor);
+              min-width: 100px;
+              display: inline-block;
+            }
+          }
+        }
+      }
+    }
+
+    .payto-order-sec {
+      margin-bottom: 0;
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
+      align-items: flex-end;
+
+      .sub-head {
+        flex: 1 1 calc(8% - 5px);
+        h6 {
+          width: 60px;
+          font-size: 12px;
+          margin: 0;
+        }
+      }
+      .text {
+        flex: 1 1 calc(67% - 10px);
+        p {
+          width: 100%;
+          margin: 0;
+          line-height: 1.2;
+          padding-bottom: 3px;
+          border-bottom: 1px solid var(--v4-border-color, currentColor);
+        }
+      }
+      .money {
+        flex: 1 1 calc(20% - 10px);
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+        h6 {
+          white-space: nowrap;
+          width: 100%;
+          margin: 0;
+          line-height: 1.2;
+          padding-bottom: 3px;
+          border-bottom: 1px solid var(--v4-border-color, currentColor);
+          box-sizing: border-box;
+          text-align: right;
+        }
+      }
+    }
+
+    .payments {
+      margin-bottom: 0;
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
+      align-items: flex-end;
+
+      .text {
+        flex: 1 1 calc(80% - 10px);
+        min-height: 1.5em;
+        h6 {
+          margin: 0;
+          line-height: 1.2;
+          padding-bottom: 3px;
+          border-bottom: 1px solid var(--v4-border-color, currentColor);
+          width: 100%;
+        }
+      }
+      .dolllar {
+        flex: 1 1 calc(20% - 10px);
+        display: flex;
+        align-items: flex-end;
+        h6 {
+          margin: 0;
+          line-height: 1.2;
+          padding-bottom: 3px;
+        }
+      }
+    }
+
+    .memo-sign {
+      margin-top: 0;
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
+      align-items: flex-end;
+
+      .memo {
+        flex: 1 1 calc(70% - 10px);
+        p {
+          margin: 0 0 2px;
+        }
+        h6.memo-label {
+          margin: 4px 0 0;
+        }
+      }
+      .sign {
+        flex: 1 1 calc(30% - 10px);
+        text-align: center;
+        p {
+          margin: 0;
+          padding-bottom: 2px;
+          border-bottom: 1px solid var(--v4-border-color, currentColor);
+          width: 100%;
+        }
+        h6 {
+          white-space: nowrap;
+          margin: 4px 0 0;
+          padding: 0;
+        }
+      }
+    }
+  }
+}
+
+// VOIDED overlay (aligned with CheckPreviewCanvas / check-view: 49px, gray ~31% opacity)
+.void-check {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+  font-size: 49px;
+  font-weight: bold;
+  color: color-mix(in srgb, var(--v4-main-text-color) 31%, transparent);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+@media (max-width: 767.98px) {
+  .check-design-sec {
+    display: none;
+  }
+  .check-design {
+    min-height: 280px;
+  }
+  .check-design .check-body-sec {
+    position: relative;
+    padding: 12px;
+  }
+}
+
+// Embedded flush in a host card: drop our own frame.
+.check-preview-v4.is-bare {
+  border: none;
+  border-radius: 0;
+}
+
+/* Below `lg` the card is only half a grid column wide, so scaleCanvasToFit()
+   renders the 675px cheque at ~0.5 and none of its text is legible. Hide the
+   section there rather than show an unreadable cheque — every value on it is
+   also listed in the panel's own rows. */
+@media (max-width: 1023.98px) {
+  :host {
+    display: none;
+  }
+}

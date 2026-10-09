@@ -1,0 +1,212 @@
+<div class="v4-mail-tracking-modal max-h-[80vh] flex flex-col">
+  <!-- modal header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-popup-header-footer-color border-b border-v4-border-color">
+    <h1 class="text-base font-bold text-v4-main-text-color font-funnel">
+      Mail Tracking
+    </h1>
+    <div
+      [mat-dialog-close]="false"
+      class="w-8 h-8 rounded-full hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" [size]="16" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body — 3/5 + 2/5 grid -->
+  <div class="p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 bg-v4-tertiary-background-color overflow-hidden flex-1 min-h-0">
+
+    <!-- Left: Shipment Events (3 cols) -->
+    <div class="col-span-full lg:col-span-3 space-y-3 min-h-0 flex flex-col">
+      <h3 class="text-sm font-semibold text-v4-main-text-color">
+        Shipment Details
+      </h3>
+      @if (isImbLimitedTracking) {
+        <p
+          class="flex items-center gap-1.5 text-xs text-v4-secondary-text-color m-0"
+        >
+          <lucide-icon
+            [img]="InfoIcon"
+            [size]="13"
+            class="shrink-0 text-v4-text-warning"
+          />
+          USPS First Class uses IMB tracking — limited scans only, not full
+          delivery tracking.
+        </p>
+      }
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+        @for (item of trackingDetails; track item) {
+          <div class="border border-v4-border-color rounded-xl overflow-hidden bg-v4-secondary-background-color shadow-sm">
+            <!-- Card Header -->
+            <div
+              class="flex justify-between items-center px-4 py-2.5 border-b"
+              style="background-color: var(--v4-surface-success); border-color: var(--v4-border-success)"
+            >
+              <span class="text-xs font-semibold text-v4-text-success">
+                {{ item.Date }}
+              </span>
+              <lucide-icon
+                [img]="TruckIcon"
+                [size]="14"
+                class="text-v4-text-success"
+              />
+            </div>
+            <!-- Card Body -->
+            <div class="px-4 py-3 flex items-center gap-4">
+              <div class="shrink-0">
+                <p class="text-[12px] text-v4-subtle-text-color mb-0.5">Status</p>
+                <p class="text-xs font-semibold text-v4-text-success">
+                  {{ convertToReadable(item?.status) }}
+                </p>
+              </div>
+              <lucide-icon
+                [img]="BarcodeIcon"
+                [size]="22"
+                class="shrink-0 text-v4-text-success"
+              />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-v4-main-text-color">
+                  {{ item?.message }}
+                </p>
+                @if (item.trackingLocation?.city) {
+                  <div class="flex items-center gap-1 mt-0.5">
+                    <lucide-icon
+                      [img]="MapPinIcon"
+                      [size]="10"
+                      class="shrink-0 text-v4-tertiary-text-color"
+                    />
+                    <span class="text-xs text-v4-subtle-text-color truncate">
+                      {{ item.trackingLocation.city }}
+                      @if (item.trackingLocation?.state) {
+                        , {{ item.trackingLocation.state }}
+                      }
+                      @if (item.trackingLocation?.country) {
+                        , {{ item.trackingLocation.country }}
+                      }
+                      @if (item.trackingLocation?.zip) {
+                        , {{ item.trackingLocation.zip }}
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right: Progress + Meta + Actions (2 cols) -->
+    <div class="col-span-full lg:col-span-2 flex flex-col gap-5">
+
+      <!-- Stepper -->
+      <div>
+        <!-- Step labels -->
+        <div class="flex justify-between mb-3 gap-1">
+          @for (label of stepLabels; track label; let i = $index) {
+            <span
+              class="text-[12px] font-semibold text-center flex-1 leading-snug"
+              [class.text-v4-text-success]="getStepState(i) === 'complete' || getStepState(i) === 'active'"
+              [class.text-v4-tertiary-text-color]="getStepState(i) === 'inactive'"
+            >
+              {{ label }}
+            </span>
+          }
+        </div>
+        <!-- Track + dots -->
+        <div class="relative flex items-center" style="height: 20px">
+          <div class="stepper-track"></div>
+          <div
+            class="stepper-fill"
+            [style.width.%]="getProgressPercent()"
+          ></div>
+          <div class="relative z-10 flex justify-between w-full">
+            @for (label of stepLabels; track label; let i = $index) {
+              <div
+                class="stepper-dot"
+                [class.is-complete]="getStepState(i) === 'complete'"
+                [class.is-active]="getStepState(i) === 'active'"
+              >
+                @if (getStepState(i) === 'complete') {
+                  <lucide-icon [img]="CheckIcon" [size]="8" class="text-white" />
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Info -->
+      <div
+        class="rounded-lg px-4 py-3 grid gap-4 border bg-v4-secondary-background-color border-v4-border-color"
+        [class.grid-cols-2]="mailedType !== 3"
+        [class.grid-cols-1]="mailedType === 3"
+      >
+        @if (mailedType !== 3) {
+          <div>
+            <p class="text-[12px] text-v4-subtle-text-color mb-1.5">{{ delivery }}</p>
+            <p class="text-xs font-bold leading-snug text-v4-main-text-color">
+              {{ shipdata?.estimatedDeliveryDate }}
+            </p>
+          </div>
+        }
+        <div>
+          <p class="text-[12px] text-v4-common-red-color mb-1.5">Last Updated</p>
+          <p class="text-xs font-bold leading-snug text-v4-main-text-color">
+            {{ shipdata?.lastUpdated }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Action buttons + Carrier badge -->
+      @if (mailedType !== 1 && mailedType !== 14) {
+        <div class="flex items-center gap-2">
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="View Tracking"
+            customHeight="36px"
+            backGroundInput="var(--v4-primary-brand-bold-color)"
+            textColorInput="white"
+            lucideIcon="external-link"
+            [lucideIconSize]="13"
+            iconPosition="start"
+            (clickEvent)="openDetails(shipdata?.trackingCode)"
+          />
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Share Link"
+            customHeight="36px"
+            backGroundInput="var(--v4-common-blue-color)"
+            textColorInput="white"
+            lucideIcon="share-2"
+            [lucideIconSize]="13"
+            iconPosition="start"
+            (clickEvent)="sendTrack()"
+          />
+          <!-- Carrier Badge -->
+          @if (shipdata?.carrierLogo) {
+            <img
+              width="80"
+              height="30"
+              [ngSrc]="shipdata.carrierLogo"
+              alt="Carrier"
+              class="object-contain shrink-0"
+            />
+          }
+        </div>
+      }
+
+      <!-- Footer branding -->
+      <div class="w-full flex justify-center items-center pt-4 border-t border-v4-border-color mt-auto">
+        <img
+          width="300"
+          height="95"
+          ngSrc="assets/images/mail-track/ocwMailLogo.svg"
+          alt=""
+        />
+      </div>
+
+    </div>
+  </div>
+</div>

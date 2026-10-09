@@ -1,0 +1,262 @@
+@if (getFormControl().controls.length > 0 || !isAPILoaded) {
+  <div class="mb-4">
+    <!-- Section header -->
+    <div
+      role="presentation"
+      class="flex items-center justify-between px-4 py-3 bg-v4-secondary-background-color rounded-t-xl border border-v4-border-color cursor-pointer"
+      (click)="isCollapsed = !isCollapsed"
+    >
+      <div class="flex items-center gap-2">
+        <lucide-icon
+          [img]="MailIcon"
+          [size]="18"
+          class="text-v4-common-blue-color"
+        />
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-funnel">
+          Check Email
+        </h3>
+        <span class="text-xs text-v4-tertiary-text-color"
+          >({{ getFormControl().controls.length }})</span
+        >
+      </div>
+      <div class="flex items-center gap-3">
+        @if (totalAmount > 0) {
+          <span class="text-xs font-medium text-v4-secondary-text-color">
+            Total Cost: ${{ totalAmount | number: "1.2-2" }}
+          </span>
+        }
+        <lucide-icon
+          [img]="ChevronDownIcon"
+          [size]="18"
+          class="text-v4-subtle-text-color transition-transform"
+          [class.rotate-180]="!isCollapsed"
+        />
+      </div>
+    </div>
+
+    <!-- Table -->
+    @if (!isCollapsed) {
+      <div
+        class="overflow-x-auto border border-t-0 border-v4-border-color rounded-b-xl"
+      >
+        @if (!isAPILoaded) {
+          <div class="flex items-center justify-center py-8">
+            <span class="text-sm text-v4-subtle-text-color"
+              >Loading email check details...</span
+            >
+          </div>
+        } @else {
+          <table class="v4-ocw-table" [formGroup]="dynamicForm">
+            <thead>
+              <tr>
+                <th class="text-center w-12"></th>
+                <th>Payee</th>
+                <th>Amount</th>
+                <th class="min-w-[208px] w-[208px]">Email</th>
+                <th class="min-w-[256px]">SMS</th>
+                <th>#Check No</th>
+                <th>Cost</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody formArrayName="checkEmailFormArray">
+              @for (
+                data of getFormControl().controls;
+                track data;
+                let i = $index
+              ) {
+                <tr [formGroupName]="i">
+                  <!-- Bank icon -->
+                  <td class="text-center">
+                    <lucide-icon
+                      [img]="LandmarkIcon"
+                      [size]="16"
+                      class="text-v4-common-blue-color"
+                      [matTooltip]="data?.value?.bank_name || ''"
+                    />
+                  </td>
+
+                  <!-- Payee -->
+                  <td>
+                    <span
+                      class="text-xs font-medium text-v4-main-text-color whitespace-nowrap truncate max-w-[180px] inline-block"
+                    >
+                      {{ data?.value?.payee_name }}
+                    </span>
+                  </td>
+
+                  <!-- Amount -->
+                  <td>
+                    <span
+                      class="text-xs font-medium text-v4-main-text-color whitespace-nowrap"
+                    >
+                      {{ data?.value?.cheque_amount | currency }}
+                    </span>
+                  </td>
+
+                  <!-- Email -->
+                  <td class="min-w-[208px] email-field-cell">
+                    <app-common-input-v4
+                      class="w-full"
+                      formControlName="payee_email"
+                      [placeholder]="'Email'"
+                      [control]="data.get('payee_email')"
+                      [type]="'email'"
+                      [isFieldRequired]="false"
+                      [fieldHeight]="'32px'"
+                    />
+                  </td>
+
+                  <!-- SMS -->
+                  <td class="w-64">
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        formControlName="checked"
+                        class="v4-checkbox-sm flex-shrink-0"
+                        (change)="showPhoneNumWarning($event, i)"
+                        [disabled]="v3BulkPaymentService.isSendToOneAddress"
+                      />
+                      <app-phone-input-v4
+                        formControlName="payee_phone"
+                        [fieldHeight]="'32px'"
+                        [isFieldRequired]="false"
+                        (input)="phoneCheck(i)"
+                      ></app-phone-input-v4>
+                    </div>
+                  </td>
+
+                  <!-- Check No -->
+                  <td>
+                    <span
+                      class="text-xs text-v4-secondary-text-color whitespace-nowrap"
+                    >
+                      {{ data?.value?.cheque_serial_number || "--" }}
+                    </span>
+                  </td>
+
+                  <!-- Cost -->
+                  <td>
+                    <span
+                      class="text-xs font-medium text-v4-main-text-color whitespace-nowrap"
+                    >
+                      ${{ data?.value?.cost | number: "1.2-2" }}
+                    </span>
+                  </td>
+
+                  <!-- Comment -->
+                  <td class="text-center">
+                    <button aria-label="Email Message"
+                      type="button"
+                      class="p-1 rounded hover:bg-v4-tertiary-background-color"
+                      style="color: var(--v4-primary-brand-bold-color)"
+                      matTooltip="Email Message"
+                      (click)="openEmailMessage(data?.value?.checkId)"
+                    >
+                      <lucide-icon
+                        [img]="MessageSquarePlusIcon"
+                        [size]="16"
+                        class="email-message-icon"
+                      />
+                    </button>
+                  </td>
+
+                  <!-- Attachment -->
+                  <td class="text-center">
+                    <button aria-label="Attachments"
+                      type="button"
+                      class="p-1 rounded hover:bg-v4-tertiary-background-color text-v4-subtle-text-color relative"
+                      [matBadge]="getAttachmentCount(data?.value?.checkId)"
+                      matBadgeSize="small"
+                      matBadgeOverlap="true"
+                      [matBadgeHidden]="
+                        getAttachmentCount(data?.value?.checkId) < 1
+                      "
+                      matTooltip="Attachments"
+                      (click)="openAttachmentModal(data?.value?.checkId)"
+                    >
+                      <lucide-icon [img]="PaperclipIcon" [size]="16" />
+                    </button>
+                  </td>
+                </tr>
+                @if (data.get('payee_email')?.invalid && data.get('payee_email')?.touched) {
+                  <tr class="error-row">
+                    <td colspan="3" class="!p-0 !border-t-0"></td>
+                    <td class="!pt-0 !pb-1 !border-t-0">
+                      <app-control-message-v4
+                        [control]="data.get('payee_email')"
+                        [isMarginTopEnabled]="false"
+                      />
+                    </td>
+                    <td colspan="5" class="!p-0 !border-t-0"></td>
+                  </tr>
+                }
+              }
+
+              @if (getFormControl().controls.length === 0) {
+                <tr>
+                  <td [attr.colspan]="9" class="text-center !py-8">
+                    <span class="text-sm text-v4-subtle-text-color"
+                      >No check email payments</span
+                    >
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Auto attachment note -->
+          @if (autoAttachmentForCheckMail) {
+            <div
+              class="px-4 py-2 text-xs text-v4-secondary-text-color border-t border-v4-border-color"
+            >
+              Note: To include attachments, click 'Add' before sending the
+              check.
+            </div>
+          }
+
+          <!-- Send to Custom Email Section -->
+          <div
+            class="px-4 py-3 border-t border-v4-border-color bg-v4-secondary-background-color"
+          >
+            <div class="flex flex-wrap items-center gap-4">
+              <label
+                class="flex items-center gap-1.5 cursor-pointer text-xs text-v4-main-text-color"
+              >
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-sm"
+                  [(ngModel)]="v3BulkPaymentService.isSendToOneAddress"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="
+                    onSelectAddress(v3BulkPaymentService.isSendToOneAddress)
+                  "
+                />
+                Send to Custom Email
+                <lucide-icon
+                  [img]="CircleHelpIcon"
+                  [size]="14"
+                  class="text-v4-subtle-text-color cursor-pointer"
+                  matTooltip="Select this option to send multiple e-checks to a single email address"
+                />
+              </label>
+
+              @if (v3BulkPaymentService.isSendToOneAddress) {
+                <app-common-input-v4
+                  class="w-64"
+                  [placeholder]="'Email'"
+                  [control]="v3BulkPaymentService.sendToOneAddressEmail"
+                  [type]="'email'"
+                  [isFieldRequired]="true"
+                  [fieldHeight]="'32px'"
+                  [formControl]="v3BulkPaymentService.sendToOneAddressEmail"
+                />
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

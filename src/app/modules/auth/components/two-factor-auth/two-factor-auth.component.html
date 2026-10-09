@@ -1,0 +1,504 @@
+<div
+  class="min-h-screen bg-secondary-background-color flex items-center justify-center p-4 font-inter"
+>
+  <div class="w-full max-w-[1000px]">
+    <!-- Logo -->
+    <div class="flex justify-center mb-2">
+      <img
+        [ngSrc]="
+          authV3Service.appConfig?.websiteLogo ||
+          '../../../../../assets/main/app_logo.svg'
+        "
+        [alt]="authV3Service.appConfig?.websiteTitle"
+        [title]="authV3Service.appConfig?.websiteTitle"
+        width="140"
+        height="100"
+      />
+    </div>
+
+    <!-- Back to Login -->
+    <a
+      role="presentation"
+      class="inline-flex items-center gap-2 text-sm font-medium text-secondary-text-color hover:text-common-blue-color transition-colors cursor-pointer mb-4"
+      (click)="onPopState()"
+    >
+      <fa-icon [icon]="faArrowLeft" />
+      <span>Back to Login</span>
+    </a>
+
+    <!-- Main Card -->
+    <div class="flex gap-3 max-lg:justify-center">
+      <div
+        class="bg-main-background-color rounded-3xl shadow-common-selector overflow-hidden font-roboto !min-h-[580px] w-[930px]"
+      >
+        <div class="flex flex-col lg:flex-row h-full">
+          <!-- Left Content -->
+          <div class="flex-1 p-8 lg:p-12 lg:max-w-[480px]">
+            <!-- Header -->
+            <div class="mb-6">
+              <h1
+                class="text-[22px] lg:text-[24px] font-bold text-main-text-color mb-1"
+              >
+                Two-Factor Authentication
+              </h1>
+              <p class="text-secondary-text-color text-sm">
+                Enter your {{ twoFactShow ? "recovery code" : "OTP code" }} to
+                continue
+              </p>
+            </div>
+
+            <!-- Tab Toggle -->
+            <div class="flex justify-between gap-2 mb-6 w-full">
+              <button
+                type="button"
+                class="flex items-center gap-2 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 w-1/2 justify-center border"
+                [class.bg-common-secondary-blue-color]="twoFactShow === false"
+                [class.bg-main-background-color]="twoFactShow === true"
+                [class.shadow-sm]="twoFactShow === false"
+                [class.text-common-blue-color]="twoFactShow === false"
+                [class.text-secondary-text-color]="twoFactShow === true"
+                [class.border-common-blue-color]="twoFactShow === false"
+                [class.border-input-border-color]="twoFactShow === true"
+                (click)="useOtp()"
+              >
+                <fa-icon [icon]="faMessageDots" />
+                SMS Code
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-2 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 w-1/2 justify-center border"
+                [class.bg-common-secondary-blue-color]="twoFactShow === true"
+                [class.bg-main-background-color]="twoFactShow === false"
+                [class.shadow-sm]="twoFactShow === true"
+                [class.text-common-blue-color]="twoFactShow === true"
+                [class.text-secondary-text-color]="twoFactShow === false"
+                [class.border-common-blue-color]="twoFactShow === true"
+                [class.border-input-border-color]="twoFactShow === false"
+                (click)="twoAuth()"
+              >
+                <fa-icon [icon]="faKey" />
+                Backup Code
+              </button>
+            </div>
+
+            <form [formGroup]="twoFactorForm">
+              <!-- OTP Section -->
+              @if (twoFactShow === false) {
+                <!-- Enter 6-digit Code Label -->
+                <div class="mb-3">
+                  <h2
+                    class="text-[15px] font-semibold text-main-text-color mb-1"
+                  >
+                    Enter 6-digit Code
+                  </h2>
+                  <p
+                    class="text-secondary-text-color text-[13px] leading-relaxed"
+                  >
+                    OTP has been sent to your verified phone number and email
+                    address
+                  </p>
+                </div>
+
+                <!-- OTP Input Boxes -->
+                <div class="mb-1">
+                  <div class="flex items-center gap-2">
+                    <input
+                      class="otp-input w-11 h-12 text-center text-lg font-semibold border rounded-lg focus:border-common-blue-color focus:ring-1 focus:ring-common-secondary-blue-color outline-none transition-all duration-200 bg-main-background-color text-main-text-color"
+                      [class.border-common-red-color]="emptyOtpBoxes[0]"
+                      [class.border-input-border-color]="!emptyOtpBoxes[0]"
+                      type="number"
+                      id="otp1"
+                      #box1
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                      (keyup)="onKeyUpEvent($event, box2, box1)"
+                      (paste)="handlePaste($event)"
+                      oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                      maxlength="1"
+                    />
+                    <input
+                      class="otp-input w-11 h-12 text-center text-lg font-semibold border rounded-lg focus:border-common-blue-color focus:ring-1 focus:ring-common-secondary-blue-color outline-none transition-all duration-200 bg-main-background-color text-main-text-color"
+                      [class.border-common-red-color]="emptyOtpBoxes[1]"
+                      [class.border-input-border-color]="!emptyOtpBoxes[1]"
+                      type="number"
+                      id="otp2"
+                      #box2
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                      (keyup)="onKeyUpEvent($event, box3, box1)"
+                      (paste)="handlePaste($event)"
+                      oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                      maxlength="1"
+                    />
+                    <input
+                      class="otp-input w-11 h-12 text-center text-lg font-semibold border rounded-lg focus:border-common-blue-color focus:ring-1 focus:ring-common-secondary-blue-color outline-none transition-all duration-200 bg-main-background-color text-main-text-color"
+                      [class.border-common-red-color]="emptyOtpBoxes[2]"
+                      [class.border-input-border-color]="!emptyOtpBoxes[2]"
+                      type="number"
+                      id="otp3"
+                      #box3
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                      (keyup)="onKeyUpEvent($event, box4, box2)"
+                      (paste)="handlePaste($event)"
+                      oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                      maxlength="1"
+                    />
+                    <span class="text-secondary-text-color text-base mx-0.5"
+                      >-</span
+                    >
+                    <input
+                      class="otp-input w-11 h-12 text-center text-lg font-semibold border rounded-lg focus:border-common-blue-color focus:ring-1 focus:ring-common-secondary-blue-color outline-none transition-all duration-200 bg-main-background-color text-main-text-color"
+                      [class.border-common-red-color]="emptyOtpBoxes[3]"
+                      [class.border-input-border-color]="!emptyOtpBoxes[3]"
+                      type="number"
+                      id="otp4"
+                      #box4
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                      (keyup)="onKeyUpEvent($event, box5, box3)"
+                      (paste)="handlePaste($event)"
+                      oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                      maxlength="1"
+                    />
+                    <input
+                      class="otp-input w-11 h-12 text-center text-lg font-semibold border rounded-lg focus:border-common-blue-color focus:ring-1 focus:ring-common-secondary-blue-color outline-none transition-all duration-200 bg-main-background-color text-main-text-color"
+                      [class.border-common-red-color]="emptyOtpBoxes[4]"
+                      [class.border-input-border-color]="!emptyOtpBoxes[4]"
+                      type="number"
+                      id="otp5"
+                      #box5
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                      (keyup)="onKeyUpEvent($event, box6, box4)"
+                      (paste)="handlePaste($event)"
+                      oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                      maxlength="1"
+                    />
+                    <input
+                      class="otp-input w-11 h-12 text-center text-lg font-semibold border rounded-lg focus:border-common-blue-color focus:ring-1 focus:ring-common-secondary-blue-color outline-none transition-all duration-200 bg-main-background-color text-main-text-color"
+                      [class.border-common-red-color]="emptyOtpBoxes[5]"
+                      [class.border-input-border-color]="!emptyOtpBoxes[5]"
+                      type="number"
+                      id="otp6"
+                      #box6
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                      (keyup)="onKeyUpEvent($event, box6, box5)"
+                      (paste)="handlePaste($event)"
+                      oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                      maxlength="1"
+                    />
+                  </div>
+                  <!-- OTP Error Message -->
+                  @if (otpError) {
+                    <app-control-message-v35
+                      [label]="otpError"
+                      [isErrorMessageCentered]="true"
+                      [control]="twoFactorForm.controls.otpCode"
+                    ></app-control-message-v35>
+                  }
+                </div>
+
+                <!-- Resend & Timer -->
+                <div class="flex items-center gap-2 mb-5">
+                  <button
+                    type="button"
+                    class="text-common-blue-color font-medium text-sm hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    [disabled]="authV3Service.btnDisable"
+                    (click)="resendOtp()"
+                  >
+                    Resend Code
+                    @if (authV3Service.showSpinner) {
+                      <img
+                        alt="spinner"
+                        src="assets/icon/spinner.gif"
+                        class="w-4 h-4"
+                      />
+                    }
+                  </button>
+                  @if (authV3Service.showTimer) {
+                    <span class="text-sm text-secondary-text-color">
+                      Retry in
+                      <span class="text-secondary-text-color">{{
+                        authV3Service.display
+                      }}</span>
+                    </span>
+                  }
+                </div>
+
+                <!-- Device Name Input -->
+                <div class="mb-4">
+                  <app-common-input-field
+                    placeholder="Enter device name (optional)"
+                    formControlName="deviceName"
+                    [maxLength]="15"
+                    [isFieldRequired]="false"
+                  />
+                </div>
+
+                <!-- Remember Device Checkbox -->
+                <div class="mb-5">
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <div
+                      class="relative flex items-center justify-center mt-0.5"
+                    >
+                      <input
+                        type="checkbox"
+                        formControlName="rememberDevice"
+                        class="w-[18px] h-[18px] border border-input-border-color rounded bg-main-background-color checked:bg-common-blue-color checked:border-common-blue-color transition-all duration-200 appearance-none cursor-pointer"
+                        id="remember_device"
+                        name="remember_device"
+                      />
+                      @if (rememberDeviceChecked) {
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px] absolute pointer-events-none"
+                        ></fa-icon>
+                      }
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-medium text-main-text-color">
+                        Remember this device
+                      </span>
+                      <span class="text-xs text-secondary-text-color">
+                        Skip verification on this device for your selected
+                        duration
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Duration Options -->
+                @if (showDays) {
+                  <div class="mb-5 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    @for (option of durationOptions; track option.value) {
+                      <label class="duration-option">
+                        <input
+                          type="radio"
+                          [checked]="days === option.value"
+                          name="dateFrequency"
+                          (change)="selectDays(option.value)"
+                          class="peer sr-only"
+                        />
+                        <div
+                          class="px-3 py-2 text-sm text-center border border-input-border-color rounded-lg cursor-pointer peer-checked:border-common-blue-color peer-checked:bg-common-secondary-blue-color peer-checked:text-common-blue-color transition-all duration-200 hover:border-common-blue-color"
+                        >
+                          {{ option.label }}
+                        </div>
+                      </label>
+                    }
+                  </div>
+                }
+
+                <!-- Continue Button -->
+                <app-common-button-v35
+                  customClasses="!h-[48px]"
+                  [type]="{ style: 'general', name: 'action' }"
+                  text="Continue"
+                  width="100%"
+                  (clickEvent)="onSubmit()"
+                  backGroundInput="var(--common-blue-color)"
+                  textColorInput="white"
+                  [disabled]="authV3Service.submitBtnDisable"
+                  [loading]="authV3Service.submitBtnDisable"
+                />
+              }
+
+              <!-- Recovery Code Section -->
+              @if (twoFactShow === true) {
+                <div class="mb-4">
+                  <h2
+                    class="text-[15px] font-semibold text-main-text-color mb-1"
+                  >
+                    Enter Recovery Code
+                  </h2>
+                  <p
+                    class="text-secondary-text-color text-[13px] leading-relaxed"
+                  >
+                    Enter the 8-digit recovery code you have already downloaded
+                  </p>
+                </div>
+                <!-- Recovery Code Input -->
+                <div class="mb-6">
+                  <app-common-input-field
+                    placeholder="Enter 8-digit recovery code"
+                    formControlName="backupCode"
+                    [maxLength]="8"
+                    [isNumberOnly]="true"
+                  />
+                  <!-- Backup Code Error Message -->
+                  @if (backupCodeError) {
+                    <app-control-message-v35
+                      [control]="twoFactorForm.controls.backupCode"
+                      [label]="backupCodeError"
+                    ></app-control-message-v35>
+                  }
+                </div>
+
+                <!-- Device Name Input -->
+                <div class="mb-4">
+                  <app-common-input-field
+                    placeholder="Enter device name (optional)"
+                    formControlName="deviceName"
+                    [maxLength]="15"
+                    [isFieldRequired]="false"
+                  />
+                </div>
+
+                <!-- Remember Device Checkbox -->
+                <div class="mb-5">
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <div
+                      class="relative flex items-center justify-center mt-0.5"
+                    >
+                      <input
+                        type="checkbox"
+                        formControlName="rememberDevice"
+                        class="w-[18px] h-[18px] border border-input-border-color rounded bg-main-background-color checked:bg-common-blue-color checked:border-common-blue-color transition-all duration-200 appearance-none cursor-pointer"
+                        id="remember_device_recovery"
+                        name="remember_device"
+                      />
+                      @if (rememberDeviceChecked) {
+                        <fa-icon
+                          [icon]="faCheck"
+                          class="text-white text-[12px] absolute pointer-events-none"
+                        ></fa-icon>
+                      }
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-medium text-main-text-color">
+                        Remember this device
+                      </span>
+                      <span class="text-xs text-secondary-text-color">
+                        Skip verification on this device for your selected
+                        duration
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Duration Options -->
+                @if (showDays) {
+                  <div class="mb-5 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    @for (option of durationOptions; track option.value) {
+                      <label class="duration-option">
+                        <input
+                          type="radio"
+                          [checked]="days === option.value"
+                          name="dateFrequency_recovery"
+                          (change)="selectDays(option.value)"
+                          class="peer sr-only"
+                        />
+                        <div
+                          class="px-3 py-2 text-sm text-center border border-input-border-color rounded-lg cursor-pointer peer-checked:border-common-blue-color peer-checked:bg-common-secondary-blue-color peer-checked:text-common-blue-color transition-all duration-200 hover:border-common-blue-color"
+                        >
+                          {{ option.label }}
+                        </div>
+                      </label>
+                    }
+                  </div>
+                }
+
+                <!-- Continue Button -->
+                <app-common-button-v35
+                  customClasses="!h-[48px]"
+                  [type]="{ style: 'general', name: 'action' }"
+                  text="Continue"
+                  width="100%"
+                  (clickEvent)="onSubmit()"
+                  backGroundInput="var(--common-blue-color)"
+                  textColorInput="white"
+                  [disabled]="authV3Service.submitBtnDisable"
+                  [loading]="authV3Service.submitBtnDisable"
+                />
+              }
+            </form>
+          </div>
+
+          <!-- Right Illustration -->
+          <div
+            class="hidden lg:flex flex-1 items-center justify-center bg-secondary-background-color"
+          >
+            <img
+              [ngSrc]="'./../../../assets/images/2FA.svg'"
+              width="450"
+              height="450"
+              alt="Two-Factor Authentication"
+              class="max-w-full h-auto max-h-[450px] object-contain mb-[60px]"
+              priority
+            />
+          </div>
+        </div>
+      </div>
+      <!-- Help -->
+      <div class="flex flex-col">
+        <a
+          class="group relative mt-2.5 bg-main-background-color w-8 h-8 rounded-full text-center shadow-xl border border-main-background-color flex items-center justify-center"
+          appWhiteLabel
+          hiddenIf="hideLiveChat"
+        >
+          <fa-icon
+            (click)="goToLiveChat()"
+            class="text-common-blue-color text-base cursor-pointer"
+            [icon]="faMessage"
+          ></fa-icon>
+          <div
+            class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[105px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[70px]"
+          >
+            <span class="text-xs font-inter !text-common-blue-color pl-2"
+              >Live Chat</span
+            >
+          </div>
+        </a>
+        <a
+          class="group relative mt-2.5 bg-main-background-color w-8 h-8 flex items-center justify-center rounded-full text-center shadow-xl border border-main-background-color"
+          [href]="'mailto:' + staticWhiteLabelConditions.customerSupportEmail"
+        >
+          <fa-icon
+            class="text-common-blue-color text-base cursor-pointer"
+            [icon]="faEnvelope"
+          ></fa-icon>
+          <div
+            class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[220px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[200px]"
+          >
+            <span class="text-xs font-inter !text-common-blue-color pl-2">
+              {{ staticWhiteLabelConditions.customerSupportEmail }}</span
+            >
+          </div>
+        </a>
+        @if (staticWhiteLabelConditions.customerSupportNo) {
+          <a
+            [href]="'tel:' + staticWhiteLabelConditions.customerSupportNo"
+            class="group relative flex justify-center items-center mt-2.5 bg-main-background-color w-8 h-8 rounded-full text-center border border-main-background-color"
+          >
+            <fa-icon
+              class="text-common-blue-color text-base cursor-pointer"
+              [icon]="faHeadset"
+            ></fa-icon>
+            <div
+              class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[180px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[145px]"
+            >
+              <span class="text-xs font-inter !text-common-blue-color pl-2">
+                Call at {{ staticWhiteLabelConditions.customerSupportNo }}</span
+              >
+            </div>
+          </a>
+        } @else {
+          <a
+            [href]="staticWhiteLabelConditions.helpWebsite"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group relative flex justify-center items-center mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center shadow-xl border border-main-background-color"
+          >
+            <fa-icon
+              class="text-common-blue-color text-base cursor-pointer"
+              [icon]="faHeadset"
+            ></fa-icon>
+            <div
+              class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[180px] bg-main-background-color group-hover:opacity-100 top rounded-md w-[145px]"
+            >
+              <span class="text-xs font-inter !text-common-blue-color pl-2">
+                Contact Us</span
+              >
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+</div>

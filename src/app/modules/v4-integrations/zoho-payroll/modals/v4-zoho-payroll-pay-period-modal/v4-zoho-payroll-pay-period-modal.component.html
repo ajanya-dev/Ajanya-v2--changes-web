@@ -1,0 +1,136 @@
+<div class="flex flex-col max-h-[90vh] min-w-[700px]">
+  <!-- header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="min-w-0">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Pay Periods
+      </h1>
+      <p class="text-xs text-v4-tertiary-text-color mt-1 truncate">
+        {{ data.company.companyName }}
+      </p>
+    </div>
+    <div
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+    >
+      <lucide-icon name="x" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- body -->
+  <div class="flex-1 overflow-auto p-6 bg-v4-tertiary-background-color min-h-0">
+    @if (loading()) {
+      <div class="flex justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="32"
+          class="text-v4-primary-brand-color animate-spin"
+        />
+      </div>
+    }
+
+    @if (!loading() && payPeriods().length === 0) {
+      <div class="text-center py-12 text-v4-tertiary-text-color">
+        No pay periods available for this company.
+      </div>
+    }
+
+    @if (!loading() && payPeriods().length) {
+      <div
+        class="border border-v4-input-border-color rounded-xl overflow-hidden bg-v4-secondary-background-color"
+      >
+        <div class="overflow-x-auto max-h-[60vh]">
+          <table class="w-full text-sm text-v4-main-text-color">
+            <thead>
+              <tr class="bg-v4-input-background-color">
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Pay Date
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Pay Period Start Date
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Pay Period End Date
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Processing Period
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (
+                row of payPeriods();
+                track row.payroll_run_id;
+                let i = $index
+              ) {
+                <tr
+                  class="border-b border-v4-input-border-color last:border-b-0 hover:bg-v4-input-background-color/50 transition-colors"
+                >
+                  <td class="px-4 py-3">{{ row.pay_date }}</td>
+                  <td class="px-4 py-3">{{ row.pay_period_start_date }}</td>
+                  <td class="px-4 py-3">{{ row.pay_period_end_date }}</td>
+                  <td class="px-4 py-3">{{ row.processing_period }}</td>
+                  <td class="px-4 py-3">
+                    @if (isImported(row)) {
+                      <span
+                        class="inline-flex items-center gap-1 text-xs font-semibold"
+                        style="color: var(--v4-badge-success-text-color)"
+                      >
+                        <lucide-icon name="circle-check" [size]="14" />
+                        Imported
+                      </span>
+                    } @else if (importingIndex() === i) {
+                      <lucide-icon
+                        name="loader-circle"
+                        [size]="18"
+                        class="animate-spin text-v4-primary-brand-color"
+                      />
+                    } @else {
+                      <button aria-label="Import checks for this pay period"
+                        type="button"
+                        class="p-2 rounded-lg transition-colors cursor-pointer"
+                        style="color: var(--v4-primary-brand-bold-color)"
+                        matTooltip="Import checks for this pay period"
+                        [disabled]="importingIndex() !== undefined"
+                        (click)="importTransactions(row, i)"
+                      >
+                        <lucide-icon name="download" [size]="18" />
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color flex-shrink-0"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      [text]="'Close'"
+      (clickEvent)="close()"
+    />
+  </div>
+</div>

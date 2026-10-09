@@ -1,0 +1,131 @@
+﻿<div
+  [formGroup]="form"
+  class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-[18px]"
+>
+  <!--
+    Purpose of Payment — card only, and the panel's first field. The card network
+    wants to know what the payment is for, and its answer becomes the memo.
+  -->
+  <div class="flex flex-col" data-field="purposeOfPayment">
+    <app-sp-select-dropdown
+      class="relative block"
+      label="Purpose of Payment"
+      [required]="true"
+      [tooltip]="purposeOtherTooltip()"
+      [placeholder]="'Select purpose of payment'"
+      [searchPlaceholder]="'Search purpose of payment'"
+      [items]="purposeOptions()"
+      formControlName="purposeOfPayment"
+    />
+    <app-control-message-v4
+      [control]="form.controls.purposeOfPayment"
+      [customMessages]="{
+        required: 'Please choose a purpose of payment'
+      }"
+    />
+  </div>
+
+  @if (needsPayeeBank()) {
+    <div class="flex flex-col gap-[7px]" data-field="payeeBankAc">
+      <app-sp-payee-bank-dropdown
+        [required]="isWire()"
+        [payeeId]="sendStateService.payeeId()"
+        [payeeEncryptedId]="sendStateService.payeeDetails()?.payeeEncryptedId ?? ''"
+        [payeeName]="sendStateService.payeeDetails()?.payee_information?.payee_name ?? ''"
+        [preselectBankId]="sendStateService.preferredBankId()"
+        [paymentMethod]="sendStateService.methodId()"
+        [reloadTrigger]="sendStateService.payeeBankReloadTrigger()"
+        [externalLoading]="sendStateService.payeeFetching()"
+        (bankSelected)="onBankListSelected($event)"
+        (wireAllowedChange)="onWireAllowedChange($event)"
+      />
+      <app-control-message-v4
+        [control]="form.controls.payeeBankAc"
+        [customMessages]="{
+          required: 'Please select a bank account for the payee'
+        }"
+      />
+    </div>
+  }
+
+  @if (isCheckMail()) {
+  }
+
+  <div class="flex flex-col gap-[7px]" data-field="category">
+    <app-sp-category-dropdown
+      [enableAddNew]="true" formControlName="category" [zIndex]="0" />
+  </div>
+
+  <!-- Payee ID — every card method but vendor-decide, which does not ask for one. -->
+  @if (showsPayeeIdNumber()) {
+    <div class="flex flex-col gap-[7px]" data-field="payeeIdNumber">
+      <label
+        class="block text-v4-main-text-color text-[13px] font-semibold tracking-[-0.01em]"
+        for="card-payee-id"
+      >
+        {{ 'Payee' | whiteLabel: 'payeeName' }} ID/Account Number
+      </label>
+      <app-common-input-v4
+        variant="compact"
+        inputId="card-payee-id"
+        [placeholder]="('Payee' | whiteLabel: 'payeeName') + ' ID/Account Number'"
+        [isFieldRequired]="false"
+        formControlName="payeeIdNumber"
+      />
+      <app-control-message-v4 [control]="form.controls.payeeIdNumber" />
+    </div>
+  }
+
+  <!-- Invoice number — required on a card, unlike the wallet rail. -->
+  <div class="flex flex-col gap-[7px]" data-field="invoiceNumber">
+    <label
+      class="block text-v4-main-text-color text-[13px] font-semibold tracking-[-0.01em]"
+      for="card-invoice"
+    >
+      Invoice Number <span class="text-v4-common-red-color">*</span>
+      <i-lucide
+        [img]="InfoIcon"
+        [size]="13"
+        class="ml-1 inline-block cursor-help align-text-bottom text-v4-tertiary-text-color"
+        [matTooltip]="invoiceTooltip"
+        matTooltipClass="whitespace-pre-line"
+      ></i-lucide>
+    </label>
+    <app-common-input-v4
+      variant="compact"
+      inputId="card-invoice"
+      [placeholder]="'Enter invoice number'"
+      formControlName="invoiceNumber"
+      [control]="form.controls.invoiceNumber"
+      [customMessages]="{
+        required: 'Please enter an invoice number'
+      }"
+    />
+  </div>
+
+  <!--
+    Other means the user writes the purpose themselves. It is the same control as
+    the Memo above, shown here under its own label so the panel reads as the
+    purpose entry the card network is asking for. Capped at 26 letters.
+  -->
+  <!-- @if (memoIsFreeText()) {
+    <div class="flex flex-col gap-[7px] md:col-span-2" data-field="memo">
+      <app-common-input-v4
+        variant="compact"
+        fieldLabel="Enter Purpose of Payment"
+        [isFieldRequired]="true"
+        [placeholder]="'Enter purpose of payment'"
+        [maxLength]="memoMaxLength"
+        formControlName="memo"
+        [control]="form.controls.memo"
+      />
+      <p class="text-right text-[12px] text-v4-tertiary-text-color">
+        {{ (form.controls.memo.value || '').length }}/{{ memoMaxLength }} characters
+      </p>
+    </div>
+  } -->
+
+  <!-- Everything below the memo is a full-width card, not a form field. -->
+
+  <app-schedule-notify [form]="form" />
+</div>

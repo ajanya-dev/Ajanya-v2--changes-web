@@ -1,0 +1,631 @@
+@if (paymentSuccess()) {
+  <!-- ═══ SUCCESS SCREEN ═══ -->
+  <div class="max-h-[90vh] overflow-hidden flex flex-col">
+    <!-- modal header -->
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          {{ successTitle }}
+        </h1>
+        <p class="text-xs text-v4-subtle-text-color font-peridot">
+          Payment confirmation
+        </p>
+      </div>
+      <div
+        [mat-dialog-close]="{ success: true }"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+
+    <!-- modal body start -->
+    <div class="p-6 bg-v4-tertiary-background-color">
+      <div
+        class="flex flex-col items-center text-center gap-4 [animation:fadeIn_0.35s_ease-out_both]"
+      >
+        <!-- Success icon -->
+        <div
+          class="flex items-center justify-center w-[72px] h-[72px] rounded-full bg-v4-common-green-color shadow-[0_0_0_8px_color-mix(in_srgb,var(--v4-common-green-color)_15%,transparent)] [animation:scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
+        >
+          <lucide-icon
+            [img]="CircleCheckIcon"
+            [size]="40"
+            class="text-white"
+          ></lucide-icon>
+        </div>
+
+        <h3 class="font-peridot text-2xl font-semibold text-v4-main-text-color">
+          Success!
+        </h3>
+        <p class="font-peridot text-sm text-v4-secondary-text-color">
+          {{ successMessage }}
+        </p>
+
+        <!-- Summary card -->
+        <div
+          class="w-full mt-4 bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-5 [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+        >
+          <div class="flex flex-col gap-3">
+            <!-- Amount -->
+            <div class="flex justify-between items-center">
+              <span class="font-peridot text-sm text-v4-secondary-text-color"
+                >Amount</span
+              >
+              <span
+                class="font-peridot text-sm font-medium text-v4-main-text-color"
+                >{{
+                  manualAch.controls["amount"].value | currency: "USD"
+                }}</span
+              >
+            </div>
+
+            <!-- From (Payer) -->
+            @if (selectedPayee?.name) {
+              <div class="flex justify-between items-center">
+                <span class="font-peridot text-sm text-v4-secondary-text-color"
+                  >From (Payer)</span
+                >
+                <span
+                  class="font-peridot text-sm font-medium text-v4-main-text-color"
+                  >{{
+                    selectedPayee.name.length > 40
+                      ? selectedPayee.name.slice(0, 30) + "..."
+                      : selectedPayee.name
+                  }}</span
+                >
+              </div>
+            }
+
+            <!-- To Account -->
+            @if (manualAch.controls["senderBankAccountId"].value) {
+              <div class="flex justify-between items-center">
+                <span class="font-peridot text-sm text-v4-secondary-text-color"
+                  >To Account</span
+                >
+                <span
+                  class="font-peridot text-sm font-medium text-v4-main-text-color"
+                  >{{ selectedBank.value?.bankName }} ({{
+                    selectedBank.value?.accountNumber
+                  }})</span
+                >
+              </div>
+            }
+
+            <!-- Memo -->
+            @if (manualAch.controls["memo"].value) {
+              <div class="flex justify-between items-center">
+                <span class="font-peridot text-sm text-v4-secondary-text-color"
+                  >Memo</span
+                >
+                <span
+                  class="font-peridot text-sm font-medium text-v4-main-text-color truncate max-w-[200px]"
+                  >{{ manualAch.controls["memo"].value }}</span
+                >
+              </div>
+            }
+
+            <!-- Same Day ACH -->
+            @if (manualAch.controls["isSameDay"].value) {
+              <div class="flex justify-between items-center">
+                <span class="font-peridot text-sm text-v4-secondary-text-color"
+                  >Same Day ACH</span
+                >
+                <span
+                  class="font-peridot text-sm font-medium text-v4-common-green-color"
+                  >Yes</span
+                >
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- modal body end -->
+
+    <div
+      class="p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Done'"
+        [width]="'100%'"
+        (clickEvent)="handleDone()"
+      />
+    </div>
+  </div>
+} @else {
+  <!-- ═══ FORM SCREEN ═══ -->
+  <div
+    class="max-h-[90vh] overflow-hidden flex flex-col"
+    [formGroup]="manualAch"
+  >
+    <!-- modal header -->
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          Manual ACH
+        </h1>
+        <p class="text-xs text-v4-subtle-text-color font-peridot">
+          Debit funds from a payer's account
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        @if (manualAch.controls["amount"].value) {
+          <div
+            class="flex flex-col items-center bg-v4-tertiary-background-color border border-v4-border-color rounded-xl py-1 px-4 min-w-[72px] [animation:fadeIn_0.35s_ease-out_both]"
+          >
+            <span
+              class="font-peridot text-[0.625rem] font-medium text-v4-subtle-text-color uppercase tracking-wider"
+              >Amount</span
+            >
+            <span
+              class="font-peridot text-base font-bold text-v4-main-text-color leading-tight"
+              >{{ manualAch.controls["amount"].value | currency: "USD" }}</span
+            >
+          </div>
+        }
+        <div
+          [mat-dialog-close]="false"
+          class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+        >
+          <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+        </div>
+      </div>
+    </div>
+
+    <!-- modal body start -->
+    <div
+      class="flex-1 max-h-[calc(90vh-140px)] p-6 bg-v4-tertiary-background-color [scrollbar-width:thin] [scrollbar-color:var(--v4-subtle-text-color)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--v4-subtle-text-color)] [&::-webkit-scrollbar-thumb]:rounded-full"
+      [class.overflow-y-auto]="!isDropdownOpen()"
+      [class.overflow-hidden]="isDropdownOpen()"
+    >
+      <div class="flex flex-col gap-5">
+        <!-- 1. AMOUNT SECTION -->
+        <div
+          class="bg-v4-popup-header-footer-color rounded-2xl border border-v4-border-color py-5 px-6 [animation:fadeIn_0.35s_ease-out_both]"
+        >
+          <div class="flex justify-center mb-3">
+            <span
+              class="font-peridot text-xl font-semibold text-v4-main-text-color"
+              >How much do you want to debit?</span
+            >
+          </div>
+          <app-common-amount-input-v4
+            [customClass]="'hero-input'"
+            [isRequired]="true"
+            [border]="false"
+            [maxLength]="13"
+            formControlName="amount"
+          />
+        </div>
+
+        <!-- 2. PAYER SECTION -->
+        @if (manualAch.controls["amount"].value) {
+          <div
+            class="bg-v4-popup-header-footer-color rounded-2xl border border-v4-border-color py-5 px-6 relative [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+          >
+            <div class="flex items-center gap-2 mb-3">
+              <span
+                class="font-peridot text-sm font-semibold text-v4-main-text-color"
+                >Payer</span
+              >
+            </div>
+            <div>
+              <app-payee-dropdown-v4
+                [formControl]="payee"
+                [enableAddNew]="true"
+                [placeholder]="'Select Payer'"
+                [clearable]="true"
+                [searchable]="true"
+                [appendTo]="'body'"
+                (dropdownOpen)="isDropdownOpen.set(true)"
+                (dropdownClose)="isDropdownOpen.set(false)"
+                (clearEvent)="onClearPayee()"
+              />
+              @if (isPayeeDataLoading()) {
+                <div class="flex items-center gap-2 mt-2">
+                  <div
+                    class="w-4 h-4 border-2 border-v4-primary-brand-color border-t-transparent rounded-full animate-spin"
+                  ></div>
+                  <span
+                    class="font-peridot text-xs text-v4-secondary-text-color"
+                    >Loading payer details...</span
+                  >
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- 2b. PAYER DETAILS CARD -->
+        @if (selectedPayee?.id && !isPayeeDataLoading()) {
+          <div
+            class="bg-v4-popup-header-footer-color rounded-2xl border border-v4-border-color py-5 px-6 relative [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span
+                  class="font-peridot text-sm font-semibold text-v4-main-text-color"
+                  >Payer Details</span
+                >
+              </div>
+              <button aria-label="Edit Payer"
+                class="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-v4-tertiary-background-color transition-colors"
+                (click)="editPayee()"
+                matTooltip="Edit Payer"
+              >
+                <lucide-icon
+                  [img]="PencilIcon"
+                  [size]="14"
+                  class="text-v4-primary-brand-bold-color"
+                ></lucide-icon>
+              </button>
+            </div>
+            <div>
+              <div class="flex flex-col gap-1.5 font-peridot text-sm">
+                @if (selectedPayee.name) {
+                  <p class="font-medium text-v4-main-text-color truncate">
+                    {{ selectedPayee.name }}
+                  </p>
+                }
+                @if (selectedPayee.email) {
+                  <p class="text-v4-secondary-text-color truncate">
+                    {{ selectedPayee.email }}
+                  </p>
+                }
+                @if (selectedPayee.phone) {
+                  <p class="text-v4-secondary-text-color truncate">
+                    {{ selectedPayee.phone }}
+                  </p>
+                }
+                @if (selectedPayee.addressLine1) {
+                  <p class="text-v4-secondary-text-color truncate">
+                    {{ selectedPayee.addressLine1 }}
+                    @if (
+                      selectedPayee.city ||
+                      selectedPayee.state ||
+                      selectedPayee.zip
+                    ) {
+                      , {{ selectedPayee.city }} {{ selectedPayee.state }}
+                      {{ selectedPayee.zip }}
+                    }
+                  </p>
+                }
+                @if (
+                  selectedPayee.routingNumber || selectedPayee.hiddenAccountNum
+                ) {
+                  <div
+                    class="mt-2 pt-2 border-t border-v4-border-color flex flex-col gap-1.5"
+                  >
+                    @if (selectedPayee.routingNumber) {
+                      <div class="flex">
+                        <span class="w-28 text-v4-secondary-text-color"
+                          >Routing No</span
+                        >
+                        <span class="font-medium text-v4-main-text-color">{{
+                          selectedPayee.routingNumber
+                        }}</span>
+                      </div>
+                    }
+                    @if (selectedPayee.hiddenAccountNum) {
+                      <div class="flex">
+                        <span class="w-28 text-v4-secondary-text-color"
+                          >Account No</span
+                        >
+                        <span class="font-medium text-v4-main-text-color">{{
+                          selectedPayee.hiddenAccountNum
+                        }}</span>
+                      </div>
+                    }
+                    @if (selectedPayee.accountType) {
+                      <div class="flex">
+                        <span class="w-28 text-v4-secondary-text-color"
+                          >Account Type</span
+                        >
+                        <span class="font-medium text-v4-main-text-color">{{
+                          getAccountType(selectedPayee.accountType) | titlecase
+                        }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- 3. PAYABLE TO (Bank Account) SECTION -->
+        @if (selectedPayee?.id) {
+          <div
+            class="bg-v4-popup-header-footer-color rounded-2xl border border-v4-border-color py-5 px-6 relative [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+          >
+            <div class="flex items-center gap-2 mb-3">
+              <span
+                class="font-peridot text-sm font-semibold text-v4-main-text-color"
+                >Payable To</span
+              >
+            </div>
+            <div>
+              <app-bank-ac-dropdown-v4
+                [formControl]="selectedBank"
+                [enableAddNew]="true"
+                [placeholder]="'Select Bank Account'"
+                [config]="{ enableAddBtn: true, enableAchStatus: true }"
+                [dropdownType]="'manual-ach'"
+                [permissionContext]="'forPayment'"
+                [append]="'body'"
+                (dropdownOpen)="isDropdownOpen.set(true)"
+                (dropdownClose)="isDropdownOpen.set(false)"
+                (clearEvent)="onRemoveBank()"
+              />
+              @if (bankAchError()) {
+                <p
+                  class="mt-1.5 flex items-center gap-1 font-peridot text-xs text-v4-common-red-color"
+                >
+                  <lucide-icon
+                    [img]="CircleAlertIcon"
+                    [size]="13"
+                    class="shrink-0"
+                  />
+                  {{ bankAchError() }}
+                </p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- 4. MEMO SECTION -->
+        @if (manualAch.controls["senderBankAccountId"].value) {
+          <div
+            class="bg-v4-popup-header-footer-color rounded-2xl border border-v4-border-color py-5 px-6 relative [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+          >
+            <div class="flex items-center gap-2 mb-3">
+              <span
+                class="font-peridot text-sm font-semibold text-v4-main-text-color"
+                >Memo <span class="text-v4-common-red-color">*</span></span
+              >
+            </div>
+            <div>
+              <textarea
+                class="w-full resize-none rounded-lg border border-v4-border-color !bg-v4-secondary-background-color px-3 py-2.5 text-sm text-v4-main-text-color placeholder-v4-subtle-text-color outline-none transition-colors focus:border-v4-primary-brand-color"
+                formControlName="memo"
+                placeholder="Enter memo (required)"
+                rows="3"
+                maxlength="150"
+              ></textarea>
+              <div class="flex justify-end mt-1">
+                <span class="font-peridot text-xs text-v4-subtle-text-color">
+                  {{ manualAch.controls["memo"].value?.length || 0 }}/150
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- 5. PAYMENT OPTIONS SECTION -->
+        @if (manualAch.controls["senderBankAccountId"].value) {
+          <div
+            class="bg-v4-popup-header-footer-color rounded-2xl border border-v4-border-color py-5 px-6 relative [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+          >
+            <div class="flex items-center gap-2 mb-3">
+              <span
+                class="font-peridot text-sm font-semibold text-v4-main-text-color"
+                >Payment Options</span
+              >
+            </div>
+            <div>
+              <!-- Same Day ACH -->
+              <label class="flex items-start gap-3 cursor-pointer">
+                <mat-checkbox
+                  class="v4-checkbox"
+                  formControlName="isSameDay"
+                ></mat-checkbox>
+                <div class="flex flex-col">
+                  <span
+                    class="font-peridot text-sm font-medium text-v4-main-text-color"
+                    >Same Day ACH</span
+                  >
+                  <span
+                    class="font-peridot text-xs text-v4-secondary-text-color mt-0.5"
+                    >Process this ACH debit on the same day for faster
+                    settlement.</span
+                  >
+                </div>
+              </label>
+              @if (manualAch.controls["isSameDay"].value) {
+                <div
+                  class="same-day-info mt-3 p-3 rounded-lg font-peridot text-xs text-v4-main-text-color leading-relaxed [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+                >
+                  Great! Your ACH request will be processed on the same day.
+                  This process will have a fee of $9.99. Please initiate the
+                  payment before 10:30 AM PST (12:30 PM CST) to ensure same-day
+                  processing. If initiated any later than that, it will be
+                  processed on the next business day but will still be
+                  considered as 'same-day ACH' with the same fee.
+                </div>
+              }
+
+              <!-- Divider -->
+              <div class="my-4 border-t border-v4-border-color"></div>
+
+              <!-- Schedule Checkbox -->
+              <label class="flex items-start gap-3 cursor-pointer">
+                <mat-checkbox
+                  class="v4-checkbox"
+                  [checked]="paymentMode === 'schedule'"
+                  (change)="togglePaymentMode('schedule', $event.checked)"
+                ></mat-checkbox>
+                <div class="flex flex-col">
+                  <span
+                    class="font-peridot text-sm font-medium text-v4-main-text-color"
+                    >Schedule</span
+                  >
+                  <span
+                    class="font-peridot text-xs text-v4-secondary-text-color mt-0.5"
+                    >Schedule this ACH debit for a future date.</span
+                  >
+                </div>
+              </label>
+
+              <!-- Schedule Date Input -->
+              @if (paymentMode === "schedule") {
+                <div
+                  class="ml-8 mt-3 [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+                >
+                  <label
+                    class="font-peridot text-xs font-medium text-v4-secondary-text-color mb-1 block"
+                  >
+                    Schedule Date
+                  </label>
+                  <app-v4-date-picker
+                    placeholder="Select date"
+                    [minDate]="minDate"
+                    [isFieldRequired]="false"
+                    [(ngModel)]="scheduleDate"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </div>
+              }
+
+              <!-- Divider -->
+              <div class="my-4 border-t border-v4-border-color"></div>
+
+              <!-- Recurring Checkbox -->
+              <label class="flex items-start gap-3 cursor-pointer">
+                <mat-checkbox
+                  class="v4-checkbox"
+                  [checked]="paymentMode === 'recurring'"
+                  (change)="togglePaymentMode('recurring', $event.checked)"
+                ></mat-checkbox>
+                <div class="flex flex-col">
+                  <span
+                    class="font-peridot text-sm font-medium text-v4-main-text-color"
+                    >Make this payment recurring</span
+                  >
+                  <span
+                    class="font-peridot text-xs text-v4-tertiary-text-color mt-0.5"
+                    >Set up automatic recurring payments</span
+                  >
+                </div>
+              </label>
+
+              <!-- Recurring Payment Settings -->
+              @if (paymentMode === "recurring") {
+                <div
+                  class="recurring-settings mt-3 rounded-lg border border-v4-border-color bg-v4-badge-info-bg-color p-4 [animation:slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_both]"
+                >
+                  <h4
+                    class="mb-4 text-xs font-semibold uppercase tracking-wide text-v4-main-text-color font-peridot"
+                  >
+                    Recurring Payment Settings
+                  </h4>
+
+                  <!-- Frequency -->
+                  <div class="mb-4">
+                    <label
+                      class="mb-1.5 block text-xs font-medium text-v4-main-text-color font-peridot"
+                    >
+                      Frequency
+                    </label>
+                    <app-v4-common-dropdown
+                      [(ngModel)]="recurringFrequency"
+                      [ngModelOptions]="{ standalone: true }"
+                      [config]="frequencyDropdownConfig"
+                      [listData]="frequencyOptions"
+                      [clearable]="false"
+                      [appendTo]="'body'"
+                    />
+                  </div>
+
+                  <!-- Starting Date -->
+                  <div class="mb-4">
+                    <label
+                      class="mb-1.5 block text-xs font-medium text-v4-main-text-color font-peridot"
+                    >
+                      Starting Date
+                    </label>
+                    <app-v4-date-picker
+                      placeholder="Select date"
+                      [minDate]="minDate"
+                      [isFieldRequired]="false"
+                      [(ngModel)]="recurringStartDate"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                  </div>
+
+                  <!-- Payment Duration -->
+                  <div>
+                    <label
+                      class="mb-2 block text-xs font-medium text-v4-main-text-color font-peridot"
+                    >
+                      Payment Duration
+                    </label>
+
+                    <mat-radio-group
+                      [(ngModel)]="recurringEndSelect"
+                      [ngModelOptions]="{ standalone: true }"
+                      class="flex flex-col gap-2"
+                    >
+                      <mat-radio-button
+                        value="3"
+                        class="v4-radio font-peridot text-sm text-v4-main-text-color"
+                        >Pay until I cancel</mat-radio-button
+                      >
+
+                      <div class="flex items-center gap-2">
+                        <mat-radio-button
+                          value="1"
+                          class="v4-radio font-peridot text-sm text-v4-main-text-color"
+                          >Pay for</mat-radio-button
+                        >
+                        @if (recurringEndSelect === "1") {
+                          <input
+                            type="number"
+                            min="1"
+                            class="w-14 rounded border border-v4-border-color bg-v4-secondary-background-color px-2 py-1 text-center text-sm font-peridot text-v4-main-text-color outline-none transition-colors focus:border-v4-primary-brand-color"
+                            [(ngModel)]="recurringCount"
+                            [ngModelOptions]="{ standalone: true }"
+                          />
+                          <span
+                            class="font-peridot text-sm text-v4-secondary-text-color"
+                          >
+                            time(s)
+                          </span>
+                        }
+                      </div>
+                    </mat-radio-group>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    <!-- modal body end -->
+
+    <div
+      class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="
+          paymentMode === 'process'
+            ? 'Process Now'
+            : paymentMode === 'schedule'
+              ? 'Schedule Payment'
+              : 'Set Recurring'
+        "
+        [loading]="isProceedLoading()"
+        [disabled]="manualAch.invalid"
+        [width]="'100%'"
+        (clickEvent)="submitPayment()"
+      />
+    </div>
+  </div>
+}

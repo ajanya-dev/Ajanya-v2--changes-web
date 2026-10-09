@@ -1,0 +1,135 @@
+<div class="p-4 space-y-5">
+  <!-- Button Style Selection -->
+  <div class="rounded-lg border border-v4-border-color p-4 space-y-3">
+    <h4 class="text-sm font-semibold text-v4-main-text-color">Get Paid Buttons For Your Website</h4>
+    <p class="text-xs text-v4-secondary-text-color">Select a button style to generate the embed code for your website.</p>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      @for (style of buttonStyles; track $index) {
+        <app-common-button-v4
+          [type]="selectedIndex() === $index ? { style: 'primary', name: 'main' } : { style: 'outline', name: 'main' }"
+          [text]="style.label"
+          [customClasses]="'w-full justify-center text-xs font-bold' + (selectedIndex() === $index ? ' ring-2 ring-v4-primary-brand-color ring-offset-2' : '')"
+          (clickEvent)="onSelectButton($index)"
+        />
+      }
+    </div>
+  </div>
+
+  <!-- Custom Amount -->
+  <div class="rounded-lg border border-v4-border-color p-4 space-y-3">
+    <div class="flex items-center gap-2">
+      <lucide-angular name="dollar-sign" [size]="16" class="text-v4-primary-brand-bold-color" />
+      <h4 class="text-sm font-semibold text-v4-main-text-color">Custom Amount</h4>
+    </div>
+    <p class="text-xs text-v4-secondary-text-color">
+      Enter a custom amount to include in the button code. Leave empty for user-entered amounts.
+    </p>
+
+    <div class="flex items-center gap-2">
+      <div class="relative flex-1">
+        <app-common-amount-input-v4
+          [(ngModel)]="amountValue"
+          [fieldLabel]="''"
+        ></app-common-amount-input-v4>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'neon', name: 'main' }"
+        text="Add"
+        [textClasses]="'text-sm'"
+        (clickEvent)="addAmount()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Clear"
+        [textClasses]="'text-sm'"
+        (clickEvent)="clearAmount()"
+      />
+    </div>
+
+    @if (appliedAmount()) {
+      <p class="text-[12px] text-v4-common-green-color flex items-center gap-1">
+        <lucide-angular name="check-circle" [size]="12" />
+        Amount ${{ appliedAmount() }} will be included in the button code.
+      </p>
+    }
+  </div>
+
+  <!-- Code Sections -->
+  @if (selectedButtonDetails(); as btn) {
+    <!-- HTML Button Code -->
+    <div class="rounded-lg border border-v4-border-color p-4 space-y-3">
+      <div class="flex items-center gap-2">
+        <h4 class="text-sm font-semibold text-v4-main-text-color">HTML Button Code</h4>
+        <span
+          class="text-[12px] text-v4-secondary-text-color cursor-help"
+          [matTooltip]="tooltips.button"
+        >(?)</span>
+      </div>
+      <div class="relative p-3 rounded-lg bg-v4-secondary-background-color border border-v4-border-color">
+        <pre class="text-[12px] text-v4-main-text-color whitespace-pre-wrap break-all font-mono pr-8 overflow-x-auto">{{ btn.htmlButtonCode }}</pre>
+        <button aria-label="Copy"
+          (click)="copyCode(btn.htmlButtonCode, 'button')"
+          class="absolute top-2 right-2 p-1.5 rounded hover:bg-v4-tertiary-background-color transition-colors"
+          matTooltip="Copy"
+        >
+          @if (copiedButton()) {
+            <lucide-angular name="check" [size]="14" class="text-v4-common-green-color" />
+          } @else {
+            <lucide-angular name="copy" [size]="14" class="text-v4-secondary-text-color" />
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- HTML Widget Code -->
+    <div class="rounded-lg border border-v4-border-color p-4 space-y-3">
+      <div class="flex items-center gap-2">
+        <h4 class="text-sm font-semibold text-v4-main-text-color">HTML Widget Code</h4>
+        <span
+          class="text-[12px] text-v4-secondary-text-color cursor-help"
+          [matTooltip]="tooltips.widget"
+        >(?)</span>
+      </div>
+      <div class="relative p-3 rounded-lg bg-v4-secondary-background-color border border-v4-border-color">
+        <pre class="text-[12px] text-v4-main-text-color whitespace-pre-wrap break-all font-mono pr-8 overflow-x-auto">{{ btn.htmlWidgetCode }}</pre>
+        <button aria-label="Copy"
+          (click)="copyCode(btn.htmlWidgetCode, 'widget')"
+          class="absolute top-2 right-2 p-1.5 rounded hover:bg-v4-tertiary-background-color transition-colors"
+          matTooltip="Copy"
+        >
+          @if (copiedWidget()) {
+            <lucide-angular name="check" [size]="14" class="text-v4-common-green-color" />
+          } @else {
+            <lucide-angular name="copy" [size]="14" class="text-v4-secondary-text-color" />
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Snippet Code -->
+    <div class="rounded-lg border border-v4-border-color p-4 space-y-3">
+      <div class="flex items-center gap-2">
+        <h4 class="text-sm font-semibold text-v4-main-text-color">Snippet Code</h4>
+        <span
+          class="text-[12px] text-v4-secondary-text-color cursor-help"
+          [matTooltip]="tooltips.snippet"
+        >(?)</span>
+      </div>
+      <div class="relative p-3 rounded-lg bg-v4-secondary-background-color border border-v4-border-color">
+        <pre class="text-[12px] text-v4-main-text-color whitespace-pre-wrap break-all font-mono pr-8 overflow-x-auto">{{ btn.snippetCode }}</pre>
+        <button aria-label="Copy"
+          (click)="copyCode(btn.snippetCode, 'snippet')"
+          class="absolute top-2 right-2 p-1.5 rounded hover:bg-v4-tertiary-background-color transition-colors"
+          matTooltip="Copy"
+        >
+          @if (copiedSnippet()) {
+            <lucide-angular name="check" [size]="14" class="text-v4-common-green-color" />
+          } @else {
+            <lucide-angular name="copy" [size]="14" class="text-v4-secondary-text-color" />
+          }
+        </button>
+      </div>
+    </div>
+  }
+</div>

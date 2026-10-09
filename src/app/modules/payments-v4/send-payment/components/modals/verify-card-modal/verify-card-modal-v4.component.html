@@ -1,0 +1,624 @@
+<div class="flex flex-col min-w-0 font-peridot h-full">
+
+  <!-- ── Header — Step 1: snippet base, Step 2: snippet base with subtitle ── -->
+  @if (step === 1) {
+    <div class="flex justify-between items-start gap-3 px-6 py-3 bg-v4-secondary-background-color border-b border-v4-border-color shrink-0 min-w-0">
+      <div class="flex flex-col min-w-0 flex-1">
+        <h1 class="text-lg font-semibold text-v4-main-text-color font-peridot break-words">{{ modalTitle }}</h1>
+        <h2 class="text-xs text-v4-subtle-text-color">Upload required documents for verification</h2>
+      </div>
+      <div [mat-dialog-close]="false" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  }
+
+  @if (step === 2) {
+    <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color shrink-0">
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-peridot">Sign</h1>
+        <h2 class="text-xs text-v4-subtle-text-color">Customer Authorization for Credit Card Use</h2>
+      </div>
+      <div [mat-dialog-close]="false" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  }
+
+  <!-- ── Step 1: Document uploads ── -->
+  @if (step === 1) {
+    <div class="px-6 py-4 space-y-3 bg-v4-tertiary-background-color min-w-0 flex-1 min-h-0 overflow-y-auto">
+
+      <!-- Card nickname + number -->
+      <div class="flex items-center justify-between gap-4 border border-v4-border-color rounded-lg px-4 py-2.5 text-sm text-v4-main-text-color bg-v4-secondary-background-color">
+        <span class="font-medium">{{ dialogData.card?.nickName ?? '' }}</span>
+        <span>{{ dialogData.card?.card }}</span>
+      </div>
+
+      <!-- Description -->
+      <p class="text-sm text-v4-subtle-text-color leading-relaxed">
+        {{
+          cardRequired
+            ? 'Before making the first payment with this new card, we kindly request you to upload the picture of your card with name and last 4 digit visible for verification purpose.'
+            : 'Before making the payment, we kindly request you to upload the invoice for this payment. This is to verify and make the payment faster.'
+        }}
+      </p>
+
+      <!-- Don't close warning -->
+      @if (showDontClose) {
+        <div class="flex items-center gap-2 rounded-lg border border-v4-border-color bg-v4-secondary-background-color px-4 py-2.5 text-sm text-v4-subtle-text-color">
+          <fa-icon [icon]="faCircleExclamaton" class="shrink-0 text-v4-main-text-color"></fa-icon>
+          Please do not close the window until you have finished uploading the file from your phone.
+        </div>
+      }
+
+      <!-- ── Card Front ── -->
+      @if (cardRequired) {
+        <div class="space-y-2">
+          <input class="hidden" [accept]="acceptedDocumentTypes" (change)="filePicked($event, 'card')" type="file" #cardDocumentInput />
+
+          @if (!showUploadFromPhone.card) {
+            @if (!documents.card?.name && !uploadedDocumentDetails.card.documentId) {
+              <div class="flex w-full gap-2 items-center">
+                <button type="button"
+                  class="min-w-0 flex-1 flex items-center justify-center gap-1.5 border border-v4-primary-brand-bold-color rounded-xl px-2 sm:px-3 py-2.5 text-xs sm:text-sm font-medium text-v4-primary-brand-bold-color bg-v4-secondary-background-color hover:bg-v4-primary-brand-bold-color/10 transition-colors text-center leading-tight"
+                  (click)="chooseFile(cardDocumentInput)">
+                  <fa-icon [icon]="faUpToLine" class="shrink-0 text-v4-primary-brand-bold-color self-center"></fa-icon>
+                  <span class="min-w-0">Upload Credit Card Picture (Front View)</span>
+                </button>
+                @if (!isMobile) {
+                  <button aria-label="Capture using Webcam" type="button"
+                    class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                    (click)="openWebcamCapture('card')"
+                    matTooltip="Capture using Webcam">
+                    <fa-icon [icon]="faCameraWeb" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  </button>
+                }
+                @if (isMobile) {
+                  <button aria-label="Capture using Camera" type="button"
+                    class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                    (click)="triggerMobileCameraCapture(cardDocumentInput)"
+                    matTooltip="Capture using Camera">
+                    <fa-icon [icon]="faCamera" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  </button>
+                }
+                <button aria-label="Upload from Phone" type="button"
+                  class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                  (click)="showUploadFromPhone.card = true"
+                  matTooltip="Upload from Phone">
+                  <fa-icon [icon]="faMobile" class="text-v4-primary-brand-bold-color"></fa-icon>
+                </button>
+              </div>
+            } @else {
+              <!-- File selected -->
+              <div class="flex items-center gap-2 border border-v4-border-color bg-v4-secondary-background-color rounded-2xl px-4 py-3 text-sm text-v4-main-text-color">
+                <fa-icon [icon]="faCircleCheck" class="text-v4-common-green-color shrink-0"></fa-icon>
+                <span class="flex-1 truncate">
+                  Credit Card (Front View):
+                  {{ uploadedDocumentDetails.card.documentId
+                      ? (uploadedDocumentDetails.card.documentName ?? '' | truncate:20)
+                      : (documents.card?.name ?? '' | truncate:20) }}
+                </span>
+                @if (!uploadedDocumentDetails.card.documentId) {
+                  <button type="button" class="text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors shrink-0" (click)="removeFile(cardDocumentInput, 'card')">
+                    <fa-icon [icon]="faXmark"></fa-icon>
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <!-- Phone upload expanded -->
+            <div class="border border-v4-border-color rounded-2xl p-4 space-y-3 bg-v4-secondary-background-color">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-v4-subtle-text-color font-medium">Upload Credit Card Picture (Front View)</span>
+                <button type="button" class="text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors" (click)="showUploadFromPhone.card = false">
+                  <fa-icon [icon]="faXmark"></fa-icon>
+                </button>
+              </div>
+              <div class="flex gap-3">
+                <button type="button"
+                  class="flex-1 bg-v4-primary-brand-color text-white rounded-2xl py-2.5 text-sm font-semibold hover:bg-v4-primary-brand-color/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  [disabled]="smsLoading.card || isResendDisabled.card"
+                  (click)="sendMessage('card')">
+                  {{ sentSms.card ? 'Resend Link' : 'Send Link' }}
+                </button>
+                <button type="button"
+                  class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors disabled:opacity-60"
+                  [disabled]="qrLoading.card"
+                  (click)="openQrCodeModal('card')">
+                  <fa-icon [icon]="faQrCode" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  QR Link
+                </button>
+              </div>
+              @if (!isMobile) {
+                <button type="button"
+                  class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-subtle-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors w-fit"
+                  (click)="openWebcamCapture('card')">
+                  <fa-icon [icon]="faCameraWeb" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  Webcam Capture
+                </button>
+              }
+              @if (isMobile) {
+                <button type="button"
+                  class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-subtle-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors w-fit"
+                  (click)="triggerMobileCameraCapture(cardDocumentInput)">
+                  <fa-icon [icon]="faCamera" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  Camera Capture
+                </button>
+              }
+              @if (sentSms.card) {
+                <p class="flex items-center gap-1.5 text-xs text-v4-common-green-color">
+                  <fa-icon [icon]="faCircleCheck"></fa-icon>
+                  Link Sent to {{ verfiedPhoneNumber }}
+                  @if (isResendDisabled.card) {
+                    <span class="text-v4-subtle-text-color">(Resend in {{ resendCountdown.card }}s)</span>
+                  }
+                </p>
+              }
+            </div>
+          }
+          @if (showError.card && !showUploadFromPhone.card) {
+            <p class="flex items-center gap-1 text-xs text-v4-common-red-color pt-0.5">
+              <fa-icon [icon]="faCircleExclamaton"></fa-icon>
+              This field is required
+            </p>
+          }
+        </div>
+      }
+
+      <!-- ── Card Back ── -->
+      @if (cardRequired) {
+        <div class="space-y-2">
+          <input class="hidden" [accept]="acceptedDocumentTypes" (change)="filePicked($event, 'cardReverse')" type="file" #cardReverseDocumentInput />
+
+          @if (!showUploadFromPhone.cardReverse) {
+            @if (!documents.cardReverse?.name && !uploadedDocumentDetails.cardReverse.documentId) {
+              <div class="flex w-full gap-2 items-center">
+                <button type="button"
+                  class="min-w-0 flex-1 flex items-center justify-center gap-1.5 border border-v4-primary-brand-bold-color rounded-xl px-2 sm:px-3 py-2.5 text-xs sm:text-sm font-medium text-v4-primary-brand-bold-color bg-v4-secondary-background-color hover:bg-v4-primary-brand-bold-color/10 transition-colors text-center leading-tight"
+                  (click)="chooseFile(cardReverseDocumentInput)">
+                  <fa-icon [icon]="faUpToLine" class="shrink-0 text-v4-primary-brand-bold-color self-center"></fa-icon>
+                  <span class="min-w-0">Upload Credit Card Picture (Back View)</span>
+                </button>
+                @if (!isMobile) {
+                  <button aria-label="Capture using Webcam" type="button"
+                    class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                    (click)="openWebcamCapture('cardReverse')"
+                    matTooltip="Capture using Webcam">
+                    <fa-icon [icon]="faCameraWeb" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  </button>
+                }
+                @if (isMobile) {
+                  <button aria-label="Capture using Camera" type="button"
+                    class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                    (click)="triggerMobileCameraCapture(cardReverseDocumentInput)"
+                    matTooltip="Capture using Camera">
+                    <fa-icon [icon]="faCamera" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  </button>
+                }
+                <button aria-label="Upload from Phone" type="button"
+                  class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                  (click)="showUploadFromPhone.cardReverse = true"
+                  matTooltip="Upload from Phone">
+                  <fa-icon [icon]="faMobile" class="text-v4-primary-brand-bold-color"></fa-icon>
+                </button>
+              </div>
+            } @else {
+              <div class="flex items-center gap-2 border border-v4-border-color bg-v4-secondary-background-color rounded-2xl px-4 py-3 text-sm text-v4-main-text-color">
+                <fa-icon [icon]="faCircleCheck" class="text-v4-common-green-color shrink-0"></fa-icon>
+                <span class="flex-1 truncate">
+                  Credit Card (Back View):
+                  {{ uploadedDocumentDetails.cardReverse.documentId
+                      ? (uploadedDocumentDetails.cardReverse.documentName ?? '' | truncate:20)
+                      : (documents.cardReverse?.name ?? '' | truncate:20) }}
+                </span>
+                @if (!uploadedDocumentDetails.cardReverse.documentId) {
+                  <button type="button" class="text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors shrink-0" (click)="removeFile(cardReverseDocumentInput, 'cardReverse')">
+                    <fa-icon [icon]="faXmark"></fa-icon>
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <!-- Phone upload expanded — Back View -->
+            <div class="border border-v4-border-color rounded-2xl p-4 space-y-3 bg-v4-secondary-background-color">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-v4-subtle-text-color font-medium">Upload Credit Card Picture (Back View)</span>
+                <button type="button" class="text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors" (click)="showUploadFromPhone.cardReverse = false">
+                  <fa-icon [icon]="faXmark"></fa-icon>
+                </button>
+              </div>
+              <div class="flex gap-3">
+                <button type="button"
+                  class="flex-1 bg-v4-primary-brand-color text-white rounded-2xl py-2.5 text-sm font-semibold hover:bg-v4-primary-brand-color/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  [disabled]="smsLoading.cardReverse || isResendDisabled.cardReverse"
+                  (click)="sendMessage('cardReverse')">
+                  {{ sentSms.cardReverse ? 'Resend Link' : 'Send Link' }}
+                </button>
+                <button type="button"
+                  class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors disabled:opacity-60"
+                  [disabled]="qrLoading.cardReverse"
+                  (click)="openQrCodeModal('cardReverse')">
+                  <fa-icon [icon]="faQrCode" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  QR Link
+                </button>
+              </div>
+              @if (!isMobile) {
+                <button type="button"
+                  class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-subtle-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors w-fit"
+                  (click)="openWebcamCapture('cardReverse')">
+                  <fa-icon [icon]="faCameraWeb" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  Webcam Capture
+                </button>
+              }
+              @if (isMobile) {
+                <button type="button"
+                  class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-subtle-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors w-fit"
+                  (click)="triggerMobileCameraCapture(cardReverseDocumentInput)">
+                  <fa-icon [icon]="faCamera" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  Camera Capture
+                </button>
+              }
+              @if (sentSms.cardReverse) {
+                <p class="flex items-center gap-1.5 text-xs text-v4-common-green-color">
+                  <fa-icon [icon]="faCircleCheck"></fa-icon>
+                  Link Sent to {{ verfiedPhoneNumber }}
+                  @if (isResendDisabled.cardReverse) {
+                    <span class="text-v4-subtle-text-color">(Resend in {{ resendCountdown.cardReverse }}s)</span>
+                  }
+                </p>
+              }
+            </div>
+          }
+          @if (showError.cardReverse && !showUploadFromPhone.cardReverse) {
+            <p class="flex items-center gap-1 text-xs text-v4-common-red-color pt-0.5">
+              <fa-icon [icon]="faCircleExclamaton"></fa-icon>
+              This field is required
+            </p>
+          }
+        </div>
+      }
+
+      <!-- ── Invoice(s) ── -->
+      @if (invoiceRequired) {
+        @for (invoice of documents.invoice; track invoice; let i = $index) {
+          <div class="space-y-2">
+            <input class="hidden" [accept]="acceptedDocumentTypes" (change)="filePicked($event, 'invoice')" type="file" #invoiceDocumentInput />
+
+            @if (!showUploadFromPhoneInvoice(i)) {
+              @if (!invoice?.name && !invoice?.documentId) {
+                <div class="flex w-full gap-2 items-center">
+                  <button type="button"
+                    class="min-w-0 flex-1 flex items-center justify-center gap-1.5 border border-v4-primary-brand-bold-color rounded-xl px-2 sm:px-3 py-2.5 text-xs sm:text-sm font-medium text-v4-primary-brand-bold-color bg-v4-secondary-background-color hover:bg-v4-primary-brand-bold-color/10 transition-colors whitespace-nowrap"
+                    (click)="chooseFile(invoiceDocumentInput)">
+                    <fa-icon [icon]="faUpToLine" class="shrink-0 text-v4-primary-brand-bold-color"></fa-icon>
+                    Upload Invoice
+                  </button>
+                  <button aria-label="Upload from Phone" type="button"
+                    class="shrink-0 flex items-center justify-center w-[38px] h-[38px] border border-v4-primary-brand-bold-color rounded-lg cursor-pointer"
+                    (click)="showUploadFromPhone.invoice = !showUploadFromPhone.invoice"
+                    matTooltip="Upload from Phone">
+                    <fa-icon [icon]="faMobile" class="text-v4-primary-brand-bold-color"></fa-icon>
+                  </button>
+                </div>
+              } @else {
+                <div class="flex items-center gap-2 border border-v4-border-color bg-v4-secondary-background-color rounded-2xl px-4 py-3 text-sm text-v4-main-text-color">
+                  <fa-icon [icon]="faCircleCheck" class="text-v4-common-green-color shrink-0"></fa-icon>
+                  <span class="flex-1 truncate">
+                    Invoice Document:
+                    {{ invoice?.documentId
+                        ? (invoice?.documentName ?? '' | truncate:20)
+                        : (invoice?.name ?? '' | truncate:20) }}
+                  </span>
+                  @if (!invoice?.documentId) {
+                    <button type="button" class="text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors shrink-0" (click)="removeFile(invoiceDocumentInput, 'invoice', i)">
+                      <fa-icon [icon]="faXmark"></fa-icon>
+                    </button>
+                  }
+                </div>
+              }
+            }
+
+            @if (showUploadFromPhoneInvoice(i)) {
+              <div class="border border-v4-border-color rounded-2xl p-4 space-y-3 bg-v4-secondary-background-color">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-v4-subtle-text-color font-medium">Upload Invoice</span>
+                  <button type="button" class="text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors" (click)="showUploadFromPhone.invoice = false">
+                    <fa-icon [icon]="faXmark"></fa-icon>
+                  </button>
+                </div>
+                <div class="flex gap-3">
+                  <button type="button"
+                    class="flex-1 bg-v4-primary-brand-color text-white rounded-2xl py-2.5 text-sm font-semibold hover:bg-v4-primary-brand-color/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    [disabled]="smsLoading.invoice || isResendDisabled.invoice"
+                    (click)="sendMessage('invoice')">
+                    {{ sentSms.invoice ? 'Resend Link' : 'Send Link' }}
+                  </button>
+                  <button type="button"
+                    class="flex items-center gap-1.5 border border-v4-border-color rounded-2xl px-3 py-2 text-sm text-v4-main-text-color hover:bg-v4-input-background-color/40 transition-colors disabled:opacity-60"
+                    [disabled]="qrLoading.invoice"
+                    (click)="openQrCodeModal('invoice')">
+                    <fa-icon [icon]="faQrCode" class="text-v4-primary-brand-bold-color"></fa-icon>
+                    QR Link
+                  </button>
+                </div>
+                @if (sentSms.invoice) {
+                  <p class="flex items-center gap-1.5 text-xs text-v4-common-green-color">
+                    <fa-icon [icon]="faCircleCheck"></fa-icon>
+                    Link Sent to {{ verfiedPhoneNumber }}
+                    @if (isResendDisabled.invoice) {
+                      <span class="text-v4-subtle-text-color">(Resend in {{ resendCountdown.invoice }}s)</span>
+                    }
+                  </p>
+                }
+              </div>
+            }
+
+            @if (showError.invoice && !showUploadFromPhone.invoice) {
+              <p class="flex items-center gap-1 text-xs text-v4-common-red-color pt-0.5">
+                <fa-icon [icon]="faCircleExclamaton"></fa-icon>
+                This field is required
+              </p>
+            }
+          </div>
+        }
+
+        <!-- Add Invoice -->
+        @if (documents.invoice.length < 3) {
+          <div class="flex justify-end pt-1">
+            <button type="button"
+              class="flex items-center gap-1.5 border border-v4-primary-brand-bold-color rounded-xl px-4 py-2 text-sm font-medium text-v4-primary-brand-bold-color bg-v4-secondary-background-color hover:bg-v4-primary-brand-bold-color/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              [disabled]="isAddInvoiceDisabled"
+              (click)="onAddInvoice()">
+              + Add Invoice
+            </button>
+          </div>
+        }
+      }
+
+    </div>
+  }
+
+  <!-- ── Step 2: Authorization + Signature ── -->
+  @if (step === 2) {
+    <div class="flex flex-col gap-3 px-6 py-4 bg-v4-tertiary-background-color flex-1 min-h-0">
+
+      <!-- Scrollable authorization text -->
+      <div class="flex gap-7 flex-col bg-v4-secondary-background-color flex-1 min-h-[120px] pt-3 overflow-y-auto rounded-xl border border-v4-border-color">
+
+        <h2 class="font-semibold text-v4-main-text-color text-center text-[14px]">
+          CUSTOMER AUTHORIZATION FOR CREDIT CARD USE
+        </h2>
+
+        <div class="px-5">
+          <p class="text-v4-secondary-text-color text-sm">
+            I, {{ cardHolderName }}, hereby authorize Zil Money Corporation ("Zil Money") to debit my credit card on a designated date for a specific amount, as described below, in order to execute my payment instruction and deduct any applicable fees. By signing this form, I acknowledge that I have read and understood the terms and conditions outlined below, and I agree to be bound by them.
+          </p>
+        </div>
+
+        <div class="px-5 flex flex-col gap-1">
+          <h3 class="font-semibold text-v4-main-text-color text-[14px]">Credit Card Informations</h3>
+          <p class="text-v4-secondary-text-color text-sm">Cardholder Name: {{ cardHolderName }}</p>
+          <p class="text-v4-secondary-text-color text-sm">Credit Card Number: {{ cardNumber }}</p>
+        </div>
+
+        <div class="px-5 flex flex-col gap-1">
+          <h3 class="font-semibold text-v4-main-text-color text-[14px]">Descriptions of Authorization:</h3>
+          <p class="text-v4-secondary-text-color text-sm">Amount: {{ amount | currency }}</p>
+          @if (payee) { <p class="text-v4-secondary-text-color text-sm">Payee: {{ payee.name }}</p> }
+          @if (invoiceNumber) { <p class="text-v4-secondary-text-color text-sm">Invoice Number: {{ invoiceNumber }}</p> }
+        </div>
+
+        <div class="px-5 flex flex-col gap-3">
+          <h3 class="font-semibold text-v4-main-text-color text-[14px]">
+            I UNDERSTAND AND AGREE TO THE FOLLOWING TERMS AND CONDITIONS:
+          </h3>
+          <p class="text-v4-secondary-text-color text-sm">
+            <strong class="text-v4-main-text-color">1. Authorization</strong>: By signing this form, I authorize Zil Money to charge my credit card for the specified amount on the specified date as provided above. I understand that this authorization is for a one-time payment and does not establish any ongoing or recurring payment arrangement.
+          </p>
+          <p class="text-v4-secondary-text-color text-sm">
+            <strong class="text-v4-main-text-color">2. Waiver of Liability</strong>: I waive any and all claims against Zil Money arising from or related to the credit card transaction authorized by this form. I understand that Zil Money acts solely as a facilitator and processor of the payment and shall not be held responsible for any disputes, issues, or damages arising from the transaction.
+          </p>
+          <p class="text-v4-secondary-text-color text-sm">
+            <strong class="text-v4-main-text-color">3. Indemnification</strong>: I agree to indemnify and hold harmless Zil Money and its affiliates, officers, directors, employees, and agents from any and all claims, losses, damages, liabilities, costs, and expenses (including attorney's fees) incurred by Zil Money as a result of the authorized credit card transaction or any breach of the terms and conditions outlined in this form.
+          </p>
+          <p class="text-v4-secondary-text-color text-sm">
+            <strong class="text-v4-main-text-color">4. Cardholder Responsibility</strong>: I acknowledge that I am the authorized cardholder of the credit card mentioned above, and I am responsible for ensuring the availability of sufficient funds or credit limit to cover the authorized payment. I agree to promptly resolve any issues or disputes related to the credit card transaction with my card issuer.
+          </p>
+          <p class="text-v4-secondary-text-color text-sm">
+            <strong class="text-v4-main-text-color">5. Refund Policy</strong>: I understand that refunds for authorized credit card transactions are subject to Zil Money's refund policy. Any refund requests should be directed to Zil Money's customer support in accordance with their established procedures. By signing below, I acknowledge that I have read, understood, and agreed to the terms and conditions outlined in this "CUSTOMER AUTHORIZATION FOR CREDIT CARD USE" form.
+          </p>
+        </div>
+
+        <!-- Important Reminder About Disputes -->
+        <div class="px-5 flex flex-col gap-3">
+          <h3 class="font-semibold text-v4-main-text-color text-lg">Important Reminder About Disputes</h3>
+          <p class="text-v4-secondary-text-color text-sm flex gap-1.5">
+            <fa-icon [icon]="faSquare" class="shrink-0 mt-0.5"></fa-icon>
+            <span>Timeliness of Resolution: You are required to resolve all disputes with payees directly, including dissatisfaction, friendly fraud, or issues outside card network rules, Regulation Z, or Regulation E. Disputes must be addressed within thirty (30) calendar days of the transaction or dispute notification, whichever occurs first. Failure to meet this timeline may result in financial liabilities.</span>
+          </p>
+          <p class="text-v4-secondary-text-color text-sm flex gap-1.5">
+            <fa-icon [icon]="faSquare" class="shrink-0 mt-0.5"></fa-icon>
+            <span>Hold Harmless and Reimbursement: If a dispute is not resolved within the designated timeframe and results in financial losses or liabilities for Zil Money, you agree to hold Zil Money harmless and fully reimburse all associated costs, including chargebacks, fees, penalties, or related expenses, within five (5) business days of notification.</span>
+          </p>
+          <p class="text-v4-secondary-text-color text-sm flex gap-1.5">
+            <fa-icon [icon]="faSquare" class="shrink-0 mt-0.5"></fa-icon>
+            <span>Fraudulent Disputes: Raising unauthorized, invalid, or fraudulent disputes may result in account suspension, liability for fees, recovery of associated costs, and potential legal action. Fraudulent actions may also affect your ability to continue using the platform.</span>
+          </p>
+          <p class="text-v4-secondary-text-color text-sm flex gap-1.5">
+            <fa-icon [icon]="faSquare" class="shrink-0 mt-0.5"></fa-icon>
+            <span>Consent to Terms and Updates: By using Zil Money's platform, you agree to the Zil Money Transaction Facilitation and Dispute Resolution Terms, including your responsibilities to resolve disputes promptly, reimburse Zil Money for any incurred losses, and consent to ongoing updates to these terms. Continued platform use signifies agreement to any updates as posted at
+            <a class="text-v4-primary-brand-bold-color hover:underline" href="https://zilmoney.com/terms-and-condition" target="_blank" rel="noopener noreferrer">Zil Money Terms and Conditions</a>
+            to include
+            <a class="text-v4-primary-brand-bold-color hover:underline" href="https://zilmoney.com/terms-and-condition/" target="_blank" rel="noopener noreferrer">Zil Money Transaction Facilitation and Dispute Resolution Terms.</a></span>
+          </p>
+          <p class="text-v4-secondary-text-color text-sm flex gap-1.5">
+            <fa-icon [icon]="faSquareCheck" class="shrink-0 mt-0.5 text-v4-primary-brand-bold-color"></fa-icon>
+            <span>Acknowledgment: By checking this box, you confirm acceptance of
+            <a class="text-v4-primary-brand-bold-color hover:underline" href="https://zilmoney.com/terms-and-condition/" target="_blank" rel="noopener noreferrer">Zil Money Transaction Facilitation and Dispute Resolution Terms.</a>
+            in addition to
+            <a class="text-v4-primary-brand-bold-color hover:underline" href="https://zilmoney.com/terms-and-condition/" target="_blank" rel="noopener noreferrer">Zil Money Terms and Conditions</a>
+            your obligation to resolve disputes timely, and your commitment to indemnify and reimburse Zil Money for financial impacts arising from unresolved disputes or fraudulent actions.</span>
+          </p>
+        </div>
+
+        <!-- Zil Money Transaction Facilitation and Dispute Resolution Terms -->
+        <div class="px-5 pb-4 flex flex-col gap-2">
+          <h3 class="font-semibold text-v4-main-text-color text-[14px]">
+            Zil Money Transaction Facilitation and Dispute Resolution Terms
+          </h3>
+          <p class="text-v4-secondary-text-color text-sm">
+            For Credit Card, Debit Card, Wire Transfers, ACH Payments, and Other Banking Transactions
+          </p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Introduction</h4>
+          <p class="text-v4-secondary-text-color text-sm">
+            This Account-Level Authorization Agreement titled "Zil Money Transaction Facilitation and Dispute Resolution Terms) ("Agreement") is entered into between Zil Money Corporation ("Zil Money") and the undersigned ("User"). By executing this Agreement, the User authorizes Zil Money to facilitate financial transactions in accordance with this Agreement, Zil Money's Terms and Conditions, and applicable laws and regulations.
+          </p>
+          <p class="text-v4-secondary-text-color text-sm">
+            Zil Money is a financial technology company, not a bank or FDIC member. All payment and money movement services, including but not limited to credit card, debit card, wire transfers, and ACH payments, are provided by Zil Money's third-party banking relationships or partners and other authorized service providers. Zil Money acts solely as a platform and facilitator for these services.
+          </p>
+          <p class="text-v4-secondary-text-color text-sm">
+            For additional details regarding user responsibilities, dispute resolution, and platform policies, please refer to Zil Money's Terms and Conditions available at
+            <a class="text-v4-primary-brand-bold-color hover:underline" href="https://zilmoney.com/terms-and-condition/" target="_blank" rel="noopener noreferrer">https://zilmoney.com/terms-and-condition/.</a>
+          </p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Scope of Agreement</h4>
+          <p class="text-v4-secondary-text-color text-sm">This Agreement governs all financial transactions initiated by the User and facilitated by Zil Money, including:</p>
+          <p class="text-v4-secondary-text-color text-sm">(i) Funding the Digital Wallet via credit or debit card, ACH transfers, or wire transfers.</p>
+          <p class="text-v4-secondary-text-color text-sm">(ii) Payments made to third-party payees through Zil Money's platform.</p>
+          <p class="text-v4-secondary-text-color text-sm">(iii) Transactions executed using the User's designated funding sources.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Authorization for Transactions</h4>
+          <p class="text-v4-secondary-text-color text-sm">The User authorizes Zil Money and its service providers to process transactions on behalf of the User's account. This includes:</p>
+          <p class="text-v4-secondary-text-color text-sm">(i) Debiting or crediting designated funding sources to facilitate payments or fund the Digital Wallet.</p>
+          <p class="text-v4-secondary-text-color text-sm">(ii) Transmitting funds to payees as instructed by the User.</p>
+          <p class="text-v4-secondary-text-color text-sm">This authorization remains valid until explicitly revoked in writing by the User.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Representations and Warranties</h4>
+          <p class="text-v4-secondary-text-color text-sm">The User represents and warrants that:</p>
+          <p class="text-v4-secondary-text-color text-sm">(i) They are legally authorized to use the funding sources, including credit cards, debit cards, and bank accounts.</p>
+          <p class="text-v4-secondary-text-color text-sm">(ii) All funding sources provided are valid, accurate, and authorized for the intended transactions.</p>
+          <p class="text-v4-secondary-text-color text-sm">(iii) No transaction will involve prohibited activities as defined in Zil Money's Prohibited Products and Services Policy.</p>
+          <p class="text-v4-secondary-text-color text-sm">(iv) They have performed sufficient due diligence on any payees to ensure legitimacy.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">User Responsibilities</h4>
+          <p class="text-v4-secondary-text-color text-sm">The User assumes full responsibility for resolving disputes with payees, including those arising from friendly fraud, vendor dissatisfaction, service non-delivery, or buyer's remorse.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Dispute Resolution and Timeliness</h4>
+          <p class="text-v4-secondary-text-color text-sm">(i) The User must take all reasonable steps to resolve disputes directly with the relevant payee within thirty (30) calendar days from the date of the transaction or receipt of dispute notification.</p>
+          <p class="text-v4-secondary-text-color text-sm">(ii) Failure to initiate or complete resolution efforts within this timeframe constitutes a breach of this Agreement.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Liability for Unresolved Disputes</h4>
+          <p class="text-v4-secondary-text-color text-sm">(i) If a dispute remains unresolved within the designated timeframe and results in financial losses or liabilities for Zil Money, the User assumes full responsibility for reimbursing Zil Money.</p>
+          <p class="text-v4-secondary-text-color text-sm">(ii) Reimbursement must occur within five (5) business days of written notification, with additional funds provided if the Digital Wallet balance is insufficient.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Enforcement of Reimbursement</h4>
+          <p class="text-v4-secondary-text-color text-sm">Zil Money reserves the right to offset the owed amount against the User's Digital Wallet balance, debit funds from linked funding sources, or pursue legal action or arbitration to recover losses.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Business Purpose Verification</h4>
+          <p class="text-v4-secondary-text-color text-sm">(i) The User represents that all transactions initiated through Zil Money's platform are for legitimate business purposes.</p>
+          <p class="text-v4-secondary-text-color text-sm">(ii) Transactions intended for personal or unauthorized purposes are prohibited and may result in account suspension.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Validation of Business Transactions</h4>
+          <p class="text-v4-secondary-text-color text-sm">Zil Money reserves the right to request documentation to verify the business purpose of transactions. Failure to provide requested documentation promptly may result in account suspension or denial of services.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Fraud Prevention and Indemnification</h4>
+          <p class="text-v4-secondary-text-color text-sm">The User agrees to indemnify, defend, and hold harmless Zil Money and its service providers from any claims, damages, or liabilities arising from unauthorized transactions, failure to resolve disputes, or fraudulent activities.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Regulatory and Network Compliance</h4>
+          <p class="text-v4-secondary-text-color text-sm">Zil Money will adhere to applicable regulatory guidelines, including Regulation Z and Regulation E, as well as card network rules. The User acknowledges their obligations to comply with these standards.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Recordkeeping Obligations</h4>
+          <p class="text-v4-secondary-text-color text-sm">The User must maintain complete and accurate transaction records, including payment instructions, invoices, receipts, and correspondence, for at least three (3) years or as required by law. Failure to maintain these records may affect the ability to contest disputes or fulfill obligations under this Agreement.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Finality of Transactions</h4>
+          <p class="text-v4-secondary-text-color text-sm">All transactions facilitated under this Agreement are final and non-reversible, except as required by applicable law or card network rules. Refunds or reversals will only be processed for verified fraud or processing errors.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Prohibited Activities</h4>
+          <p class="text-v4-secondary-text-color text-sm">The User agrees not to use Zil Money's platform for activities involving illegal transactions, money laundering, or fraud, and high-risk industries without prior written approval. Zil Money's Prohibited Products and Services Policy provides further details.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Arbitration for Unresolved Issues</h4>
+          <p class="text-v4-secondary-text-color text-sm">Any disputes arising under this Agreement shall be subject to binding arbitration conducted in accordance with Zil Money's Dispute Resolution Policy. Arbitration will take place in the jurisdiction specified by Zil Money.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Limitations of Liability</h4>
+          <p class="text-v4-secondary-text-color text-sm">Zil Money's liability is limited to the amount of funds directly facilitated under this Agreement. Zil Money and its service providers are not liable for indirect, incidental, or consequential damages arising from disputes between the User and payees.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Ongoing Updates and Amendments</h4>
+          <p class="text-v4-secondary-text-color text-sm">
+            Zil Money reserves the right to update or amend the "Zil Money Transaction Facilitation and Dispute Resolution Terms" ("Agreement") as necessary to reflect changes in operational requirements, regulatory guidelines, or other relevant factors. Any such updates or amendments will be posted on the Zil Money website at
+            <a class="text-v4-primary-brand-bold-color hover:underline" href="https://zilmoney.com/terms-and-condition/" target="_blank" rel="noopener noreferrer">Zil Money Terms and Conditions</a>
+          </p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Consent Through Continued Use</h4>
+          <p class="text-v4-secondary-text-color text-sm">By continuing to use Zil Money's platform following any updates or amendments to this Agreement, the User agrees to be bound by the revised terms. It is the User's responsibility to review the Agreement periodically to remain informed of any changes.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Notification of Changes</h4>
+          <p class="text-v4-secondary-text-color text-sm">When material changes are made to this Agreement, Zil Money will provide reasonable notice through electronic communication or by prominently posting the updates on its platform. The continued use of Zil Money's services after the effective date of the changes constitutes the User's acceptance of the revised terms.</p>
+
+          <h4 class="font-semibold text-v4-main-text-color text-sm pt-2">Termination</h4>
+          <p class="text-v4-secondary-text-color text-sm">This Agreement may be terminated by either party upon written notice. Termination does not absolve the User of obligations incurred prior to termination, including indemnification, reimbursement, or dispute resolution.</p>
+        </div>
+      </div>
+
+      <!-- Signature area — outside scrollable content -->
+      <div class="shrink-0 border border-v4-border-color rounded-xl overflow-hidden cursor-pointer bg-v4-secondary-background-color hover:bg-v4-input-background-color/20 transition-colors"
+        role="presentation"
+        (click)="addSignature()">
+        @if (signaturePadImg === '') {
+          <div class="flex items-center justify-center py-5">
+            <span class="text-sm font-medium text-v4-primary-brand-bold-color">Add Signature</span>
+          </div>
+        } @else {
+          <div class="relative p-1">
+            <div class="rounded-lg bg-white mx-auto w-fit">
+              <img class="h-16 max-w-[188px] object-contain p-2" [src]="signaturePadImg" alt="Signature" />
+            </div>
+            <button type="button"
+              class="absolute top-2 right-2 text-xs text-v4-common-red-color hover:underline"
+              (click)="removeSign(); $event.stopPropagation()">
+              Remove
+            </button>
+          </div>
+        }
+      </div>
+      @if (showError.signature) {
+        <p class="flex items-center gap-1 text-xs text-v4-common-red-color">
+          <fa-icon [icon]="faCircleExclamaton"></fa-icon>
+          Signature is required
+        </p>
+      }
+
+    </div>
+  }
+
+  <!-- ── Footer ── -->
+  <div class="flex justify-end gap-3 px-6 py-3 bg-v4-secondary-background-color border-t border-v4-border-color shrink-0">
+    @if (showsBack) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Back"
+        [disabled]="loading"
+        (clickEvent)="goBack()"
+      />
+    } @else {
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        [disabled]="loading"
+      />
+    }
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="buttonText"
+      [disabled]="loading"
+      [loading]="loading && step === 2"
+      (clickEvent)="onVerify()"
+    />
+  </div>
+
+</div>

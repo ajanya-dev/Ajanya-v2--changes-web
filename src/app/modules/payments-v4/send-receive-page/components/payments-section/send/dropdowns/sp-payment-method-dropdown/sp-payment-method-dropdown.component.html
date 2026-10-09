@@ -1,0 +1,135 @@
+<app-sp-dropdown-shell
+  label="How would you like to send it?"
+  tooltip="Pick the delivery rail. Fees and speed vary by method."
+  [(open)]="open"
+  [searchable]="true"
+  [searchPlaceholder]="'Search a method'"
+  [searchTerm]="searchTerm()"
+  (searchTermChange)="onSearchInput($event)"
+  (cleared)="clearSelection()"
+>
+  <ng-container trigger>
+    @if (trigger(); as sel) {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon [img]="getIcon(sel.icon)" [size]="16" />
+      </span>
+      <span
+        class="truncate font-bold text-v4-main-text-color text-[13px]"
+        >{{ sel.name }}</span
+      >
+    } @else {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon [img]="FileCheckIcon" [size]="16" />
+      </span>
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholder() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel class="flex flex-col gap-[3px]">
+    @for (row of optionsView(); track row.item.id) {
+      <div
+        class="flex w-full items-center gap-1 rounded-[9px] border-[1.5px] border-transparent pr-1 transition-colors hover:bg-v4-main-background-color"
+        [ngClass]="{ 'bg-v4-brand-tint': row.isSelected, '!border-v4-brand-tint-strong': row.isSelected }"
+        [class.opacity-55]="row.isLocked"
+      >
+        <button
+          type="button"
+          class="flex min-w-0 flex-1 items-center gap-2.5 p-2 text-left"
+          [ngClass]="
+            row.isLocked
+              ? 'cursor-not-allowed'
+              : row.tooltip
+                ? 'cursor-help'
+                : 'cursor-pointer'"
+          [attr.aria-disabled]="row.isLocked"
+          [matTooltip]="row.tooltip"
+          [matTooltipDisabled]="!row.tooltip"
+          matTooltipPosition="right"
+          (click)="onSelect(row.item)"
+        >
+          <span
+            class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] transition-colors"
+            [class.bg-v4-primary-brand-color]="row.isSelected"
+            [class.text-white]="row.isSelected"
+            [ngClass]="{ 'bg-v4-brand-tint': !row.isSelected }"
+            [class.text-v4-brand-border-color]="!row.isSelected"
+          >
+            <lucide-icon [img]="getIcon(row.item.icon)" [size]="15" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="flex items-center gap-[7px]">
+              <span
+                class="truncate font-bold text-v4-main-text-color text-[13px]"
+                >{{ row.item.name }}</span
+              >
+              @if (row.item.fee && !row.isLocked) {
+                <span
+                  class="shrink-0 rounded-[5px] bg-v4-badge-success-bg-color px-1.5 py-0.5 font-bold text-v4-badge-success-text-color text-[12px]"
+                >
+                  {{ row.item.fee }}
+                </span>
+              }
+              @if (row.isLocked) {
+                <lucide-icon
+                  [img]="LockIcon"
+                  [size]="12"
+                  class="shrink-0 text-v4-subtle-text-color"
+                />
+              }
+            </span>
+            @if (row.isLocked) {
+              <span class="mt-0.5 block text-v4-tertiary-text-color text-[12px]"
+                >For Verified Users</span
+              >
+            } @else if (row.item.processingTime) {
+              <span class="mt-0.5 block text-v4-tertiary-text-color text-[12px]"
+                >{{ row.item.processingTime }}</span
+              >
+            }
+          </span>
+        </button>
+
+        @if (showDefaultStar() && !row.isLocked) {
+          <button
+            type="button"
+            class="grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors"
+            [ngClass]="{
+              'cursor-not-allowed opacity-40': row.item.disableStar,
+              'cursor-pointer hover:bg-v4-hover-tint': !row.item.disableStar,
+              '[&_svg]:fill-current': row.isDefault
+            }"
+            [disabled]="row.item.disableStar"
+            [attr.aria-label]="
+              row.isDefault ? 'Default method' : 'Set as default method'"
+            matTooltip="Set it as your default for next time"
+            [matTooltipDisabled]="row.item.disableStar"
+            matTooltipPosition="above"
+            (click)="onStar($event, row.item)"
+          >
+            <lucide-icon
+              [img]="StarIcon"
+              [size]="15"
+              [class]="
+                row.isDefault
+                  ? 'text-v4-favorite-star-color'
+                  : 'text-v4-subtle-text-color'"
+            />
+          </button>
+        }
+      </div>
+    } @empty {
+      <p
+        class="py-6 text-center text-v4-tertiary-text-color text-[12px]"
+      >
+        No results found
+      </p>
+    }
+  </div>
+</app-sp-dropdown-shell>

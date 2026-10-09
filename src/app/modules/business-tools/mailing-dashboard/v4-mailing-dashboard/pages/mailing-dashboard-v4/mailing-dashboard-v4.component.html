@@ -1,0 +1,180 @@
+<div class="bg-v4-main-background-color">
+  <div>
+    <!-- Page Header -->
+    <div class="mb-6">
+      <button
+        type="button"
+        class="flex items-center gap-1.5 text-sm text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors mb-2 bg-transparent border-none cursor-pointer p-0 font-peridot"
+        (click)="goBack()"
+      >
+        <lucide-icon name="arrow-left" [size]="14"></lucide-icon>
+        <span>Back</span>
+      </button>
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          [style.background-color]="'rgba(121,36,255,0.12)'"
+        >
+          <lucide-icon
+            name="mail"
+            [size]="20"
+            [style.color]="'var(--v4-accent-violet-color)'"
+          ></lucide-icon>
+        </div>
+        <div class="flex flex-col">
+          <h1 class="m-0 text-xl font-semibold text-v4-main-text-color font-funnel">
+            Mailing Dashboard
+          </h1>
+          <span class="text-xs text-v4-secondary-text-color font-peridot">
+            Send checks and documents via mail with tracking
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content with Sidebar -->
+    <div class="flex flex-col lg:flex-row gap-6">
+      <!-- Left Sidebar -->
+      <div class="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-4">
+        <!-- Key Features Card -->
+        <div
+          class="sidebar-card bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5"
+        >
+          <h2
+            class="text-sm font-bold text-v4-main-text-color mb-4 flex items-center gap-2 font-funnel"
+          >
+            <lucide-icon
+              name="circle-check-big"
+              [size]="18"
+              class="text-v4-secondary-brand-color"
+            />
+            Key Features
+          </h2>
+          <ul class="space-y-3">
+            @for (feature of keyFeatures; track $index) {
+              <li
+                class="flex items-start gap-3 text-sm text-v4-secondary-text-color font-peridot"
+              >
+                <lucide-icon
+                  [name]="feature.icon"
+                  [size]="16"
+                  class="mt-0.5 flex-shrink-0"
+                  style="color: var(--v4-primary-brand-bold-color)"
+                />
+                <span>{{ feature.text }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Supported Shipment Types Card -->
+        <div
+          class="sidebar-card bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5"
+        >
+          <h2
+            class="text-sm font-bold text-v4-main-text-color mb-4 flex items-center gap-2 font-funnel"
+          >
+            <lucide-icon
+              name="truck"
+              [size]="18"
+              style="color: var(--v4-primary-brand-bold-color)"
+            />
+            Supported Shipment Types
+          </h2>
+
+          @if (isLoading()) {
+            <div class="flex flex-col gap-2">
+              @for (_ of [].constructor(8); track $index) {
+                <div
+                  class="h-9 rounded-lg animate-pulse skeleton-row"
+                ></div>
+              }
+            </div>
+          } @else {
+            <div class="space-y-2">
+              @for (item of shippingTypeList(); track $index) {
+                <div
+                  class="shipping-type-row flex items-center justify-between py-2 px-3 bg-v4-tertiary-background-color rounded-lg transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <lucide-icon
+                      [name]="getShippingIcon(item?.name)"
+                      [size]="14"
+                      class="text-v4-tertiary-text-color"
+                    />
+                    <span
+                      class="text-xs text-v4-secondary-text-color font-peridot"
+                    >
+                      {{ getShippingName(item?.name, item?.amount) }}
+                    </span>
+                  </div>
+                  <span
+                    class="text-xs font-bold font-peridot"
+                    style="color: var(--v4-primary-brand-bold-color)"
+                  >
+                    ${{ item?.amount }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Action Cards Grid -->
+      <div class="flex-1">
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
+        >
+          @for (card of dashboardCards; track card.id) {
+            <div role="presentation"
+              class="dashboard-card bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5 flex flex-col cursor-pointer group transition-all duration-200"
+              [class.coming-soon-card]="card.comingSoon"
+              role="button"
+              tabindex="0"
+              (click)="onCardClick(card)"
+            >
+              <div class="flex items-start justify-between mb-3">
+                <!-- Icon -->
+                <div
+                  class="icon-box w-12 h-12 rounded-2xl flex items-center justify-center"
+                  [style.--icon-bg-light]="card.iconBgLight"
+                >
+                  <lucide-icon
+                    [name]="card.icon"
+                    [size]="24"
+                    [style.color]="card.iconColor"
+                  />
+                </div>
+
+                <!-- Coming Soon Badge -->
+                @if (card.comingSoon) {
+                  <div
+                    class="coming-soon-badge flex items-center gap-1 px-2.5 py-1 bg-v4-input-background-color text-v4-primary-brand-bold-color text-[12px] font-semibold rounded-full font-peridot"
+                  >
+                    <lucide-icon name="clock" [size]="10" />
+                    Coming Soon
+                  </div>
+                }
+              </div>
+
+              <!-- Title -->
+              <h3
+                class="text-sm font-bold text-v4-main-text-color mb-1 font-funnel card-title"
+              >
+                {{ card.title }}
+              </h3>
+
+              <!-- Description -->
+              <p
+                class="text-xs text-v4-secondary-text-color flex-1 font-peridot line-clamp-2"
+              >
+                {{ card.description }}
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

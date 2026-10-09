@@ -1,0 +1,284 @@
+<div class="px-[6px] pb-[6px]">
+  <div class="flex justify-between pb-6">
+    <span
+      class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+    >
+      @if(injectData !== 'beazley-ent'){
+        <button (click)="back()">
+          <fa-icon class="cursor-pointer" [icon]="faArrowLeft" />
+        </button>
+      }
+      <span class="pl-3 font-inter font-semibold text-base pb-0.5" [ngClass]="{'!pl-0': injectData === 'beazley-ent'}">
+        {{injectData === 'beazley-ent' ? 'Import from Lis File' : 'Import from Excel File'}}
+      </span>
+    </span>
+    <fa-icon
+      [mat-dialog-close]="false"
+      class="text-secondary-text-color cursor-pointer"
+      [icon]="faXmark"
+    />
+  </div>
+
+  <div>
+    @if (step().step === 1) {
+      <div class="mt-5">
+        <form [formGroup]="form">
+          <div class="flex flex-col gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2">
+              <label
+                class="font-inter font-semibold text-main-text-color text-sm"
+                for="file"
+              >
+                Select File:
+                <span class="required">*</span>
+              </label>
+              <div class="flex flex-col">
+                <app-common-upload-button-v35
+                  [uploadedFile]="form.controls.file.value"
+                  buttonText="BROWSE"
+                  [acceptedFileTypes]="fts"
+                  (selectedFileEvent)="onFileUpload($event)"
+                />
+                <app-control-message-v35
+                  [control]="form.controls.file"
+                  labelName="Please select a file"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2">
+              @if(injectData === 'beazley-ent'){
+                <label
+                class="font-inter font-normal text-main-text-color text-sm"
+                for="account"
+                >Select Account: <span class="required">*</span></label
+              >
+              <div class="single_input control_wrap">
+                <app-bank-ac-dropdown-v3
+                  permissionContext="forPayment"
+                  [formControl]="selectedBank"
+                  (clearEvent)="onRemoveBank()"
+                  [append]="'body'"
+                >
+                </app-bank-ac-dropdown-v3>
+                <app-control-message-v35
+                  [control]="form.controls.bankAccount"
+                  labelName="Please select a bank account"
+                />
+              </div>
+              }@else{
+                <label
+                  for="head"
+                  class="font-inter font-semibold text-main-text-color text-sm"
+                >
+                  Include Column Heading Lines:
+                </label>
+                <div class="single_input no_modal_btn">
+                  <div class="angular-ocw-v35-ng-select-dropdown w-full">
+                    <ng-select
+                      appendTo="body"
+                      class="ng-dropdown-panel-v35 text-sm import-cheques"
+                      formControlName="includeHeader"
+                      [clearable]="false"
+                      [searchable]="false"
+                    >
+                      <ng-option value="no" selected>No</ng-option>
+                      <ng-option value="yes">Yes</ng-option>
+                    </ng-select>
+                  </div>
+                </div>
+
+              }
+            </div>
+
+            @if (injectData !== 'beazley-ent') {
+              <!-- How To Prepare Your File -->
+              <div
+                class="overflow-hidden rounded-lg border border-input-border-color"
+              >
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center gap-2.5 border-none bg-tertiary-background-color px-3.5 py-3 text-left"
+                  (click)="togglePrepareGuide()"
+                >
+                  <fa-icon
+                    class="shrink-0 text-common-blue-color"
+                    [icon]="faBookOpen"
+                  />
+                  <span class="flex min-w-0 flex-1 flex-col">
+                    <span
+                      class="font-inter text-sm font-semibold text-main-text-color"
+                      >How to prepare your file</span
+                    >
+                    <span
+                      class="font-inter text-xs font-normal text-secondary-text-color"
+                      >Each payment method needs its own columns &mdash; check
+                      yours before importing</span
+                    >
+                  </span>
+                  <fa-icon
+                    class="shrink-0 text-secondary-text-color transition-transform duration-200"
+                    [ngClass]="{ 'rotate-180': showPrepareGuide() }"
+                    [icon]="faAngleDown"
+                  />
+                </button>
+
+                @if (showPrepareGuide()) {
+                  <div
+                    class="max-h-[200px] overflow-y-auto border-t border-input-border-color bg-main-background-color px-3.5 pb-2 pt-1"
+                  >
+                    @for (group of prepareGuide; track group.sourceType) {
+                      <div
+                        class="pb-1 pt-2 font-inter text-[12px] font-semibold uppercase tracking-wider text-secondary-text-color"
+                      >
+                        {{ group.sourceLabel }}
+                      </div>
+                      @for (method of group.methods; track method.key) {
+                        <div
+                          class="flex items-start gap-3 border-b border-input-border-color py-2"
+                        >
+                          <div class="flex w-[118px] shrink-0 flex-col">
+                            <span
+                              class="font-inter text-xs font-semibold text-main-text-color"
+                              >{{ method.transferLabel }}</span
+                            >
+                            <span
+                              class="font-inter text-[12px] font-normal text-secondary-text-color"
+                              >min {{ method.minColumns }} columns</span
+                            >
+                          </div>
+                          <div
+                            class="flex min-w-0 flex-1 flex-wrap gap-1 pt-0.5"
+                          >
+                            @for (field of method.fieldLabels; track field) {
+                              <span
+                                class="rounded-md bg-tertiary-background-color px-1.5 py-0.5 font-inter text-[12px] font-normal text-secondary-text-color"
+                                >{{ field }}</span
+                              >
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                    <div
+                      class="flex items-center gap-1.5 pt-2 font-inter text-[12px] font-normal text-secondary-text-color"
+                    >
+                      <fa-icon class="shrink-0" [icon]="faCircleInfo" />
+                      <span
+                        >Column order doesn&rsquo;t matter when heading lines
+                        are included &middot; amounts as numbers, no currency
+                        symbol</span
+                      >
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="flex justify-end">
+              <app-common-button-v35
+                [type]="{ style: 'modal', name: 'main' }"
+                backGroundInput="var(--common-green-color)"
+                text="Import"
+                (clickEvent)="submit()"
+                [loading]="submitting()"
+                [disabled]="submitting()"
+              />
+            </div>
+          </div>
+        </form>
+
+        <div class="text-sm flex flex-col">
+          @if(injectData !== 'beazley-ent'){
+            <span
+              class="mt-3 flex items-center gap-1 font-inter text-main-text-color font-normal"
+            >
+              <fa-icon class="text-common-blue-color" [icon]="faAngleRight" />
+              <span>
+                Please make sure date format is (mm/dd/yyyy or mm/dd/yy)
+              </span>
+            </span>
+          }
+          <span
+            class="mt-3 flex items-center gap-1 font-inter text-main-text-color font-normal"
+          >
+            <fa-icon class="text-common-blue-color" [icon]="faAngleRight" />
+            <span>We only support {{injectData === 'beazley-ent' ? 'lis' : 'csv/xlsx'}} file</span>
+          </span>
+
+          <a class="flex items-center gap-1 mt-3">
+            <span class="m-1 text-common-blue-color font-inter font-normal">
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                text="Download Sample File"
+                [type]="{ style: 'bordered', name: 'main' }"
+                [disableHoverEffect]="false"
+                [isAddIcon]="true"
+                [icon]="faArrowDownToLine"
+                [disabled]="fileDownloading()"
+                [loading]="fileDownloading()"
+                (click)="downloadSample()"
+              />
+            </span>
+          </a>
+        </div>
+      </div>
+    }
+    @if (step().step === 2) {
+      <div class="flex flex-col gap-1 !max-w-11/12">
+        <div class="flex flex-shrink !overflow-auto">
+          <table class="ocw-table overflow-auto ocw-table-striped">
+            <tbody>
+              <tr>
+                <td>S.No</td>
+                @for (item of step().info.header; track item; let i = $index) {
+                  <td class="min-w-[250px]">
+                    <div class="single_input no_modal_btn">
+                      <select
+                        [(ngModel)]="selectedHeader[i]"
+                        (ngModelChange)="onSelectHeader(selectedHeader[i], i)"
+                        placeholder="Base Account"
+                        class="input_style"
+                      >
+                        <option selected value="">--Match--</option>
+                        @for (
+                          option of step().info.header;
+                          track option;
+                          let optIn = $index
+                        ) {
+                          <option
+                            [disabled]="disableMap()[optIn] !== undefined"
+                            [ngValue]="{ opt: option, optIn: optIn }"
+                          >
+                            {{ option.displayName }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                  </td>
+                }
+              </tr>
+
+              @for (row of step().info.rows; track row; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  @for (col of step().info.header; track col) {
+                    <td>{{ row[col.displayName] }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="flex justify-end">
+          <app-common-button-v35
+            [type]="{ style: 'modal', name: 'main' }"
+            text="Submit"
+            (clickEvent)="submitStep2()"
+            [loading]="submitting()"
+            [disabled]="submitting()"
+          />
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,290 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Fund Your Wallet
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <form [formGroup]="fundYourWalletForm" class="flex flex-col gap-4">
+      <!-- Amount -->
+      <div class="flex flex-col items-center">
+        <app-common-amount-input-v4
+          formControlName="amount"
+          [customClass]="'hero-input'"
+          [maxLength]="15"
+          (blurEvent)="totalAmountCal()"
+        />
+        <app-control-message-v4
+          [control]="fundYourWalletForm.controls.amount"
+          [customMessages]="{ min: 'This field is required' }"
+        />
+        @if (
+          fundYourWalletForm.value?.amount < minAmount &&
+          fundYourWalletForm.value.amount !== null &&
+          fundYourWalletForm.value?.amount! > 0
+        ) {
+          <small
+            class="text-destructive text-xs font-medium !text-v4-common-red-color"
+          >
+            Amount should be a minimum of {{ minAmount | currency }}
+          </small>
+        }
+      </div>
+
+      <!-- Memo -->
+      @if (selectedFundingBank !== "3") {
+        <div>
+          <app-common-input-v4
+            formControlName="comment"
+            [placeholder]="'Memo'"
+            [maxLength]="50"
+            [control]="fundYourWalletForm.controls.comment"
+            [fieldLabel]="'Memo'"
+            [isFieldRequired]="true"
+          />
+        </div>
+      }
+
+      <!-- Funding Source Radio Group -->
+      <div>
+        <mat-radio-group
+          aria-label="Select an option"
+          class="flex flex-wrap gap-4"
+          [(ngModel)]="selectedFundingBank"
+          [ngModelOptions]="{ standalone: true }"
+          (change)="onChangeBankType($event)"
+        >
+          @for (item of fundingBankTypes; track item.id) {
+            <div class="flex items-center gap-1">
+              <mat-radio-button
+                [value]="item.id"
+                [checked]="item.id === selectedFundingBank"
+              >
+                <span class="text-sm font-medium text-v4-main-text-color font-peridot">{{
+                  item.head
+                }}</span>
+              </mat-radio-button>
+              <lucide-icon
+                [img]="HelpCircleIcon"
+                [size]="14"
+                class="text-v4-tertiary-text-color relative z-10"
+                [matTooltip]="item.tooltip"
+                matTooltipPosition="above"
+                (click)="$event.stopPropagation()"
+              />
+            </div>
+          }
+        </mat-radio-group>
+      </div>
+
+      <!-- Transfer Type Toggle (ACH / Wire) -->
+      @if (selectedFundingBank !== "3") {
+        <div>
+          <app-common-tab-v4
+            [tabs]="transferTypeTabs"
+            [(activeTab)]="selectedTransferType"
+            [variant]="'toggle'"
+            (tabChange)="changeTransferType($event)"
+          />
+        </div>
+      }
+
+      <!-- Bank Account / Bank Holder Name -->
+      @if (selectedFundingBank !== "3" && selectedTransferType !== "card") {
+        @if (selectedFundingBank === "1") {
+          <div>
+            <label
+              class="block text-xs font-medium text-v4-secondary-text-color mb-1.5 font-peridot"
+              for="bankAccount"
+              >Bank Account
+              <span class="text-v4-common-red-color">*</span></label
+            >
+            <app-bank-ac-dropdown-v4
+              #bankAcDropDown
+              [append]="'body'"
+              [zIndex]="1001"
+              [placeholder]="
+                selectedTransferType === 'ach'
+                  ? 'From Bank Account'
+                  : 'Select Bank Account'
+              "
+              [formControl]="selectedBankAccount"
+            />
+            <app-control-message-v4
+              [control]="fundYourWalletForm.controls.bankAccount"
+            />
+          </div>
+        } @else {
+          <div class="input-full-width">
+            <app-common-input-v4
+              [placeholder]="'Bank Account Holder Name'"
+              formControlName="bankHolderName"
+              [control]="fundYourWalletForm.controls.bankHolderName"
+              [fieldLabel]="'Bank Account Holder Name'"
+              [isFieldRequired]="true"
+            />
+          </div>
+        }
+      }
+
+      <!-- To Wallet -->
+      <div>
+        <label
+          class="block text-xs font-medium text-v4-secondary-text-color mb-1.5 font-peridot"
+          for="toWallet"
+          >To Wallet <span class="text-v4-common-red-color">*</span></label
+        >
+        <app-wallet-dropdown-v4
+          placeholder="Select Wallet"
+          [formControl]="selectedWallet"
+          [showLogoUpdateModal]="false"
+          [append]="'body'"
+        />
+        <app-control-message-v4
+          [control]="fundYourWalletForm.controls.toWallet"
+        />
+      </div>
+
+      <!-- Crypto Fields -->
+      @if (selectedFundingBank === "3") {
+        <div class="flex flex-col gap-5">
+          <div>
+            <select
+              formControlName="chain"
+              class="w-full px-3 py-2 border border-v4-input-border-color rounded-md bg-v4-input-background-color text-v4-main-text-color text-sm"
+              (change)="onChangeChain($event)"
+            >
+              <option value="" class="text-v4-tertiary-text-color" disabled>
+                Select a Blockchain Network
+              </option>
+              @for (chain of cryptoChains; track chain.id) {
+                <option [value]="chain.id">{{ chain.name }}</option>
+              }
+            </select>
+            <app-control-message-v4
+              [control]="fundYourWalletForm.controls.chain"
+            />
+            @if (fundYourWalletForm.controls.chain.value) {
+              <div class="text-end mt-1">
+                <button
+                  type="button"
+                  class="text-xs text-v4-primary-brand-color cursor-pointer hover:underline border-none bg-transparent p-0"
+                  (click)="openQRCodeModal()"
+                >
+                  QR Code
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (fundYourWalletForm.controls.receiving_crypto_address.value) {
+            <div class="relative input-full-width">
+              <app-common-input-v4
+                [placeholder]="'Receiving Crypto Address'"
+                formControlName="receiving_crypto_address"
+                [isFieldRequired]="false"
+                [readOnly]="true"
+                [control]="fundYourWalletForm.controls.receiving_crypto_address"
+                [fieldLabel]="'Receiving Crypto Address'"
+              />
+              <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                <lucide-icon
+                  [img]="CopyIcon"
+                  [size]="14"
+                  class="text-v4-tertiary-text-color cursor-pointer hover:text-v4-main-text-color"
+                  (click)="copyCryptoAddress()"
+                />
+              </div>
+            </div>
+          }
+
+          <div class="input-full-width">
+            <app-common-input-v4
+              [placeholder]="'From Address (Your Blockchain Source Address)'"
+              formControlName="fromAddress"
+              [showInfoIcon]="true"
+              [tooltip]="
+                'Enter the address of your digital wallet from which funds were sent.'
+              "
+              [control]="fundYourWalletForm.controls.fromAddress"
+              [fieldLabel]="'From Address (Your Blockchain Source Address)'"
+            />
+          </div>
+
+          <div class="input-full-width">
+            <app-common-input-v4
+              [placeholder]="'Transaction Hash'"
+              formControlName="transactionHash"
+              [showInfoIcon]="true"
+              [tooltip]="
+                'Enter the unique transaction ID (TxID) of the transfer.'
+              "
+              [control]="fundYourWalletForm.controls.transactionHash"
+              [fieldLabel]="'Transaction Hash'"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Digital Signature (Wire from your bank) -->
+      @if (selectedTransferType === "wire" && selectedFundingBank === "1") {
+        <div class="input-full-width">
+          <app-common-input-v4
+            [placeholder]="'Enter Your Name/Digital Sign'"
+            formControlName="digitalSignature"
+            [control]="fundYourWalletForm.controls.digitalSignature"
+            [fieldLabel]="'Digital Signature'"
+            [isFieldRequired]="true"
+          />
+        </div>
+        <div class="pb-1 text-3xl font-signatureFont text-v4-main-text-color">
+          {{ fundYourWalletForm.value?.digitalSignature }}
+        </div>
+      }
+
+      <!-- Card Total Amount -->
+      @if (selectedTransferType === "card") {
+        <div class="text-end flex flex-col gap-1">
+          <span class="font-normal text-xs text-v4-secondary-text-color">
+            Total Amount (Including transaction fee)
+          </span>
+          <h1 class="text-v4-main-text-color font-semibold text-sm">
+            {{ fundYourWalletForm.value.totalAmount | currency }}
+          </h1>
+        </div>
+      }
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="'Submit'"
+      [width]="'124px'"
+      [loading]="loading()"
+      (clickEvent)="onSubmit()"
+    />
+  </div>
+</div>

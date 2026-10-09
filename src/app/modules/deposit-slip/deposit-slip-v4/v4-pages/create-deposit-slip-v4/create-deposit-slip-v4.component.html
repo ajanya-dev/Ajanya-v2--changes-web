@@ -1,0 +1,353 @@
+<div class="px-6 py-1 font-peridot">
+  <!-- Header -->
+  <div class="flex items-center gap-3 my-6">
+    <button
+      class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-v4-secondary-background-color transition-colors"
+      (click)="navigateToIndex()"
+    >
+      <lucide-icon name="arrow-left" [size]="20" class="text-v4-main-text-color"></lucide-icon>
+    </button>
+    <h2 class="text-xl font-bold m-0 font-funnel text-v4-main-text-color">
+      {{ routeData?.title }}
+    </h2>
+  </div>
+
+  <!-- Form Card -->
+  <div class="rounded-xl p-5 bg-v4-secondary-background-color border border-v4-border-color">
+    <!-- Row 1: Bank Account + Deposit From -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <app-bank-ac-dropdown-v4
+        [(ngModel)]="bankAccount"
+        permissionContext="fromDepositSlip"
+        placeholder="Select a Bank Account to Deposit"
+        [showVerificationBadge]="true"
+      />
+      @if (isLoading()) {
+        <div class="skelton h-10 rounded-lg"></div>
+      } @else {
+        <app-payee-dropdown-v4
+          placeholder="Deposit From"
+          [(ngModel)]="payee"
+          (ready)="autoPopulateDropdown($event, deposlipData()?.payeeId ?? '')"
+        />
+      }
+    </div>
+
+    <!-- Row 2: Date, Ref ID, Memo -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      <app-v4-date-picker
+        fieldLabel="Date"
+        [isFieldRequired]="true"
+        placeholder="Date"
+        [(ngModel)]="date"
+      />
+      <app-common-input-v4
+        fieldLabel="Ref ID"
+        [isFieldRequired]="false"
+        placeholder="Ref ID"
+        [(ngModel)]="refId"
+        [maxLength]="10"
+        [isNumberOnly]="true"
+        numberType="numeric"
+      />
+      <app-common-input-v4
+        fieldLabel="Memo"
+        [isFieldRequired]="false"
+        placeholder="Memo"
+        [(ngModel)]="memo"
+        [maxLength]="150"
+      />
+    </div>
+
+    <!-- Row 3: Attachment, Comment, Blank checkbox -->
+    <div class="flex items-center gap-3 mt-4">
+      <button
+        class="flex items-center justify-center w-9 h-9 rounded-md transition-colors relative border border-brand-border-color bg-v4-secondary-background-color text-v4-secondary-text-color"
+        matTooltip="Add attachments to the deposit slip"
+        (click)="openAddAttachment()"
+      >
+        <lucide-icon name="paperclip" [size]="16"></lucide-icon>
+        @if (attachmentList.length) {
+          <span class="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 rounded-full text-[12px] font-bold text-white" style="background: var(--v4-common-red-color)">
+            {{ attachmentList.length }}
+          </span>
+        }
+      </button>
+
+      <button
+        class="flex items-center justify-center w-9 h-9 rounded-md transition-colors relative border border-brand-border-color bg-v4-secondary-background-color text-v4-secondary-text-color"
+        matTooltip="Add comments. For internal purposes, will not print on deposit slips."
+        (click)="openAddComment()"
+      >
+        <lucide-icon name="message-square" [size]="16"></lucide-icon>
+        @if (commentList.length) {
+          <span class="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 rounded-full text-[12px] font-bold text-white bg-v4-common-red-color">
+            {{ commentList.length }}
+          </span>
+        }
+      </button>
+
+      <div class="flex items-center gap-1">
+        <mat-checkbox
+          class="v4-checkbox"
+          [checked]="blank === 0"
+          (change)="blankdeposit($event)"
+        >
+          <span class="text-sm" style="color: var(--v4-main-text-color)">Blank Deposit Slip</span>
+        </mat-checkbox>
+        <lucide-icon
+          name="circle-help"
+          [size]="14"
+          class="cursor-help text-v4-secondary-text-color"
+          matTooltip="Create a blank deposit slip by adding just the bank account and date. You can add the amount later."
+        ></lucide-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASH TABLE -->
+  @if (!ischecked) {
+    <div class="mt-6">
+      <h3 class="text-sm font-bold tracking-wide mb-3 font-funnel text-v4-main-text-color">CASH</h3>
+      <div class="rounded-xl p-4 pb-3 bg-v4-secondary-background-color border border-v4-border-color">
+      <div class="overflow-x-auto">
+        <table class="v4-form-table v4-form-table-fixed">
+          <thead>
+            <tr>
+              <th class="w-[18%] font-semibold">AMOUNT</th>
+              <th class="w-[20%] font-semibold">CASHIER/CLERK</th>
+              <th class="font-semibold">NOTE</th>
+              <th class="w-[14%] font-semibold">TYPE</th>
+              <th class="w-[60px] font-semibold">ACTION</th>
+            </tr>
+          </thead>
+          <tbody [formGroup]="cashForm">
+            <ng-container formArrayName="rows">
+              @for (item of cashForm?.controls['rows']['controls']; track item; let i = $index) {
+                <tr>
+                  <ng-container [formGroupName]="i">
+                    <td>
+                      <app-common-amount-input-v4
+                        formControlName="amount"
+                        [enableBreakdown]="true"
+                        [showBreakdownPanel]="activeBreakdownIndex === i"
+                        (toggleBreakdownRequest)="toggleBreakdown(i)"
+                        (breakdownApplied)="handleBreakdownApplied($event, i)"
+                        [savedDenominations]="cashFormRows.at(i).get('denominations')?.value"
+                        (focused)="onAmountInputFocus()"
+                        height="32px"
+                      />
+                    </td>
+                    <td>
+                      <app-v4-common-dropdown
+                        [config]="cashierClerkConfig"
+                        [listData]="payees"
+                        [clearable]="true"
+                        [searchable]="true"
+                        [addTag]="true"
+                        addTagText="Save"
+                        formControlName="payeeName"
+                      />
+                    </td>
+                    <td>
+                      <app-common-input-v4
+                        placeholder="Note"
+                        [isFieldRequired]="false"
+                        [maxLength]="70"
+                        formControlName="misc"
+                        fieldHeight="32px"
+                      />
+                    </td>
+                    <td>
+                      <app-v4-common-dropdown
+                        [config]="cashTypeConfig"
+                        [listData]="cashTypeItems"
+                        [clearable]="false"
+                        [searchable]="false"
+                        formControlName="checkType"
+                      />
+                    </td>
+                    <td>
+                      <button
+                        class="flex items-center justify-center w-8 h-8 rounded-md transition-colors mx-auto text-v4-insight-card-icon-red"
+                        (click)="removeCashRow(i)"
+                      >
+                        <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+                </tr>
+              }
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      </div>
+
+      <div class="flex justify-end gap-2 mt-3">
+        <button
+          class="add-row-btn"
+          [class.disabled]="!disablePushBtn"
+          [disabled]="!disablePushBtn"
+          (click)="pushCashRow()"
+        >+</button>
+        <button
+          class="remove-row-btn"
+          (click)="popCashRow()"
+        >-</button>
+      </div>
+    </div>
+  }
+
+  <!-- CHECK TABLE -->
+  @if (!ischecked) {
+    <div class="mt-6">
+      <h3 class="text-sm font-bold tracking-wide mb-3 font-funnel text-v4-main-text-color">CHECK</h3>
+      <div class="rounded-xl p-4 pb-3 bg-v4-secondary-background-color border border-v4-border-color">
+      <div class="overflow-x-auto">
+        <table class="v4-form-table v4-form-table-fixed">
+          <thead>
+            <tr>
+              <th class="w-[12%] font-semibold">AMOUNT</th>
+              <th class="w-[18%] font-semibold">FROM</th>
+              <th class="w-[10%] font-semibold">CHECK#</th>
+              <th class="w-[16%] font-semibold">CASHIER/CLERK</th>
+              <th class="font-semibold">NOTE</th>
+              <th class="w-[14%] font-semibold">TYPE</th>
+              <th class="w-[60px] font-semibold">ACTION</th>
+            </tr>
+          </thead>
+          <tbody [formGroup]="checkForm">
+            <ng-container formArrayName="rows">
+              @for (item of checkForm?.controls['rows']['controls']; track item; let i = $index) {
+                <tr>
+                  <ng-container [formGroupName]="i">
+                    <td>
+                      <app-common-amount-input-v4
+                        formControlName="amount"
+                        (focused)="onAmountInputFocus()"
+                        height="32px"
+                      />
+                    </td>
+                    <td>
+                      <app-payee-dropdown-v4
+                        style="display: block; width: 100%"
+                        placeholder="Select"
+                        formControlName="checkFrom"
+                        [enableAddNew]="true"
+                        [labelIconNeeded]="false"
+                        [dropdownIconNeeded]="false"
+                        [customHeight]="'1'"
+                        (ready)="autoPopulateDropdown($event, item.get('checkFrom')?.value)"
+                      />
+                    </td>
+                    <td>
+                      <app-common-input-v4
+                        placeholder="Check#"
+                        [isFieldRequired]="false"
+                        [isNumberOnly]="true"
+                        numberType="decimal"
+                        [maxLength]="10"
+                        formControlName="checkTo"
+                        fieldHeight="32px"
+                      />
+                    </td>
+                    <td>
+                      <app-v4-common-dropdown
+                        [config]="cashierClerkConfig"
+                        [listData]="payees"
+                        [clearable]="true"
+                        [searchable]="true"
+                        [addTag]="true"
+                        addTagText="Save"
+                        formControlName="payeeName"
+                      />
+                    </td>
+                    <td>
+                      <app-common-input-v4
+                        placeholder="Note"
+                        [isFieldRequired]="false"
+                        [maxLength]="70"
+                        formControlName="misc"
+                        fieldHeight="32px"
+                      />
+                    </td>
+                    <td>
+                      <app-v4-common-dropdown
+                        [config]="checkTypeConfig"
+                        [listData]="checkTypeItems"
+                        [clearable]="false"
+                        [searchable]="false"
+                        formControlName="checkType"
+                      />
+                    </td>
+                    <td>
+                      <button
+                        class="flex items-center justify-center w-8 h-8 rounded-md transition-colors mx-auto"
+                        style="color: var(--v4-insight-card-icon-red)"
+                        (click)="removeCheckRow(i)"
+                      >
+                        <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+                </tr>
+              }
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      </div>
+
+      <div class="flex justify-end gap-2 mt-3">
+        <button
+          class="add-row-btn"
+          [class.disabled]="!disablePushBtn"
+          [disabled]="!disablePushBtn"
+          (click)="pushCheckRow()"
+        >+</button>
+        <button
+          class="remove-row-btn"
+          (click)="popCheckRow()"
+        >-</button>
+      </div>
+    </div>
+  }
+
+  <!-- ACTION BUTTONS -->
+  <div class="flex justify-end gap-3 mt-6 mb-6">
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [lucideIcon]="'save'"
+      [lucideIconSize]="15"
+      [loading]="loaders.submitting"
+      [text]="routeData?.mode === 'edit' ? 'Update Deposit Slip' : routeData?.mode === 'clone' ? 'Clone Deposit Slip' : 'Save'"
+      [disabled]="loaders.printing || loaders.submitting || loaders.submittingAndNew"
+      (clickEvent)="saveSlip()"
+    />
+
+    @if (routeData?.mode === 'create') {
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [lucideIcon]="'save'"
+        [lucideIconSize]="15"
+        [loading]="loaders.submittingAndNew"
+        [disabled]="loaders.printing || loaders.submitting || loaders.submittingAndNew"
+        text="Save & New"
+        (clickEvent)="saveSlip(true)"
+      />
+
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [lucideIcon]="'printer'"
+        [lucideIconSize]="15"
+        [loading]="loaders.printing"
+        [disabled]="loaders.printing || loaders.submitting || loaders.submittingAndNew"
+        text="Print"
+        (clickEvent)="saveAndPrint()"
+      />
+    }
+  </div>
+</div>

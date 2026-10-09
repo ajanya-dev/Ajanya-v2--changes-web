@@ -1,0 +1,478 @@
+<div
+  class="bg-main-background-color w-full relative bg-[url(/assets/images/register-bg.svg)] max-sm:bg-none min-h-screen"
+>
+  <div
+    class="flex w-full items-center flex-col pt-14 max-sm:pt-4 px-4 max-sm:px-2 relative"
+  >
+    @if (isLogout()) {
+      <div class="absolute left-[50%] top-[50%] loader !z-10"></div>
+    }
+    <div
+      class="shadow-common-box-shadow rounded flex flex-col gap-5 py-5 px-7 bg-main-background-color max-sm:shadow-none max-sm:px-3 max-sm:w-full w-full max-w-4xl"
+      [ngClass]="{ 'blur-[3px]': isLogout() }"
+    >
+      <!-- Logo Section -->
+      <div class="flex justify-center items-center relative">
+        <div class="absolute top-0 right-0">
+          <span
+            class="v35-labels hover:underline"
+            role="presentation"
+            (click)="onLogout()"
+            >Logout</span
+          >
+        </div>
+        <div class="w-32 pb-7 max-sm:w-24 max-sm:pb-3 cursor-pointer">
+          <img
+            role="presentation"
+            [alt]="authV3Service.appConfig?.websiteTitle"
+            (click)="authV3Service.onGoToWebsite()"
+            [ngSrc]="logoPath"
+            [title]="authV3Service.appConfig?.websiteTitle"
+            width="130"
+            height="85"
+            priority
+          />
+        </div>
+      </div>
+
+      <!-- Card and Details Section -->
+      @if (!isSectionTimeout()) {
+        <div class="flex h-auto w-full gap-6 max-lg:flex-col max-lg:h-full">
+          <!-- Card Visual Section -->
+          <div class="flex flex-col relative items-center justify-center">
+            <div
+              class="aspect-[85.60/53.98] w-[273px] h-[170px] bg-[#d5af34] relative p-2 flex flex-col justify-between rounded-[9px] shrink-0 border-[.66px] border-[#fffac2] shadow-[-5px_5px_4px_0px_rgba(0,0,0,0.18)] ml-2"
+              [ngClass]="{
+                'blur-[3px]':
+                  !isCardinfoLoading() &&
+                  cardDeatils()?.card?.card_status === 'pending_activation'
+              }"
+            >
+              <div class="flex justify-end">
+                <img
+                  ngSrc="assets/images/virtual-card/zm logo.svg"
+                  alt=""
+                  width="94"
+                  height="25"
+                />
+              </div>
+              <div class="flex flex-col">
+                <div class="flex flex-col px-4">
+                  <div class="credit-card-font font-normal">
+                    @if (
+                      !isCardinfoLoading() && decyptedInfo()?.cardNumber;
+                      as cardNumber
+                    ) {
+                      <div>
+                        <div
+                          class="text-white font-normal text-[14.8px]"
+                          style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                        >
+                          {{ cardNumber }}
+                        </div>
+                      </div>
+                    } @else if (isCardinfoLoading()) {
+                      <div class="card-skeleton h-7 w-[222px]"></div>
+                    } @else {
+                      <div class="text-white text-[20.8px]">
+                        **** **** **** ****
+                      </div>
+                    }
+                  </div>
+                  <div
+                    class="flex justify-end items-center lato-regular text-white text-[12px]"
+                  >
+                    <div class="whitespace-nowrap pr-[2px]">CVV</div>
+                    @if (!isCardinfoLoading()) {
+                      <div class="text-white">
+                        @if (decyptedInfo()?.cardCvv; as cardSecurity) {
+                          {{ cardSecurity }}
+                        }
+                      </div>
+                    } @else if (isCardinfoLoading()) {
+                      <div class="card-skeleton h-3 w-9"></div>
+                    } @else {
+                      <div class="text-white">****</div>
+                    }
+                  </div>
+                </div>
+                <div class="flex flex-col pl-4">
+                  <div class="flex items-center justify-center">
+                    <div
+                      class="flex flex-col items-start lato-regular text-white text-[7px] pr-[2px] leading-tight"
+                    >
+                      <div>VALID</div>
+                      <div>THRU</div>
+                    </div>
+                    @if (!isCardinfoLoading()) {
+                      <div
+                        class="text-white font-roboto text-lg"
+                        style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                      >
+                        @if (decyptedInfo()?.expiryDate; as cardExpiry) {
+                          {{ cardExpiry }}
+                        }
+                      </div>
+                    } @else if (isCardinfoLoading()) {
+                      <div class="card-skeleton h-7 w-9"></div>
+                    } @else {
+                      <div class="text-white font-roboto text-lg">**/**</div>
+                    }
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div
+                        class="text-white font-medium truncate font-roboto text-base leading-[14px]"
+                        style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                        [matTooltip]="
+                          cardDeatils()?.card?.name_on_card?.length > 18
+                            ? cardDeatils()?.card?.name_on_card
+                            : ''
+                        "
+                      >
+                        {{ cardDeatils()?.card?.name_on_card | truncate: 18 }}
+                      </div>
+                    </div>
+                    <div>
+                      <img
+                        ngSrc="assets/images/virtual-card/visa logo.svg"
+                        alt="visa-logo"
+                        width="59"
+                        height="18"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reveal Button - Outside Card Image -->
+            @if (showRevealBtn()) {
+              <app-common-button-v35
+                (clickEvent)="revealCardInfo(this.cardDeatils()?.card_info)"
+                [type]="{ name: 'action', style: 'blue' }"
+                text="Reveal Details"
+                class="mt-3"
+              />
+            }
+            <!-- Card Action Buttons -->
+            <div
+              class="flex gap-2 mt-3 w-full justify-center max-sm:flex-col max-sm:items-center"
+            >
+              @if (cardDeatils()?.card?.card_status === "pending_activation") {
+                <button
+                  class="activate_btn sm:text-sm sm:p-2"
+                  [class.loading]="isActiveCard()"
+                  [disabled]="isActiveCard()"
+                  (click)="activateCard()"
+                  type="button"
+                  aria-label="Activate gift card"
+                >
+                  {{ isActiveCard() ? "Activating..." : "Activate Card" }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Card Details Section -->
+          <div class="flex flex-col min-h-full w-full gap-2">
+            <div
+              class="flex flex-wrap gap-x-7 items-start justify-start bg-secondary-background-color rounded p-5 w-full h-full relative max-sm:p-3 max-sm:flex-col max-sm:gap-3"
+            >
+              <div class="flex max-sm:w-full max-sm:justify-between">
+                <!-- Card Holder Section -->
+                <div
+                  class="flex flex-col gap-5 min-w-[120px] max-sm:min-w-[45%]"
+                >
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Card Holder</span
+                    >
+                    <div class="flex gap-2 w-32 max-sm:w-full">
+                      <span
+                        class="font-inter font-medium text-sm text-main-text-color truncate"
+                        [ngClass]="{
+                          'skelton !h-5 !w-10': isCardinfoLoading()
+                        }"
+                        [matTooltip]="
+                          cardDeatils()?.card?.name_on_card?.length > 13
+                            ? cardDeatils()?.card?.name_on_card
+                            : ''
+                        "
+                      >
+                        {{ cardDeatils()?.card?.name_on_card }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Last 4 digit</span
+                    >
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                      [ngClass]="{ 'skelton !h-5 !w-10': isCardinfoLoading() }"
+                    >
+                      ****{{ cardDeatils()?.card?.last4 }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Balance and Type Section -->
+                <div
+                  class="flex flex-col gap-5 min-w-[120px] max-sm:min-w-[45%]"
+                >
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Available Balance</span
+                    >
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                      [ngClass]="{ 'skelton !h-5 !w-10': isCardinfoLoading() }"
+                    >
+                      {{ cardDeatils()?.available_limit_amount | currency }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Type</span
+                    >
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                      [ngClass]="{ 'skelton !h-5 !w-10': isCardinfoLoading() }"
+                    >
+                      {{ cardDeatils()?.card?.card_type | titlecase }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Sender Section -->
+                <div class="block max-sm:hidden">
+                  <ng-container *ngTemplateOutlet="sender"></ng-container>
+                </div>
+              </div>
+              <div class="hidden max-sm:block max-sm:w-full">
+                <ng-container *ngTemplateOutlet="sender"></ng-container>
+              </div>
+              <!-- Billing Address Section -->
+              <div class="w-full mt-5 max-sm:mt-0">
+                <div class="flex flex-col gap-1 w-fit">
+                  <span
+                    class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                    >Billing Address</span
+                  >
+                  @if (cardDeatils()?.card?.holder?.address1) {
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color w-fit max-sm:break-words"
+                    >
+                      {{ cardDeatils()?.card?.holder?.address1 }},
+                      @if (cardDeatils()?.card?.holder?.address2) {
+                        {{ cardDeatils()?.card?.holder?.address2 }},
+                      }
+                      {{ cardDeatils()?.card?.holder?.city }},
+                      {{ cardDeatils()?.card?.holder?.state }},
+                      {{ cardDeatils()?.card?.holder?.country }},
+                      {{ cardDeatils()?.card?.holder?.zip }}
+                    </span>
+                  } @else {
+                    <div
+                      [ngClass]="{ 'skelton !h-5 !w-32': isCardinfoLoading() }"
+                    >
+                      <app-common-button-v35
+                        type="list"
+                        text="Update Address"
+                        (clickEvent)="updateAddress()"
+                      />
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Transactions Section -->
+      @if (!isSectionTimeout()) {
+        <div>
+          <h1
+            class="font-inter font-medium text-base text-main-text-color pb-2"
+          >
+            Transactions
+          </h1>
+          <div class="overflow-x-auto">
+            @if (cardTransactions()?.length > 0 && !isTrandactionLoading()) {
+              <table class="new-table w-full min-w-[600px]">
+                <thead>
+                  <tr>
+                    @for (
+                      head of [
+                        "Merchant",
+                        "Amount",
+                        "Date",
+                        "Description",
+                        "Status"
+                      ];
+                      track $index
+                    ) {
+                      <th class="text-left p-2 text-sm">{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+
+                <tbody>
+                  @for (item of cardTransactions(); track item) {
+                    <tr>
+                      <td class="p-2 text-sm break-all">
+                        {{ item.merchant_name }}
+                      </td>
+                      <td class="p-2 text-sm">{{ item.amount | currency }}</td>
+                      <td class="p-2 text-sm">
+                        {{ item.txn_date | date: "MMM-dd-yyyy" }}
+                      </td>
+                      <td class="p-2 text-sm break-all max-w-[200px]">
+                        {{ item.description }}
+                      </td>
+                      <td class="p-2 text-sm">
+                        <div
+                          class="w-fit rounded px-2 text-xs py-1"
+                          [ngClass]="{
+                            'text-common-red-color bg-common-secondary-red-color':
+                              item.status === 'declined',
+                            'text-common-green-color bg-common-secondary-green-color':
+                              item.status === 'completed',
+                            'text-common-yellow-color bg-common-secondary-yellow-color':
+                              item.status === 'pending'
+                          }"
+                        >
+                          {{ item.status | titlecase }}
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- Pagination -->
+              @if (totalTransaction() > 1 && cardTransactions().length) {
+                <div
+                  class="py-3 flex items-center justify-end max-sm:flex-wrap max-sm:justify-center"
+                >
+                  <nav
+                    class="relative z-0 inline-flex rounded-md shadow-sm gap-0.5 max-sm:flex-wrap max-sm:justify-center"
+                    aria-label="Pagination"
+                  >
+                    <a
+                      (click)="onPrevious()"
+                      role="presentation"
+                      class="relative sm:mx-0.5 inline-flex items-center px-2 py-2 rounded-md border border-input-border-color text-sm font-medium text-gray-500 cursor-pointer"
+                    >
+                      <fa-icon [icon]="faAngleLeft">Previous</fa-icon>
+                    </a>
+
+                    @for (item of pageArr; let i = $index; track item) {
+                      <a
+                        aria-current="page"
+                        (click)="gotoPage(item)"
+                        role="presentation"
+                        class="sm:mx-0.5 z-10 relative inline-flex items-center px-3 py-1 text-sm font-medium cursor-pointer font-inter text-main-text-color"
+                        [ngClass]="{
+                          ' border-w':
+                            (mode === 1 && i + 1 === initialPage) ||
+                            (mode !== 1 && i + 1 === pseudoI),
+                          ' border-gray-300': i + 1 !== initialPage,
+                          'rounded-md border border-input-border-color':
+                            item !== '...',
+                          'bg-common-blue-color text-white':
+                            paginationPage === item
+                        }"
+                      >
+                        {{ item ? item : "..." }}
+                      </a>
+                    }
+
+                    <a
+                      (click)="onNext()"
+                      role="presentation"
+                      class="sm:mx-0.5 relative inline-flex items-center px-2 py-1 rounded-md border border-input-border-color text-sm font-medium text-gray-500 cursor-pointer"
+                    >
+                      <fa-icon [icon]="faAngleRight">Next</fa-icon>
+                    </a>
+                  </nav>
+                </div>
+              }
+            } @else if (isTrandactionLoading()) {
+              <div class="flex flex-col justify-center items-center h-60">
+                <fa-icon
+                  [icon]="faSpinner"
+                  animation="spin"
+                  class="text-common-green-color"
+                />
+              </div>
+            } @else {
+              <div class="flex flex-col justify-center items-center h-60">
+                <img
+                  ngSrc="/assets/images/empty-box-v3.svg"
+                  alt="No data"
+                  width="120"
+                  height="100"
+                />
+                <span
+                  class="font-roboto font-normal text-main-text-color text-sm"
+                >
+                  No Transactions
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (isSectionTimeout()) {
+        <div class="h-96 flex justify-center items-center flex-col">
+          <img
+            ngSrc="assets/images/link-expired.svg"
+            alt="Section Expired"
+            width="85"
+            height="85"
+          />
+          <span class="font-inter font-medium text-main-text-color text-base"
+            >Section Expired</span
+          >
+        </div>
+      }
+      <div class="flex flex-col gap-2">
+        <h1 class="font-inter text-main-text-color text-lg font-medium">For quicker access, download the ZilMoney Virtual Card App.</h1>
+        <div class="flex gap-2">
+          <a href="https://apps.apple.com/us/app/virtual-cards/id6748954269" style="display: inline-block; margin: 5px 10px 5px 0; text-decoration: none;"><img alt="Download on the App Store" src="data:image/svg+xml;base64,PHN2ZyBpZD0ibGl2ZXR5cGUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjExOS42NjQwNyIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDExOS42NjQwNyA0MCI+CiAgPHRpdGxlPkRvd25sb2FkX29uX3RoZV9BcHBfU3RvcmVfQmFkZ2VfVVMtVUtfUkdCX2Jsa180U1ZHXzA5MjkxNzwvdGl0bGU+CiAgPGc+CiAgICA8Zz4KICAgICAgPGc+CiAgICAgICAgPHBhdGggZD0iTTExMC4xMzQ3NywwSDkuNTM0NjhjLS4zNjY3LDAtLjcyOSwwLTEuMDk0NzMuMDAyLS4zMDYxNS4wMDItLjYwOTg2LjAwNzgxLS45MTg5NS4wMTI3QTEzLjIxNDc2LDEzLjIxNDc2LDAsMCwwLDUuNTE3MS4xOTE0MWE2LjY2NTA5LDYuNjY1MDksMCwwLDAtMS45MDA4OC42MjdBNi40Mzc3OSw2LjQzNzc5LDAsMCwwLDEuOTk3NTcsMS45OTcwNyw2LjI1ODQ0LDYuMjU4NDQsMCwwLDAsLjgxOTM1LDMuNjE4MTZhNi42MDExOSw2LjYwMTE5LDAsMCwwLS42MjUsMS45MDMzMiwxMi45OTMsMTIuOTkzLDAsMCwwLS4xNzkyLDIuMDAyQy4wMDU4Nyw3LjgzMDA4LjAwNDg5LDguMTM3NywwLDguNDQ0MzRWMzEuNTU4NmMuMDA0ODkuMzEwNS4wMDU4Ny42MTEzLjAxNTE1LjkyMTlhMTIuOTkyMzIsMTIuOTkyMzIsMCwwLDAsLjE3OTIsMi4wMDE5LDYuNTg3NTYsNi41ODc1NiwwLDAsMCwuNjI1LDEuOTA0M0E2LjIwNzc4LDYuMjA3NzgsMCwwLDAsMS45OTc1NywzOC4wMDFhNi4yNzQ0NSw2LjI3NDQ1LDAsMCwwLDEuNjE4NjUsMS4xNzg3LDYuNzAwODIsNi43MDA4MiwwLDAsMCwxLjkwMDg4LjYzMDgsMTMuNDU1MTQsMTMuNDU1MTQsMCwwLDAsMi4wMDM5LjE3NjhjLjMwOTA5LjAwNjguNjEyOC4wMTA3LjkxODk1LjAxMDdDOC44MDU2Nyw0MCw5LjE2OCw0MCw5LjUzNDY4LDQwSDExMC4xMzQ3N2MuMzU5NCwwLC43MjQ2LDAsMS4wODQtLjAwMi4zMDQ3LDAsLjYxNzItLjAwMzkuOTIxOS0uMDEwN2ExMy4yNzksMTMuMjc5LDAsMCwwLDItLjE3NjgsNi44MDQzMiw2LjgwNDMyLDAsMCwwLDEuOTA4Mi0uNjMwOCw2LjI3NzQyLDYuMjc3NDIsMCwwLDAsMS42MTcyLTEuMTc4Nyw2LjM5NDgyLDYuMzk0ODIsMCwwLDAsMS4xODE2LTEuNjE0Myw2LjYwNDEzLDYuNjA0MTMsMCwwLDAsLjYxOTEtMS45MDQzLDEzLjUwNjQzLDEzLjUwNjQzLDAsMCwwLC4xODU2LTIuMDAxOWMuMDAzOS0uMzEwNi4wMDM5LS42MTE0LjAwMzktLjkyMTkuMDA3OC0uMzYzMy4wMDc4LS43MjQ2LjAwNzgtMS4wOTM4VjkuNTM2MTNjMC0uMzY2MjEsMC0uNzI5NDktLjAwNzgtMS4wOTE3OSwwLS4zMDY2NCwwLS42MTQyNi0uMDAzOS0uOTIwOWExMy41MDcxLDEzLjUwNzEsMCwwLDAtLjE4NTYtMi4wMDIsNi42MTc3LDYuNjE3NywwLDAsMC0uNjE5MS0xLjkwMzMyLDYuNDY2MTksNi40NjYxOSwwLDAsMC0yLjc5ODgtMi43OTk4LDYuNzY3NTQsNi43Njc1NCwwLDAsMC0xLjkwODItLjYyNywxMy4wNDM5NCwxMy4wNDM5NCwwLDAsMC0yLS4xNzY3NmMtLjMwNDctLjAwNDg4LS42MTcyLS4wMTA3NC0uOTIxOS0uMDEyNjktLjM1OTQtLjAwMi0uNzI0Ni0uMDAyLTEuMDg0LS4wMDJaIiBzdHlsZT0iZmlsbDogI2E2YTZhNiIvPgogICAgICAgIDxwYXRoIGQ9Ik04LjQ0NDgzLDM5LjEyNWMtLjMwNDY4LDAtLjYwMi0uMDAzOS0uOTA0MjktLjAxMDdhMTIuNjg3MTQsMTIuNjg3MTQsMCwwLDEtMS44NjkxNC0uMTYzMSw1Ljg4MzgxLDUuODgzODEsMCwwLDEtMS42NTY3NC0uNTQ3OSw1LjQwNTczLDUuNDA1NzMsMCwwLDEtMS4zOTctMS4wMTY2LDUuMzIwODIsNS4zMjA4MiwwLDAsMS0xLjAyMDUxLTEuMzk2NSw1LjcyMTg2LDUuNzIxODYsMCwwLDEtLjU0My0xLjY1NzIsMTIuNDEzNTEsMTIuNDEzNTEsMCwwLDEtLjE2NjUtMS44NzVjLS4wMDYzNC0uMjEwOS0uMDE0NjQtLjkxMzEtLjAxNDY0LS45MTMxVjguNDQ0MzRTLjg4MTg1LDcuNzUyOTMuODg3Nyw3LjU0OThhMTIuMzcwMzksMTIuMzcwMzksMCwwLDEsLjE2NTUzLTEuODcyMDcsNS43NTU1LDUuNzU1NSwwLDAsMSwuNTQzNDYtMS42NjIxQTUuMzczNDksNS4zNzM0OSwwLDAsMSwyLjYxMTgzLDIuNjE3NjgsNS41NjU0Myw1LjU2NTQzLDAsMCwxLDQuMDE0MTcsMS41OTUyMWE1LjgyMzA5LDUuODIzMDksMCwwLDEsMS42NTMzMi0uNTQzOTRBMTIuNTg1ODksMTIuNTg1ODksMCwwLDEsNy41NDMuODg3MjFMOC40NDUzMi44NzVIMTExLjIxMzg3bC45MTMxLjAxMjdhMTIuMzg0OTMsMTIuMzg0OTMsMCwwLDEsMS44NTg0LjE2MjU5LDUuOTM4MzMsNS45MzgzMywwLDAsMSwxLjY3MDkuNTQ3ODUsNS41OTM3NCw1LjU5Mzc0LDAsMCwxLDIuNDE1LDIuNDE5OTMsNS43NjI2Nyw1Ljc2MjY3LDAsMCwxLC41MzUyLDEuNjQ4OTIsMTIuOTk1LDEyLjk5NSwwLDAsMSwuMTczOCwxLjg4NzIxYy4wMDI5LjI4MzIuMDAyOS41ODc0LjAwMjkuODkwMTQuMDA3OS4zNzUuMDA3OS43MzE5My4wMDc5LDEuMDkxNzlWMzAuNDY0OGMwLC4zNjMzLDAsLjcxNzgtLjAwNzksMS4wNzUyLDAsLjMyNTIsMCwuNjIzMS0uMDAzOS45Mjk3YTEyLjczMTI2LDEyLjczMTI2LDAsMCwxLS4xNzA5LDEuODUzNSw1LjczOSw1LjczOSwwLDAsMS0uNTQsMS42Nyw1LjQ4MDI5LDUuNDgwMjksMCwwLDEtMS4wMTU2LDEuMzg1Nyw1LjQxMjksNS40MTI5LDAsMCwxLTEuMzk5NCwxLjAyMjUsNS44NjE2OCw1Ljg2MTY4LDAsMCwxLTEuNjY4LjU0OTgsMTIuNTQyMTgsMTIuNTQyMTgsMCwwLDEtMS44NjkyLjE2MzFjLS4yOTI5LjAwNjgtLjU5OTYuMDEwNy0uODk3NC4wMTA3bC0xLjA4NC4wMDJaIi8+CiAgICAgIDwvZz4KICAgICAgPGcgaWQ9Il9Hcm91cF8iIGRhdGEtbmFtZT0iJmx0O0dyb3VwJmd0OyI+CiAgICAgICAgPGcgaWQ9Il9Hcm91cF8yIiBkYXRhLW5hbWU9IiZsdDtHcm91cCZndDsiPgogICAgICAgICAgPGcgaWQ9Il9Hcm91cF8zIiBkYXRhLW5hbWU9IiZsdDtHcm91cCZndDsiPgogICAgICAgICAgICA8cGF0aCBpZD0iX1BhdGhfIiBkYXRhLW5hbWU9IiZsdDtQYXRoJmd0OyIgZD0iTTI0Ljc2ODg4LDIwLjMwMDY4YTQuOTQ4ODEsNC45NDg4MSwwLDAsMSwyLjM1NjU2LTQuMTUyMDYsNS4wNjU2Niw1LjA2NTY2LDAsMCwwLTMuOTkxMTYtMi4xNTc2OGMtMS42NzkyNC0uMTc2MjYtMy4zMDcxOSwxLjAwNDgzLTQuMTYyOSwxLjAwNDgzLS44NzIyNywwLTIuMTg5NzctLjk4NzMzLTMuNjA4NS0uOTU4MTRhNS4zMTUyOSw1LjMxNTI5LDAsMCwwLTQuNDcyOTIsMi43Mjc4N2MtMS45MzQsMy4zNDg0Mi0uNDkxNDEsOC4yNjk0NywxLjM2MTIsMTAuOTc2MDguOTI2OSwxLjMyNTM1LDIuMDEwMTgsMi44MDU4LDMuNDI3NjMsMi43NTMzLDEuMzg3MDYtLjA1NzUzLDEuOTA1MS0uODg0NDgsMy41Nzk0LS44ODQ0OCwxLjY1ODc2LDAsMi4xNDQ3OS44ODQ0OCwzLjU5MS44NTExLDEuNDg4MzgtLjAyNDE2LDIuNDI2MTMtMS4zMzEyNCwzLjMyMDUxLTIuNjY5MTRhMTAuOTYyLDEwLjk2MiwwLDAsMCwxLjUxODQyLTMuMDkyNTFBNC43ODIwNSw0Ljc4MjA1LDAsMCwxLDI0Ljc2ODg4LDIwLjMwMDY4WiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICAgICAgPHBhdGggaWQ9Il9QYXRoXzIiIGRhdGEtbmFtZT0iJmx0O1BhdGgmZ3Q7IiBkPSJNMjIuMDM3MjUsMTIuMjEwODlhNC44NzI0OCw0Ljg3MjQ4LDAsMCwwLDEuMTE0NTItMy40OTA2Miw0Ljk1NzQ2LDQuOTU3NDYsMCwwLDAtMy4yMDc1OCwxLjY1OTYxLDQuNjM2MzQsNC42MzYzNCwwLDAsMC0xLjE0MzcxLDMuMzYxMzlBNC4wOTkwNSw0LjA5OTA1LDAsMCwwLDIyLjAzNzI1LDEyLjIxMDg5WiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICAgIDwvZz4KICAgICAgICA8L2c+CiAgICAgICAgPGc+CiAgICAgICAgICA8cGF0aCBkPSJNNDIuMzAyMjcsMjcuMTM5NjVoLTQuNzMzNGwtMS4xMzY3MiwzLjM1NjQ1SDM0LjQyNzI3bDQuNDgzNC0xMi40MThoMi4wODNsNC40ODM0LDEyLjQxOEg0My40MzhaTTM4LjA1OTEsMjUuNTkwODJoMy43NTJsLTEuODQ5NjEtNS40NDcyN2gtLjA1MTc2WiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICAgIDxwYXRoIGQ9Ik01NS4xNTk2OSwyNS45Njk3M2MwLDIuODEzNDgtMS41MDU4Niw0LjYyMTA5LTMuNzc4MzIsNC42MjEwOWEzLjA2OTMsMy4wNjkzLDAsMCwxLTIuODQ4NjMtMS41ODRoLS4wNDN2NC40ODQzOGgtMS44NTg0VjIxLjQ0MjM4SDQ4LjQzMDJ2MS41MDU4NmguMDM0MThhMy4yMTE2MiwzLjIxMTYyLDAsMCwxLDIuODgyODEtMS42MDA1OUM1My42NDUsMjEuMzQ3NjYsNTUuMTU5NjksMjMuMTY0MDYsNTUuMTU5NjksMjUuOTY5NzNabS0xLjkxMDE2LDBjMC0xLjgzMy0uOTQ3MjctMy4wMzgwOS0yLjM5MjU4LTMuMDM4MDktMS40MTk5MiwwLTIuMzc1LDEuMjMwNDctMi4zNzUsMy4wMzgwOSwwLDEuODI0MjIuOTU1MDgsMy4wNDU5LDIuMzc1LDMuMDQ1OUM1Mi4zMDIyNywyOS4wMTU2Myw1My4yNDk1MywyNy44MTkzNCw1My4yNDk1MywyNS45Njk3M1oiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgICA8cGF0aCBkPSJNNjUuMTI0NTMsMjUuOTY5NzNjMCwyLjgxMzQ4LTEuNTA1ODYsNC42MjEwOS0zLjc3ODMyLDQuNjIxMDlhMy4wNjkzLDMuMDY5MywwLDAsMS0yLjg0ODYzLTEuNTg0aC0uMDQzdjQuNDg0MzhoLTEuODU4NFYyMS40NDIzOEg1OC4zOTV2MS41MDU4NmguMDM0MThBMy4yMTE2MiwzLjIxMTYyLDAsMCwxLDYxLjMxMiwyMS4zNDc2NkM2My42MDk4OCwyMS4zNDc2Niw2NS4xMjQ1MywyMy4xNjQwNiw2NS4xMjQ1MywyNS45Njk3M1ptLTEuOTEwMTYsMGMwLTEuODMzLS45NDcyNy0zLjAzODA5LTIuMzkyNTgtMy4wMzgwOS0xLjQxOTkyLDAtMi4zNzUsMS4yMzA0Ny0yLjM3NSwzLjAzODA5LDAsMS44MjQyMi45NTUwOCwzLjA0NTksMi4zNzUsMy4wNDU5QzYyLjI2NzExLDI5LjAxNTYzLDYzLjIxNDM4LDI3LjgxOTM0LDYzLjIxNDM4LDI1Ljk2OTczWiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICAgIDxwYXRoIGQ9Ik03MS43MTA0NywyNy4wMzYxM2MuMTM3NywxLjIzMTQ1LDEuMzM0LDIuMDQsMi45Njg3NSwyLjA0LDEuNTY2NDEsMCwyLjY5MzM2LS44MDg1OSwyLjY5MzM2LTEuOTE4OTUsMC0uOTYzODctLjY3OTY5LTEuNTQxLTIuMjg5MDYtMS45MzY1MmwtMS42MDkzNy0uMzg3N2MtMi4yODAyNy0uNTUwNzgtMy4zMzg4Ny0xLjYxNzE5LTMuMzM4ODctMy4zNDc2NiwwLTIuMTQyNTgsMS44NjcxOS0zLjYxNDI2LDQuNTE4NTUtMy42MTQyNiwyLjYyNCwwLDQuNDIyODUsMS40NzE2OCw0LjQ4MzQsMy42MTQyNmgtMS44NzZjLS4xMTIzLTEuMjM5MjYtMS4xMzY3Mi0xLjk4NzMtMi42MzM3OS0xLjk4NzNzLTIuNTIxNDguNzU2ODQtMi41MjE0OCwxLjg1ODRjMCwuODc3OTMuNjU0MywxLjM5NDUzLDIuMjU0ODgsMS43OWwxLjM2ODE2LjMzNTk0YzIuNTQ3ODUuNjAyNTQsMy42MDY0NSwxLjYyNiwzLjYwNjQ1LDMuNDQyMzgsMCwyLjMyMzI0LTEuODUwNTksMy43NzgzMi00Ljc5Mzk1LDMuNzc4MzItMi43NTM5MSwwLTQuNjEzMjgtMS40MjA5LTQuNzMzNC0zLjY2N1oiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgICA8cGF0aCBkPSJNODMuMzQ2MjEsMTkuMjk5OHYyLjE0MjU4aDEuNzIxNjh2MS40NzE2OEg4My4zNDYyMXY0Ljk5MTIxYzAsLjc3NTM5LjM0NDczLDEuMTM2NzIsMS4xMDE1NiwxLjEzNjcyYTUuODA3NTIsNS44MDc1MiwwLDAsMCwuNjExMzMtLjA0M3YxLjQ2Mjg5YTUuMTAzNTEsNS4xMDM1MSwwLDAsMS0xLjAzMjIzLjA4NTk0Yy0xLjgzMywwLTIuNTQ3ODUtLjY4ODQ4LTIuNTQ3ODUtMi40NDQzNFYyMi45MTQwNkg4MC4xNjI2MlYyMS40NDIzOEg4MS40NzlWMTkuMjk5OFoiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgICA8cGF0aCBkPSJNODYuMDY1LDI1Ljk2OTczYzAtMi44NDg2MywxLjY3NzczLTQuNjM4NjcsNC4yOTM5NS00LjYzODY3LDIuNjI1LDAsNC4yOTQ5MiwxLjc5LDQuMjk0OTIsNC42Mzg2NywwLDIuODU2NDUtMS42NjExMyw0LjYzODY3LTQuMjk0OTIsNC42Mzg2N0M4Ny43MjYwOSwzMC42MDg0LDg2LjA2NSwyOC44MjYxNyw4Ni4wNjUsMjUuOTY5NzNabTYuNjk1MzEsMGMwLTEuOTU0MS0uODk1NTEtMy4xMDc0Mi0yLjQwMTM3LTMuMTA3NDJzLTIuNDAwMzksMS4xNjIxMS0yLjQwMDM5LDMuMTA3NDJjMCwxLjk2MTkxLjg5NDUzLDMuMTA2NDUsMi40MDAzOSwzLjEwNjQ1UzkyLjc2MDI3LDI3LjkzMTY0LDkyLjc2MDI3LDI1Ljk2OTczWiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICAgIDxwYXRoIGQ9Ik05Ni4xODYwNiwyMS40NDIzOGgxLjc3MjQ2djEuNTQxaC4wNDNhMi4xNTk0LDIuMTU5NCwwLDAsMSwyLjE3NzczLTEuNjM1NzQsMi44NjYxNiwyLjg2NjE2LDAsMCwxLC42MzY3Mi4wNjkzNHYxLjczODI4YTIuNTk3OTQsMi41OTc5NCwwLDAsMC0uODM1LS4xMTIzLDEuODcyNjQsMS44NzI2NCwwLDAsMC0xLjkzNjUyLDIuMDgzdjUuMzcwMTJoLTEuODU4NFoiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgICA8cGF0aCBkPSJNMTA5LjM4NDMsMjcuODM2OTFjLS4yNSwxLjY0MzU1LTEuODUwNTksMi43NzE0OC0zLjg5ODQ0LDIuNzcxNDgtMi42MzM3OSwwLTQuMjY4NTUtMS43NjQ2NS00LjI2ODU1LTQuNTk1NywwLTIuODM5ODQsMS42NDM1NS00LjY4MTY0LDQuMTkwNDMtNC42ODE2NCwyLjUwNDg4LDAsNC4wODAwOCwxLjcyMDcsNC4wODAwOCw0LjQ2NTgydi42MzY3MmgtNi4zOTQ1M3YuMTEyM2EyLjM1OCwyLjM1OCwwLDAsMCwyLjQzNTU1LDIuNTY0NDUsMi4wNDgzNCwyLjA0ODM0LDAsMCwwLDIuMDkwODItMS4yNzM0NFptLTYuMjgyMjMtMi43MDIxNWg0LjUyNjM3YTIuMTc3MywyLjE3NzMsMCwwLDAtMi4yMjA3LTIuMjk3ODVBMi4yOTIsMi4yOTIsMCwwLDAsMTAzLjEwMjA3LDI1LjEzNDc3WiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICA8L2c+CiAgICAgIDwvZz4KICAgIDwvZz4KICAgIDxnIGlkPSJfR3JvdXBfNCIgZGF0YS1uYW1lPSImbHQ7R3JvdXAmZ3Q7Ij4KICAgICAgPGc+CiAgICAgICAgPHBhdGggZD0iTTM3LjgyNjE5LDguNzMxYTIuNjM5NjQsMi42Mzk2NCwwLDAsMSwyLjgwNzYyLDIuOTY0ODRjMCwxLjkwNjI1LTEuMDMwMjcsMy4wMDItMi44MDc2MiwzLjAwMkgzNS42NzA5MlY4LjczMVptLTEuMjI4NTIsNS4xMjNoMS4xMjVhMS44NzU4OCwxLjg3NTg4LDAsMCwwLDEuOTY3NzctMi4xNDYsMS44ODEsMS44ODEsMCwwLDAtMS45Njc3Ny0yLjEzMzc5aC0xLjEyNVoiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgPHBhdGggZD0iTTQxLjY4MDY4LDEyLjQ0NDM0YTIuMTMzMjMsMi4xMzMyMywwLDEsMSw0LjI0NzA3LDAsMi4xMzM1OCwyLjEzMzU4LDAsMSwxLTQuMjQ3MDcsMFptMy4zMzMsMGMwLS45NzYwNy0uNDM4NDgtMS41NDY4Ny0xLjIwOC0xLjU0Njg3LS43NzI0NiwwLTEuMjA3LjU3MDgtMS4yMDcsMS41NDY4OCwwLC45ODM4OS40MzQ1NywxLjU1MDI5LDEuMjA3LDEuNTUwMjlDNDQuNTc1MjIsMTMuOTk0NjMsNDUuMDEzNjksMTMuNDI0MzIsNDUuMDEzNjksMTIuNDQ0MzRaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik01MS41NzMyNiwxNC42OTc3NWgtLjkyMTg3bC0uOTMwNjYtMy4zMTY0MWgtLjA3MDMxbC0uOTI2NzYsMy4zMTY0MWgtLjkxMzA5bC0xLjI0MTIxLTQuNTAyOTNoLjkwMTM3bC44MDY2NCwzLjQzNmguMDY2NDFsLjkyNTc4LTMuNDM2aC44NTI1NGwuOTI1NzgsMy40MzZoLjA3MDMxbC44MDI3My0zLjQzNmguODg4NjdaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik01My44NTM1NCwxMC4xOTQ4Mkg1NC43MDl2LjcxNTMzaC4wNjY0MWExLjM0OCwxLjM0OCwwLDAsMSwxLjM0Mzc1LS44MDIyNSwxLjQ2NDU2LDEuNDY0NTYsMCwwLDEsMS41NTg1OSwxLjY3NDh2Mi45MTVoLS44ODg2N1YxMi4wMDU4NmMwLS43MjM2My0uMzE0NDUtMS4wODM1LS45NzE2OC0xLjA4MzVhMS4wMzI5NCwxLjAzMjk0LDAsMCwwLTEuMDc1MiwxLjE0MTExdjIuNjM0MjhoLS44ODg2N1oiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgPHBhdGggZD0iTTU5LjA5Mzc3LDguNDM3aC44ODg2N3Y2LjI2MDc0aC0uODg4NjdaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik02MS4yMTc3OSwxMi40NDQzNGEyLjEzMzQ2LDIuMTMzNDYsMCwxLDEsNC4yNDc1NiwwLDIuMTMzOCwyLjEzMzgsMCwxLDEtNC4yNDc1NiwwWm0zLjMzMywwYzAtLjk3NjA3LS40Mzg0OC0xLjU0Njg3LTEuMjA4LTEuNTQ2ODctLjc3MjQ2LDAtMS4yMDcuNTcwOC0xLjIwNywxLjU0Njg4LDAsLjk4Mzg5LjQzNDU3LDEuNTUwMjksMS4yMDcsMS41NTAyOUM2NC4xMTIzMiwxMy45OTQ2Myw2NC41NTA4LDEzLjQyNDMyLDY0LjU1MDgsMTIuNDQ0MzRaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik02Ni40MDA5LDEzLjQyNDMyYzAtLjgxMDU1LjYwMzUyLTEuMjc3ODMsMS42NzQ4LTEuMzQ0MjRsMS4yMTk3My0uMDcwMzF2LS4zODg2N2MwLS40NzU1OS0uMzE0NDUtLjc0NDE0LS45MjE4Ny0uNzQ0MTQtLjQ5NjA5LDAtLjgzOTg0LjE4MjEzLS45Mzg0OC41MDA0OWgtLjg2MDM1Yy4wOTA4Mi0uNzczNDQuODE4MzYtMS4yNjk1MywxLjgzOTg0LTEuMjY5NTMsMS4xMjg5MSwwLDEuNzY1NjMuNTYyLDEuNzY1NjMsMS41MTMxOHYzLjA3NjY2aC0uODU1NDd2LS42MzI4MWgtLjA3MDMxYTEuNTE1LDEuNTE1LDAsMCwxLTEuMzUyNTQuNzA3QTEuMzYwMjYsMS4zNjAyNiwwLDAsMSw2Ni40MDA5LDEzLjQyNDMyWm0yLjg5NDUzLS4zODQ3N3YtLjM3NjQ2bC0xLjA5OTYxLjA3MDMxYy0uNjIwMTIuMDQxNS0uOTAxMzcuMjUyNDQtLjkwMTM3LjY0OTQxLDAsLjQwNTI3LjM1MTU2LjY0MTExLjgzNS42NDExMUExLjA2MTUsMS4wNjE1LDAsMCwwLDY5LjI5NTQzLDEzLjAzOTU1WiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgICA8cGF0aCBkPSJNNzEuMzQ4MTYsMTIuNDQ0MzRjMC0xLjQyMjg1LjczMTQ1LTIuMzI0MjIsMS44NjkxNC0yLjMyNDIyYTEuNDg0LDEuNDg0LDAsMCwxLDEuMzgwODYuNzloLjA2NjQxVjguNDM3aC44ODg2N3Y2LjI2MDc0aC0uODUxNTZ2LS43MTE0M2gtLjA3MDMxYTEuNTYyODQsMS41NjI4NCwwLDAsMS0xLjQxNDA2Ljc4NTY0QzcyLjA3MTgsMTQuNzcyLDcxLjM0ODE2LDEzLjg3MDYxLDcxLjM0ODE2LDEyLjQ0NDM0Wm0uOTE4LDBjMCwuOTU1MDguNDUwMiwxLjUyOTc5LDEuMjAzMTMsMS41Mjk3OS43NDksMCwxLjIxMTkxLS41ODMsMS4yMTE5MS0xLjUyNTg4LDAtLjkzODQ4LS40Njc3Ny0xLjUyOTc5LTEuMjExOTEtMS41Mjk3OUM3Mi43MjEyMSwxMC45MTg0Niw3Mi4yNjYxMywxMS40OTcwNyw3Mi4yNjYxMywxMi40NDQzNFoiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgPHBhdGggZD0iTTc5LjIzLDEyLjQ0NDM0YTIuMTMzMjMsMi4xMzMyMywwLDEsMSw0LjI0NzA3LDAsMi4xMzM1OCwyLjEzMzU4LDAsMSwxLTQuMjQ3MDcsMFptMy4zMzMsMGMwLS45NzYwNy0uNDM4NDgtMS41NDY4Ny0xLjIwOC0xLjU0Njg3LS43NzI0NiwwLTEuMjA3LjU3MDgtMS4yMDcsMS41NDY4OCwwLC45ODM4OS40MzQ1NywxLjU1MDI5LDEuMjA3LDEuNTUwMjlDODIuMTI0NTMsMTMuOTk0NjMsODIuNTYzLDEzLjQyNDMyLDgyLjU2MywxMi40NDQzNFoiIHN0eWxlPSJmaWxsOiAjZmZmIi8+CiAgICAgICAgPHBhdGggZD0iTTg0LjY2OTQ1LDEwLjE5NDgyaC44NTU0N3YuNzE1MzNoLjA2NjQxYTEuMzQ4LDEuMzQ4LDAsMCwxLDEuMzQzNzUtLjgwMjI1LDEuNDY0NTYsMS40NjQ1NiwwLDAsMSwxLjU1ODU5LDEuNjc0OHYyLjkxNUg4Ny42MDVWMTIuMDA1ODZjMC0uNzIzNjMtLjMxNDQ1LTEuMDgzNS0uOTcxNjgtMS4wODM1YTEuMDMyOTQsMS4wMzI5NCwwLDAsMC0xLjA3NTIsMS4xNDExMXYyLjYzNDI4aC0uODg4NjdaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik05My41MTUxNiw5LjA3MzczdjEuMTQxNmguOTc1NTl2Ljc0ODU0aC0uOTc1NTlWMTMuMjc5M2MwLC40NzE2OC4xOTQzNC42NzgyMi42MzY3Mi42NzgyMmEyLjk2NjU3LDIuOTY2NTcsMCwwLDAsLjMzODg3LS4wMjA1MXYuNzQwMjNhMi45MTU1LDIuOTE1NSwwLDAsMS0uNDgzNC4wNDU0MWMtLjk4ODI4LDAtMS4zODE4NC0uMzQ3NjYtMS4zODE4NC0xLjIxNTgydi0yLjU0M2gtLjcxNDg0di0uNzQ4NTRoLjcxNDg0VjkuMDczNzNaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik05NS43MDQ2MSw4LjQzN2guODgwODZ2Mi40ODE0NWguMDcwMzFhMS4zODU2LDEuMzg1NiwwLDAsMSwxLjM3My0uODA2NjQsMS40ODMzOSwxLjQ4MzM5LDAsMCwxLDEuNTUwNzgsMS42Nzg3MXYyLjkwNzIzSDk4LjY5di0yLjY4OGMwLS43MTkyNC0uMzM1LTEuMDgzNS0uOTYyODktMS4wODM1YTEuMDUxOTQsMS4wNTE5NCwwLDAsMC0xLjEzMzc5LDEuMTQxNnYyLjYyOTg4aC0uODg4NjdaIiBzdHlsZT0iZmlsbDogI2ZmZiIvPgogICAgICAgIDxwYXRoIGQ9Ik0xMDQuNzYxMjUsMTMuNDgxOTNhMS44MjgsMS44MjgsMCwwLDEtMS45NTExNywxLjMwMjczQTIuMDQ1MzEsMi4wNDUzMSwwLDAsMSwxMDAuNzMsMTIuNDYwNDVhMi4wNzY4NSwyLjA3Njg1LDAsMCwxLDIuMDc2MTctMi4zNTI1NGMxLjI1MjkzLDAsMi4wMDg3OS44NTYsMi4wMDg3OSwyLjI3VjEyLjY4OGgtMy4xNzk2OXYuMDQ5OGExLjE5MDIsMS4xOTAyLDAsMCwwLDEuMTk5MjIsMS4yOSwxLjA3OTM0LDEuMDc5MzQsMCwwLDAsMS4wNzEyOS0uNTQ1OVptLTMuMTI2LTEuNDUxMTdoMi4yNzQ0MWExLjA4NjQ3LDEuMDg2NDcsMCwwLDAtMS4xMDg0LTEuMTY2NUExLjE1MTYyLDEuMTUxNjIsMCwwLDAsMTAxLjYzNTI3LDEyLjAzMDc2WiIgc3R5bGU9ImZpbGw6ICNmZmYiLz4KICAgICAgPC9nPgogICAgPC9nPgogIDwvZz4KPC9zdmc+Cg==" style="height: 40px; width: 135px; vertical-align: middle; border: none; object-fit: contain;"></a>
+          <a href="https://play.google.com/store/apps/details?id=com.virtualcard.app" style="display: inline-block; margin: 5px 0; text-decoration: none;"><img alt="Get it on Google Play" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMTM1cHgiIGhlaWdodD0iNDBweCIgdmlld0JveD0iMCAwIDEzNSA0MCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj4KICAgIDwhLS0gR2VuZXJhdG9yOiBTa2V0Y2ggNTUuMiAoNzgxODEpIC0gaHR0cHM6Ly9za2V0Y2hhcHAuY29tIC0tPgogICAgPHRpdGxlPmVuPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGRlZnM+CiAgICAgICAgPGxpbmVhckdyYWRpZW50IHgxPSI2MS4wMzM5NDEyJSIgeTE9IjQuOTQ4MTI0NSUiIHgyPSIyNi41MDI2NTY4JSIgeTI9IjcxLjkwNzQyMjIlIiBpZD0ibGluZWFyR3JhZGllbnQtMSI+CiAgICAgICAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMwMEEwRkYiIG9mZnNldD0iMCUiPjwvc3RvcD4KICAgICAgICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzAwQTFGRiIgb2Zmc2V0PSIxJSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMDBCRUZGIiBvZmZzZXQ9IjI2JSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMDBEMkZGIiBvZmZzZXQ9IjUxJSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMDBERkZGIiBvZmZzZXQ9Ijc2JSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMDBFM0ZGIiBvZmZzZXQ9IjEwMCUiPjwvc3RvcD4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgICAgIDxsaW5lYXJHcmFkaWVudCB4MT0iMTA3LjY4NDcyOSUiIHkxPSI1MCUiIHgyPSItMTMwLjY0MDM5NCUiIHkyPSI1MCUiIGlkPSJsaW5lYXJHcmFkaWVudC0yIj4KICAgICAgICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI0ZGRTAwMCIgb2Zmc2V0PSIwJSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjRkZCRDAwIiBvZmZzZXQ9IjQxJSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjRkZBNTAwIiBvZmZzZXQ9Ijc4JSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjRkY5QzAwIiBvZmZzZXQ9IjEwMCUiPjwvc3RvcD4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgICAgIDxsaW5lYXJHcmFkaWVudCB4MT0iODYuMjE5MjkzJSIgeTE9IjMwLjkxMTI4NDIlIiB4Mj0iLTUwLjE0OTc5MDMlIiB5Mj0iMTM1Ljk4NzU0OCUiIGlkPSJsaW5lYXJHcmFkaWVudC0zIj4KICAgICAgICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI0ZGM0E0NCIgb2Zmc2V0PSIwJSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjQzMxMTYyIiBvZmZzZXQ9IjEwMCUiPjwvc3RvcD4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgICAgIDxsaW5lYXJHcmFkaWVudCB4MT0iLTE4Ljc1Mzc0NDglIiB5MT0iLTExLjgzMTU1NCUiIHgyPSI0Mi4xMjEwMzA2JSIgeTI9IjM1LjA5NDgxMjUlIiBpZD0ibGluZWFyR3JhZGllbnQtNCI+CiAgICAgICAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMzMkEwNzEiIG9mZnNldD0iMCUiPjwvc3RvcD4KICAgICAgICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzJEQTc3MSIgb2Zmc2V0PSI3JSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMTVDRjc0IiBvZmZzZXQ9IjQ4JSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMDZFNzc1IiBvZmZzZXQ9IjgwJSI+PC9zdG9wPgogICAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMDBGMDc2IiBvZmZzZXQ9IjEwMCUiPjwvc3RvcD4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPGcgaWQ9IlBhZ2UtMSIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9ImVuIiBmaWxsLXJ1bGU9Im5vbnplcm8iPgogICAgICAgICAgICA8cmVjdCBpZD0iUmVjdGFuZ2xlIiBmaWxsPSIjMDAwMDAwIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTM1IiBoZWlnaHQ9IjQwIiByeD0iNSI+PC9yZWN0PgogICAgICAgICAgICA8cGF0aCBkPSJNMTMwLDAuOCBDMTMyLjMxOTU5NiwwLjggMTM0LjIsMi42ODA0MDQwNSAxMzQuMiw1IEwxMzQuMiwzNSBDMTM0LjIsMzcuMzE5NTk1OSAxMzIuMzE5NTk2LDM5LjIgMTMwLDM5LjIgTDUsMzkuMiBDMi42ODA0MDQwNSwzOS4yIDAuOCwzNy4zMTk1OTU5IDAuOCwzNSBMMC44LDUgQzAuOCwyLjY4MDQwNDA1IDIuNjgwNDA0MDUsMC44IDUsMC44IEwxMzAsMC44IEwxMzAsMC44IFogTTEzMCwwIEw1LDAgQzIuMjM4NTc2MjUsMCAwLDIuMjM4NTc2MjUgMCw1IEwwLDM1IEMwLDM3Ljc2MTQyMzcgMi4yMzg1NzYyNSw0MCA1LDQwIEwxMzAsNDAgQzEzMi43NjE0MjQsNDAgMTM1LDM3Ljc2MTQyMzcgMTM1LDM1IEwxMzUsNSBDMTM1LDIuMjM4NTc2MjUgMTMyLjc2MTQyNCwwIDEzMCwwIFoiIGlkPSJTaGFwZSIgZmlsbD0iI0E2QTZBNiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNDcuNDIsMTAuMjQgQzQ3LjQ1NDM1MzYsMTAuOTgxMjMxIDQ3LjE4MzI2NzYsMTEuNzA0MTI2OSA0Ni42NywxMi4yNCBDNDYuMDk2NDQ5OCwxMi44MzU4MDMyIDQ1LjI5NjQ4MzgsMTMuMTU5NDI1OCA0NC40NywxMy4xMyBDNDMuMjAyMzQwMywxMy4xMjAwNzg4IDQyLjA2NDE0ODIsMTIuMzUxMjE2MiA0MS41ODE2OTE4LDExLjE3ODkxMjcgQzQxLjA5OTIzNTUsMTAuMDA2NjA5MiA0MS4zNjY1MzU1LDguNjU5MzIyNDYgNDIuMjYsNy43NiBDNDIuODQwNTMzLDcuMTY3MzI1OTcgNDMuNjQwNTc4OSw2Ljg0MTUxNTQzIDQ0LjQ3LDYuODYgQzQ0Ljg5Mjc1NzYsNi44NTg1OTE0MyA0NS4zMTEzMzU5LDYuOTQzNjY4MzIgNDUuNyw3LjExIEM0Ni4wNjE4NTQ1LDcuMjU1OTUzNTYgNDYuMzgzOTg0MSw3LjQ4NTU1NjU2IDQ2LjY0LDcuNzggTDQ2LjExLDguMzEgQzQ1LjcwNTM0NjgsNy44Mjg2NzY0NSA0NS4wOTc4ODQ4LDcuNTY1Njg5ODcgNDQuNDcsNy42IEM0My44Mzg4NDk0LDcuNTk2OTAzODcgNDMuMjMzNjc5Myw3Ljg1MTA4NzY2IDQyLjc5NDAzNiw4LjMwMzkzOTE0IEM0Mi4zNTQzOTI3LDguNzU2NzkwNjIgNDIuMTE4MjI4Myw5LjM2OTIxNzM5IDQyLjE0LDEwIEM0Mi4xMjY2MDE5LDEwLjk1MzE4OTcgNDIuNjg3OTc2NSwxMS44MjA4Mzk1IDQzLjU2MjkzMzMsMTIuMTk5MjU4MyBDNDQuNDM3ODksMTIuNTc3Njc3MSA0NS40NTQ1OTI2LDEyLjM5MjU0NTYgNDYuMTQsMTEuNzMgQzQ2LjQ0NzcwOTUsMTEuMzk2NTM2NiA0Ni42MjUxODMsMTAuOTYzNTAxMyA0Ni42NCwxMC41MSBMNDQuNDcsMTAuNTEgTDQ0LjQ3LDkuNzkgTDQ3LjM4LDkuNzkgQzQ3LjQwNjY3MzEsOS45Mzg1MTQxMiA0Ny40MjAwNTk0LDEwLjA4OTEwOTYgNDcuNDIsMTAuMjQgTDQ3LjQyLDEwLjI0IFogTTUyLDcuNzQgTDQ5LjMsNy43NCBMNDkuMyw5LjY0IEw1MS43Niw5LjY0IEw1MS43NiwxMC4zNiBMNDkuMywxMC4zNiBMNDkuMywxMi4yNiBMNTIsMTIuMjYgTDUyLDEzIEw0OC41LDEzIEw0OC41LDcgTDUyLDcgTDUyLDcuNzQgWiBNNTUuMjgsMTMgTDU0LjUxLDEzIEw1NC41MSw3Ljc0IEw1Mi44Myw3Ljc0IEw1Mi44Myw3IEw1Nyw3IEw1Nyw3Ljc0IEw1NS4yOCw3Ljc0IEw1NS4yOCwxMyBaIE01OS45NCwxMyBMNTkuOTQsNyBMNjAuNzEsNyBMNjAuNzEsMTMgTDU5Ljk0LDEzIFogTTY0LjEzLDEzIEw2My4zNiwxMyBMNjMuMzYsNy43NCBMNjEuNjgsNy43NCBMNjEuNjgsNyBMNjUuOCw3IEw2NS44LDcuNzQgTDY0LjEzLDcuNzQgTDY0LjEzLDEzIFogTTczLjYxLDEyLjIyIEM3Mi4zOTI5ODk4LDEzLjQzMDIyNzkgNzAuNDI3MDEwMiwxMy40MzAyMjc5IDY5LjIxLDEyLjIyIEM2OC4wMzAyNjg5LDEwLjk3MTIzMzkgNjguMDMwMjY4OSw5LjAxODc2NjEzIDY5LjIxLDcuNzcgQzY5Ljc5MTk5ODQsNy4xODM3NDY2OSA3MC41ODM5MTU4LDYuODU0MDMyOTcgNzEuNDEsNi44NTQwMzI5NyBDNzIuMjM2MDg0Miw2Ljg1NDAzMjk3IDczLjAyODAwMTYsNy4xODM3NDY2OSA3My42MSw3Ljc3IEM3NC43OTQ3NjU1LDkuMDE2NzU5ODQgNzQuNzk0NzY1NSwxMC45NzMyNDAyIDczLjYxLDEyLjIyIEw3My42MSwxMi4yMiBaIE02OS43OCwxMS43MiBDNzAuNjgxMzIzOSwxMi42MTc1NjUxIDcyLjEzODY3NjEsMTIuNjE3NTY1MSA3My4wNCwxMS43MiBDNzMuOTI1MTk4MywxMC43NDQxNzExIDczLjkyNTE5ODMsOS4yNTU4Mjg4NiA3My4wNCw4LjI4IEM3Mi4xMzg2NzYxLDcuMzgyNDM0OTMgNzAuNjgxMzIzOSw3LjM4MjQzNDkzIDY5Ljc4LDguMjggQzY4Ljg5NDgwMTcsOS4yNTU4Mjg4NiA2OC44OTQ4MDE3LDEwLjc0NDE3MTEgNjkuNzgsMTEuNzIgTDY5Ljc4LDExLjcyIFogTTc1LjU4LDEzIEw3NS41OCw3IEw3Ni41Miw3IEw3OS40NCwxMS42NyBMNzkuNDQsNyBMODAuMjEsNyBMODAuMjEsMTMgTDc5LjQxLDEzIEw3Ni4zNiw4LjExIEw3Ni4zNiwxMyBMNzUuNTgsMTMgWiIgaWQ9IlNoYXBlIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMC4yIiBmaWxsPSIjRkZGRkZGIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik02OC4xNCwyMS43NSBDNjUuNzk1NDI1LDIxLjc2MTAzMzQgNjMuOTAyNjczOSwyMy42Njg2ODExIDYzLjkwOTk5OTUsMjYuMDEzMjcwNiBDNjMuOTE3MzY3OCwyOC4zNTc4NjAxIDY1LjgyMjAzNzIsMzAuMjUzNjA4MyA2OC4xNjY2MzUzLDMwLjI0OTk1MzEgQzcwLjUxMTIzMzQsMzAuMjQ2Mjg3MyA3Mi40MDk5NzQsMjguMzQ0NjAxIDcyLjQwOTk5OTUsMjYgQzcyLjQyNjQ3MywyNC44NjQzNzM4IDcxLjk4MTIzMTYsMjMuNzcwNzA5NyA3MS4xNzYyNTUxLDIyLjk2OTUwMzcgQzcwLjM3MTI3ODcsMjIuMTY4Mjk3NiA2OS4yNzU1MzY0LDIxLjcyODE5NTYgNjguMTQsMjEuNzUgTDY4LjE0LDIxLjc1IFogTTY4LjE0LDI4LjU4IEM2Ny4wODMyMjczLDI4LjY1MzkwNTMgNjYuMDg4NjczLDI4LjA3NDMxMzUgNjUuNjMyMDIxMywyNy4xMTg0MzcxIEM2NS4xNzUzNjk3LDI2LjE2MjU2MDcgNjUuMzQ5NDM1OCwyNS4wMjQ2ODI4IDY2LjA3MDk2NTksMjQuMjQ5MDM4IEM2Ni43OTI0OTU5LDIzLjQ3MzM5MzIgNjcuOTE0ODM3OSwyMy4yMTc2MzI0IDY4LjkwMTE4NzgsMjMuNjA0MDgzMSBDNjkuODg3NTM3OCwyMy45OTA1MzM4IDcwLjUzNzQxODksMjQuOTQwNjQ5NCA3MC41NCwyNiBDNzAuNTcyNTQyOCwyNi42NjI2NzE5IDcwLjMzNjAzMjcsMjcuMzEwMzkyOCA2OS44ODQxNDAzLDI3Ljc5NjE3NzEgQzY5LjQzMjI0OCwyOC4yODE5NjEzIDY4LjgwMzI5MjEsMjguNTY0NjE2NCA2OC4xNCwyOC41OCBMNjguMTQsMjguNTggWiBNNTguODMsMjEuNzUgQzU2LjQ4NDA5OTUsMjEuNzU1NTE5OCA1NC41ODYzMjc1LDIzLjY2MDc0NjkgNTQuNTg5OTk5OSwyNi4wMDY2NTEgQzU0LjU5MzY4MjksMjguMzUyNTU1MSA1Ni40OTc0MTkyLDMwLjI1MTgyMjUgNTguODQzMzI1NSwzMC4yNDk5ODgzIEM2MS4xODkyMzE4LDMwLjI0ODE1MTMgNjMuMDg5OTk5OSwyOC4zNDU5MDcgNjMuMDg5OTk5OSwyNiBDNjMuMTA2NDczLDI0Ljg2NDM3MzggNjIuNjYxMjMxNiwyMy43NzA3MDk3IDYxLjg1NjI1NTEsMjIuOTY5NTAzNyBDNjEuMDUxMjc4NywyMi4xNjgyOTc2IDU5Ljk1NTUzNjQsMjEuNzI4MTk1NiA1OC44MiwyMS43NSBMNTguODMsMjEuNzUgWiBNNTguODMsMjguNTggQzU3Ljc3MjY3NTcsMjguNjU4MDczIDU2Ljc3NTIyMTUsMjguMDgxMzcxMyA1Ni4zMTUzNTE3LDI3LjEyNjA5NjYgQzU1Ljg1NTQ4MTksMjYuMTcwODIxOSA1Ni4wMjY4MjI3LDI1LjAzMTQ2MTUgNTYuNzQ3MzEzNCwyNC4yNTM2OTM0IEM1Ny40Njc4MDQsMjMuNDc1OTI1MyA1OC41OTA3NTc1LDIzLjIxODA5NzYgNTkuNTc4MzUzOCwyMy42MDM2OTI3IEM2MC41NjU5NTAxLDIzLjk4OTI4NzcgNjEuMjE3MTIxNSwyNC45Mzk4MDExIDYxLjIyLDI2IEM2MS4yNTI1NDI4LDI2LjY2MjY3MTkgNjEuMDE2MDMyNywyNy4zMTAzOTI4IDYwLjU2NDE0MDMsMjcuNzk2MTc3MSBDNjAuMTEyMjQ4LDI4LjI4MTk2MTMgNTkuNDgzMjkyMSwyOC41NjQ2MTY0IDU4LjgyLDI4LjU4IEw1OC44MywyOC41OCBaIE00Ny43NCwyMy4wNiBMNDcuNzQsMjQuODYgTDUyLjA2LDI0Ljg2IEM1MS45OTIyNjM0LDI1LjcwNzgwMzggNTEuNjM5ODQ0NiwyNi41MDc3OTQ1IDUxLjA2LDI3LjEzIEM1MC4xODYwMjI5LDI4LjAyMDIyNDYgNDguOTc2NTQzMiwyOC40OTk2NTggNDcuNzMsMjguNDUgQzQ1LjA3OTAzMzIsMjguNDUgNDIuOTMsMjYuMzAwOTY2OCA0Mi45MywyMy42NSBDNDIuOTMsMjAuOTk5MDMzMiA0NS4wNzkwMzMyLDE4Ljg1IDQ3LjczLDE4Ljg1IEM0OC45NDc3OTU3LDE4LjgzMDEzODggNTAuMTIzNzYyLDE5LjI5NDA1MjEgNTEsMjAuMTQgTDUyLjI3LDE4Ljg3IEM1MS4wNzQ5MTk2LDE3LjY1OTg1ODEgNDkuNDQwNzE4NCwxNi45ODUyNTQxIDQ3Ljc0LDE3IEM0NS4zMTg5NjA4LDE2LjkwNTc3OSA0My4wNDAzOTM2LDE4LjE0MzY3MTggNDEuODAxODU0LDIwLjIyNjA1NzEgQzQwLjU2MzMxNDUsMjIuMzA4NDQyMyA0MC41NjMzMTQ1LDI0LjkwMTU1NzcgNDEuODAxODU0LDI2Ljk4Mzk0MjkgQzQzLjA0MDM5MzYsMjkuMDY2MzI4MiA0NS4zMTg5NjA4LDMwLjMwNDIyMSA0Ny43NCwzMC4yMSBDNDkuNDcxNzY1LDMwLjI4ODI1NDMgNTEuMTUyNzQwNywyOS42MTM2NzYyIDUyLjM1LDI4LjM2IEM1My4zOTc2NzU3LDI3LjIwODkyMTYgNTMuOTU3MDQzMSwyNS42OTU3NjEyIDUzLjkxLDI0LjE0IEM1My45MTMyMjY5LDIzLjc2MDk4ODIgNTMuODc5NzM3MiwyMy4zODI1NTQ4IDUzLjgxLDIzLjAxIEw0Ny43NCwyMy4wNiBaIE05My4wNSwyNC40NiBDOTIuNTE2MDc5NiwyMi44ODkyMTAxIDkxLjA2NzkyNzgsMjEuODExMDUzIDg5LjQxLDIxLjc0OTk5MjMgQzg4LjMwNDM2MzUsMjEuNzQ3ODM4MyA4Ny4yNDcxNDUxLDIyLjIwMzQwNzYgODYuNDg5Mzc5NCwyMy4wMDg1MzM2IEM4NS43MzE2MTM4LDIzLjgxMzY1OTYgODUuMzQwODk1NSwyNC44OTY1MjMxIDg1LjQxLDI2IEM4NS4zODU0NDEsMjcuMTI5Mjk2MSA4NS44MjExNjQ0LDI4LjIyMDAyODMgODYuNjE3MDUyMiwyOS4wMjE1NzQxIEM4Ny40MTI5Mzk5LDI5LjgyMzExOTggODguNTAwNTU4MiwzMC4yNjY1NTg4IDg5LjYzLDMwLjI0OTk5MjMgQzkxLjA1MDg1ODUsMzAuMjU3NjU5IDkyLjM4MDY0MzQsMjkuNTUxNDQ1NSA5My4xNywyOC4zNyBMOTEuNzIsMjcuMzcgQzkxLjI3OTc0NiwyOC4xMDM5NDIyIDkwLjQ4NTg1NjMsMjguNTUyMTY3IDg5LjYzLDI4LjU1IEM4OC43NDM1OTE0LDI4LjU4Mzc4NTEgODcuOTI2NjQxMywyOC4wNzIxOTk4IDg3LjU3LDI3LjI2IEw5My4yNiwyNC45MSBMOTMuMDUsMjQuNDYgWiBNODcuMjUsMjUuODggQzg3LjIwOTA1MTksMjUuMjU1MTY0MyA4Ny40MjEzMjU3LDI0LjY0MDE0NSA4Ny44Mzg5NjY3LDI0LjE3MzU5MTEgQzg4LjI1NjYwNzYsMjMuNzA3MDM3MyA4OC44NDQ0NjAyLDIzLjQyODIyMTYgODkuNDcsMjMuNCBDOTAuMTI5MzY5OCwyMy4zNTY1NTE2IDkwLjc1MTA2NjQsMjMuNzEwNjgyNiA5MS4wNSwyNC4zIEw4Ny4yNSwyNS44OCBaIE04Mi42MywzMCBMODQuNSwzMCBMODQuNSwxNy41IEw4Mi42MywxNy41IEw4Mi42MywzMCBaIE03OS41NywyMi42OTk5OTc0IEw3OS41LDIyLjY5OTk5NzQgQzc4LjkyOTk2MjEsMjIuMDYyNjc2OCA3OC4xMTUwNTcyLDIxLjY5ODg4IDc3LjI2LDIxLjY5OTk5NzQgQzc0Ljk5MDE0NjksMjEuODEwMDcxNyA3My4yMDYzMzcxLDIzLjY4MjQ3OTYgNzMuMjA2MzM3MSwyNS45NTUgQzczLjIwNjMzNzEsMjguMjI3NTIwNCA3NC45OTAxNDY5LDMwLjA5OTkyODMgNzcuMjYsMzAuMjEgQzc4LjExNzgyOSwzMC4yMjQ0MjM3IDc4LjkzODAxNTksMjkuODU4MjY4OCA3OS41LDI5LjIxIEw3OS41NiwyOS4yMSBMNzkuNTYsMjkuODIgQzc5LjU2LDMxLjQ1IDc4LjY5LDMyLjMyIDc3LjI5LDMyLjMyIEM3Ni4zMzYzMDMsMzIuMjk3Njc3NCA3NS40OTA3MjgxLDMxLjcwMTAzMzQgNzUuMTUsMzAuODEgTDczLjUyLDMxLjQ5IEM3NC4xNDc2ODE2LDMzLjAxNjgxMSA3NS42MzkyMzA4LDM0LjAwOTg1ODMgNzcuMjksMzQuMDAwMDcyNyBDNzkuNDgsMzQuMDAwMDcyNyA4MS4yOSwzMi43MSA4MS4yOSwyOS41NyBMODEuMjksMjIgTDc5LjU3LDIyIEw3OS41NywyMi42OTk5OTc0IFogTTc3LjQzLDI4LjU4IEM3Ni4wOTI4ODc2LDI4LjQ2MjE1OTggNzUuMDY3Mzc2MywyNy4zNDIyOTUgNzUuMDY3Mzc2MywyNiBDNzUuMDY3Mzc2MywyNC42NTc3MDUgNzYuMDkyODg3NiwyMy41Mzc4NDAyIDc3LjQzLDIzLjQyIEM3OC4wNzYxMTk2LDIzLjQ1MzE1NzUgNzguNjgxNDg1OSwyMy43NDU3NzAyIDc5LjEwODg0OTgsMjQuMjMxNDk2NSBDNzkuNTM2MjEzNywyNC43MTcyMjI4IDc5Ljc0OTM3MywyNS4zNTQ5MTY5IDc5LjcsMjYgQzc5Ljc1NTEzNDgsMjYuNjQ4MDQ5NCA3OS41NDI2NTc1LDI3LjI5MDQzMTEgNzkuMTExOTcwMywyNy43Nzc3ODc3IEM3OC42ODEyODMxLDI4LjI2NTE0NDMgNzguMDY5OTEwNCwyOC41NTUwMTM4IDc3LjQyLDI4LjU4IEw3Ny40MywyOC41OCBaIE0xMDEuODEsMTcuNSBMOTcuMzQsMTcuNSBMOTcuMzQsMzAgTDk5LjIxLDMwIEw5OS4yMSwyNS4yNiBMMTAxLjgyLDI1LjI2IEMxMDMuMjcyNjg0LDI1LjM2NDM2MzggMTA0LjY2MTk3NCwyNC42NDg1MDkgMTA1LjQyMDEzLDIzLjQwNDk3MyBDMTA2LjE3ODI4NiwyMi4xNjE0MzcgMTA2LjE3ODI4NiwyMC41OTg1NjMgMTA1LjQyMDEzLDE5LjM1NTAyNyBDMTA0LjY2MTk3NCwxOC4xMTE0OTEgMTAzLjI3MjY4NCwxNy4zOTU2MzYyIDEwMS44MiwxNy41IEwxMDEuODEsMTcuNSBaIE0xMDEuODEsMjMuNSBMOTkuMiwyMy41IEw5OS4yLDE5LjI0IEwxMDEuODUsMTkuMjQgQzEwMy4wMzQ2NTEsMTkuMjQgMTAzLjk5NSwyMC4yMDAzNDkyIDEwMy45OTUsMjEuMzg1IEMxMDMuOTk1LDIyLjU2OTY1MDggMTAzLjAzNDY1MSwyMy41MyAxMDEuODUsMjMuNTMgTDEwMS44MSwyMy41IFogTTExMy4zNCwyMS43IEMxMTEuOTQ4NzEzLDIxLjYxNjgzODkgMTEwLjY0MDY4NywyMi4zNjcwODggMTEwLjAxLDIzLjYxIEwxMTEuNjcsMjQuMyBDMTEyLjAwNDQwNiwyMy42ODM2NjgyIDExMi42NzExMjUsMjMuMzIyODU1NiAxMTMuMzcsMjMuMzggQzExMy44NDk1MjgsMjMuMzIzOTk0NiAxMTQuMzMxNDU0LDIzLjQ2Mjk3MDEgMTE0LjcwNzUyOCwyMy43NjU3MTAyIEMxMTUuMDgzNjAzLDI0LjA2ODQ1MDMgMTE1LjMyMjI5OSwyNC41MDk1NzQ5IDExNS4zNywyNC45OSBMMTE1LjM3LDI1LjEyIEMxMTQuNzY5MzkzLDI0LjgwMTk5OTEgMTE0LjA5OTU5MiwyNC42MzcxMjUyIDExMy40MiwyNC42NCBDMTExLjYzLDI0LjY0IDEwOS44MiwyNS42NCAxMDkuODIsMjcuNDUgQzEwOS44NTU2ODgsMjguMjI5NzA4OCAxMTAuMjA1MjQsMjguOTYxODI5NSAxMTAuNzg5MTMxLDI5LjQ3OTc5NzQgQzExMS4zNzMwMjIsMjkuOTk3NzY1MiAxMTIuMTQxNTk4LDMwLjI1NzUzMjYgMTEyLjkyLDMwLjIgQzExMy44NzkyMjksMzAuMjY4ODgzMSAxMTQuNzk5NTY5LDI5LjgwODcxMzIgMTE1LjMyLDI5IEwxMTUuMzgsMjkgTDExNS4zOCwzMCBMMTE3LjE4LDMwIEwxMTcuMTgsMjUuMTkgQzExNy4xOCwyMyAxMTUuNTIsMjEuNzMgMTEzLjM5LDIxLjczIEwxMTMuMzQsMjEuNyBaIE0xMTMuMTEsMjguNTUgQzExMi41LDI4LjU1IDExMS42NSwyOC4yNCAxMTEuNjUsMjcuNDkgQzExMS42NSwyNi40OSAxMTIuNzEsMjYuMTYgMTEzLjY1LDI2LjE2IEMxMTQuMjQ0MDQyLDI2LjE0NTM0MTkgMTE0LjgzMTEzMSwyNi4yOTAzODc0IDExNS4zNSwyNi41OCBDMTE1LjIyMDY5NiwyNy42OTk0MTUgMTE0LjI4NjUyNCwyOC41NTI1NDA1IDExMy4xNiwyOC41OCBMMTEzLjExLDI4LjU1IFogTTEyMy43NCwyMiBMMTIxLjYsMjcuNDIgTDEyMS41NCwyNy40MiBMMTE5LjMyLDIyIEwxMTcuMzIsMjIgTDEyMC42NSwyOS41OCBMMTE4Ljc1LDMzLjc5IEwxMjAuNywzMy43OSBMMTI1LjgyLDIyIEwxMjMuNzQsMjIgWiBNMTA2LjkzLDMwIEwxMDguOCwzMCBMMTA4LjgsMTcuNSBMMTA2LjkzLDE3LjUgTDEwNi45MywzMCBaIiBpZD0iU2hhcGUiIGZpbGw9IiNGRkZGRkYiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTEwLjQ0LDcuNTQgQzEwLjExNDA2NSw3LjkzMTEwODM0IDkuOTQ5NTUzNjUsOC40MzE3OTQ5MiA5Ljk4LDguOTQgTDkuOTgsMzEuMDYgQzkuOTQ5NTUzNjUsMzEuNTY4MjA1MSAxMC4xMTQwNjUsMzIuMDY4ODkxNyAxMC40NCwzMi40NiBMMTAuNTEsMzIuNTMgTDIyLjksMjAuMTUgTDIyLjksMTkuODYgTDEwLjUxLDcuNDcgTDEwLjQ0LDcuNTQgWiIgaWQ9IlBhdGgiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQtMSkiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTI3LDI0LjI4IEwyMi45LDIwLjE1IEwyMi45LDE5Ljg2IEwyNywxNS43MiBMMjcuMDksMTUuNzcgTDMyLDE4LjU2IEMzMy40LDE5LjM1IDMzLjQsMjAuNjUgMzIsMjEuNDUgTDI3LjExLDI0LjIzIEwyNywyNC4yOCBaIiBpZD0iUGF0aCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudC0yKSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNMjcuMTIsMjQuMjIgTDIyLjksMjAgTDEwLjQ0LDMyLjQ2IEMxMS4wMjg3MTc3LDMyLjk3NzUyMjQgMTEuOTAyNDI5LDMzLjAwMjcyNTYgMTIuNTIsMzIuNTIgTDI3LjEzLDI0LjIyIiBpZD0iUGF0aCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudC0zKSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNMjcuMTIsMTUuNzggTDEyLjUxLDcuNDggQzExLjg5MjQyOSw2Ljk5NzI3NDM5IDExLjAxODcxNzcsNy4wMjI0Nzc2IDEwLjQzLDcuNTQgTDIyLjksMjAgTDI3LjEyLDE1Ljc4IFoiIGlkPSJQYXRoIiBmaWxsPSJ1cmwoI2xpbmVhckdyYWRpZW50LTQpIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0yNywyNC4xMyBMMTIuNTEsMzIuMzggQzExLjkxNzAzODUsMzIuODIzMzM2NCAxMS4xMDI5NjE1LDMyLjgyMzMzNjQgMTAuNTEsMzIuMzggTDEwLjQ0LDMyLjQ1IEwxMC41MSwzMi41MiBDMTEuMTAxODQ1OCwzMi45NjY2NzkyIDExLjkxODE1NDIsMzIuOTY2Njc5MiAxMi41MSwzMi41MiBMMjcuMTIsMjQuMjIgTDI3LDI0LjEzIFoiIGlkPSJQYXRoIiBmaWxsPSIjMDAwMDAwIiBvcGFjaXR5PSIwLjIiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTEwLjQ0LDMyLjMyIEMxMC4xMTQwNjUsMzEuOTI4ODkxNyA5Ljk0OTU1MzY1LDMxLjQyODIwNTEgOS45OCwzMC45MiBMOS45OCwzMS4wNyBDOS45NDk1NTM2NSwzMS41NzgyMDUxIDEwLjExNDA2NSwzMi4wNzg4OTE3IDEwLjQ0LDMyLjQ3IEwxMC41MSwzMi40IEwxMC40NCwzMi4zMiBaIE0zMiwyMS4zIEwyNywyNC4xMyBMMjcuMDksMjQuMjIgTDMyLDIxLjQ0IEMzMi41NjcwNzAxLDIxLjE3MzYxMzIgMzIuOTQ4NDY4NCwyMC42MjQzOTk3IDMzLDIwIEMzMi44ODYwMjk1LDIwLjU2NDgzNzkgMzIuNTE2NzA2LDIxLjA0NDk1ODUgMzIsMjEuMyBaIiBpZD0iU2hhcGUiIGZpbGw9IiMwMDAwMDAiIG9wYWNpdHk9IjAuMTIiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTEyLjUxLDcuNjIgTDMyLDE4LjcgQzMyLjUxNjcwNiwxOC45NTUwNDE1IDMyLjg4NjAyOTUsMTkuNDM1MTYyMSAzMywyMCBDMzIuOTQ4NDY4NCwxOS4zNzU2MDAzIDMyLjU2NzA3MDEsMTguODI2Mzg2OCAzMiwxOC41NiBMMTIuNTEsNy40OCBDMTEuMTEsNi42OSA5Ljk3LDcuMzUgOS45Nyw4Ljk1IEw5Ljk3LDkuMSBDMTAsNy40OSAxMS4xMiw2LjgzIDEyLjUxLDcuNjIgTDEyLjUxLDcuNjIgWiIgaWQ9IlBhdGgiIGZpbGw9IiNGRkZGRkYiIG9wYWNpdHk9IjAuMjUiPjwvcGF0aD4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPg==" style="height: 40px; width: 135px; vertical-align: middle; border: none; object-fit: contain;"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #sender>
+  <div
+    class="flex flex-col gap-5 min-w-[120px] max-sm:min-w-[45%] max-sm:flex-row"
+  >
+    <div class="flex flex-col gap-1 w-fit max-sm:min-w-[45%]">
+      <span
+        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+        >Sender Name</span
+      >
+      <span
+        class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+        [ngClass]="{ 'skelton !h-5 !w-10': isCardinfoLoading() }"
+        [matTooltip]="
+          cardDeatils()?.card?.sender?.length > 27
+            ? cardDeatils()?.card?.sender
+            : ''
+        "
+      >
+        {{ cardDeatils()?.card?.sender | truncate: 27 }}
+      </span>
+    </div>
+  </div>
+</ng-template>

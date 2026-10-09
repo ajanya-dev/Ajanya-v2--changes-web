@@ -1,0 +1,282 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'check-draft-recurring-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [titleSuffix]="panelTitleSuffix()"
+  [subtitleTemplate]="recurringMeta"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="actionButtonClicked.emit($event)"
+/>
+
+<!-- Header icon: navy circle -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="repeat" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<ng-template #recurringMeta>
+  @if (isPanelExpanded()) {
+    <div class="flex min-w-0 items-center gap-2 whitespace-nowrap">
+      @if (bankName()) {
+        <span class="min-w-0 truncate" [matTooltip]="bankName()">
+          Bank:
+          <span class="font-semibold text-v4-main-text-color">{{
+            bankName()
+          }}</span>
+        </span>
+      }
+      @for (part of scheduleParts(); track part; let first = $first) {
+        @if (!first || bankName()) {
+          <span
+            class="h-1 w-1 shrink-0 rounded-full bg-v4-secondary-text-color"
+          ></span>
+        }
+        <span class="shrink-0">{{ part }}</span>
+      }
+    </div>
+  } @else {
+    <div class="flex min-w-0 flex-col gap-1">
+      @if (bankName()) {
+        <p class="m-0 min-w-0 truncate" [matTooltip]="bankName()">
+          Bank:
+          <span class="font-semibold text-v4-main-text-color">{{
+            bankName()
+          }}</span>
+        </p>
+      }
+      @if (scheduleParts().length) {
+        <p class="m-0 min-w-0 truncate">
+          @for (part of scheduleParts(); track part; let first = $first) {
+            @if (!first) {
+              &middot;
+            }
+            {{ part }}
+          }
+        </p>
+      }
+    </div>
+  }
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+    [class.grid-rows-[auto_1fr]]="isPanelExpanded() && !isLoading()"
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="7" [tiles]="0" [timeline]="2" [party]="false" />
+    } @else {
+      <!-- Check draft details -->
+      <div class="pd-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('details')"
+        >
+          <span class="pd-card-title">Check draft details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('details') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("details")) {
+          <div
+            class="pd-card-body divide-y divide-v4-border-color [&>.pd-row]:py-1.5"
+          >
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Bank account</span>
+              <span
+                class="pd-row-value truncate"
+                [title]="viewData()?.details?.bank_account_name ?? ''"
+                >{{ viewData()?.details?.bank_account_name ?? "—" }}</span
+              >
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Payer</span>
+              <span
+                class="pd-row-value truncate"
+                [title]="
+                  viewData()?.details?.payee_name ?? row()?.payee_name ?? ''
+                "
+                >{{
+                  viewData()?.details?.payee_name ?? row()?.payee_name ?? "—"
+                }}</span
+              >
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Amount</span>
+              <span class="pd-row-value">
+                @if (viewData()?.details?.amount ?? row()?.amount; as amount) {
+                  ${{ amount }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Recurring create date</span>
+              <span class="pd-row-value">{{
+                viewData()?.details?.created_date
+                  ? formatDate(viewData()!.details!.created_date)
+                  : "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Ending date</span>
+              <span class="pd-row-value">{{
+                viewData()?.details?.ending_date
+                  ? formatDate(viewData()!.details!.ending_date)
+                  : "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Total</span>
+              <span class="pd-row-value">{{
+                viewData()?.details?.total ?? "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Paid</span>
+              <span class="pd-row-value">{{
+                viewData()?.details?.paid ?? "—"
+              }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- References -->
+      <div class="pd-card">
+        <button type="button" class="pd-card-head" (click)="toggleCard('refs')">
+          <span class="pd-card-title">References</span>
+          <lucide-icon
+            [name]="isCardCollapsed('refs') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("refs")) {
+          <div
+            class="pd-card-body divide-y divide-v4-border-color [&>.pd-row]:py-1.5"
+          >
+            <div class="pd-row">
+              <span class="pd-row-label">Ac#</span>
+              <span class="pd-row-value">{{
+                viewData()?.details?.ac ?? "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Inv#</span>
+              <span class="pd-row-value">{{
+                viewData()?.details?.inv ?? "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Memo</span>
+              <span
+                class="pd-row-value min-w-0 text-right [overflow-wrap:anywhere]"
+                >{{ viewData()?.details?.memo ?? "—" }}</span
+              >
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Note</span>
+              <span
+                class="pd-row-value min-w-0 text-right [overflow-wrap:anywhere]"
+                >{{ viewData()?.details?.note ?? "—" }}</span
+              >
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Recurring schedule — each run as a timeline entry -->
+      <div class="pd-card pd-full flex-1">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('schedule')"
+        >
+          <span class="pd-card-title">Recurring schedule</span>
+          <lucide-icon
+            [name]="isCardCollapsed('schedule') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("schedule")) {
+          <div class="pd-card-body">
+            @if (jobs().length) {
+              @for (
+                item of visibleJobs();
+                track item.date + $index;
+                let last = $last
+              ) {
+                <div class="flex gap-2.5">
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                      [style.background-color]="
+                        getJobStatusBadge(item.processed).color
+                      "
+                    ></span>
+                    @if (!last) {
+                      <span class="mt-1 w-px flex-1 bg-v4-border-color"></span>
+                    }
+                  </div>
+                  <div class="min-w-0 pb-2.5 leading-tight">
+                    <p
+                      class="m-0 font-peridot text-xs font-bold uppercase text-v4-main-text-color"
+                    >
+                      {{ getJobStatusText(item.processed) }}
+                    </p>
+                    @if (item.notes) {
+                      <p
+                        class="m-0 mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color [overflow-wrap:anywhere]"
+                      >
+                        {{ item.notes }}
+                      </p>
+                    }
+                    <p
+                      class="m-0 mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                    >
+                      {{ item.date ? formatDate(item.date) : "—" }}
+                    </p>
+                  </div>
+                </div>
+              }
+              @if (canShowMoreJobs()) {
+                <app-pd-show-more
+                  [hiddenCount]="hiddenJobCount()"
+                  [showingAll]="scheduleShowAll()"
+                  (toggled)="scheduleShowAll.set(!scheduleShowAll())"
+                />
+              }
+            } @else {
+              <div class="pd-empty">
+                <p class="m-0 py-6 text-center text-v4-tertiary-text-color">
+                  No recurring details available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

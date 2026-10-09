@@ -1,0 +1,435 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'gift-card-recurring-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [titleSuffix]="panelTitleSuffix()"
+  [subtitleTemplate]="panelMetaLines().length ? panelMeta : undefined"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+/>
+
+<!-- O3 header icon: navy circle. `repeat` is the canonical recurring icon. -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="repeat" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<!-- Header meta: stacked lines collapsed, one dotted line expanded. -->
+<ng-template #panelMeta>
+  <app-pd-meta-lines
+    [lines]="panelMetaLines()"
+    [expanded]="isPanelExpanded()"
+  />
+</ng-template>
+
+<!-- Panel-wide loading state: plain bars in the panel's own card shell. -->
+<ng-template #panelSkeleton>
+  <app-pd-skeleton [rows]="8" [tiles]="2" [party]="false" />
+</ng-template>
+
+<!-- Stand-in for a section whose data is fetched on first open (loadSection). -->
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (isLoading()) {
+      <ng-container [ngTemplateOutlet]="panelSkeleton" />
+    } @else {
+      <!-- O4 left column: the data cards. display:contents when collapsed, so
+           they flow inline; individual grid tiles when expanded. -->
+      <div class="o4-left-col">
+        <!-- 1. Recurring details -->
+        <div class="pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('recurring')"
+          >
+            <span class="pd-card-title">Recurring details</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('recurring') ? 'chevron-down' : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed("recurring")) {
+            <div class="pd-row">
+              <span class="pd-row-label">Status</span>
+              <span class="pd-row-value uppercase">{{
+                panelStatusBadge()?.text ?? giftCardData()?.status ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Card type</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.cardType ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Name on card</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.nameOnCard ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Amount</span>
+              <span class="pd-row-value">{{ panelTitle() || "—" }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Frequency</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.frequency ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Recharge type</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.rechargeType ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Total payments scheduled</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.isItUnlimited === 1
+                  ? "Unlimited"
+                  : (giftCardData()?.ofPay ?? "—")
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Payments processed</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.ofPaid ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Total completed</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.completedCount ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Total failed</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.failedCount ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Remaining payments</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.ofLeft ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Start date</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.startDate ?? "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">End date</span>
+              <span class="pd-row-value">{{
+                giftCardData()?.isItUnlimited === 1
+                  ? "Until cancel"
+                  : (giftCardData()?.endDate ?? "—")
+              }}</span>
+            </div>
+
+            @if (giftCardData()?.isCardCancelled) {
+              <div
+                class="mt-3 flex items-center gap-1.5 rounded-md bg-v4-badge-error-bg-color px-3 py-2 text-[12px] font-medium text-v4-common-red-color"
+              >
+                <lucide-icon
+                  name="circle-alert"
+                  [size]="13"
+                  class="shrink-0"
+                ></lucide-icon>
+                The linked card has been cancelled.
+              </div>
+            }
+            @if (giftCardData()?.isPayeeDeleted) {
+              <div
+                class="mt-2 flex items-center gap-1.5 rounded-md bg-v4-badge-error-bg-color px-3 py-2 text-[12px] font-medium text-v4-common-red-color"
+              >
+                <lucide-icon
+                  name="circle-alert"
+                  [size]="13"
+                  class="shrink-0"
+                ></lucide-icon>
+                The linked payee has been deleted.
+              </div>
+            }
+          }
+        </div>
+
+        <!-- 2. Recurring events — the schedule of occurrences. Its own card (not
+             an action tile): it is fetched eagerly with the details, so it costs
+             no extra request and belongs in the first view. -->
+        <div class="pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('events')"
+          >
+            <span class="pd-card-title">Recurring events</span>
+            <lucide-icon
+              [name]="isCardCollapsed('events') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed("events")) {
+            @if (recurringEventDetails().length) {
+              <!-- A sequence of dated occurrences reads as a timeline, not a
+                   table. Scrolls in place: an unlimited schedule can run to
+                   dozens of rows. -->
+              <div class="max-h-[420px] overflow-y-auto">
+                @for (
+                  event of visibleSchedule();
+                  track event.recurringDate + $index;
+                  let last = $last
+                ) {
+                  <div class="flex gap-2.5">
+                    <div class="flex flex-col items-center">
+                      <span
+                        class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                        [style.background-color]="
+                          getEventStatusBadge(event.status).color
+                        "
+                      ></span>
+                      @if (!last) {
+                        <span
+                          class="mt-1 w-px flex-1 bg-v4-border-color"
+                        ></span>
+                      }
+                    </div>
+                    <div class="min-w-0 pb-2.5 leading-tight">
+                      <div class="flex items-center gap-2">
+                        <p
+                          class="m-0 font-peridot text-xs font-bold uppercase text-v4-main-text-color"
+                        >
+                          {{ event.status }}
+                        </p>
+                        @if (event.canRetry) {
+                          <app-common-button-v4
+                            [type]="{ style: 'blue', name: 'action' }"
+                            text="Retry"
+                            lucideIcon="refresh-cw"
+                            width="80px"
+                            [minWidth]="'80px'"
+                            customHeight="24px"
+                            [loading]="retryingCardId() === event.id"
+                            (clickEvent)="retryEvent(event.id)"
+                          />
+                        }
+                      </div>
+                      @if (event.amount) {
+                        <p
+                          class="m-0 mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                        >
+                          ${{ event.amount }}
+                        </p>
+                      }
+                      <app-pd-date-time
+                        class="mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                        [value]="event.recurringDate"
+                      />
+                    </div>
+                  </div>
+                }
+              </div>
+              @if (canShowMoreSchedule()) {
+                <app-pd-show-more
+                  [hiddenCount]="hiddenScheduleCount()"
+                  [showingAll]="scheduleShowAll()"
+                  (toggled)="scheduleShowAll.set(!scheduleShowAll())"
+                />
+              }
+            } @else {
+              <div class="pd-empty">
+                <p
+                  class="m-0 py-6 text-center text-[12px] text-v4-tertiary-text-color"
+                >
+                  No recurring events available.
+                </p>
+              </div>
+            }
+          }
+        </div>
+      </div>
+      <!-- /O4 left column -->
+
+      <!-- 3. Actions — tile row (acts as the card head) + the selected panel
+           rendered flush beneath it, as one card. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="grid grid-cols-2 gap-1.5 px-3 py-2 pd-card-head-flush"
+          [ngClass]="
+            openActionSection() ? 'border-b border-v4-border-color' : ''
+          "
+        >
+          <!-- Audit trail -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'audit'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="toggleSection('audit')"
+          >
+            <lucide-icon
+              name="activity"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Audit<br />trail</span
+            >
+          </button>
+
+          <!-- Comments -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'comments'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="toggleSection('comments')"
+          >
+            <lucide-icon
+              name="message-square"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Comments</span
+            >
+          </button>
+        </div>
+
+        <!-- Inline: Audit trail -->
+        @if (openActionSection() === "audit") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("audit")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else if (auditTrail().length) {
+              <div
+                class="overflow-x-auto rounded-xl border border-v4-border-color"
+              >
+                <div class="max-h-[490px] overflow-y-auto">
+                  <table class="v4-ocw-table">
+                    <thead>
+                      <tr>
+                        <th class="text-center">#</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Device</th>
+                        <th>Note</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (
+                        item of visibleAuditTrail();
+                        track item.date + $index
+                      ) {
+                        <tr>
+                          <td class="text-center">
+                            <span class="text-xs text-v4-tertiary-text-color">{{
+                              $index + 1
+                            }}</span>
+                          </td>
+                          <td><app-pd-date-time [value]="item.date" /></td>
+                          <td>{{ item.status | titlecase }}</td>
+                          <td>{{ item.ip }}</td>
+                          <td>{{ item.note }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              @if (canShowMoreAudit()) {
+                <app-pd-show-more
+                  [hiddenCount]="hiddenAuditCount()"
+                  [showingAll]="auditShowAll()"
+                  (toggled)="auditShowAll.set(!auditShowAll())"
+                />
+              }
+            } @else {
+              <div class="pd-empty">
+                <p
+                  class="m-0 py-6 text-center text-[12px] text-v4-tertiary-text-color"
+                >
+                  No audit trail available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Inline: Comments — the shared payments-out list: inline composer,
+             table and delete action all live in the component. -->
+        @if (openActionSection() === "comments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("comments")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-comments-list
+                variant="view-panel"
+                emptyHint="Notes you add here stay with this schedule."
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                [comments]="commentsForList()"
+                [maxHeight]="'400px'"
+                [posting]="commentPosting()"
+                [error]="commentError()"
+                (submitComment)="onSubmitComment($event)"
+                (deleteComment)="onDeleteComment($event)"
+                (closed)="toggleSection('comments')"
+              />
+            }
+          </div>
+        }
+      </div>
+      <!-- /actions card -->
+    }
+  </div>
+</ng-template>

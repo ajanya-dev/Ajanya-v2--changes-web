@@ -1,0 +1,415 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden">
+  <!-- Header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color">
+        {{
+          type === "invoice" || type === "added-invoice"
+            ? "Invoice Mail"
+            : type === "bulk"
+              ? "Bulk Mail"
+              : "Document Mail"
+        }}
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Mail your
+        {{
+          type === "invoice" || type === "added-invoice"
+            ? "invoices"
+            : "documents"
+        }}
+        via postal service
+      </h2>
+    </div>
+    <button
+      type="button"
+      (click)="close()"
+      [disabled]="mailing"
+      [class.opacity-50]="mailing"
+      [class.cursor-not-allowed]="mailing"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div
+    class="p-6 bg-v4-tertiary-background-color flex flex-col gap-4 transition-opacity"
+    [class.pointer-events-none]="mailing"
+    [class.opacity-60]="mailing"
+    [attr.aria-busy]="mailing"
+  >
+    <!-- Invalid IDs warning -->
+    @if (invalidIds && invalidIds.length) {
+      <div
+        class="flex items-start gap-2 px-4 py-3 rounded-lg bg-v4-badge-warning-bg-color border border-v4-badge-warning-border-color text-sm text-v4-badge-warning-text-color"
+      >
+        <span>
+          Invoice numbers <strong>{{ invalidIds }}</strong>
+          {{ invalidIds.length === 1 ? "is" : "are" }} not eligible for mailing
+        </span>
+      </div>
+    }
+
+    <!-- Common controls -->
+    @if (type === "invoice" || type === "added-invoice") {
+      <!-- Full-width shipping type for invoice types -->
+      <div class="flex flex-col gap-1.5 w-72">
+        <span
+          class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+          >Shipping Type</span
+        >
+        <app-v4-common-dropdown
+          [(ngModel)]="commonShippingType"
+          (ngModelChange)="onCommonShippingChange($event)"
+          [config]="{
+            placeholder: 'Select Shipping Type',
+            displayField: 'name',
+            style: { size: 1 }
+          }"
+          [listData]="shippingTypes"
+          [loading]="shippingTypeLoading"
+          appendTo="body"
+        />
+      </div>
+    } @else {
+      <div
+        class="common-controls-row grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 rounded-xl bg-v4-secondary-background-color border border-v4-border-color p-4"
+      >
+        <div class="flex flex-col gap-1.5">
+          <span
+            class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+            >Select From</span
+          >
+          <app-v4-common-dropdown
+            [(ngModel)]="commonFrom"
+            (ngModelChange)="onCommonFromChange($event)"
+            (buttonClick)="addFromAddress()"
+            [config]="{
+              placeholder: 'Select From',
+              displayField: 'payee_name',
+              enableAddNew: true,
+              addNewSubLabel: 'Add a new address'
+            }"
+            [listData]="addressList"
+            [loading]="addresLoading"
+            appendTo="body"
+          />
+        </div>
+        @if (type === "bulk") {
+          <div class="flex flex-col gap-1.5">
+            <span
+              class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+              >Select Common File</span
+            >
+            <div class="flex gap-2 items-center">
+              <app-common-input-v4
+                placeholder="Select File"
+                [disabled]="true"
+                [isFieldRequired]="false"
+                [fieldHeight]="'44px'"
+                [(ngModel)]="commonFileName"
+                class="flex-1"
+              />
+              <input
+                type="file"
+                #commonFileInput
+                (change)="onCommonFilePick($event)"
+                hidden
+              />
+              <app-common-button-v4
+                [type]="{ style: 'general', name: 'action' }"
+                [backGroundInput]="'var(--v4-mailing-card-selected-bg-blue)'"
+                [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+                lucideIcon="paperclip"
+                [lucideIconSize]="18"
+                customHeight="44px"
+                width="44px"
+                text=""
+                toolTip="Select file"
+                (clickEvent)="clickFileAttachment(commonFileInput)"
+              />
+            </div>
+          </div>
+        }
+        <div class="flex flex-col gap-1.5">
+          <span
+            class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+            >Select Payee</span
+          >
+          <app-payee-dropdown-v4
+            [formControl]="selectedPayeeCtrl"
+            (ready)="autoPopulatePayee($event)"
+            [enableAddNew]="true"
+            (clearEvent)="onClearPayee()"
+            [appendTo]="'body'"
+            [placeholder]="'Select Your Payee'"
+          />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span
+            class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+            >Shipping Type</span
+          >
+          <app-v4-common-dropdown
+            [(ngModel)]="commonShippingType"
+            (ngModelChange)="onCommonShippingChange($event)"
+            [config]="{
+              placeholder: 'Select Shipping Type',
+              displayField: 'name'
+            }"
+            [listData]="shippingTypes"
+            [loading]="shippingTypeLoading"
+            appendTo="body"
+          />
+        </div>
+      </div>
+    }
+
+    <!-- Bulk row count -->
+    @if (type === "bulk") {
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium text-v4-main-text-color"
+          >No of Mails</span
+        >
+        <div class="flex items-center gap-2">
+          <app-common-input-v4
+            placeholder="Count"
+            [type]="'number'"
+            [isFieldRequired]="false"
+            [fieldHeight]="'32px'"
+            [(ngModel)]="numberOfMails"
+            (keydown.enter)="immediateRowCountChange()"
+            class="w-16"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'general', name: 'action' }"
+            [backGroundInput]="'var(--v4-mailing-card-selected-bg-blue)'"
+            [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+            lucideIcon="minus"
+            [lucideIconSize]="14"
+            text=""
+            toolTip="Remove row"
+            (clickEvent)="changeRowCount('dec')"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'general', name: 'action' }"
+            [backGroundInput]="'var(--v4-mailing-card-selected-bg-blue)'"
+            [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+            lucideIcon="plus"
+            [lucideIconSize]="14"
+            text=""
+            toolTip="Add row"
+            (clickEvent)="changeRowCount('inc')"
+          />
+        </div>
+      </div>
+    }
+
+    <!-- Table -->
+    <div class="overflow-hidden border border-v4-border-color rounded-xl">
+      <div class="max-h-[420px] overflow-y-auto overflow-x-hidden" (scroll)="closeAllPayeeDropdowns()">
+        <table class="v4-ocw-table">
+          <thead>
+            <tr>
+              <th class="text-center !w-8">#</th>
+              <th class="w-[250px]">FILE</th>
+              @if (!(type === "invoice" || type === "added-invoice")) {
+                <th>FROM</th>
+              }
+              <th>PAYEE</th>
+              <th>SHIPPING TYPE</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (control of mailForm.controls; track control; let i = $index) {
+              <tr class="[&>td]:!align-top">
+                <td class="text-center">
+                  <div class="h-8 flex items-center justify-center">
+                    <span class="text-sm font-medium text-v4-tertiary-text-color">{{
+                      i + 1
+                    }}</span>
+                  </div>
+                </td>
+                <td class="w-[250px] max-w-[250px]">
+                  <div class="flex flex-col">
+                    <div class="flex gap-2 items-start">
+                      @if (control.controls.document_title.disabled) {
+                      <div
+                        class="flex-1 min-w-0 max-w-[200px] h-[32px] px-3 flex items-center rounded-lg border border-v4-border-color bg-v4-tertiary-background-color text-sm font-medium truncate"
+                        [class.text-v4-main-text-color]="control.controls.document_title.value"
+                        [class.text-v4-subtle-text-color]="!control.controls.document_title.value"
+                        [matTooltip]="control.controls.document_title.value || 'Select File'"
+                      >
+                        {{ control.controls.document_title.value || 'Select File' }}
+                      </div>
+                    } @else {
+                      <app-common-input-v4
+                          placeholder="File Name"
+                          [isFieldRequired]="false"
+                        [fieldHeight]="'32px'"
+                          [formControl]="control.controls.document_title"
+                          class="flex-1"
+                        />
+                      }
+                    <input
+                        #singleFileInput
+                        (change)="onIndividualFilePick($event, i)"
+                        type="file"
+                        class="hidden"
+                      />
+                      @if (type === "bulk") {
+                        <app-common-button-v4
+                          [type]="{ style: 'general', name: 'action' }"
+                          [backGroundInput]="'var(--v4-mailing-card-selected-bg-blue)'"
+                          [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+                          lucideIcon="paperclip"
+                          [lucideIconSize]="14"
+                          text=""
+                          toolTip="Select file"
+                          (clickEvent)="clickFileAttachment(singleFileInput)"
+                        />
+                      }
+                    </div>
+                    @if (type === "bulk") {
+                      <app-control-message-v4
+                        [control]="control.controls.file!"
+                        [customMessages]="{ required: 'File is required' }"
+                      />
+                    }
+                    @if (type === "normal") {
+                      <app-control-message-v4
+                        [control]="control.controls.id"
+                        [customMessages]="{ required: 'File is required' }"
+                      />
+                    }
+                  </div>
+                </td>
+                @if (!(type === "invoice" || type === "added-invoice")) {
+                  <td>
+                    <div class="flex flex-col">
+                      <app-v4-common-dropdown
+                        [formControl]="control.controls.reply_to_id"
+                        (buttonClick)="addFromAddress(i)"
+                        [config]="{
+                          placeholder: 'Select From',
+                          displayField: 'payee_name',
+                          enableAddNew: true,
+                          addNewSubLabel: 'Add a new address',
+                          style: { size: 1 }
+                        }"
+                        [listData]="addressList"
+                        [loading]="addresLoading"
+                        appendTo="body"
+                      />
+                      <app-control-message-v4
+                        [control]="control.controls.reply_to_id"
+                        [customMessages]="{ required: 'From address is required' }"
+                      />
+                    </div>
+                  </td>
+                }
+                <td class="w-[280px]">
+                  <div class="flex flex-col">
+                    <div class="w-[280px] max-w-full shrink-0 overflow-hidden">
+                      <app-payee-dropdown-v4
+                        [clearable]="
+                          !(type === 'added-invoice' || type === 'invoice')
+                        "
+                        [searchable]="
+                          !(type === 'added-invoice' || type === 'invoice')
+                        "
+                        (ready)="
+                          autoPopulateDropdown($event, control.controls.payee_id)
+                        "
+                        [formControl]="control.controls.payee_id"
+                        [customHeight]="'1'"
+                        [labelIconNeeded]="false"
+                        appendTo="body"
+                      />
+                    </div>
+                    <app-control-message-v4
+                      [control]="control.controls.payee_id"
+                      [customMessages]="{ required: 'Payee is required' }"
+                    />
+                    @if (control.controls.validPayee?.touched && control.controls.validPayee?.errors?.["required"]) {
+                      <div
+                        role="presentation"
+                        class="inline-flex items-center whitespace-nowrap bg-v4-badge-error-bg-color text-v4-common-red-color rounded-full px-2 py-0.5 text-[12px] font-medium mt-1 w-fit cursor-pointer hover:opacity-80 transition-opacity"
+                        (click)="editPayee(control.controls.payee_id, control)"
+                      >
+                        Invalid Payee Address
+                        <lucide-icon [img]="PencilIcon" [size]="11" class="ml-1" />
+                      </div>
+                    }
+                  </div>
+                </td>
+                <td class="w-[320px]">
+                  <div class="flex flex-col">
+                    <div class="flex gap-2 items-center">
+                      <div class="w-[280px] shrink-0">
+                        <app-v4-common-dropdown
+                          [formControl]="control.controls.shipping_type"
+                          [config]="{
+                            placeholder: 'Select Shipping Type',
+                            displayField: 'name',
+                            style: { size: 1 }
+                          }"
+                          [listData]="shippingTypes"
+                          [loading]="shippingTypeLoading"
+                          appendTo="body"
+                        />
+                      </div>
+                      <app-common-button-v4
+                        [type]="{ style: 'general', name: 'action' }"
+                        [backGroundInput]="'color-mix(in srgb, var(--v4-common-red-color) 15%, transparent)'"
+                        [textColorInput]="'var(--v4-common-red-color)'"
+                        lucideIcon="trash-2"
+                        [lucideIconSize]="14"
+                        text=""
+                        toolTip="Remove row"
+                        (clickEvent)="deleteRow(i)"
+                      />
+                    </div>
+                    <app-control-message-v4
+                      [control]="control.controls.shipping_type"
+                      [customMessages]="{ required: 'Shipping type is required' }"
+                    />
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex justify-end items-center gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <span class="text-sm font-medium text-v4-main-text-color mr-auto">
+      Total Shipping Cost:
+      <span class="font-semibold">{{ shippingCost | currency }}</span>
+    </span>
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      [disabled]="mailing"
+      (clickEvent)="close()"
+    />
+    <app-common-button-v4
+      width="140px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Mail"
+      [loading]="mailing"
+      [disabled]="mailing"
+      (clickEvent)="onSubmit()"
+    />
+  </div>
+</div>

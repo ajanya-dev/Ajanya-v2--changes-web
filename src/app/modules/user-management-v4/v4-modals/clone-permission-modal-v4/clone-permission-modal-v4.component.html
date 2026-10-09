@@ -1,0 +1,152 @@
+<div class="flex flex-col max-h-[90vh] font-peridot">
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between p-5 sm:p-6 border-b border-v4-border-color bg-v4-popup-header-footer-color"
+  >
+    <div class="flex items-center gap-3">
+      <div
+        class="w-10 h-10 rounded-lg bg-v4-primary-brand-color flex items-center justify-center flex-shrink-0"
+      >
+        <lucide-icon name="copy" [size]="20" class="text-white"></lucide-icon>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-v4-main-text-color">
+          Clone Permissions
+        </h2>
+        <p class="text-xs text-v4-secondary-text-color">
+          Copy permissions to {{ selectedUser?.client_name }}
+        </p>
+      </div>
+    </div>
+    <button
+      [mat-dialog-close]="false"
+      class="text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors p-1"
+    >
+      <lucide-icon name="x" [size]="20"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-y-auto p-5 sm:p-6 bg-v4-popup-background-color">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-bold text-v4-main-text-color">
+        Select User to Clone From
+      </h3>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Add User'"
+        [lucideIcon]="'plus'"
+        [lucideIconSize]="14"
+        [customHeight]="'34px'"
+        [customClasses]="'rounded-lg px-3'"
+        [textClasses]="'text-xs font-semibold'"
+        (clickEvent)="openNewUserModal()"
+      />
+    </div>
+
+    <!-- Search -->
+    <div class="mb-4">
+      <app-common-input-v4
+        [placeholder]="'Search Users...'"
+        [isFieldRequired]="false"
+        [maxLength]="50"
+        [(ngModel)]="searchInput"
+        (ngModelChange)="fetchSearchData()"
+        [isSearchInput]="true"
+      />
+    </div>
+
+    <!-- User list -->
+    <div
+      class="h-[350px] overflow-y-auto overflow-x-hidden flex flex-col gap-2 pr-1"
+    >
+      @if (usersList?.length === 0 && !isLoading()) {
+        <div
+          class="flex flex-col justify-center items-center h-full text-v4-secondary-text-color"
+        >
+          <lucide-icon
+            name="search"
+            [size]="40"
+            class="mb-2 opacity-40"
+          ></lucide-icon>
+          <p class="text-sm">No users found</p>
+        </div>
+      }
+      @if (!isLoading()) {
+        @for (user of usersList; track user; let i = $index) {
+          <div
+            class="cursor-pointer rounded-lg border border-v4-border-color px-4 py-3 hover:border-v4-primary-brand-bold-color transition-colors"
+            role="presentation"
+            [ngClass]="{
+              '!border-v4-primary-brand-bold-color': checkboxArray[i]
+            }"
+            (click)="selectUser(user, i)"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="font-semibold text-v4-main-text-color text-sm">
+                  {{ user.client_name }}
+                </h3>
+                <p class="text-v4-secondary-text-color text-xs mt-0.5">
+                  {{ user.client_email }}
+                </p>
+              </div>
+              <span
+                class="text-[12px] font-semibold px-2 py-0.5 rounded-full border border-v4-border-color text-v4-secondary-text-color flex-shrink-0 ml-2"
+              >
+                {{ userManagementService.getUserType(user.client_type) }}
+              </span>
+            </div>
+          </div>
+        }
+      } @else {
+        @for (_ of [].constructor(5); track $index) {
+          <div class="rounded-lg border border-v4-border-color px-4 py-3">
+            <div class="flex items-start justify-between">
+              <div class="flex flex-col gap-1.5">
+                <div
+                  class="w-32 h-3.5 bg-v4-tertiary-background-color animate-pulse rounded"
+                ></div>
+                <div
+                  class="w-44 h-3 bg-v4-tertiary-background-color animate-pulse rounded"
+                ></div>
+              </div>
+              <div
+                class="w-14 h-5 bg-v4-tertiary-background-color animate-pulse rounded-full"
+              ></div>
+            </div>
+            <div
+              class="w-28 h-3 bg-v4-tertiary-background-color animate-pulse rounded mt-2.5"
+            ></div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="border-t border-v4-border-color p-5 sm:p-6 bg-v4-popup-header-footer-color"
+  >
+    <div class="flex items-center gap-3">
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Cancel'"
+        [width]="'100%'"
+        [customHeight]="'44px'"
+        mat-dialog-close
+      />
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Clone Permissions'"
+        [lucideIcon]="'check'"
+        [lucideIconSize]="16"
+        [width]="'100%'"
+        [customHeight]="'44px'"
+        (clickEvent)="openClonePermissionsConfirmationModal()"
+      />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,167 @@
+<div class="pt-3 sm:pt-4 space-y-4 max-h-[572px] overflow-auto">
+
+  <!-- Category activity cards -->
+  @if (isActivityLoaded && displayStatus === null) {
+    @for (category of getActiveCategories(); track category.type) {
+      <div
+        class="rounded-xl border border-v4-border-color bg-v4-popup-background-color p-4"
+      >
+        <!-- Category header -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center"
+              [ngClass]="category.bgClass"
+            >
+              <lucide-icon
+                [name]="category.icon"
+                [size]="16"
+                [ngClass]="category.iconClass"
+              ></lucide-icon>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-v4-main-text-color">
+                {{ category.name }}
+              </h4>
+              <p class="text-[12px] text-v4-secondary-text-color">
+                {{ getCategoryCount(category.type) }} activities
+              </p>
+            </div>
+          </div>
+          <app-common-button-v4
+            [type]="'borderless'"
+            [text]="'View All'"
+            [textColorInput]="'var(--v4-secondary-text-color)'"
+            [customHeight]="'28px'"
+            [textClasses]="'text-xs'"
+            [suffix]="true"
+            [suffixIcon]="['fas', 'arrow-right']"
+            (clickEvent)="openActivityModal(category.type)"
+          />
+        </div>
+
+        <!-- Activity preview items (max 3) -->
+        <div class="space-y-0">
+          @for (
+            row of getActivityData(category.type) | slice: 0 : 3;
+            track row;
+            let last = $last
+          ) {
+            <div
+              class="flex items-start gap-3 py-2.5"
+              [ngClass]="{ 'border-b border-v4-border-color': !last }"
+            >
+              <!-- Status dot -->
+              <div
+                class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                [ngClass]="getStatusDotClass(row.status)"
+              ></div>
+
+              <!-- Content -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-v4-main-text-color">
+                      {{ row.status | titlecase }}
+                    </p>
+                    <p
+                      class="text-xs text-v4-secondary-text-color mt-0.5 truncate"
+                    >
+                      {{ row.memo || row.bank_name || "" }}
+                    </p>
+                  </div>
+                  <span
+                    class="text-[12px] text-v4-secondary-text-color whitespace-nowrap"
+                  >
+                    {{ row.date }}
+                  </span>
+                </div>
+                @if (row.amount) {
+                  <p
+                    class="text-xs font-bold mt-1 text-v4-badge-success-text-color"
+                  >
+                    {{ row.amount }}
+                  </p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Loading -->
+  @if (!isActivityLoaded) {
+    <div class="flex justify-center items-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="animate-spin text-v4-primary-brand-color"
+      ></lucide-icon>
+    </div>
+  }
+
+  <!-- No data -->
+  @if (displayStatus === "no_data" && isActivityLoaded) {
+    <div
+      class="flex flex-col items-center justify-center text-center bg-v4-tertiary-background-color rounded-lg mt-2 h-full min-h-[300px]"
+    >
+      <lucide-icon
+        name="file-text"
+        [size]="48"
+        class="text-v4-subtle-text-color opacity-40 mb-3"
+      ></lucide-icon>
+      <p class="font-peridot text-xs text-v4-subtle-text-color">
+        This user has no activities yet.
+      </p>
+    </div>
+  }
+
+  <!-- Waiting for approval -->
+  @if (displayStatus === "waiting" && isActivityLoaded) {
+    <div
+      class="flex flex-col items-center justify-center py-12 text-v4-secondary-text-color"
+    >
+      <lucide-icon
+        name="clock"
+        [size]="40"
+        class="mb-3 opacity-40"
+      ></lucide-icon>
+      <p class="text-sm mb-4">Waiting for approval.</p>
+      <div class="flex items-center gap-3">
+        @if (selectedUser.status === 0) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Resend Invite'"
+            [lucideIcon]="'send'"
+            [lucideIconSize]="16"
+            [width]="'160px'"
+            [toolTip]="'Request is pending. Please wait or resend'"
+            (clickEvent)="resendEvent.emit()"
+          />
+        }
+        @if (selectedUser.status === 3) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Approve'"
+            [lucideIcon]="'check'"
+            [lucideIconSize]="16"
+            [width]="'130px'"
+            [toolTip]="'Approve and & Set permission'"
+            (clickEvent)="approveEvent.emit()"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'destructive', name: 'main' }"
+            [text]="'Delete'"
+            [lucideIcon]="'trash-2'"
+            [lucideIconSize]="16"
+            [width]="'130px'"
+            [toolTip]="'Reject and remove this user\'s access'"
+            (clickEvent)="deleteEvent.emit()"
+          />
+        }
+      </div>
+    </div>
+  }
+</div>

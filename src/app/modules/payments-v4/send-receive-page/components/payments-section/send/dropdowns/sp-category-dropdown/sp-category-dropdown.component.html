@@ -1,0 +1,99 @@
+﻿<app-sp-dropdown-shell
+  [label]="label()"
+  [tooltip]="tooltip()"
+  [(open)]="open"
+  (cleared)="clearSelection()"
+  [searchable]="true"
+  [searchPlaceholder]="'Search or add a category'"
+  [dropUp]="dropUp()"
+  [searchTerm]="term()"
+  (searchTermChange)="onSearchInput($event)"
+>
+  <ng-container trigger>
+    <span
+      class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+    >
+      <lucide-icon [img]="LayersIcon" [size]="16" />
+    </span>
+    @if (selectedItem; as category) {
+      <span class="min-w-0 flex-1 text-left">
+        <span
+          class="block truncate font-bold leading-tight text-v4-main-text-color text-[13px]"
+          >{{ category.name }}</span
+        >
+      </span>
+      <button
+        type="button"
+        class="grid h-5 w-5 shrink-0 place-items-center rounded-full text-v4-tertiary-text-color transition-colors hover:bg-v4-hover-tint hover:text-v4-main-text-color"
+        aria-label="Clear category"
+        (click)="clearSelection($event)"
+      >
+        <lucide-icon [img]="XIcon" [size]="14" />
+      </button>
+    } @else {
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholderText() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel>
+    @if (enableAddNew()) {
+      <button
+        type="button"
+        class="mb-2 flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-dashed border-v4-border-success p-2 text-left transition-colors hover:bg-v4-surface-success"
+        (click)="onAddNew()"
+      >
+        <span
+          class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-surface-success-bold text-v4-text-success"
+        >
+          <lucide-icon [img]="PlusIcon" [size]="15" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block font-bold text-v4-text-success text-[13px]"
+            >Add New Category</span
+          >
+          <span class="block truncate text-v4-text-success text-[12px]"
+            >Create a new category</span
+          >
+        </span>
+      </button>
+    }
+
+    <div
+      class="flex max-h-[280px] flex-col gap-[3px] overflow-y-auto"
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+    >
+      @for (category of categories; track category.id) {
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-transparent p-2 text-left transition-colors hover:bg-v4-main-background-color"
+          [ngClass]="{ 'bg-v4-brand-tint': selectedItem?.id === category.id, '!border-v4-brand-tint-strong': selectedItem?.id === category.id }"
+          (click)="onSelect(category)"
+        >
+          <span
+            class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] transition-colors"
+            [class.bg-v4-primary-brand-color]="selectedItem?.id === category.id"
+            [class.text-white]="selectedItem?.id === category.id"
+            [ngClass]="{ 'bg-v4-brand-tint': selectedItem?.id !== category.id }"
+            [class.text-v4-brand-border-color]="selectedItem?.id !== category.id"
+          >
+            <lucide-icon [img]="LayersIcon" [size]="15" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span
+              class="block truncate font-bold text-v4-main-text-color text-[13px]"
+              >{{ category.name }}</span
+            >
+          </span>
+        </button>
+      } @empty {
+        <p class="py-4 text-center text-v4-tertiary-text-color text-[12px]">
+          No categories found
+        </p>
+      }
+    </div>
+  </div>
+</app-sp-dropdown-shell>

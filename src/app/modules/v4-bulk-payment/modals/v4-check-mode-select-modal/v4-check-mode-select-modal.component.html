@@ -1,0 +1,191 @@
+<div class="">
+  <!-- modal header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Select Payment Method
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Choose how each check should be delivered
+      </h2>
+    </div>
+    <div (click)="onClose()" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <!-- Bulk method selector (only in all-payments mode) -->
+    @if (paymentMode !== 'group-mail') {
+      <div class="flex items-center justify-end mb-4 gap-2">
+        <span class="text-xs font-medium text-v4-secondary-text-color whitespace-nowrap">
+          Apply to all:
+        </span>
+        <div class="w-40 angular-ocw-v4-ng-select-dropdown">
+          <ng-select
+            class="height-1 ng-dropdown-panel-v4 text-sm"
+            [(ngModel)]="allSelectedCheckTypes"
+            (change)="updateAllCheckTypeDropdown($event)"
+            placeholder="Select..."
+            [clearable]="false"
+            appendTo="body"
+          >
+            <ng-option value="Check Mail">Check Mail</ng-option>
+            <ng-option value="Check Email">Check Email</ng-option>
+            <ng-option value="Check Print">Check Print</ng-option>
+            @if (!hidesDirectDeposit()) {
+              <ng-option value="Check DD">Check DD</ng-option>
+            }
+          </ng-select>
+        </div>
+      </div>
+    }
+
+    <!-- Table -->
+    <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+      <div class="max-h-[400px] overflow-y-auto">
+        <table class="v4-ocw-table">
+          <thead>
+            <tr>
+              <th class="text-center">#</th>
+              <th class="w-[150px] min-w-[150px] max-w-[150px]">Payee</th>
+              <th class="text-left">Amount</th>
+              <th>Memo</th>
+              <th>Issue Date</th>
+              <th>Check No</th>
+              <th>Category</th>
+              @if (paymentMode === 'group-mail') {
+                <th class="text-center">Action</th>
+              } @else {
+                <th>Payment Method</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (data of checkPaymentsData; track data.id; let i = $index) {
+              <tr>
+                <td class="text-center">
+                  <span class="text-xs text-v4-tertiary-text-color">{{ i + 1 }}</span>
+                </td>
+                <td class="max-w-[150px]" [matTooltip]="data.payee.name || '—'">
+                  <span class="text-xs font-medium text-v4-main-text-color truncate block">
+                    {{ data.payee.name || '—' }}
+                  </span>
+                </td>
+                <td class="text-left">
+                  <span class="text-xs font-medium text-v4-main-text-color whitespace-nowrap">
+                    ${{ data.amount }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color">
+                    {{ data.description || 'N/A' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color whitespace-nowrap">
+                    {{ formatDate(data.createdAt) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color">
+                    {{ data.referenceNo }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color">
+                    {{ data.transfer?.category?.catagoryName || 'N/A' }}
+                  </span>
+                </td>
+                <td>
+                  @if (paymentMode === 'group-mail') {
+                    <div class="flex items-center justify-center">
+                      <button aria-label="Remove payment"
+                        type="button"
+                        class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                        matTooltip="Remove payment"
+                        (click)="removePayment(i)"
+                      >
+                        <lucide-icon [img]="Trash2Icon" [size]="14"></lucide-icon>
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="flex items-center gap-2">
+                      <div class="flex-1 min-w-[130px] angular-ocw-v4-ng-select-dropdown">
+                        <ng-select
+                          class="height-1 ng-dropdown-panel-v4 text-sm"
+                          [ngClass]="{ 'invalid-dropdown': !isDropdownValid(i) }"
+                          [(ngModel)]="v3BulkPaymentService.selectedCheckTypes[i]"
+                          (change)="onDropdownChange(
+                            $event,
+                            i,
+                            data?.transferId,
+                            data?.source?.routingNumber,
+                            data?.payee,
+                            true,
+                            data?.source?.isItZil
+                          )"
+                          placeholder="Select..."
+                          [clearable]="false"
+                          appendTo="body"
+                        >
+                          <ng-option value="Check Mail">Check Mail</ng-option>
+                          <ng-option value="Check Email">Check Email</ng-option>
+                          <ng-option value="Check Print">Check Print</ng-option>
+                          @if (!hidesDirectDeposit()) {
+                            <ng-option value="Check DD">Check DD</ng-option>
+                          }
+                        </ng-select>
+                      </div>
+                      <button aria-label="Remove payment"
+                        type="button"
+                        class="p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                        matTooltip="Remove payment"
+                        (click)="removePayment(i)"
+                      >
+                        <lucide-icon [img]="Trash2Icon" [size]="14"></lucide-icon>
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+
+            @if (!checkPaymentsData.length) {
+              <tr>
+                <td [attr.colspan]="8" class="text-center !py-8">
+                  <span class="text-sm text-v4-subtle-text-color">No check payments found</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div class="flex justify-between items-center p-6 bg-v4-secondary-background-color border-t border-v4-border-color">
+    <p class="text-xs text-v4-tertiary-text-color">
+      {{ checkPaymentsData.length }} check(s)
+    </p>
+    <div class="flex gap-3">
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="onCancel()"
+      />
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Done"
+        (clickEvent)="payAsGroup()"
+        [disabled]="isProcessing() || !checkPaymentsData.length"
+        [loading]="isProcessing()"
+      />
+    </div>
+  </div>
+</div>

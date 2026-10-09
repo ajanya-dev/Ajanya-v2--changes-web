@@ -1,0 +1,397 @@
+@if (!resize) {
+  <app-list-header-v4
+    header="Bank Accounts"
+    [isSwitchOption]="false"
+    [isAddButton]="true"
+    [loading]="bankDataService.accountLoadingSignal()"
+    [searchPlaceholder]="'Search accounts...'"
+    [addButtonTooltip]="'Add New Bank Account'"
+    (searchEvent)="filterData($event)"
+    (addButtonClickEvent)="onNew()"
+  />
+}
+
+<div
+  cdkDropList
+  (cdkDropListDropped)="dropListSort($event)"
+  [cdkDropListSortPredicate]="sortPredicate()"
+  [ngClass]="{
+    '!cursor-grabbing': grabbing
+  }"
+  class="bank-accounts-list flex-1 flex flex-col overflow-x-hidden overflow-y-auto"
+  appScrollToEnd
+  (scrollToEnd)="onScrollToEnd()"
+>
+  @if (!isSearchLoading) {
+    <div
+      role="presentation"
+      class="bank-account-item border-b border-v4-border-color border-l-4 border-l-transparent flex items-center text-xs font-semibold text-v4-main-text-color cursor-pointer transition-colors py-3"
+      [ngClass]="{
+        '!cursor-grabbing': grabbing,
+        '!border-l-v4-primary-brand-bold-color bg-v4-input-background-color':
+          !bankDataService.selectedBankAccountSignal()?.id,
+        'px-3': !resize,
+        'justify-center px-1': resize
+      }"
+      (click)="selectAll()"
+      [matTooltip]="resize ? 'All Accounts' : ''"
+    >
+      <div class="flex items-center gap-2" [ngClass]="{ 'justify-center w-full': resize }">
+        <div
+          class="w-7 h-7 rounded-md flex items-center justify-center bg-v4-badge-info-bg-color flex-shrink-0"
+        >
+          <lucide-icon
+            name="building-2"
+            [size]="14"
+            class="text-v4-primary-brand-color"
+          ></lucide-icon>
+        </div>
+        @if (!resize) {
+          <div class="flex flex-col">
+            <h1 class="text-xs font-bold text-v4-main-text-color">
+              All Accounts
+            </h1>
+            <h2 class="text-[12px] font-normal text-v4-secondary-text-color">
+              {{ totalAccountsCount }} accounts
+            </h2>
+          </div>
+        }
+      </div>
+    </div>
+  @for (
+    item of bankDataService.bankAccountsSignal()
+      | moveSelectedToTop: selectedBankAccount : searchInput;
+    track $index
+  ) {
+    <div
+      class="cursor-pointer"
+      [ngClass]="{
+        '!cursor-grab': item.is_favorite && !grabbing,
+        '!cursor-grabbing': grabbing
+      }"
+      (cdkDragStarted)="dragEvents('start')"
+      (cdkDragEnded)="dragEvents('end')"
+      [cdkDragDisabled]="!item.is_favorite"
+      cdkDragLockAxis="y"
+      cdkDragBoundary=".bank-accounts-list"
+      cdkDrag
+    >
+      <div
+        tabindex="0"
+        class="bank-account-item border-b border-v4-border-color border-l-4 border-l-transparent py-3 flex justify-between items-center text-xs font-semibold text-v4-main-text-color transition-colors select-none"
+        [ngClass]="{
+          '!border-l-v4-primary-brand-bold-color bg-v4-input-background-color':
+            item?.id === bankDataService.selectedBankAccountSignal()?.id,
+          'px-3': !resize,
+          'justify-center px-1': resize
+        }"
+        role="presentation"
+        (click)="selectBankAccount(item)"
+        [matTooltip]="resize ? (item.bank_account_nick_name || item.bank_account_account_name) : ''"
+      >
+        <div class="flex gap-2 items-center overflow-hidden flex-1 min-w-0" [ngClass]="{ 'justify-center w-full': resize }">
+          <div
+            class="relative flex justify-center items-center rounded-md h-7 w-7 bg-v4-badge-info-bg-color flex-shrink-0"
+          >
+            <lucide-icon
+              name="building-2"
+              [size]="14"
+              class="text-v4-primary-brand-color"
+            ></lucide-icon>
+            @if (item.is_favorite && !resize) {
+              <fa-icon
+                class="absolute -top-1 -right-1 text-v4-favorite-star-color"
+                [icon]="faStar"
+              />
+            }
+            <!-- Collapsed: status dot indicator -->
+            @if (resize) {
+              @if (
+                item?.ach_application_status === 1 ||
+                item.mark_as_verified === 1 ||
+                item.verified_by === 5
+              ) {
+                <span role="img" aria-label="Verified" matTooltip="Verified" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-green-color border-2 border-v4-secondary-background-color"></span>
+              } @else if (
+                (!item.verified_by && (item.mark_as_verified === 0 || !item.mark_as_verified)) ||
+                (item.verified_by === 88 && item.mark_as_verified === 0) ||
+                item.verified_by === 3
+              ) {
+                <span role="img" aria-label="Not verified" matTooltip="Not verified" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-sky-color border-2 border-v4-secondary-background-color"></span>
+              } @else if (item.verified_by === 4) {
+                <span role="img" aria-label="Verification pending" matTooltip="Verification pending" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-yellow-color border-2 border-v4-secondary-background-color"></span>
+              } @else if (
+                item.verified_by === 6 ||
+                item.verified_by === 10 ||
+                item.verified_by === 12
+              ) {
+                <span role="img" aria-label="Verification failed" matTooltip="Verification failed" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-v4-common-red-color border-2 border-v4-secondary-background-color"></span>
+              }
+            }
+          </div>
+          @if (!resize) {
+            <div class="flex flex-col overflow-hidden">
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="whitespace-nowrap truncate !text-xs max-w-[130px]"
+                  [matTooltip]="
+                    item.bank_account_nick_name || item.bank_account_account_name
+                  "
+                >
+                  {{
+                    item.bank_account_nick_name || item.bank_account_account_name
+                  }}
+                </span>
+                @if (item.is_positive_pay_enabled === 1) {
+                  <lucide-icon
+                    name="banknote"
+                    [size]="18"
+                    class="shrink-0 text-v4-common-green-color"
+                    matTooltip="This bank account is configured for Positive Pay."
+                  ></lucide-icon>
+                }
+              </div>
+              <div
+                class="whitespace-nowrap overflow-hidden !font-normal !text-v4-secondary-text-color"
+              >
+                {{ item.truncatedBankAccNumber }}
+              </div>
+            </div>
+          }
+        </div>
+        @if (!resize) {
+          <div class="flex items-center flex-shrink-0 gap-1">
+            <div class="flex justify-end items-center whitespace-nowrap">
+              @if (
+                (!item.verified_by &&
+                  (item.mark_as_verified === 0 || !item.mark_as_verified)) ||
+                (item.verified_by === 88 && item.mark_as_verified === 0)
+              ) {
+                <button
+                  class="flex items-center gap-1 text-v4-common-blue-color hover:underline hidden xl:flex"
+                  matTooltip="This bank account is not verified yet. Click to verify it and unlock ACH payments."
+                  (click)="openBankVerifyModal(item)"
+                >
+                  <lucide-icon name="circle-alert" [size]="12" />
+                  <span class="text-[12px] font-semibold underline">Verify</span>
+                </button>
+                <div class="flex justify-end items-center xl:hidden">
+                  <button
+                    class="text-v4-common-blue-color h-5 text-xs flex items-center gap-1"
+                    matTooltip="This bank account is not verified yet. Click to verify it and unlock ACH payments."
+                    (click)="openBankVerifyModal(item)"
+                  >
+                    <lucide-icon name="circle-alert" [size]="12" class="flex-shrink-0"></lucide-icon>
+                    <span class="underline">Verify</span>
+                  </button>
+                </div>
+              }
+              @if (
+                item.mark_as_verified === 1 &&
+                item?.ach_application_status !== 1
+              ) {
+                <div
+                  class="flex items-center gap-1 text-v4-common-green-color hidden xl:flex"
+                  matTooltip="This bank account has been verified."
+                >
+                  <lucide-icon name="circle-check" [size]="12" />
+                  <span class="text-[12px] font-semibold">Verified</span>
+                </div>
+                <div
+                  class="text-xs text-center flex items-center gap-1 text-v4-common-green-color xl:hidden"
+                  matTooltip="This bank account has been verified."
+                >
+                  <lucide-icon name="circle-check" [size]="12" class="flex-shrink-0"></lucide-icon>
+                  <span>Verified</span>
+                </div>
+              }
+              @if (
+                item.verified_by === 3 && item?.ach_application_status !== 1
+              ) {
+                <button
+                  class="flex items-center gap-1 text-v4-common-blue-color hover:underline hidden xl:flex"
+                  matTooltip="Micro deposits were sent to this account. Click to confirm the deposited amounts."
+                  (click)="microDeposit(item)"
+                >
+                  <lucide-icon name="circle-alert" [size]="12" />
+                  <span class="text-[12px] font-semibold underline">Confirm MD</span>
+                </button>
+                <div class="flex justify-end items-center xl:hidden">
+                  <button
+                    class="text-v4-common-blue-color h-5 text-xs flex items-center gap-1"
+                    matTooltip="Micro deposits were sent to this account. Click to confirm the deposited amounts."
+                    (click)="microDeposit(item)"
+                  >
+                    <lucide-icon name="circle-alert" [size]="12" class="flex-shrink-0"></lucide-icon>
+                    <span class="underline">Confirm MD</span>
+                  </button>
+                </div>
+              }
+              @if (
+                item.verified_by === 4 && item?.ach_application_status !== 1
+              ) {
+                <div
+                  class="flex items-center gap-1 text-v4-badge-warning-text-color hidden xl:flex"
+                  matTooltip="Verification for this bank account is in progress."
+                >
+                  <lucide-icon name="circle" [size]="9" />
+                  <span class="text-[12px] font-semibold">Pending</span>
+                </div>
+                <div
+                  class="text-v4-common-yellow-color text-xs flex items-center gap-1 xl:hidden"
+                  matTooltip="Verification for this bank account is in progress."
+                >
+                  <span aria-hidden="true" class="w-2 h-2 rounded-full bg-v4-common-yellow-color flex-shrink-0"></span>
+                  <span>Pending</span>
+                </div>
+              }
+              @if (
+                item.verified_by === 5 && item?.ach_application_status !== 1
+              ) {
+                <div
+                  class="flex items-center gap-1 text-v4-common-green-color hidden xl:flex"
+                  matTooltip="Verification for this bank account was approved."
+                >
+                  <lucide-icon name="circle-check" [size]="12" />
+                  <span class="text-[12px] font-semibold">Approved</span>
+                </div>
+                <div
+                  class="text-xs text-center flex items-center gap-1 text-v4-common-green-color xl:hidden"
+                  matTooltip="Verification for this bank account was approved."
+                >
+                  <lucide-icon name="circle-check" [size]="12" class="flex-shrink-0"></lucide-icon>
+                  <span>Approved</span>
+                </div>
+              }
+              @if (item?.ach_application_status === 1) {
+                <div
+                  class="flex items-center gap-1 text-v4-common-green-color hidden xl:flex"
+                  matTooltip="This bank account is approved for ACH payments."
+                >
+                  <lucide-icon name="circle-check" [size]="12" />
+                  <span class="text-[12px] font-semibold">ACH</span>
+                </div>
+                <div
+                  class="text-xs text-center flex items-center gap-1 text-v4-common-green-color xl:hidden"
+                  matTooltip="This bank account is approved for ACH payments."
+                >
+                  <lucide-icon name="circle-check" [size]="12" class="flex-shrink-0"></lucide-icon>
+                  <span>ACH</span>
+                </div>
+              }
+              @if (
+                (item.verified_by === 6 || item.verified_by === 10) &&
+                item?.ach_application_status !== 1
+              ) {
+                <div
+                  class="flex items-center gap-1 text-v4-common-red-color hidden xl:flex"
+                  matTooltip="Verification for this bank account was rejected."
+                >
+                  <lucide-icon name="circle" [size]="9" />
+                  <span class="text-[12px] font-semibold">Rejected</span>
+                </div>
+                <div
+                  class="text-v4-common-red-color text-xs flex items-center gap-1 xl:hidden"
+                  matTooltip="Verification for this bank account was rejected."
+                >
+                  <span aria-hidden="true" class="w-2 h-2 rounded-full bg-v4-common-red-color flex-shrink-0"></span>
+                  <span>Rejected</span>
+                </div>
+              }
+              @if (
+                item.verified_by === 12 && item?.ach_application_status !== 1
+              ) {
+                <div
+                  class="flex items-center gap-1 text-v4-common-red-color hidden xl:flex"
+                  matTooltip="Verification for this bank account failed."
+                >
+                  <lucide-icon name="circle" [size]="9" />
+                  <span class="text-[12px] font-semibold">Failed</span>
+                </div>
+                <div
+                  class="text-v4-common-red-color text-xs flex items-center gap-1 xl:hidden"
+                  matTooltip="Verification for this bank account failed."
+                >
+                  <span aria-hidden="true" class="w-2 h-2 rounded-full bg-v4-common-red-color flex-shrink-0"></span>
+                  <span>Failed</span>
+                </div>
+              }
+            </div>
+            <div cdkOverlayOrigin #trigger="cdkOverlayOrigin">
+              <button aria-label="Bank account actions"
+                matTooltip="Bank account actions"
+                class="flex items-center justify-center w-7 h-7 rounded-md hover:bg-v4-secondary-background-color transition-colors"
+                (click)="togglePopover($event, item)"
+              >
+                <lucide-icon
+                  name="ellipsis-vertical"
+                  [size]="16"
+                  [strokeWidth]="2.5"
+                  class="text-v4-secondary-text-color"
+                ></lucide-icon>
+              </button>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayOrigin]="trigger"
+                [cdkConnectedOverlayOpen]="openPopoverItemId === item.id"
+                [cdkConnectedOverlayHasBackdrop]="true"
+                [cdkConnectedOverlayBackdropClass]="
+                  'cdk-overlay-transparent-backdrop'
+                "
+                (backdropClick)="closePopover()"
+                [cdkConnectedOverlayPositions]="popoverPositions"
+              >
+                <div
+                  class="bg-v4-popup-background-color rounded-lg border border-v4-border-color shadow-lg py-1 min-w-[220px]"
+                >
+                  @for (list of settings; track $index) {
+                    <button
+                      class="v4-menu-item"
+                      [class.v4-danger-item]="list.id === 'id_delete_row'"
+                      [disabled]="
+                        ((item.is_neo_bank ||
+                          item.bank_account_nature_type === 2) &&
+                          list.id === 'id_edit_design_row') ||
+                        ((item.is_neo_bank ||
+                          item.bank_account_nature_type === 2) &&
+                          list.id === 'id_add_signature')
+                      "
+                      (click)="onSettingClick(list.id, item)"
+                    >
+                      <lucide-icon
+                        [name]="list.lucideIcon"
+                        [size]="16"
+                        [ngClass]="{
+                          '!text-v4-favorite-star-color':
+                            list.id === 'id_favorite' &&
+                            item.is_favorite === 0
+                        }"
+                      ></lucide-icon>
+                      <span>{{
+                        list.id === "id_favorite"
+                          ? item.is_favorite === 0
+                            ? "Add to Favorites"
+                            : "Unfavorite"
+                          : list.name
+                      }}</span>
+                    </button>
+                  }
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+  }
+  @if (
+    bankDataService.isRemainingLoading ||
+    isSearchLoading ||
+    bankDataService.accountLoadingSignal()
+  ) {
+    <div>
+      <app-common-list-skelton [items]="14"></app-common-list-skelton>
+    </div>
+  }
+</div>

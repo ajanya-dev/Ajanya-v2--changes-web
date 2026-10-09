@@ -1,0 +1,422 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'gpbf-recurring-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [titleSuffix]="panelTitleSuffix()"
+  [subtitleTemplate]="panelMetaLines().length ? panelMeta : undefined"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="actionButtonClicked.emit($event)"
+/>
+
+<!-- Header icon: navy circle -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="repeat" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<!-- Panel-wide loading state: plain bars in the panel's own card shell. -->
+<ng-template #panelSkeleton>
+  <app-pd-skeleton [rows]="7" [tiles]="3" />
+</ng-template>
+
+<!-- Stand-in for a section whose data is fetched on first open (loadSection). -->
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<!-- Header meta: stacked lines collapsed, one dotted line expanded. -->
+<ng-template #panelMeta>
+  <app-pd-meta-lines
+    [lines]="panelMetaLines()"
+    [expanded]="isPanelExpanded()"
+  />
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (isLoading()) {
+      <ng-container [ngTemplateOutlet]="panelSkeleton" />
+    } @else {
+      <!-- DOM order pairs the tall cards for the grid; collapsed re-orders in SCSS. -->
+      <div class="pd-card o4-check-details">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('check')"
+        >
+          <span class="pd-card-title">Check details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('check') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("check")) {
+          <div class="pd-card-body">
+            <div class="pd-row">
+              <span class="pd-row-label">Check number</span>
+              <span class="pd-row-value">{{
+                viewData()?.checkSerialNo || "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Amount</span>
+              <span class="pd-row-value">{{ panelTitle() || "—" }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Payable to</span>
+              <span class="pd-row-value">{{
+                viewData()?.payableTo || row()?.payee_name || "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Frequency</span>
+              <span class="pd-row-value">{{
+                viewData()?.frequency || row()?.rrule_freq || "—"
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Total payments</span>
+              <span class="pd-row-value">{{ totalPayments() }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Payments made</span>
+              <span class="pd-row-value">{{ paymentsMade() }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Payments left</span>
+              <span class="pd-row-value">{{ paymentsLeft() }}</span>
+            </div>
+
+            @if (viewData()?.transactionId) {
+              <div class="pd-row">
+                <span class="pd-row-label">Transaction ID</span>
+                <span
+                  class="pd-row-value truncate"
+                  [title]="viewData()?.transactionId"
+                  >{{ viewData()?.transactionId }}</span
+                >
+              </div>
+            }
+
+            @if (viewData()?.submittedIpAddress) {
+              <div class="pd-row">
+                <span class="pd-row-label">Submitted IP address</span>
+                <a
+                  [href]="'https://ipapi.co/' + viewData()?.submittedIpAddress"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="pd-row-value text-v4-primary-brand-bold-color hover:underline"
+                  >{{ viewData()?.submittedIpAddress }}</a
+                >
+              </div>
+            }
+
+            @if (viewData()?.submittedAt) {
+              <div class="pd-row">
+                <span class="pd-row-label">Submitted at</span>
+                <app-pd-date-time
+                  class="pd-row-value text-right"
+                  [value]="viewData()?.submittedAt"
+                />
+              </div>
+            }
+
+            @if (viewData()?.memo || row()?.memo) {
+              <div class="pd-row-block">
+                <span class="pd-row-label">Memo</span>
+                <p class="pd-row-value m-0">
+                  {{ viewData()?.memo || row()?.memo }}
+                </p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Recurring schedule — a timeline, not a table (skill §3). -->
+      <div class="pd-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('schedule')"
+        >
+          <span class="pd-card-title">Recurring schedule</span>
+          <lucide-icon
+            [name]="isCardCollapsed('schedule') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("schedule")) {
+          <div class="pd-card-body">
+            @if (recurringEventDetails()?.length) {
+              @for (
+                event of visibleRecurringEvents();
+                track event.recurringDate + $index;
+                let last = $last
+              ) {
+                <div class="flex gap-2.5">
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                      [style.background-color]="timelineColor(event.status)"
+                    ></span>
+                    @if (!last) {
+                      <span class="mt-1 w-px flex-1 bg-v4-border-color"></span>
+                    }
+                  </div>
+                  <div class="min-w-0 pb-2.5 leading-tight">
+                    <p
+                      class="m-0 font-peridot text-xs font-bold uppercase text-v4-main-text-color"
+                    >
+                      {{ event.status }}
+                    </p>
+                    <p
+                      class="m-0 mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                    >
+                      ${{ event.amount
+                      }}{{ event.checkId ? " · Check " + event.checkId : "" }}
+                    </p>
+                    <app-pd-date-time
+                      class="mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                      [value]="event.recurringDate"
+                    />
+                  </div>
+                </div>
+              }
+              @if (canShowMoreTimeline()) {
+                <app-pd-show-more
+                  [hiddenCount]="hiddenTimelineCount()"
+                  [showingAll]="timelineShowAll()"
+                  (toggled)="timelineShowAll.set(!timelineShowAll())"
+                />
+              }
+            } @else {
+              <div class="pd-empty">
+                <p class="m-0 py-6 text-center text-v4-tertiary-text-color">
+                  No recurring events available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Payee details — the party card; no payee id, so no "Open payee". -->
+      @if (payeeDisplay(); as p) {
+        @if (p.has) {
+          <div class="pd-card pd-full o4-payee">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('payee')"
+            >
+              <span class="pd-card-title">Payee details</span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('payee') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+
+            @if (!isCardCollapsed("payee")) {
+              <div class="pd-card-body">
+                <div class="flex items-center gap-2.5">
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color font-peridot text-[12px] font-bold text-white"
+                  >
+                    {{ p.initials }}
+                  </span>
+                  <div class="min-w-0 flex-1 leading-tight">
+                    <p
+                      class="m-0 truncate font-peridot text-xs font-semibold text-v4-main-text-color"
+                    >
+                      {{ p.name || "—" }}
+                    </p>
+                    @if (p.contact) {
+                      <p
+                        class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                      >
+                        {{ p.contact }}
+                      </p>
+                    }
+                    @if (p.address) {
+                      <p
+                        class="m-0 truncate font-peridot text-[12px] text-v4-tertiary-text-color"
+                        [title]="p.address"
+                      >
+                        {{ p.address }}
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                @if (p.account) {
+                  <div class="pd-row-block">
+                    <span class="pd-row-label">Payee account</span>
+                    <p class="pd-row-value m-0">{{ p.account }}</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- Actions — the tile row is the card head; the open section renders below. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="pd-card-head-flush grid grid-cols-3 gap-1.5 px-3 py-2"
+          [ngClass]="
+            openActionSection() ? 'border-b border-v4-border-color' : ''
+          "
+        >
+          <!-- Audit trail -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'audit'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('audit')"
+          >
+            <lucide-icon
+              name="activity"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Audit<br />trail</span
+            >
+          </button>
+
+          <!-- Comments -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'comments'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('comments')"
+          >
+            <lucide-icon
+              name="message-square"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Comments</span
+            >
+          </button>
+
+          <!-- Metadata -->
+          <button
+            type="button"
+            class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              openActionSection() === 'metadata'
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="selectSection('metadata')"
+          >
+            <lucide-icon
+              name="database"
+              [size]="16"
+              class="shrink-0"
+            ></lucide-icon>
+            <span
+              class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+              >Metadata</span
+            >
+          </button>
+        </div>
+
+        <!-- Action panels render flush under the tile row, in the same card. -->
+        @if (openActionSection() === "audit") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("audit")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-audit-log-list
+                [collapsedCount]="2"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                [logs]="auditLogsForList()"
+                [maxHeight]="'400px'"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === "comments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("comments")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else {
+              <app-po-comments-list
+                variant="view-panel"
+                emptyHint="Notes you add here stay with this schedule."
+                [collapsedCount]="4"
+                [forceExpand]="isPanelExpanded()"
+                [bare]="true"
+                [comments]="commentsForList()"
+                [maxHeight]="'400px'"
+                [posting]="commentPosting()"
+                [error]="commentError()"
+                [allowDelete]="false"
+                (submitComment)="onSubmitComment($event)"
+                (closed)="closeSection()"
+              />
+            }
+          </div>
+        }
+
+        @if (openActionSection() === "metadata") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-metadata-activity-list-v4
+              [bare]="true"
+              [metaData]="metaDataForList()"
+              [maxHeight]="'400px'"
+              (closed)="closeSection()"
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

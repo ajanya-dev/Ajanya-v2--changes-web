@@ -1,0 +1,336 @@
+<!-- Setup View -->
+@if (!isSetupComplete()) {
+  <div class="">
+    <!-- modal header -->
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 rounded-lg bg-v4-primary-brand-color flex items-center justify-center flex-shrink-0"
+          >
+            <lucide-icon
+              [img]="MailIcon"
+              [size]="18"
+              class="text-v4-secondary-brand-color"
+            />
+          </div>
+          <h1
+            class="text-xl md:text-2xl font-semibold text-v4-main-text-color font-funnel"
+          >
+            Setup Bill Inbox
+          </h1>
+        </div>
+        <h2 class="text-xs md:text-sm text-v4-subtle-text-color font-peridot">
+          Forward bills to your unique email address and we'll automatically
+          convert them to digital bills
+        </h2>
+      </div>
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center flex-shrink-0"
+      >
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+
+    <!-- modal body start -->
+    <div class="p-4 md:p-6 bg-v4-tertiary-background-color flex flex-col gap-4">
+      <!-- Your Bill Inbox Email -->
+      <div
+        class="rounded-xl border border-v4-border-color bg-v4-tertiary-background-color p-4"
+      >
+        <label
+          for="bill-inbox-email-username"
+          class="block text-sm font-semibold font-peridot text-v4-secondary-text-color mb-2"
+        >
+          Your Bill Inbox Email <span class="text-v4-common-red-color">*</span>
+        </label>
+        <div class="flex items-center gap-2">
+          <app-common-input-v4
+            [inputId]="'bill-inbox-email-username'"
+            [formControl]="formGroup.controls.username"
+            placeholder="Enter username"
+            [isFieldRequired]="true"
+            [maxLength]="20"
+            class="flex-1"
+          />
+          <span class="text-base md:text-sm text-v4-subtle-text-color font-peridot select-none whitespace-nowrap flex-shrink-0 px-2">
+            &#64;{{ billInboxDomain }}
+          </span>
+          <app-common-button-v4
+            width="90px"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Copy"
+            lucideIcon="copy"
+            [lucideIconSize]="14"
+            (clickEvent)="copyBillInboxEmail()"
+            [disabled]="!billInboxEmailDisplay()"
+            [textClasses]="'font-bold text-sm font-funnel'"
+          />
+        </div>
+        <app-control-message-v4
+          [control]="formGroup.controls.username"
+          label="Username is required"
+        />
+        <p
+          class="text-[12px] md:text-xs text-v4-subtle-text-color font-peridot mt-2"
+        >
+          Forward or send bills to this email address from any email client.
+        </p>
+      </div>
+
+      <!-- How It Works -->
+      <div
+        class="rounded-xl border border-v4-brand-border-color bg-v4-badge-info-bg-color p-4"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <lucide-icon
+            [img]="ZapIcon"
+            [size]="16"
+            class="text-v4-badge-info-text-color"
+          />
+          <h3
+            class="text-sm font-semibold font-funnel text-v4-badge-info-text-color"
+          >
+            How It Works
+          </h3>
+        </div>
+        <ol class="flex flex-col gap-3">
+          <li class="flex flex-col gap-1">
+            <div class="flex items-start gap-3">
+              <span
+                class="w-6 h-6 rounded-full bg-v4-primary-brand-color text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
+              >
+                1
+              </span>
+              <span
+                class="text-sm text-v4-badge-info-text-color font-funnel"
+              >
+                Forward your bill emails
+              </span>
+            </div>
+            <p
+              class="text-[12px] md:text-xs text-v4-badge-info-text-color font-peridot pl-9"
+            >
+              Send bills to your inbox email address.
+            </p>
+          </li>
+          <li class="flex flex-col gap-1">
+            <div class="flex items-start gap-3">
+              <span
+                class="w-6 h-6 rounded-full bg-v4-primary-brand-color text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
+              >
+                2
+              </span>
+              <span
+                class="text-sm text-v4-badge-info-text-color font-funnel"
+              >
+                AI extracts bill details
+              </span>
+            </div>
+            <p
+              class="text-[12px] md:text-xs text-v4-badge-info-text-color font-peridot pl-9"
+            >
+              Automatically reads payee, amount, dates, and more.
+            </p>
+          </li>
+          <li class="flex flex-col gap-1">
+            <div class="flex items-start gap-3">
+              <span
+                class="w-6 h-6 rounded-full bg-v4-primary-brand-color text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
+              >
+                3
+              </span>
+              <span
+                class="text-sm text-v4-badge-info-text-color font-funnel"
+              >
+                Bill appears in your dashboard
+              </span>
+            </div>
+            <p
+              class="text-[12px] md:text-xs text-v4-badge-info-text-color font-peridot pl-9"
+            >
+              Review and approve, or let it auto-approve.
+            </p>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Settings -->
+      <div class="relative">
+        <div
+          class="v4-bill-inbox-settings relative overflow-hidden rounded-xl border-2 border-v4-border-color bg-v4-secondary-background-color p-4"
+        >
+          <div class="relative z-0 pointer-events-none">
+            <div class="flex items-center gap-2 mb-3">
+              <lucide-icon
+                [img]="SettingsIcon"
+                [size]="16"
+                class="text-v4-secondary-text-color"
+              />
+              <h3
+                class="text-sm font-semibold font-funnel text-v4-secondary-text-color"
+              >
+                Settings
+              </h3>
+            </div>
+            <div class="flex flex-col gap-4">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <span
+                    class="text-sm font-medium text-v4-main-text-color font-peridot"
+                  >
+                    Auto-approve high confidence bills
+                  </span>
+                  <span
+                    class="text-[12px] md:text-xs text-v4-badge-info-text-color font-peridot"
+                  >
+                    Bills with 90%+ confidence auto-approve
+                  </span>
+                </div>
+                <mat-slide-toggle
+                  class="flex-shrink-0"
+                  [formControl]="formGroup.controls.autoApproveHighConfidence"
+                />
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <span
+                    class="text-sm font-medium text-v4-main-text-color font-peridot"
+                  >
+                    Email notifications
+                  </span>
+                  <span
+                    class="text-[12px] md:text-xs text-v4-badge-info-text-color font-peridot"
+                  >
+                    Get notified when new bills arrive
+                  </span>
+                </div>
+                <mat-slide-toggle
+                  class="flex-shrink-0"
+                  [formControl]="formGroup.controls.emailNotifications"
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            class="bill-inbox-settings-coming-soon-overlay absolute inset-0 z-10 flex items-center justify-center rounded-xl"
+          >
+            <span
+              class="font-funnel text-sm font-semibold text-v4-secondary-text-color"
+            >
+              Coming soon
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- modal body end -->
+
+    <!-- modal footer -->
+    <div
+      class="flex justify-end gap-3 p-4 md:p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        [textClasses]="'font-bold text-sm font-funnel'"
+      />
+      <app-common-button-v4
+        width="140px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Complete Setup"
+        lucideIcon="check"
+        (clickEvent)="connectAndAutomate()"
+        [disabled]="loading()"
+        [loading]="loading()"
+        [textClasses]="'font-bold text-sm font-funnel'"
+      />
+    </div>
+  </div>
+}
+
+<!-- Success View -->
+@if (isSetupComplete()) {
+  <div class="">
+    <!-- modal header -->
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 rounded-lg bg-v4-primary-brand-color flex items-center justify-center flex-shrink-0"
+          >
+            <lucide-icon
+              [img]="MailIcon"
+              [size]="18"
+              class="text-v4-secondary-brand-color"
+            />
+          </div>
+          <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+            Setup Bill Inbox
+          </h1>
+        </div>
+        <h2 class="text-xs md:text-sm text-v4-subtle-text-color font-peridot">
+          Your bill inbox is ready
+        </h2>
+      </div>
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+
+    <!-- modal body -->
+    <div class="p-6 bg-v4-tertiary-background-color">
+      <div class="text-center">
+        <div
+          class="w-16 h-16 bg-v4-badge-success-bg-color rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <lucide-icon
+            [img]="CheckIcon"
+            [size]="28"
+            class="text-v4-common-green-color"
+          />
+        </div>
+        <h3 class="text-lg font-bold font-funnel text-v4-main-text-color mb-2">
+          Email to Bill Setup Complete!
+        </h3>
+        @if (!mappedEmailToBill) {
+          <p class="text-sm font-peridot text-v4-secondary-text-color">
+            Your email ID is connected to
+            <span class="font-bold text-v4-badge-info-text-color">
+              {{ username() }}&#64;{{ billInboxDomain }}
+            </span>
+          </p>
+        } @else {
+          <p class="text-sm font-peridot text-v4-secondary-text-color">
+            Your email ID is connected to
+            <span class="font-bold text-v4-badge-info-text-color">
+              {{ mappedEmailToBill }}
+            </span>
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- modal footer -->
+    <div
+      class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="View Invoices"
+        (clickEvent)="goToEmailInbox()"
+        [textClasses]="'font-bold text-sm font-funnel'"
+      />
+    </div>
+  </div>
+}

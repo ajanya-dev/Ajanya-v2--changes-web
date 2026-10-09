@@ -1,0 +1,537 @@
+
+<div class="flex flex-col min-h-[min(560px,90vh)] max-h-[90vh]">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        QuickBooks Online Bank Account Mapping
+      </h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Refresh -->
+      <button aria-label="Refresh"
+        type="button"
+        class="w-9 h-9 flex items-center justify-center border border-v4-input-border-color rounded-xl transition-colors cursor-pointer"
+        style="
+          background-color: var(--v4-badge-info-bg-color);
+          color: var(--v4-badge-info-text-color);
+        "
+        matTooltip="Refresh"
+        (click)="refreshData()"
+      >
+        <lucide-icon
+          name="refresh-cw"
+          [size]="16"
+          [class.animate-spin]="initialLoading"
+        ></lucide-icon>
+      </button>
+      <!-- Import Bank Accounts -->
+      <app-common-button-v4
+        [type]="{ style: 'filled-blue', name: 'action' }"
+        [backGroundInput]="'var(--v4-primary-brand-color)'"
+        [text]="'Import Bank Accounts'"
+        [isAddIcon]="true"
+        [customHeight]="'36px'"
+        [loading]="quickBooksLoading().bank"
+        [disabled]="quickBooksLoading().bank"
+        [toolTip]="'Import all bank accounts from QuickBooks account'"
+        (clickEvent)="ImportBank()"
+      />
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon name="x" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="flex-1 overflow-y-auto p-6 space-y-4 bg-v4-tertiary-background-color"
+  >
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+      <app-v4-common-dropdown
+        class="qbo-company-filter flex-1 min-w-0"
+        [config]="companyFilterConfig"
+        [listData]="companyFilterList"
+        [clearable]="false"
+        [appendTo]="'body'"
+        [ngModel]="selectedCompanyId"
+        (ngModelChange)="onCompanySelect($event)"
+      />
+
+      <div class="relative w-full sm:w-80 shrink-0">
+        <span
+          class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center text-v4-subtle-text-color"
+        >
+          <lucide-icon name="search" [size]="14" />
+        </span>
+        <input
+          type="text"
+          class="w-full h-[38px] rounded-lg border border-v4-input-border-color bg-v4-secondary-background-color text-sm text-v4-main-text-color pl-10 pr-9 placeholder:text-v4-subtle-text-color focus:outline-none focus:ring-1 focus:ring-v4-primary-brand-color/50 focus:border-v4-primary-brand-color"
+          placeholder="Search bank account"
+          [formControl]="searchControl"
+        />
+        @if (bankSearchLoading) {
+         
+          <span
+            class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center text-v4-subtle-text-color"
+          >
+            <lucide-icon
+              name="loader-circle"
+              [size]="14"
+              class="animate-spin"
+            />
+          </span>
+        } @else if (searchControl.value) {
+          <button aria-label="Clear search"
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center cursor-pointer text-v4-subtle-text-color hover:text-v4-main-text-color transition-colors"
+            matTooltip="Clear search"
+            (click)="clearBankSearch()"
+          >
+            <lucide-icon name="x" [size]="14" />
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Loading -->
+    @if (initialLoading) {
+      <div class="flex items-center justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="24"
+          class="text-v4-primary-brand-color animate-spin"
+        ></lucide-icon>
+      </div>
+    } @else {
+      <!-- Company Cards -->
+      @for (company of displayedCompanies; track company.realmId) {
+        <div
+          class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color overflow-hidden"
+        >
+          <!-- Company Card Header -->
+          <div
+            class="flex items-center justify-between px-4 py-3 bg-v4-input-background-color border-b border-v4-input-border-color"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-v4-main-text-color">
+                {{ company.companyName }}
+              </span>
+              <span class="text-xs text-v4-tertiary-text-color">
+                ({{ company.pagination?.total ?? company.data.length }} Bank
+                Accounts)
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <!-- Status Badge -->
+              @if (company.status === "Connected") {
+                <span
+                  class="text-xs px-3 py-1 rounded-full font-medium"
+                  style="
+                    background-color: var(--v4-badge-success-bg-color);
+                    color: var(--v4-badge-success-text-color);
+                  "
+                >
+                  Connected
+                </span>
+              } @else {
+                <span
+                  class="text-xs px-3 py-1 rounded-full font-medium"
+                  style="
+                    background-color: var(--v4-badge-error-bg-color);
+                    color: var(--v4-badge-error-text-color);
+                  "
+                >
+                  {{ company.status }}
+                </span>
+              }
+              <!-- Bulk Delete -->
+              @if (getSelectedCountForCompany(company.realmId) > 0) {
+                <app-common-button-v4
+                  [type]="{ style: 'filled-red', name: 'action' }"
+                  [text]="
+                    'Delete (' +
+                    getSelectedCountForCompany(company.realmId) +
+                    ')'
+                  "
+                  [loading]="bulkDeleteLoading"
+                  [disabled]="bulkDeleteLoading"
+                  (clickEvent)="onBulkDeleteForCompany(company.realmId)"
+                />
+              }
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <!-- Header Row -->
+                <tr class="bg-v4-input-background-color">
+                  <th class="w-10 px-3 py-2 text-left">
+                    <input
+                      type="checkbox"
+                      class="w-4 h-4 cursor-pointer accent-[var(--v4-primary-brand-color)]"
+                      [checked]="isAllSelectedForCompany(company.realmId)"
+                      (change)="toggleSelectAllForCompany(company.realmId)"
+                      matTooltip="Select all"
+                    />
+                  </th>
+                  <th
+                    class="px-3 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    QuickBooks ID
+                  </th>
+                  <th
+                    class="px-3 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    QuickBooks Bank Ac
+                  </th>
+                  <th
+                    class="px-3 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    OCW Bank Ac
+                  </th>
+                  <th
+                    class="px-3 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    OCW Bank Nick Name
+                  </th>
+                  <th
+                    class="px-3 py-2 text-left text-xs font-semibold text-v4-secondary-text-color"
+                  >
+                    Action
+                  </th>
+                </tr>
+                <!-- Search Row -->
+                <tr class="border-b border-v4-input-border-color">
+                  <th class="w-10 px-3 py-1.5"></th>
+                  <th class="px-3 py-1.5">
+                    <app-common-input-v4
+                      [placeholder]="'Search...'"
+                      [isFieldRequired]="false"
+                      [fieldHeight]="'32px'"
+                      [ngModel]="getSearchFilters(company.realmId).quickBookId"
+                      (ngModelChange)="
+                        onSearchChange(company.realmId, 'quickBookId', $event)
+                      "
+                    />
+                  </th>
+                  <th class="px-3 py-1.5">
+                    <app-common-input-v4
+                      [placeholder]="'Search...'"
+                      [isFieldRequired]="false"
+                      [fieldHeight]="'32px'"
+                      [ngModel]="
+                        getSearchFilters(company.realmId).quickBookAccount
+                      "
+                      (ngModelChange)="
+                        onSearchChange(
+                          company.realmId,
+                          'quickBookAccount',
+                          $event
+                        )
+                      "
+                    />
+                  </th>
+                  <th class="px-3 py-1.5">
+                    <app-common-input-v4
+                      [placeholder]="'Search...'"
+                      [isFieldRequired]="false"
+                      [fieldHeight]="'32px'"
+                      [ngModel]="
+                        getSearchFilters(company.realmId).ocwBankAccount
+                      "
+                      (ngModelChange)="
+                        onSearchChange(
+                          company.realmId,
+                          'ocwBankAccount',
+                          $event
+                        )
+                      "
+                    />
+                  </th>
+                  <th class="px-3 py-1.5">
+                    <app-common-input-v4
+                      [placeholder]="'Search...'"
+                      [isFieldRequired]="false"
+                      [fieldHeight]="'32px'"
+                      [ngModel]="
+                        getSearchFilters(company.realmId).ocwBankNickName
+                      "
+                      (ngModelChange)="
+                        onSearchChange(
+                          company.realmId,
+                          'ocwBankNickName',
+                          $event
+                        )
+                      "
+                    />
+                  </th>
+                  <th class="px-3 py-1.5"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (isPaginationLoading(company.realmId)) {
+                  <tr>
+                    <td colspan="6" class="px-3 py-12">
+                      <div class="flex items-center justify-center">
+                        <lucide-icon
+                          name="loader-circle"
+                          [size]="24"
+                          class="text-v4-primary-brand-color animate-spin"
+                        ></lucide-icon>
+                      </div>
+                    </td>
+                  </tr>
+                } @else {
+                  @for (bank of company.data; track bank.id) {
+                    <tr
+                      class="border-b border-v4-input-border-color hover:bg-v4-input-background-color/50 transition-colors"
+                    >
+                      <td class="w-10 px-3 py-2">
+                        <input
+                          type="checkbox"
+                          class="w-4 h-4 cursor-pointer accent-[var(--v4-primary-brand-color)]"
+                          [checked]="isRowSelected(bank.id)"
+                          (change)="toggleRowSelection(bank.id)"
+                        />
+                      </td>
+                      <td class="px-3 py-2 text-v4-main-text-color">
+                        {{ bank.quickBookId }}
+                      </td>
+                      <td class="px-3 py-2 text-v4-main-text-color">
+                        {{ bank.quickBookAccount }}
+                      </td>
+                      <td class="px-3 py-2">
+                        @if (bank.isMapped) {
+                          <div class="flex items-center gap-1.5">
+                            <span class="text-v4-main-text-color">{{
+                              bank.OcwbankAccount
+                            }}</span>
+                            @if (bank.duplicated && !isPlugginEnabled) {
+                              <lucide-icon
+                                name="triangle-alert"
+                                [size]="14"
+                                class="text-v4-badge-warning-text-color"
+                                matTooltip="This Bank Account is mapped to another QuickBooks Bank account. Please choose a different bank account to map."
+                              ></lucide-icon>
+                            }
+                          </div>
+                        } @else {
+                          <app-common-button-v4
+                            [type]="{ style: 'primary', name: 'main' }"
+                            [text]="'Map Now'"
+                            [toolTip]="'Map your bank account'"
+                            [customHeight]="'32px'"
+                            (clickEvent)="
+                              openBankAccountMappingModal(
+                                bank.id,
+                                bank,
+                                '1',
+                                company.realmId
+                              )
+                            "
+                          />
+                        }
+                      </td>
+                      <td class="px-3 py-2 text-v4-main-text-color">
+                        {{ bank.OcwbankAccountNickName }}
+                      </td>
+                      <td class="px-3 py-2">
+                        <div class="flex items-center gap-1.5">
+                          <div class="w-10 flex items-center justify-start">
+                            @if (bank.isMapped) {
+                              <button
+                                type="button"
+                                class="text-sm text-v4-badge-warning-text-color transition-colors"
+                                matTooltip="Remove current bank account mapping"
+                                (click)="removeMapping(bank.id)"
+                              >
+                                Clear
+                              </button>
+                            }
+                          </div>
+                          <button aria-label="Edit mapping"
+                            type="button"
+                            class="p-1 rounded-lg transition-colors cursor-pointer text-v4-primary-brand-bold-color"
+                            matTooltip="Edit mapping"
+                            (click)="
+                              onEditRow(bank.id, bank, '1', company.realmId)
+                            "
+                          >
+                            <lucide-icon
+                              name="pencil"
+                              [size]="14"
+                            ></lucide-icon>
+                          </button>
+                          @if (loading !== bank.id) {
+                            <button aria-label="Delete bank account"
+                              type="button"
+                              class="p-1 rounded-lg transition-colors cursor-pointer"
+                              style="color: var(--v4-badge-error-text-color)"
+                              matTooltip="Delete bank account"
+                              (click)="onDeleteRow(bank.id)"
+                            >
+                              <lucide-icon
+                                name="trash-2"
+                                [size]="14"
+                              ></lucide-icon>
+                            </button>
+                          } @else {
+                            <lucide-icon
+                              name="loader-circle"
+                              [size]="14"
+                              class="animate-spin"
+                              style="color: var(--v4-badge-error-text-color)"
+                            ></lucide-icon>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td
+                        colspan="6"
+                        class="px-3 py-8 text-center text-sm text-v4-tertiary-text-color"
+                      >
+                        Sorry! No result found :(
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          @if (company.pagination && company.pagination.total > 0) {
+            <div
+              class="flex items-center justify-between px-4 py-3 border-t border-v4-input-border-color bg-v4-secondary-background-color"
+            >
+              <!-- Left: rows per page + info -->
+              <div
+                class="flex items-center gap-3 text-xs text-v4-secondary-text-color"
+              >
+                <span>Rows per page:</span>
+                <div class="w-20">
+                  <app-v4-common-dropdown
+                    [config]="perPageConfig"
+                    [listData]="perPageOptions"
+                    [clearable]="false"
+                    [appendTo]="'body'"
+                    [ngModel]="getPerPageStringForCompany(company.realmId)"
+                    (ngModelChange)="
+                      onPerPageChangeForCompany($event, company.realmId)
+                    "
+                  />
+                </div>
+                <span>
+                  Showing {{ company.pagination.from }}-{{
+                    company.pagination.to
+                  }}
+                  of {{ company.pagination.total }}
+                </span>
+              </div>
+              <!-- Right: page buttons -->
+              <div class="flex items-center gap-1">
+                <!-- Prev -->
+                <app-common-button-v4
+                  [type]="{ style: 'general', name: 'action' }"
+                  [text]="'‹'"
+                  [backGroundInput]="'var(--main-background-color)'"
+                  [textColorInput]="'var(--v4-main-text-color)'"
+                  [customClasses]="'border border-v4-input-border-color'"
+                  [disabled]="company.pagination.current_page === 1"
+                  [toolTip]="'Previous'"
+                  (clickEvent)="onPageChangeForCompany('prev', company.realmId)"
+                />
+                @for (
+                  page of getPaginationArray(
+                    company.pagination.current_page,
+                    company.pagination.last_page
+                  );
+                  track $index
+                ) {
+                  @if (page === "...") {
+                    <span
+                      class="min-w-[28px] h-[30px] flex items-center justify-center text-xs text-v4-tertiary-text-color"
+                      >...</span
+                    >
+                  } @else if (page === company.pagination.current_page) {
+                    <app-common-button-v4
+                      [type]="{ style: 'general', name: 'action' }"
+                      [text]="'' + page"
+                      [backGroundInput]="'var(--v4-primary-brand-color)'"
+                      [textColorInput]="'white'"
+                      [minWidth]="'28px'"
+                    />
+                  } @else {
+                    <app-common-button-v4
+                      [type]="{ style: 'general', name: 'action' }"
+                      [text]="'' + page"
+                      [backGroundInput]="'transparent'"
+                      [textColorInput]="'var(--v4-main-text-color)'"
+                      [minWidth]="'28px'"
+                      (clickEvent)="gotoPageForCompany(page, company.realmId)"
+                    />
+                  }
+                }
+                <!-- Next -->
+                <app-common-button-v4
+                  [type]="{ style: 'general', name: 'action' }"
+                  [text]="'›'"
+                  [backGroundInput]="'var(--main-background-color)'"
+                  [textColorInput]="'var(--v4-main-text-color)'"
+                  [customClasses]="'border border-v4-input-border-color'"
+                  [disabled]="
+                    company.pagination.current_page ===
+                    company.pagination.last_page
+                  "
+                  [toolTip]="'Next'"
+                  (clickEvent)="onPageChangeForCompany('next', company.realmId)"
+                />
+                @if (company.pagination.last_page > 1) {
+                  <div class="flex items-center gap-1.5 ml-2">
+                    <span class="text-xs text-v4-secondary-text-color"
+                      >Go to</span
+                    >
+                    <div class="w-12">
+                      <app-common-input-v4
+                        [placeholder]="''"
+                        [isFieldRequired]="false"
+                        [fieldHeight]="'28px'"
+                        [isNumberOnly]="true"
+                        [numberType]="'numeric'"
+                        [ngModel]="company.pagination.current_page"
+                        (inputEvent)="
+                          onPageInputForCompany(
+                            $event,
+                            company.realmId,
+                            company.pagination.last_page
+                          )
+                        "
+                      />
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @empty {
+        <div
+          class="flex flex-col items-center justify-center min-h-[300px] border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color p-8 text-center"
+        >
+          <p class="text-sm text-v4-tertiary-text-color">No Result Found</p>
+        </div>
+      }
+    }
+  </div>
+  <!-- modal body end -->
+</div>

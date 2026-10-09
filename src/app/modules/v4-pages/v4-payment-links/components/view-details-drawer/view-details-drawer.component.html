@@ -1,0 +1,285 @@
+<!-- Backdrop -->
+<div
+  class="drawer-backdrop"
+  (click)="onBackdropClick($event)"
+  tabindex="0"
+  (keydown.enter)="onBackdropClick($event)"
+  (keydown.space)="onBackdropClick($event)"
+>
+  <!-- Drawer Panel (slides in from right) -->
+  <div
+    class="absolute top-0 right-0 h-full w-[520px] max-w-full bg-v4-secondary-background-color shadow-2xl z-[1] flex flex-col animate-slide-in"
+    (click)="$event.stopPropagation()"
+    tabindex="-1"
+    (keydown.enter)="$event.stopPropagation()"
+    (keydown.space)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div class="p-5 border-b border-v4-border-color">
+      <!-- Top: Icon + Name + Close -->
+      <div class="flex items-center gap-3 mb-4">
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-v4-primary-brand-color"
+        >
+          <lucide-angular
+            name="link"
+            [size]="18"
+            class="text-v4-common-green-color"
+          />
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-sm font-bold text-v4-main-text-color truncate">{{ link().name }}</h2>
+          <p class="text-[12px] text-v4-secondary-text-color truncate">{{ link().shortUrl }}</p>
+        </div>
+        <app-common-button-v4
+          [type]="'round'"
+          [width]="'32px'"
+          [backGroundInput]="'transparent'"
+          [lucideIcon]="'x'"
+          [lucideIconSize]="18"
+          [toolTip]="'Close'"
+          [text]="''"
+          (clickEvent)="close.emit()"
+        ></app-common-button-v4>
+      </div>
+
+      <!-- Action Buttons -->
+      @if (!isArchived()) {
+        <div class="flex gap-2">
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Edit"
+            [lucideIcon]="'pencil'"
+            [lucideIconSize]="12"
+            [customHeight]="'40px'"
+            [width]="'100%'"
+            (clickEvent)="edit.emit()"
+          />
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Duplicate"
+            [lucideIcon]="'copy'"
+            [lucideIconSize]="12"
+            [customHeight]="'40px'"
+            [width]="'100%'"
+            (clickEvent)="duplicate.emit()"
+          />
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'neon', name: 'main' }"
+            text="Share"
+            [lucideIcon]="'share-2'"
+            [lucideIconSize]="12"
+            [customHeight]="'40px'"
+            [width]="'100%'"
+            (clickEvent)="share.emit()"
+          />
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Preview"
+            [lucideIcon]="'qr-code'"
+            [lucideIconSize]="12"
+            [customHeight]="'40px'"
+            [width]="'100%'"
+            (clickEvent)="preview.emit()"
+          />
+        </div>
+      }
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto thin-scroll p-5 space-y-4">
+
+      <!-- Archived state: show prominent Restore card in place of actions -->
+      @if (isArchived()) {
+        <div class="rounded-xl border border-v4-border-color p-6 flex flex-col items-center text-center gap-4">
+          <div
+            class="w-12 h-12 rounded-full flex items-center justify-center"
+            [style.background-color]="'var(--v4-badge-error-bg-color)'"
+          >
+            <lucide-angular name="archive" [size]="20" class="text-v4-common-red-color" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <span class="font-semibold text-sm text-v4-main-text-color">This link is archived</span>
+            <span class="text-xs text-v4-secondary-text-color leading-relaxed">
+              This payment link is no longer active. Restore it to re-enable payments and access all settings.
+            </span>
+          </div>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Restore Link"
+            lucideIcon="archive-restore"
+            [width]="'180px'"
+            [disabled]="busy()"
+            (clickEvent)="restoreLink.emit()"
+          />
+        </div>
+      }
+
+      <!-- Status Section -->
+      <div class="rounded-xl border border-v4-border-color p-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-v4-main-text-color">Status</span>
+          <div class="flex items-center gap-2">
+            <span
+              class="px-2 py-0.5 rounded-full text-[12px] font-semibold inline-flex items-center gap-1"
+              [style.background-color]="statusConfig.bg"
+              [style.color]="statusConfig.color"
+            >
+              <span
+                class="w-1.5 h-1.5 rounded-full"
+                [style.background-color]="statusConfig.dot"
+              ></span>
+              {{ statusConfig.label }}
+            </span>
+            @if (!isArchived()) {
+              <button
+                (click)="onToggle(!isActive)"
+                [disabled]="busy()"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                [style.background-color]="
+                  isActive
+                    ? 'var(--v4-common-green-color)'
+                    : 'var(--v4-common-red-color)'
+                "
+              >
+                <span
+                  class="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
+                  [style.transform]="isActive ? 'translateX(18px)' : 'translateX(2px)'"
+                ></span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- URL Section -->
+      <div class="rounded-xl border border-v4-border-color p-4">
+        <div
+          class="flex items-center gap-2 px-3 py-2 rounded-lg bg-v4-badge-info-bg-color border border-v4-brand-border-color"
+        >
+          <lucide-angular
+            name="external-link"
+            [size]="14"
+            class="shrink-0 text-v4-primary-brand-color"
+          />
+          <span
+            class="text-xs font-medium truncate flex-1 text-v4-primary-brand-color"
+            >{{ fullUrl }}</span
+          >
+          <app-common-button-v4
+            [type]="'round'"
+            [width]="'28px'"
+            [backGroundInput]="'transparent'"
+            [lucideIcon]="copied() ? 'check-circle-2' : 'copy'"
+            [lucideIconSize]="14"
+            [textColorInput]="copied() ? 'var(--v4-common-green-color)' : 'var(--v4-primary-brand-color)'"
+            [toolTip]="copied() ? 'Copied!' : 'Copy link'"
+            [text]="''"
+            (clickEvent)="copyUrl()"
+          />
+        </div>
+      </div>
+
+      <!-- Payment Details Section -->
+      <div class="rounded-xl border border-v4-border-color p-4 space-y-3">
+        <h3 class="text-xs font-bold text-v4-main-text-color">Payment Details</h3>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[12px] text-v4-secondary-text-color">Received To</span>
+            <span class="text-[12px] font-medium text-v4-main-text-color">
+              {{ link().bankAccount?.bankAccountNickName || link().bankAccount?.bankName || '-' }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[12px] text-v4-secondary-text-color">Company</span>
+            <span class="text-[12px] font-medium text-v4-main-text-color">
+              {{ link().companyName || '-' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Methods Section -->
+      <div class="rounded-xl border border-v4-border-color p-4 space-y-3">
+        <h3 class="text-xs font-bold text-v4-main-text-color">Payment Methods</h3>
+        <div class="flex flex-wrap gap-1.5">
+          @for (method of paymentMethods; track method) {
+            <div class="flex items-center gap-1.5 px-2 py-1 bg-v4-tertiary-background-color border border-v4-border-color rounded text-[12px] font-semibold text-v4-main-text-color">
+              <div
+                class="w-4 h-4 rounded flex items-center justify-center"
+                [class]="PAYMENT_METHOD_CONFIG[method].iconBg"
+              >
+                <span
+                  class="text-[7px] font-bold"
+                  [class]="PAYMENT_METHOD_CONFIG[method].iconText"
+                >{{ PAYMENT_METHOD_CONFIG[method].iconChar }}</span>
+              </div>
+              {{ PAYMENT_METHOD_CONFIG[method].label }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Customize Notification -->
+      @if (!isArchived()) {
+        <div class="rounded-xl border border-v4-border-color p-4">
+          <app-common-button-v4
+            [type]="'borderless'"
+            [text]="'Customize Notification'"
+            [textClasses]="'text-xs'"
+            [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+            [lucideIcon]="'message-square'"
+            [lucideIconSize]="14"
+            [customClasses]="'w-full flex justify-center'"
+            (clickEvent)="customizeNotification.emit()"
+          ></app-common-button-v4>
+        </div>
+      }
+
+
+      <!-- Audit Trail Section -->
+      <div class="rounded-xl border border-v4-border-color p-4 space-y-3">
+        <h3 class="text-xs font-bold text-v4-main-text-color">Audit Trail</h3>
+        @if (auditTrailLoading()) {
+          <div class="flex justify-center py-6">
+            <lucide-angular
+              name="loader-circle"
+              [size]="20"
+              class="animate-spin text-v4-primary-brand-color"
+            />
+          </div>
+        } @else if (auditTrailList().length) {
+          <div class="space-y-2">
+            @for (entry of auditTrailList(); track entry.id) {
+              <div class="flex flex-col gap-0.5 py-2 border-b border-v4-border-color last:border-b-0">
+                <div class="flex items-center justify-between">
+                  <span class="text-[12px] font-semibold text-v4-main-text-color">{{ entry.action }}</span>
+                  <span class="text-[12px] text-v4-secondary-text-color">{{ entry.formattedDate }}</span>
+                </div>
+                <span class="text-[12px] text-v4-secondary-text-color">By {{ entry.user }}</span>
+                @if (entry.changes.length) {
+                  <span class="text-[12px] text-v4-secondary-text-color">
+                    Changes: {{ getChangedFields(entry.changes) }}
+                  </span>
+                }
+                <span class="text-[12px] text-v4-secondary-text-color">IP: {{ entry.ipAddress }}</span>
+                <span
+                  class="text-[12px] text-v4-secondary-text-color truncate"
+                  [title]="entry.userAgent"
+                >Device: {{ entry.deviceInfo }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="text-[12px] text-v4-secondary-text-color text-center py-4">
+            No audit trail entries found
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

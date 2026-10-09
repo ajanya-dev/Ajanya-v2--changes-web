@@ -1,0 +1,341 @@
+<div class="bg-v4-main-background-color">
+  <!-- Page Header -->
+  <app-v4-page-header [title]="'Checks Report'" [showBackButton]="true">
+    <!-- Date Filters + Filter Button -->
+    <div headerActions class="flex items-end gap-3 flex-wrap">
+      <app-v4-date-picker
+        placeholder="From Date"
+        fieldLabel="From"
+        [formControl]="date1"
+        [control]="date1"
+        [isFieldRequired]="false"
+      />
+      <app-v4-date-picker
+        placeholder="To Date"
+        fieldLabel="To"
+        [formControl]="date2"
+        [control]="date2"
+        [isFieldRequired]="false"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Filter"
+        lucideIcon="filter"
+        [loading]="loading()"
+        [disabled]="loading()"
+        (clickEvent)="onFilterClicked()"
+      />
+    </div>
+  </app-v4-page-header>
+
+  <!-- Tabs -->
+  <app-common-tab-v4
+    class="mt-5 block"
+    [tabs]="tabs"
+    [activeTab]="activeTab()"
+    variant="underline"
+    (tabChange)="toggleTab($any($event))"
+  />
+
+  <!-- Summary Cards: Total Count + Total Amount -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+    <div
+      class="flex flex-col gap-1 p-4 bg-v4-secondary-background-color border-2 border-v4-border-color rounded-xl"
+    >
+      <span class="text-xs font-medium text-v4-secondary-text-color"
+        >Total Count</span
+      >
+      <span class="text-3xl font-bold text-v4-main-text-color">
+        @if (activeTab() === "check") {
+          {{ SummaryData?.all?.count ?? 0 }}
+        } @else {
+          {{ receivePaymentsSummary?.all?.count ?? 0 }}
+        }
+      </span>
+    </div>
+    <div
+      class="flex flex-col gap-1 p-4 bg-v4-secondary-background-color border-2 border-v4-border-color rounded-xl"
+    >
+      <span class="text-xs font-medium text-v4-secondary-text-color"
+        >Total Amount</span
+      >
+      <span class="text-3xl font-bold text-v4-main-text-color">
+        @if (activeTab() === "check") {
+          ${{ SummaryData?.all?.amount ?? "0.00" }}
+        } @else {
+          ${{ receivePaymentsSummary?.all?.amount ?? "0.00" }}
+        }
+      </span>
+    </div>
+  </div>
+
+  <!-- Status Cards Grid -->
+  @if (activeTab() === "check" && SummaryData) {
+    <div
+      class="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"
+    >
+      @for (statusItem of statuses; track statusItem.value) {
+        <div
+          class="overflow-hidden min-w-0 p-3 rounded-lg cursor-pointer hover:shadow-md transition-all border border-v4-border-color"
+          [class.bg-v4-insight-card-border-blue]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'info'
+          "
+          [class.border-v4-badge-info-text-color]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'info'
+          "
+          [class.bg-v4-insight-card-border-orange]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'warning'
+          "
+          [class.border-v4-badge-warning-text-color]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'warning'
+          "
+          [class.bg-v4-insight-card-border-green]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'success'
+          "
+          [class.border-v4-badge-success-text-color]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'success'
+          "
+          [class.bg-v4-insight-card-border-red]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'error'
+          "
+          [class.border-v4-badge-error-text-color]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+            statusItem.color === 'error'
+          "
+          [class.bg-v4-secondary-background-color]="
+            +(SummaryData?.[statusItem.value]?.count ?? 0) === 0
+          "
+        >
+          <span
+            class="block text-xs font-bold mb-1 truncate"
+            [class.text-v4-insight-card-label-text-blue]="
+              (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'info'
+            "
+            [class.text-v4-insight-card-label-text-orange]="
+              (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'warning'
+            "
+            [class.text-v4-insight-card-label-text-green]="
+              (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'success'
+            "
+            [class.text-v4-insight-card-label-text-red]="
+              (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'error'
+            "
+            [class.text-v4-secondary-text-color]="
+              (SummaryData?.[statusItem.value]?.count ?? 0) === 0
+            "
+            >{{ statusItem.name }}</span
+          >
+          <div class="flex flex-col">
+            <span class="text-[12px] text-v4-tertiary-text-color">Count</span>
+            <span
+              class="text-sm font-bold"
+              [class.text-v4-insight-card-label-text-blue]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'info'
+              "
+              [class.text-v4-insight-card-label-text-orange]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'warning'
+              "
+              [class.text-v4-insight-card-label-text-green]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'success'
+              "
+              [class.text-v4-insight-card-label-text-red]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'error'
+              "
+              [class.text-v4-secondary-text-color]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) === 0
+              "
+              >{{ SummaryData?.[statusItem.value]?.count ?? 0 }}</span
+            >
+          </div>
+          <div class="flex flex-col">
+            <span class="text-[12px] text-v4-tertiary-text-color mt-1"
+              >Amount</span
+            >
+            <span
+              class="text-sm font-bold block truncate"
+              [class.text-v4-insight-card-label-text-blue]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'info'
+              "
+              [class.text-v4-insight-card-label-text-orange]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'warning'
+              "
+              [class.text-v4-insight-card-label-text-green]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'success'
+              "
+              [class.text-v4-insight-card-label-text-red]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'error'
+              "
+              [class.text-v4-secondary-text-color]="
+                (SummaryData?.[statusItem.value]?.count ?? 0) === 0
+              "
+              >${{ SummaryData?.[statusItem.value]?.amount ?? "0.00" }}</span
+            >
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (activeTab() === "receive" && receivePaymentsSummary) {
+    <div
+      class="mt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"
+    >
+      @for (statusItem of receivePaymentsStatuses; track statusItem.value) {
+        <div
+          class="overflow-hidden min-w-0 p-3 rounded-lg cursor-pointer hover:shadow-md transition-all border border-v4-border-color"
+          [class.bg-v4-insight-card-border-blue]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'info'
+          "
+          [class.border-v4-badge-info-text-color]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'info'
+          "
+          [class.bg-v4-insight-card-border-orange]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'warning'
+          "
+          [class.border-v4-badge-warning-text-color]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'warning'
+          "
+          [class.bg-v4-insight-card-border-green]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'success'
+          "
+          [class.border-v4-badge-success-text-color]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'success'
+          "
+          [class.bg-v4-insight-card-border-red]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'error'
+          "
+          [class.border-v4-badge-error-text-color]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) > 0 &&
+            statusItem.color === 'error'
+          "
+          [class.bg-v4-secondary-background-color]="
+            +(+(receivePaymentsSummary?.[statusItem.value]?.count ?? 0)) === 0
+          "
+        >
+          <span
+            class="block text-xs font-bold mb-1 truncate"
+            [class.text-v4-insight-card-label-text-blue]="
+              +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'info'
+            "
+            [class.text-v4-insight-card-label-text-orange]="
+              +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'warning'
+            "
+            [class.text-v4-insight-card-label-text-green]="
+              +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'success'
+            "
+            [class.text-v4-insight-card-label-text-red]="
+              +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+              statusItem.color === 'error'
+            "
+            [class.text-v4-secondary-text-color]="
+              +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) === 0
+            "
+            >{{ statusItem.name }}</span
+          >
+          <div class="flex flex-col">
+            <span class="text-[12px] text-v4-tertiary-text-color">Count</span>
+            <span
+              class="text-sm font-bold"
+              [class.text-v4-insight-card-label-text-blue]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'info'
+              "
+              [class.text-v4-insight-card-label-text-orange]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'warning'
+              "
+              [class.text-v4-insight-card-label-text-green]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'success'
+              "
+              [class.text-v4-insight-card-label-text-red]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'error'
+              "
+              [class.text-v4-secondary-text-color]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) === 0
+              "
+              >{{
+                receivePaymentsSummary?.[statusItem.value]?.count ?? 0
+              }}</span
+            >
+          </div>
+          <div class="flex flex-col">
+            <span class="text-[12px] text-v4-tertiary-text-color mt-1"
+              >Amount</span
+            >
+            <span
+              class="text-sm font-bold block truncate"
+              [class.text-v4-insight-card-label-text-blue]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'info'
+              "
+              [class.text-v4-insight-card-label-text-orange]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'warning'
+              "
+              [class.text-v4-insight-card-label-text-green]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'success'
+              "
+              [class.text-v4-insight-card-label-text-red]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) > 0 &&
+                statusItem.color === 'error'
+              "
+              [class.text-v4-secondary-text-color]="
+                +(receivePaymentsSummary?.[statusItem.value]?.count ?? 0) === 0
+              "
+              >${{
+                receivePaymentsSummary?.[statusItem.value]?.amount ?? "0.00"
+              }}</span
+            >
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- V4 Data Table -->
+  <div class="mt-3">
+    @if (activeTab() === "check") {
+      <app-v4-data-table
+        [columnDefs]="columnDefs"
+        [defaultColumnFields]="columnFields"
+        [tableId]="tableId"
+        [frameworkComponents]="frameworkComponents"
+      />
+    } @else if (activeTab() === "receive") {
+      <app-detailed-tab-v4
+        [isReceiveChecksReport]="true"
+        [selectedDate]="selectedDate()"
+      />
+    }
+  </div>
+</div>

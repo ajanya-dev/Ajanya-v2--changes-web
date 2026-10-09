@@ -1,0 +1,209 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [backdropZIndex]="backdropZIndex()"
+  [panelClass]="'cash-expense-side-panel'"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'cash-expense-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [subtitleTemplate]="panelMeta"
+  icon="wallet"
+  [iconBgColor]="panelIconBgColor()"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="onActionButtonClicked($event)"
+/>
+
+<!-- Payee / Account lines — labels muted, values bold main colour. Stacked
+     when collapsed; side by side on one line once the panel is expanded. -->
+<ng-template #panelMeta>
+  @if (details(); as d) {
+    <div
+      class="min-w-0"
+      [ngClass]="isPanelExpanded() ? 'flex items-center gap-3' : 'flex flex-col'"
+    >
+      <p class="m-0 min-w-0 shrink-0 truncate">
+        Payee:
+        <span class="font-semibold text-v4-main-text-color">{{ d.payee?.payeeName || "—" }}</span>
+      </p>
+      @if (isPanelExpanded()) {
+        <span class="shrink-0 text-v4-tertiary-text-color">&bull;</span>
+      }
+      <p class="m-0 min-w-0 truncate">
+        Account:
+        <span class="font-semibold text-v4-main-text-color">{{ d.bankAccount?.bankAccountName || "—" }}</span>
+        @if (d.transactionDate) {
+          · {{ d.transactionDate | date: "MM/dd/yyyy" }}
+        }
+      </p>
+    </div>
+  }
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped panel-body--fill"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="7" [tiles]="4" [timeline]="0" [party]="false" />
+    }
+
+    @if (!isLoading()) {
+      <!-- Cash Expense details -->
+      <div class="pd-card" [class.pd-full]="!payeeSummary()?.summary">
+        <button type="button" class="pd-card-head" (click)="toggleCard('details')">
+          <span class="pd-card-title">Cash expense details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('details') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+        @if (!isCardCollapsed("details")) {
+          <div class="pd-card-body">
+            <app-cash-expense-detail-card-v4 [details]="details()" />
+          </div>
+        }
+      </div>
+
+      <!-- Payee Summary -->
+      @if (payeeSummary()?.summary) {
+        <div class="pd-card">
+          <button type="button" class="pd-card-head" (click)="toggleCard('summary')">
+            <span class="pd-card-title">Payee summary</span>
+            <lucide-icon
+              [name]="isCardCollapsed('summary') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+          @if (!isCardCollapsed("summary")) {
+            <div class="pd-card-body">
+              <div class="pd-row border-b border-v4-border-subtle-color !py-[5px]">
+                <span class="pd-row-label">Total paid this month</span>
+                <span class="pd-row-value tabular-nums">{{
+                  money(payeeSummary()?.summary?.total_paid_in_month)
+                }}</span>
+              </div>
+              <div class="pd-row border-b border-v4-border-subtle-color !py-[5px]">
+                <span class="pd-row-label">Total paid this year</span>
+                <span class="pd-row-value tabular-nums">{{
+                  money(payeeSummary()?.summary?.total_paid_in_year)
+                }}</span>
+              </div>
+              <div class="pd-row !pb-0.5 !pt-[7px]">
+                <span class="text-[12px] font-bold text-v4-primary-brand-bold-color">Total paid (all time)</span>
+                <span class="font-funnel text-[15px] font-bold tabular-nums text-v4-primary-brand-bold-color">{{
+                  money(payeeSummary()?.summary?.total_paid_all)
+                }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Actions — the tile row is the card head; the open section renders below. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="pd-card-head-flush grid grid-cols-4 gap-1.5 px-3 py-2"
+          [class.border-b]="openActionSection()"
+          [class.border-v4-border-color]="openActionSection()"
+        >
+          @for (tab of panelTabs(); track tab.value) {
+            <button
+              type="button"
+              class="flex min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2.5 transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                (openActionSection() ?? 'audit') === tab.value
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="openActionSection.set($any(tab.value))"
+            >
+              <lucide-icon
+                [name]="tileIcons[tab.value]"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >{{ tab.label }}</span
+              >
+            </button>
+          }
+        </div>
+
+        @if (openActionSection() === "audit") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-audit-log-list-v4
+              [maxHeight]="'none'"
+              [logs]="auditLogsForList()"
+              (closed)="openActionSection.set(null)"
+            />
+          </div>
+        }
+
+        @if (openActionSection() === "comments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-po-comments-list
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [bare]="true"
+              variant="view-panel"
+              emptyHint="Notes you add here stay with the transaction."
+              [comments]="commentsForList()"
+              [maxHeight]="'none'"
+              [posting]="commentPosting()"
+              [error]="commentError()"
+              (submitComment)="onSubmitComment($event)"
+              (deleteComment)="onDeleteComment($event)"
+              (closed)="openActionSection.set(null)"
+            />
+          </div>
+        }
+
+        @if (openActionSection() === "attachments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-po-attachments-list
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [bare]="true"
+              variant="view-panel"
+              emptyHint="Files attached to this transaction will show up here."
+              [attachments]="attachmentsForList()"
+              [maxHeight]="'none'"
+              [deletingId]="attachmentDeletingId()"
+              [uploading]="attachmentUploading()"
+              [error]="attachmentError()"
+              (fileSelected)="onAttachmentSelected($event)"
+              (deleteAttachment)="onDeleteAttachment($event)"
+              (openAttachment)="onOpenAttachment($event)"
+              (closed)="openActionSection.set(null)"
+            />
+          </div>
+        }
+
+        @if (openActionSection() === "transactions") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-transactions-list-v4
+              [maxHeight]="'none'"
+              [bare]="true"
+              [forceExpand]="isPanelExpanded()"
+              [transactions]="transactionsForList()"
+              [total]="totalForList()"
+              [title]="'Last 10 Transactions to this Payee'"
+              [showStatus]="false"
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

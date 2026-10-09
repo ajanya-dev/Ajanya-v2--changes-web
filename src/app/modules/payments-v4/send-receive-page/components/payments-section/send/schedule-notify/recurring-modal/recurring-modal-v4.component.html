@@ -1,0 +1,291 @@
+<div class="max-h-[90vh] overflow-y-auto">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Recurring/Schedule
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Set it to repeat, or send it later on a specific date.
+      </h2>
+    </div>
+    <div
+      [matDialogClose]="undefined"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <fa-icon [icon]="faXmark" class="text-v4-subtle-text-color"></fa-icon>
+    </div>
+  </div>
+
+  <!-- modal body -->
+  <div class="px-6 py-5 bg-v4-tertiary-background-color">
+    <form [formGroup]="form" class="flex flex-col gap-4">
+      <div class="flex gap-2">
+        <span class="flex flex-1"
+          matTooltip="Coming soon"
+          matTooltipPosition="above"
+          [matTooltipDisabled]="unavailableMode !== 'recurring'">
+          <button type="button"
+            class="flex-1 rounded-[10px] border-[1.5px] p-3 text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            [class.border-v4-primary-brand-color]="!isScheduled"
+            [class.bg-v4-secondary-background-color]="!isScheduled"
+            [class.text-v4-primary-brand-bold-color]="!isScheduled"
+            [class.border-v4-border-color]="isScheduled"
+            [disabled]="unavailableMode === 'recurring'"
+            (click)="setMode('recurring')">Recurring</button>
+        </span>
+        <span class="flex flex-1"
+          matTooltip="Coming soon"
+          matTooltipPosition="above"
+          [matTooltipDisabled]="unavailableMode !== 'scheduled'">
+          <button type="button"
+            class="flex-1 rounded-[10px] border-[1.5px] p-3 text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            [class.border-v4-primary-brand-color]="isScheduled"
+            [class.bg-v4-secondary-background-color]="isScheduled"
+            [class.text-v4-primary-brand-bold-color]="isScheduled"
+            [class.border-v4-border-color]="!isScheduled"
+            [disabled]="unavailableMode === 'scheduled'"
+            (click)="setMode('scheduled')">Schedule for a date</button>
+        </span>
+      </div>
+
+      @if (isScheduled) {
+        <div class="flex flex-col gap-1.5">
+          <app-v4-date-picker
+            fieldLabel="Send on"
+            placeholder="Select a send date"
+            formControlName="scheduleDate"
+            [minDate]="minDate"
+            [isFieldRequired]="true"
+            [hideTodayShortcut]="true"
+          />
+          @if (scheduleBeforeMin) {
+            <div class="flex items-center gap-1.5">
+              <fa-icon [icon]="faCircleExclamation" animation="shake" class="text-v4-common-red-color text-[12px]"></fa-icon>
+              <p class="text-xs font-medium text-v4-common-red-color">Send date should be a future date.</p>
+            </div>
+          }
+        </div>
+      } @else {
+      <!-- frequency -->
+      <div class="flex flex-col gap-1.5">
+        <app-sp-select-dropdown
+          class="relative block"
+          label="How often"
+          formControlName="frequency"
+          [items]="frequencyOptions"
+          displayField="label"
+          outputField="value"
+          [searchable]="false"
+          [showIcon]="false"
+          [required]="true"
+          placeholder="Select a frequency"
+        />
+        @if (form.controls.frequency.invalid && form.controls.frequency.touched) {
+          <div class="flex items-center gap-1.5">
+            <fa-icon
+              [icon]="faCircleExclamation"
+              animation="shake"
+              class="text-v4-common-red-color text-[12px]"
+            ></fa-icon>
+            <p class="text-xs font-medium text-v4-common-red-color">
+              Choose how often this payment repeats.
+            </p>
+          </div>
+        }
+      </div>
+
+      <!-- starting date -->
+      <div class="flex flex-col gap-1.5">
+        <app-v4-date-picker
+          fieldLabel="Starting date"
+          placeholder="Select a start date"
+          formControlName="start_date"
+          [minDate]="minDate"
+          [isFieldRequired]="true"
+          [hideTodayShortcut]="true"
+        />
+        @if (startBeforeMin) {
+          <div class="flex items-center gap-1.5">
+            <fa-icon
+              [icon]="faCircleExclamation"
+              animation="shake"
+              class="text-v4-common-red-color text-[12px]"
+            ></fa-icon>
+            <p class="text-xs font-medium text-v4-common-red-color">
+              Starting date should be a future date.
+            </p>
+          </div>
+        }
+      </div>
+
+      <!-- end condition -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]">When should it end?</label>
+        <div class="flex flex-col gap-2">
+          <!-- pay until cancel -->
+          <div
+            class="rounded-[10px] border-[1.5px] p-3 transition-colors"
+            [class.border-v4-primary-brand-color]="form.controls.end_select.value === '3'"
+            [class.bg-v4-secondary-background-color]="form.controls.end_select.value === '3'"
+            [class.border-v4-border-color]="form.controls.end_select.value !== '3'"
+          >
+            <label class="flex gap-2.5 cursor-pointer text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]">
+              <input
+                type="radio"
+                formControlName="end_select"
+                value="3"
+                class="mt-0.5 w-4 h-4 accent-v4-primary-brand-color cursor-pointer"
+              />
+              <span class="flex flex-col">
+                <span class="text-[13px] font-semibold text-v4-main-text-color">Pay until I cancel</span>
+                <span class="text-xs text-v4-subtle-text-color">
+                  Keeps going on this schedule until you stop it.
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <!-- pay a set number of times -->
+          <div
+            class="rounded-[10px] border-[1.5px] p-3 transition-colors"
+            [class.border-v4-primary-brand-color]="form.controls.end_select.value === '1'"
+            [class.bg-v4-secondary-background-color]="form.controls.end_select.value === '1'"
+            [class.border-v4-border-color]="form.controls.end_select.value !== '1'"
+          >
+            <label class="flex gap-2.5 cursor-pointer text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]">
+              <input
+                type="radio"
+                formControlName="end_select"
+                value="1"
+                class="mt-0.5 w-4 h-4 accent-v4-primary-brand-color cursor-pointer"
+              />
+              <span class="flex flex-col">
+                <span class="text-[13px] font-semibold text-v4-main-text-color">Pay a set number of times</span>
+                @if (form.controls.end_select.value !== '1') {
+                  <span class="text-xs text-v4-subtle-text-color">
+                    Automatically stops after the number of payments you choose.
+                  </span>
+                }
+              </span>
+            </label>
+            @if (form.controls.end_select.value === '1') {
+              <div class="mt-2 flex items-center gap-2 pl-[26px]">
+                <span class="w-[72px]">
+                  <app-common-input-v4 variant="compact"
+                    placeholder="12"
+                    formControlName="count"
+                    [isFieldRequired]="false"
+                    [isNumberOnly]="true"
+                    [maxLength]="3"
+                  />
+                </span>
+                <span class="text-[13px] text-v4-main-text-color">payments, then stops automatically</span>
+              </div>
+              <div class="pl-[26px]">
+                <app-control-message-v4
+                  [control]="form.controls.count"
+                  [customMessages]="{
+                    required: 'Please enter how many payments to make',
+                    min: 'Please enter at least 1 payment'
+                  }"
+                />
+              </div>
+            }
+          </div>
+
+          <!-- stop on a date -->
+          @if (offersEnd('2')) {
+          <div
+            class="rounded-[10px] border-[1.5px] p-3 transition-colors"
+            [class.border-v4-primary-brand-color]="form.controls.end_select.value === '2'"
+            [class.bg-v4-secondary-background-color]="form.controls.end_select.value === '2'"
+            [class.border-v4-border-color]="form.controls.end_select.value !== '2'"
+          >
+            <label class="flex gap-2.5 cursor-pointer text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]">
+              <input
+                type="radio"
+                formControlName="end_select"
+                value="2"
+                class="mt-0.5 w-4 h-4 accent-v4-primary-brand-color cursor-pointer"
+              />
+              <span class="flex flex-col">
+                <span class="text-[13px] font-semibold text-v4-main-text-color">Stop on a date</span>
+                @if (form.controls.end_select.value !== '2') {
+                  <span class="text-xs text-v4-subtle-text-color">
+                    Keeps paying on this schedule up to the date you choose.
+                  </span>
+                }
+              </span>
+            </label>
+            @if (form.controls.end_select.value === '2') {
+              <div class="mt-2 pl-[26px]">
+                <app-v4-date-picker
+                  placeholder="Select an end date"
+                  formControlName="until"
+                  [minDate]="form.controls.start_date.value || minDate"
+                  [control]="form.controls.until"
+                  [isFieldRequired]="true"
+                  [hideTodayShortcut]="true"
+                  errorLabel="Please choose an end date"
+                />
+                @if (untilBeforeStart) {
+                  <div class="flex items-center gap-1.5">
+                    <fa-icon
+                      [icon]="faCircleExclamation"
+                      animation="shake"
+                      class="text-v4-common-red-color text-[12px]"
+                    ></fa-icon>
+                    <p class="text-xs font-medium text-v4-common-red-color">
+                      End date should be on or after the starting date.
+                    </p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      @if (showIncludeThisPayment) {
+        <label
+          class="flex items-center gap-2.5 cursor-pointer text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]"
+        >
+          <input
+            type="checkbox"
+            formControlName="recurringIncludeCheck"
+            class="w-4 h-4 accent-v4-primary-brand-color cursor-pointer"
+          />
+          <span class="flex flex-col">
+            <span>Include this payment</span>
+            <span class="text-xs font-normal text-v4-subtle-text-color">
+              Counts the payment you are making now as the first of the series.
+            </span>
+          </span>
+        </label>
+      }
+      }
+    </form>
+  </div>
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      [matDialogClose]="undefined"
+      [type]="{ name: 'v2-1', size: 'md', style: 'navy' }"
+      [text]="'Cancel'"
+      width="110px"
+    />
+    <app-common-button-v4
+      [type]="{ name: 'v2-1', size: 'md', style: 'primary' }"
+      [text]="isScheduled ? 'Save schedule' : 'Save recurring'"
+      width="150px"
+      (clickEvent)="save()"
+    />
+  </div>
+</div>

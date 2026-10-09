@@ -1,0 +1,153 @@
+<div class="mt-4 font-funnel">
+  <form [formGroup]="itemForm">
+    <div class="rounded-lg border border-v4-border-color overflow-hidden">
+      <!-- Header -->
+      <div
+        class="flex items-center gap-2 px-3 py-2.5 bg-v4-secondary-background-color border-b border-v4-border-color"
+      >
+        <div
+          class="w-[28%] text-[12px] uppercase tracking-wider font-bold text-v4-secondary-text-color"
+        >
+          Item
+        </div>
+        <div
+          class="w-[20%] text-[12px] uppercase tracking-wider font-bold text-v4-secondary-text-color"
+        >
+          Description
+        </div>
+        <div
+          class="w-[14%] text-[12px] uppercase tracking-wider font-bold text-v4-secondary-text-color"
+        >
+          Quantity
+        </div>
+        <div
+          class="w-[16%] text-[12px] uppercase tracking-wider font-bold text-v4-secondary-text-color"
+        >
+          Unit Cost
+        </div>
+        <div
+          class="w-[16%] text-[12px] uppercase tracking-wider font-bold text-v4-secondary-text-color"
+        >
+          Total
+        </div>
+        <div
+          class="w-[6%] text-[12px] uppercase tracking-wider font-bold text-v4-secondary-text-color"
+        >
+          Action
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div
+        formArrayName="items"
+        class="items-body divide-y divide-v4-border-color max-h-[250px] overflow-y-auto"
+        (scroll)="onTableScroll()"
+      >
+        @for (
+          data of itemForm?.controls["items"]?.controls;
+          let i = $index;
+          track data
+        ) {
+          <div
+            [formGroupName]="i"
+            class="flex items-center gap-2 px-3 py-2 bg-v4-tertiary-background-color"
+          >
+            <!-- ITEM -->
+            <div class="w-[28%]">
+              <app-v4-common-dropdown
+                formControlName="id"
+                [config]="itemDropdownConfig"
+                [listData]="invoiceItems"
+                [clearable]="true"
+                [searchable]="true"
+                appendTo="body"
+                (scrollToEnd)="onScrollToEnd()"
+                (searchEvent)="search($event)"
+                (buttonClick)="openAddInvoiceItemModal(i)"
+              />
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div class="w-[20%] inline-field">
+              <app-common-input-v4
+                formControlName="description"
+                [maxLength]="100"
+                [isFieldRequired]="false"
+                placeholder="Description"
+                [fieldHeight]="'32px'"
+                (inputEvent)="setTotal()"
+              />
+            </div>
+
+            <!-- QUANTITY -->
+            <div class="w-[14%] inline-field">
+              <app-common-input-v4
+                formControlName="quantity"
+                [maxLength]="10"
+                [isNumberOnly]="true"
+                [numberType]="'numeric'"
+                (inputEvent)="setTotal()"
+                placeholder="0"
+                [fieldHeight]="'32px'"
+                [isFieldRequired]="false"
+              />
+            </div>
+
+            <!-- UNIT COST -->
+            <div class="w-[16%] inline-field">
+              <app-common-amount-input-v4
+                formControlName="unitPrice"
+                [maxLength]="10"
+                [isRequired]="false"
+                [border]="true"
+                [height]="'32px'"
+                (blurEvent)="setTotal()"
+              />
+            </div>
+
+            <!-- TOTAL -->
+            <div class="w-[16%] inline-field">
+              <app-common-amount-input-v4
+                formControlName="total"
+                [isReadOnly]="true"
+                [isRequired]="false"
+                [border]="true"
+                [height]="'32px'"
+              />
+            </div>
+
+            <!-- DELETE -->
+            <div class="w-[6%] flex justify-center">
+              <button
+                type="button"
+                (click)="removeItem(i)"
+                class="p-1.5 rounded-md text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                [attr.aria-label]="'Delete row ' + (i + 1)"
+                matTooltip="Remove"
+              >
+                <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-between items-center mt-3">
+      <button
+        type="button"
+        class="flex items-center gap-1.5 text-sm font-medium text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity"
+        (click)="pushItem()"
+        [attr.aria-label]="'Add new row'"
+      >
+        <lucide-icon [img]="PlusIcon" [size]="16"></lucide-icon>
+        Add Row
+      </button>
+
+      <span class="text-sm font-semibold text-v4-main-text-color">
+        Total: {{ total | currency }}
+      </span>
+    </div>
+  </form>
+</div>

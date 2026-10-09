@@ -1,0 +1,185 @@
+<div>
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      Download Wallet Statement
+    </h1>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <!-- File Format Tabs -->
+    <div class="mb-5">
+      <p
+        class="text-xs font-medium text-v4-tertiary-text-color mb-2 uppercase tracking-wide"
+      >
+        Select File Format
+      </p>
+      <app-common-tab-v4
+        [tabs]="formatTabs"
+        [(activeTab)]="selectedFormat"
+        [variant]="'toggle'"
+      />
+    </div>
+
+    <!-- Time Period Table -->
+    <div
+      class="rounded-lg border border-v4-border-color overflow-hidden bg-v4-secondary-background-color"
+    >
+      <!-- Table Header -->
+      <div
+        class="flex items-center px-4 py-2 border-b border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <span
+          class="flex-1 text-xs font-medium text-v4-tertiary-text-color uppercase tracking-wide"
+        >
+          Time Period
+        </span>
+        <div class="flex items-center gap-6">
+          <span
+            class="text-xs font-medium text-v4-tertiary-text-color w-16 text-center"
+            >Old Version</span
+          >
+          <span
+            class="text-xs font-medium text-v4-tertiary-text-color w-16 text-center"
+            >New Version</span
+          >
+        </div>
+      </div>
+
+      <!-- Period Rows -->
+      @for (period of periods; track period.key; let last = $last) {
+        <div
+          class="transition-colors duration-150"
+          [class.period-row--active]="selectedPeriod === period.key"
+          [class.bg-v4-badge-info-bg-color]="selectedPeriod === period.key"
+          [class.rounded-b-lg]="last && selectedPeriod === period.key"
+          [class.border-b]="!last"
+          [class.border-v4-border-color]="!last"
+          [class.cursor-pointer]="period.key === 5"
+          (click)="period.key === 5 ? selectPeriod(period.key) : null"
+        >
+          <div class="flex items-center px-4 py-3">
+            <!-- Period Info -->
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-v4-main-text-color">
+                {{ period.name }}
+              </p>
+              <p class="text-xs text-v4-subtle-text-color mt-0.5">
+                {{ period.description }}
+              </p>
+            </div>
+
+            <!-- Download Buttons -->
+            <div class="flex items-center gap-6">
+              <!-- Old Version (v1) -->
+              <div class="w-16 flex justify-center">
+                <button aria-label="Download Old Statement Version"
+                  type="button"
+                  class="group flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer hover:bg-v4-tertiary-background-color disabled:opacity-40 disabled:cursor-not-allowed"
+                  [disabled]="
+                    !!loading() ||
+                    (period.key === 5 && !canDownloadPeriod(period.key))
+                  "
+                  (click)="$event.stopPropagation(); onDownload(period.key, 1)"
+                  matTooltip="Download Old Statement Version"
+                >
+                  @if (isLoading(period.key, 1)) {
+                    <lucide-icon
+                      [img]="LoaderCircleIcon"
+                      class="text-v4-primary-brand-color animate-spin"
+                      [size]="16"
+                    />
+                  } @else {
+                    <lucide-icon
+                      [img]="DownloadIcon"
+                      class="text-v4-subtle-text-color transition-colors group-hover:text-v4-primary-brand-color"
+                      [size]="16"
+                    />
+                  }
+                </button>
+              </div>
+
+              <!-- New Version (v2) -->
+              <div class="w-16 flex justify-center">
+                <button aria-label="Download New Statement Version"
+                  type="button"
+                  class="group flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer hover:bg-v4-tertiary-background-color disabled:opacity-40 disabled:cursor-not-allowed"
+                  [disabled]="
+                    !!loading() ||
+                    (period.key === 5 && !canDownloadPeriod(period.key))
+                  "
+                  (click)="$event.stopPropagation(); onDownload(period.key, 2)"
+                  matTooltip="Download New Statement Version"
+                >
+                  @if (isLoading(period.key, 2)) {
+                    <lucide-icon
+                      [img]="LoaderCircleIcon"
+                      class="text-v4-primary-brand-color animate-spin"
+                      [size]="16"
+                    />
+                  } @else {
+                    <lucide-icon
+                      [img]="DownloadIcon"
+                      class="text-v4-subtle-text-color transition-colors group-hover:text-v4-primary-brand-color"
+                      [size]="16"
+                    />
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Range Date Inputs (expanded inline) -->
+          @if (period.key === 5 && selectedPeriod === 5) {
+            <div
+              class="px-4 pb-4 flex flex-col gap-3"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="input-full-width">
+                <app-common-input-v4
+                  [placeholder]="'From'"
+                  [fieldLabel]="'From'"
+                  [type]="'date'"
+                  [isFieldRequired]="false"
+                  [(ngModel)]="customDate.start"
+                  (inputFocusOutEvent)="onStartDateChange($event.value)"
+                />
+              </div>
+              <div class="input-full-width">
+                <app-common-input-v4
+                  [placeholder]="'To'"
+                  [fieldLabel]="'To'"
+                  [type]="'date'"
+                  [isFieldRequired]="false"
+                  [minDate]="customDate.start"
+                  [(ngModel)]="customDate.end"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex justify-end px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+  </div>
+</div>

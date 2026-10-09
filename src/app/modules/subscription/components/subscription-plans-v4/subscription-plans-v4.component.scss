@@ -1,0 +1,1356 @@
+/* =========================================================
+   V4 Pricing page — design ported from the Zil Money pricing
+   reference. Brand colors come from the V4 theme tokens
+   (--v4-pricing-*); local aliases keep the ported rules terse.
+   ========================================================= */
+
+@property --entAng {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:host {
+  display: block;
+}
+
+.zm-pricing {
+  --green: var(--v4-pricing-green);
+  --green-bright: var(--v4-pricing-green-bright);
+  --green-ink: var(--v4-pricing-green-ink);
+  --green-text: var(--v4-pricing-green-text);
+  --navy: var(--v4-pricing-navy);
+  --navy-soft: var(--v4-pricing-navy-soft);
+  --navy-deep: var(--v4-pricing-navy-deep);
+  --ink: var(--v4-pricing-ink);
+  --muted: var(--v4-pricing-muted);
+  --body: var(--v4-pricing-body);
+  --line: var(--v4-pricing-line);
+  --bg: var(--v4-pricing-page-bg);
+  --card: var(--v4-pricing-card);
+  --soft: var(--v4-pricing-soft);
+  --radius: 20px;
+
+  position: relative;
+  background: var(--bg);
+  color: var(--body);
+  font-family: 'peridot', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .plan-name,
+  .ent-price,
+  .stat-num,
+  .price {
+    font-family: "Inter", Arial, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+.zm-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* ---------- In-app controls ---------- */
+.zm-controls {
+  position: absolute;
+  top: 22px;
+  left: 50px;
+  right: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 30;
+}
+.zm-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.zm-control-btn {
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    color: inherit;
+    padding: 0;
+  }
+}
+
+/* ---------- Hero ---------- */
+.zm-hero {
+  text-align: center;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 64px 24px 40px;
+
+  h1 {
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 800;
+    line-height: 1.06;
+    color: var(--ink);
+    margin: 0 0 22px;
+    letter-spacing: -0.02em;
+  }
+  .accent {
+    background: linear-gradient(
+      115deg,
+      #0e8a47 0%,
+      #17a553 32%,
+      #2bd07a 54%,
+      #138a4a 80%,
+      #0e8a47 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: textFlow 6s linear infinite;
+  }
+  .lead {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--body);
+    margin: 0 auto;
+    max-width: 720px;
+  }
+}
+@keyframes textFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+/* ---------- Plans grid ---------- */
+.zm-plans-section {
+  padding: 14px 0 56px;
+}
+.zm-plans {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 26px;
+  align-items: start;
+
+  &.is-single {
+    grid-template-columns: minmax(0, 1080px);
+    justify-content: center;
+  }
+  &.is-skeleton {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+}
+
+/* Unified loading state — both plan cards reveal together once data and the
+   pay-as-you-go decision have resolved, so neither pops in after the other. */
+.zm-plans-loading {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 26px;
+  align-items: start;
+}
+.sk-card {
+  min-height: 520px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    100deg,
+    rgba(140, 150, 160, 0.08) 30%,
+    rgba(140, 150, 160, 0.18) 50%,
+    rgba(140, 150, 160, 0.08) 70%
+  );
+  background-size: 220% 100%;
+  animation: entSkShimmer 1.25s ease-in-out infinite;
+
+  &--lg {
+    min-height: 560px;
+  }
+}
+
+.zm-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow:
+    0 1px 2px rgba(28, 34, 51, 0.04),
+    0 6px 16px rgba(28, 34, 51, 0.045);
+  position: relative;
+  height: 100%;
+
+  &.is-current {
+    box-shadow:
+      0 0 0 2px var(--green),
+      0 10px 28px rgba(59, 244, 147, 0.18);
+  }
+
+  /* Round the bottom of whichever block ends the card (overflow:hidden is
+     intentionally absent so the sticky card-head can work). */
+  > .feewrap:last-child,
+  > .ent-lower:last-child {
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+    overflow: hidden;
+  }
+}
+
+/* Keep the plan header (name + price + Choose Plan) pinned while the long
+   fee list scrolls — mirrors the V3 sticky card-head behaviour. */
+.card-head {
+  padding: 34px 30px 28px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--card);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.card-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #eef1f0;
+  color: #8b929b;
+  border: 1px solid #e3e7e6;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 6px 13px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.plan-tag {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green-text);
+  margin: 0 0 6px;
+}
+.plan-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 22px;
+  letter-spacing: -0.01em;
+}
+
+.pricebox {
+  background: var(--soft);
+  border-radius: 14px;
+  padding: 24px 22px;
+  text-align: center;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.price {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.price-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+}
+.ent-price {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.ent-sub {
+  font-size: 15px;
+  color: var(--body);
+  margin-top: 8px;
+}
+.ent-phone {
+  display: block;
+  margin-top: 12px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--green-text);
+  text-decoration: none;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+.ent-price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  width: 100%;
+}
+.ent-price-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+
+  /* Minor split line separating the two enterprise plans. */
+  & + .ent-price-col {
+    border-left: 1px solid var(--line);
+  }
+}
+
+/* Per month / per year division with a splitter bar above the label. */
+.ent-per {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ent-per-bar {
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--green);
+}
+.ent-per-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--body);
+  letter-spacing: 0.01em;
+}
+.ent-strike {
+  font-size: 18px;
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.ent-save {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--green-text);
+}
+
+/* ---------- Enterprise loading skeleton ---------- */
+.ent-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+.ent-sk {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(
+    100deg,
+    rgba(140, 150, 160, 0.12) 30%,
+    rgba(140, 150, 160, 0.26) 50%,
+    rgba(140, 150, 160, 0.12) 70%
+  );
+  background-size: 220% 100%;
+  animation: entSkShimmer 1.25s ease-in-out infinite;
+}
+.ent-sk-price {
+  width: 60%;
+  height: 30px;
+}
+.ent-sk-sub {
+  width: 80%;
+  height: 14px;
+}
+.ent-sk-phone {
+  width: 40%;
+  height: 18px;
+}
+.ent-actions--loading {
+  margin-top: 24px;
+}
+.ent-sk-btn {
+  display: block;
+  width: 100%;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(
+    100deg,
+    rgba(140, 150, 160, 0.12) 30%,
+    rgba(140, 150, 160, 0.26) 50%,
+    rgba(140, 150, 160, 0.12) 70%
+  );
+  background-size: 220% 100%;
+  animation: entSkShimmer 1.25s ease-in-out infinite;
+}
+@keyframes entSkShimmer {
+  0% {
+    background-position: 180% 0;
+  }
+  100% {
+    background-position: -80% 0;
+  }
+}
+
+.info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--muted);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-style: normal;
+  flex: none;
+  vertical-align: middle;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+/* Keep the fee/price tooltips compact so they stay visually contained over
+   the plan card instead of stretching across the viewport. */
+::ng-deep .override_tooltip {
+  .mdc-tooltip__surface {
+    max-width: 240px !important;
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
+    white-space: normal !important;
+  }
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'peridot', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    background 0.15s,
+    filter 0.15s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  &:disabled {
+    cursor: default;
+    opacity: 0.75;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+}
+.btn-block {
+  width: 100%;
+}
+.btn-choose {
+  margin-top: 22px;
+}
+.btn-green {
+  background: var(--green);
+  color: var(--green-ink);
+  font-size: 16px;
+  box-shadow: 0 8px 22px rgba(59, 244, 147, 0.34);
+  padding-right: 20px;
+  padding-left: 20px;
+
+  svg {
+    stroke: var(--green-ink);
+    transition: transform 0.2s;
+  }
+  &:hover:not(:disabled) {
+    color: var(--green-ink);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(59, 244, 147, 0.5);
+    filter: brightness(1.05);
+  }
+  &:hover:not(:disabled) svg {
+    transform: translateX(4px);
+  }
+}
+.btn-soft {
+  background: var(--soft);
+  color: var(--green-text);
+  border: 1.5px solid var(--line);
+  font-size: 16px;
+
+  svg {
+    stroke: var(--green-text);
+    transition: transform 0.2s;
+  }
+  &:hover:not(:disabled) {
+    color: var(--green-text);
+    border-color: var(--green);
+    transform: translateY(-1px);
+  }
+  &:hover:not(:disabled) svg {
+    transform: translateX(3px);
+  }
+}
+.btn-outline-dark {
+  background: var(--card);
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  font-weight: 600;
+  padding-right: 20px;
+  padding-left: 20px;
+
+  &:hover:not(:disabled) {
+    color: var(--ink);
+    background: var(--soft);
+    border-color: var(--green);
+  }
+}
+
+.ent-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+
+  .btn-green {
+    flex: 1.8;
+    min-width: 180px;
+  }
+  .btn-mini {
+    flex: 1;
+    min-width: 96px;
+    font-size: 13.5px;
+    padding: 13px 8px;
+    gap: 6px;
+  }
+}
+.ent-choose {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+
+  .btn {
+    flex: 1;
+  }
+}
+.ent-custom-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--body);
+
+  a {
+    color: var(--green-text);
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* ---------- Fee sections ---------- */
+.feewrap {
+  border-top: 1px solid var(--line);
+  padding: 24px 26px 30px;
+}
+.ent-lower {
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+
+  .feewrap {
+    border-top: none;
+    min-width: 0;
+  }
+}
+.benefits {
+  border-left: 1px solid var(--line);
+  padding: 24px 24px 30px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 18px;
+  }
+}
+
+.fee-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin: 0 0 8px;
+}
+.fee-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--ink);
+
+  .dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: rgba(59, 244, 147, 0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green-text);
+    flex: none;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+}
+.calc {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-text);
+  white-space: nowrap;
+  margin-left: 32px;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 30px 0 4px;
+}
+
+.fee-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 2px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  min-height: 58px;
+
+  &.first {
+    border-top: none;
+  }
+  &.tall {
+    min-height: 66px;
+  }
+}
+.fee-label {
+  color: var(--body);
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fl-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fee-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.fee-val {
+  color: var(--ink);
+  font-weight: 700;
+  text-align: right;
+  flex: none;
+
+  .free {
+    color: var(--green-text);
+  }
+  /* "As low as" label stays green, the amount stays ink-black like the
+     left-hand fee labels. */
+  .as-low {
+    color: var(--ink);
+
+    .as-low-lbl {
+      color: var(--green-text);
+    }
+  }
+  .pct {
+    color: var(--green-text);
+  }
+  .vcp {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12.5px;
+    font-style: italic;
+    line-height: 1.35;
+    display: inline-block;
+  }
+}
+
+.check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--green-text);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+
+  &.off {
+    background: var(--line);
+    color: var(--muted);
+  }
+}
+.flag-img {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+  object-fit: cover;
+  flex: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.benefit {
+  margin-bottom: 18px;
+}
+.benefit-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 6px;
+}
+.benefit-ico {
+  width: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green-text);
+  font-size: 18px;
+}
+.benefit-title {
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--ink);
+}
+.benefit p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--body);
+  padding-left: 31px;
+}
+
+/* ---------- Enterprise featured card ---------- */
+.zm-card--dark {
+  overflow: visible;
+  position: relative;
+  z-index: 3;
+  border: 1px solid var(--line);
+  background: var(--card);
+  animation: entGlow 4.5s ease-in-out infinite;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: var(--radius);
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 60%
+    );
+    background-size: 220% 100%;
+    background-repeat: no-repeat;
+    animation: entSheen 5.5s ease-in-out infinite;
+  }
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: 2;
+    border-radius: calc(var(--radius) + 2px);
+    padding: 3px;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--entAng),
+      transparent 0deg,
+      transparent 288deg,
+      rgba(59, 244, 147, 0) 298deg,
+      var(--green) 322deg,
+      #c6ffe2 340deg,
+      #ffffff 350deg,
+      var(--green-bright) 356deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation:
+      entBorder 9s linear infinite,
+      entTwinkle 1.7s ease-in-out infinite;
+  }
+
+  .ent-lower {
+    position: relative;
+    z-index: 4;
+  }
+  /* sticky head must paint above ent-lower and the animated border layers */
+  .card-head {
+    z-index: 11;
+  }
+  .pricebox {
+    background: var(--soft);
+  }
+  .card-badge {
+    top: -21px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    z-index: 20;
+    background: linear-gradient(
+      110deg,
+      #0bbf6f,
+      #34e0a1,
+      #7dffc4,
+      #34e0a1,
+      #0bbf6f
+    );
+    background-size: 220% 100%;
+    color: #053a23;
+    border: none;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    box-shadow: 0 8px 18px rgba(11, 191, 111, 0.34);
+    animation: badgeFlow 7s linear infinite;
+  }
+}
+/* The white diagonal sheen sweep washes over the dark surface and hurts
+   readability in dark mode — drop just the sheen layer there. */
+:host-context(.dark-mode) .zm-card--dark::after {
+  display: none;
+}
+
+@keyframes entTwinkle {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(59, 244, 147, 0.9))
+      drop-shadow(0 0 13px rgba(59, 244, 147, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.95))
+      drop-shadow(0 0 20px rgba(59, 244, 147, 0.95))
+      drop-shadow(0 0 32px rgba(59, 244, 147, 0.55));
+  }
+}
+@keyframes entBorder {
+  0% {
+    --entAng: -50deg;
+    opacity: 0;
+  }
+  6% {
+    --entAng: -38deg;
+    opacity: 1;
+  }
+  54% {
+    --entAng: 55deg;
+    opacity: 1;
+  }
+  66% {
+    --entAng: 128deg;
+    opacity: 1;
+  }
+  74% {
+    --entAng: 178deg;
+    opacity: 1;
+  }
+  84% {
+    --entAng: 202deg;
+    opacity: 0;
+  }
+  100% {
+    --entAng: 202deg;
+    opacity: 0;
+  }
+}
+@keyframes entSheen {
+  0% {
+    background-position: 130% 0;
+  }
+  60%,
+  100% {
+    background-position: -30% 0;
+  }
+}
+@keyframes entGlow {
+  0%,
+  100% {
+    box-shadow: 0 10px 30px rgba(28, 34, 51, 0.09);
+  }
+  50% {
+    box-shadow: 0 12px 34px rgba(28, 34, 51, 0.12);
+  }
+}
+@keyframes badgeFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* ---------- Note + legal ---------- */
+.note {
+  margin: 14px auto 0;
+  font-size: 13px;
+  color: var(--muted);
+
+  /* Enterprise-only layout: the single card is centered at 1080px, so match
+     the note's box to it instead of letting it hang under the left edge. */
+  &--single {
+    max-width: 1080px;
+  }
+}
+.legal-disclaimer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px 24px 44px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ---------- Stat band ---------- */
+.zm-statband {
+  background: linear-gradient(100deg, #159fd6 0%, #16b89a 52%, #37d06f 100%);
+  padding: 54px 24px;
+}
+.statband-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+
+  h2 {
+    text-align: center;
+    color: #0e1f1b;
+    font-size: clamp(26px, 3.4vw, 38px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0 0 30px;
+  }
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+.stat-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 30px 20px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(8, 30, 40, 0.12);
+}
+.stat-num {
+  font-size: clamp(30px, 3.4vw, 42px);
+  font-weight: 800;
+  color: #141a1f;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.stat-lbl {
+  font-size: 14px;
+  color: #5c6470;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+/* ---------- Trust ---------- */
+.zm-trust {
+  padding: 54px;
+}
+.trust-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.trust-col {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 34px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(28, 34, 51, 0.05);
+
+  h4 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--body);
+    max-width: 330px;
+  }
+}
+.badge-60 {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--green-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  b {
+    font-size: 20px;
+    font-weight: 800;
+  }
+  span {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+}
+.badge-ssl {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--green-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+}
+.cards {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 62px;
+}
+.pc {
+  width: 46px;
+  height: 30px;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 1px solid #f0f0f2;
+
+  &.visa {
+    color: #1a1f71;
+    font-style: italic;
+    font-size: 12px;
+  }
+  &.amex {
+    background: #2e77bc;
+    color: #fff;
+  }
+  &.disc {
+    color: #e25822;
+    font-size: 7.5px;
+  }
+  .mc {
+    display: flex;
+
+    i {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: block;
+
+      &:first-child {
+        background: #eb001b;
+      }
+      &:last-child {
+        background: #f79e1b;
+        margin-left: -6px;
+        mix-blend-mode: multiply;
+      }
+    }
+  }
+}
+
+/* ---------- Dark CTA footer ---------- */
+.zm-cta {
+  background: var(--navy-deep);
+  position: relative;
+  overflow: hidden;
+}
+.cta-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 40px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 40px;
+  align-items: center;
+
+  h2 {
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 800;
+    line-height: 1.05;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin: 0 0 18px;
+  }
+}
+.cta-lead {
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.66);
+  max-width: 480px;
+  margin: 0 0 22px;
+}
+.cta-checks {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15.5px;
+    font-weight: 500;
+  }
+  .tick {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(59, 244, 147, 0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: var(--green-bright);
+    font-size: 12px;
+  }
+}
+.cta-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+
+  .btn-outline-dark {
+    background: transparent;
+    color: #fff;
+    border: 1.5px solid rgba(255, 255, 255, 0.42);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.7);
+      color: #fff;
+    }
+  }
+}
+.cta-meta {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+.cta-disclaimer {
+  margin: 16px 0 0;
+  max-width: 480px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+.cta-media {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  min-height: 340px;
+  // border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cta-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 20px;
+  transform: scale(1.5);
+  transform-origin: right;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1070px){
+  .ent-lower{
+    grid-template-columns: minmax(0, 1fr) 250px;
+  }
+}
+@media (max-width: 1000px) {
+  .zm-plans,
+  .zm-plans.is-single,
+  .zm-plans-loading {
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+  .ent-lower {
+    grid-template-columns: 1fr;
+  }
+  .benefits {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trust-grid {
+    grid-template-columns: 1fr;
+  }
+  .cta-inner {
+    grid-template-columns: 1fr;
+  }
+  .cta-media {
+    min-height: 200px;
+    order: -1;
+  }
+}
+@media (max-width: 640px) {
+  .zm-wrap {
+    padding: 0 16px;
+  }
+  .zm-hero {
+    padding: 44px 20px 28px;
+  }
+  .zm-statband {
+    padding: 44px 18px;
+  }
+  .zm-trust {
+    padding: 48px 16px 8px;
+  }
+  .cta-inner {
+    padding: 52px 20px;
+  }
+  .card-head {
+    padding: 28px 20px 24px;
+  }
+  .feewrap {
+    padding: 22px 18px 26px;
+  }
+  .benefits {
+    padding: 22px 18px 26px;
+  }
+  .ent-price-grid {
+    grid-template-columns: 1fr;
+  }
+  .ent-price-col {
+    padding: 0;
+
+    & + .ent-price-col {
+      border-left: none;
+      border-top: 1px solid var(--line);
+      margin-top: 14px;
+      padding-top: 14px;
+    }
+  }
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zm-hero .accent,
+  .zm-card--dark,
+  .zm-card--dark .card-badge {
+    animation: none;
+  }
+  .zm-card--dark::after,
+  .zm-card--dark::before {
+    display: none;
+  }
+}

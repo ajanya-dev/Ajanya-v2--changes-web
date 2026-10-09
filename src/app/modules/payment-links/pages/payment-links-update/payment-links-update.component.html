@@ -1,0 +1,678 @@
+<div class="h-full px-2.5 font-inter">
+  <div
+    class="h-full bg-main-background-color rounded-t-md px-5 flex justify-center pt-5 2xl:pt-16 overflow-y-auto"
+  >
+    <div
+      class="flex flex-col h-auto gap-8 w-full xl:w-10/12 min-[1600px]:w-full min-[1800px]:w-10/12 min-[1600px]:flex-row min-[1600px]:gap-10 bg-main-background-color"
+    >
+      <div class="w-full min-[1600px]:flex-1 min-[1600px]:min-w-0">
+        <!-- Header -->
+        <div class="text-main-text-color flex gap-2 items-center">
+          <fa-icon
+            size="lg"
+            class="cursor-pointer"
+            (click)="goBack()"
+            [icon]="faArrowLeft"
+          />
+          <span class="text-2xl font-semibold">
+            {{ mode === "create" ? "Create" : "Update" }} Payment Link
+          </span>
+        </div>
+        <div class="h-8"></div>
+
+        <form [formGroup]="form">
+          <!-- Basic Information Section -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Name Field -->
+            <div class="relative single_input flex-col">
+              <input
+                class="input_style"
+                formControlName="name"
+                placeholder=" "
+              />
+              <span class="floating_label_field"
+                >Name <span class="required">*</span></span
+              >
+              <app-control-message-v35 [control]="form.controls.name" />
+            </div>
+
+            <!-- Bank Account Dropdown -->
+            <div class="relative single_input flex-col">
+              <app-bank-ac-dropdown-v3
+                formControlName="bankAccount"
+                placeholder="Your Receiving Bank Account"
+                (ready)="onBankDropDownReady($event)"
+                permissionContext="forPaymentLink"
+              />
+              <app-control-message-v35
+                [control]="form.controls.bankAccount"
+              />
+            </div>
+
+            <!-- Company Name -->
+            <div class="relative single_input flex-col">
+              <input
+                class="input_style"
+                formControlName="company_name"
+                placeholder=" "
+                maxlength="20"
+              />
+              <span class="floating_label_field">Company Name</span>
+              <app-control-message-v35
+                [control]="form.controls.company_name"
+              />
+            </div>
+
+            <!-- Comments -->
+            <div class="relative single_input flex-col">
+              <input
+                class="input_style"
+                formControlName="bottomText"
+                placeholder=" "
+              />
+              <span class="floating_label_field">Comments</span>
+              <app-control-message-v35 [control]="form.controls.bottomText" />
+            </div>
+          </div>
+
+          <div class="h-4"></div>
+
+          <!-- Choose Logo Button -->
+          <div class="col-span-2">
+            <app-common-upload-button-v35
+              buttonText="Choose Logo"
+              [FileSize]="2"
+              [acceptedFileTypes]="['.jpg', '.png', '.jpeg']"
+              (selectedFileEvent)="filePicked($event)"
+            />
+          </div>
+
+          <div class="h-6"></div>
+
+          <!-- Available Payment Channels Section -->
+          <div>
+            <div class="mb-3">
+              <span class="text-sm font-medium text-main-text-color">
+                Available Payment Channels
+              </span>
+            </div>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+              [ngClass]="{ 'skelton h-10 w-full': paymentOptionsLoading() }"
+            >
+              <!-- Row 1: PayPal, Stripe, Apple Pay -->
+              <!-- PayPal -->
+              <div
+                role="button"
+                tabindex="0"
+                class="border border-input-border-color rounded-full flex items-center h-11 px-4 gap-2 cursor-pointer hover:border-common-blue-color transition-colors bg-main-background-color"
+                [ngClass]="{ 'border-common-blue-color bg-blue-50': paypal() }"
+                (click)="togglePaymentOption(2)"
+                (keydown.enter)="togglePaymentOption(2)"
+                (keydown.space)="togglePaymentOption(2); $event.preventDefault()"
+              >
+                <mat-checkbox
+                  [checked]="paypal()"
+                  (click)="$event.stopPropagation()"
+                  (change)="paymentOptionsChange($event, 2)"
+                />
+                <img
+                  src="assets/images/payment-links/paypal-logo.svg"
+                  alt="PayPal"
+                  class="h-16"
+                />
+              </div>
+
+              <!-- Stripe -->
+              <div
+                role="button"
+                tabindex="0"
+                class="border border-input-border-color rounded-full flex items-center h-11 px-4 gap-2 cursor-pointer hover:border-common-blue-color transition-colors bg-main-background-color"
+                [ngClass]="{ 'border-common-blue-color bg-blue-50': stripe() }"
+                (click)="togglePaymentOption(1)"
+                (keydown.enter)="togglePaymentOption(1)"
+                (keydown.space)="togglePaymentOption(1); $event.preventDefault()"
+              >
+                <mat-checkbox
+                  [checked]="stripe()"
+                  (click)="$event.stopPropagation()"
+                  (change)="paymentOptionsChange($event, 1)"
+                />
+                <img
+                  src="assets/images/payment-links/stripe.svg"
+                  alt="Stripe"
+                  class="h-12"
+                />
+              </div>
+
+              <!-- Stripe Checkout -->
+              <div
+                role="button"
+                tabindex="0"
+                class="border border-input-border-color rounded-full flex items-center h-11 px-4 gap-2 cursor-pointer hover:border-common-blue-color transition-colors bg-main-background-color"
+                [ngClass]="{ 'border-common-blue-color bg-blue-50': stripeCheckout() }"
+                (click)="togglePaymentOption(4)"
+                (keydown.enter)="togglePaymentOption(4)"
+                (keydown.space)="togglePaymentOption(4); $event.preventDefault()"
+              >
+                <mat-checkbox
+                  [checked]="stripeCheckout()"
+                  (click)="$event.stopPropagation()"
+                  (change)="paymentOptionsChange($event, 4)"
+                />
+                <img
+                  src="assets/images/payment-links/stripe-checkout-logo.png"
+                  alt="Stripe Checkout"
+                  class="h-7"
+                />
+              </div>
+
+              <!-- Row 2: Coming Soon options - Only visible when expanded -->
+              @if (showMorePaymentOptions) {
+              }
+            </div>
+
+            <!-- Payment Option Dropdowns -->
+            @if (stripe() && paymentOptions?.stripe_payments?.length > 0) {
+              <div class="mt-3">
+                <div class="angular-ocw-v35-ng-select-dropdown relative">
+                  <ng-select
+                    [items]="paymentOptions?.stripe_payments"
+                    [(ngModel)]="selectedStripeId"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="selectedPaymentOption($event, 1)"
+                    [bindLabel]="'nickName'"
+                    [bindValue]="'id'"
+                    [placeholder]="'Select Stripe Account'"
+                    class="ng-dropdown-panel-v35 text-sm w-auto height-0"
+                  >
+                    <ng-template ng-header-tmp>
+                      <div
+                        (click)="openEPaymentSettings(1, 'ng-select')"
+                        role="presentation"
+                        class="add-new-btn-ng-option p-2 flex justify-center items-center text-center bg-common-secondary-blue-color rounded-lg text-common-blue-color cursor-pointer font-semibold text-[14px]"
+                      >
+                        <fa-icon class="mr-1" [icon]="faPlus"></fa-icon>
+                        <span class="add-new-text-ng-option">New</span>
+                      </div>
+                    </ng-template>
+                  </ng-select>
+                </div>
+                @if (stripe() && !selectedPaymentOptions?.[1] && isClick()) {
+                  <span class="error_msg">This field is required</span>
+                }
+              </div>
+            }
+
+            @if (paypal() && paymentOptions?.paypal_payments?.length > 0) {
+              <div class="mt-3">
+                <div class="angular-ocw-v35-ng-select-dropdown relative">
+                  <ng-select
+                    [items]="paymentOptions?.paypal_payments"
+                    [(ngModel)]="selectedPaypalId"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="selectedPaymentOption($event, 2)"
+                    [bindLabel]="'nickName'"
+                    [bindValue]="'id'"
+                    [placeholder]="'Select PayPal Account'"
+                    class="ng-dropdown-panel-v35 text-sm w-auto height-0"
+                  >
+                    <ng-template ng-header-tmp>
+                      <div
+                        (click)="openEPaymentSettings(2, 'ng-select')"
+                        role="presentation"
+                        class="add-new-btn-ng-option p-2 flex justify-center items-center text-center bg-common-secondary-blue-color rounded-lg text-common-blue-color cursor-pointer font-semibold text-[14px]"
+                      >
+                        <fa-icon class="mr-1" [icon]="faPlus"></fa-icon>
+                        <span class="add-new-text-ng-option">New</span>
+                      </div>
+                    </ng-template>
+                  </ng-select>
+                </div>
+                @if (paypal() && !selectedPaymentOptions?.[2] && isClick()) {
+                  <span class="error_msg">This field is required</span>
+                }
+              </div>
+            }
+
+            @if (stripeCheckout() && paymentOptions?.stripe_checkout_payments?.length > 0) {
+              <div class="mt-3">
+                <div class="angular-ocw-v35-ng-select-dropdown relative">
+                  <ng-select
+                    [items]="paymentOptions?.stripe_checkout_payments"
+                    [(ngModel)]="selectedStripeCheckoutId"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="selectedPaymentOption($event, 4)"
+                    [bindLabel]="'nickName'"
+                    [bindValue]="'id'"
+                    [placeholder]="'Select Stripe Checkout Account'"
+                    class="ng-dropdown-panel-v35 text-sm w-auto height-0"
+                  >
+                    <ng-template ng-header-tmp>
+                      <div
+                        (click)="openEPaymentSettings(4, 'ng-select')"
+                        role="presentation"
+                        class="add-new-btn-ng-option p-2 flex justify-center items-center text-center bg-common-secondary-blue-color rounded-lg text-common-blue-color cursor-pointer font-semibold text-[14px]"
+                      >
+                        <fa-icon class="mr-1" [icon]="faPlus"></fa-icon>
+                        <span class="add-new-text-ng-option">New</span>
+                      </div>
+                    </ng-template>
+                  </ng-select>
+                </div>
+                @if (stripeCheckout() && !selectedPaymentOptions?.[4] && isClick()) {
+                  <span class="error_msg">This field is required</span>
+                }
+              </div>
+            }
+
+          </div>
+
+          <div class="h-6"></div>
+
+          <!-- Required Document Types Section -->
+          <div class="border-t border-input-border-color pt-4">
+            <div class="flex items-center gap-2 mb-3">
+              <mat-checkbox
+                [(ngModel)]="showMultipleDocumentTypes"
+                [ngModelOptions]="{ standalone: true }"
+                (change)="toggleMultipleDocumentTypes()"
+              >
+                <span class="font-medium text-sm text-main-text-color">Required Document Types</span>
+              </mat-checkbox>
+            </div>
+            <p class="text-xs text-secondary-text-color mb-3">
+              Specify the documents the recipient must upload during payment.
+            </p>
+
+            @if (showMultipleDocumentTypes) {
+              <div formArrayName="custom_fields">
+                @for (documentType of documentTypesArray.controls; track documentType; let i = $index) {
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="flex-1 relative single_input">
+                      <input
+                        class="input_style"
+                        [formControlName]="i"
+                        placeholder="Enter required document name"
+                      />
+                      <app-control-message-v35
+                        [control]="documentTypesArray.at(i)"
+                        [customMessages]="{
+                          pattern: 'Only letters and spaces allowed',
+                          maxlength: 'Max 30 characters'
+                        }"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      (click)="addDocumentTypeField()"
+                      class="w-8 h-8 flex items-center justify-center rounded border border-input-border-color text-common-blue-color hover:bg-blue-50"
+                      [disabled]="documentTypesArray.length >= 3"
+                    >
+                      <fa-icon [icon]="faPlus" />
+                    </button>
+                    <button
+                      type="button"
+                      (click)="removeDocumentTypeField(i)"
+                      class="w-8 h-8 flex items-center justify-center rounded text-secondary-text-color hover:text-common-red-color"
+                    >
+                      <fa-icon [icon]="faTrash" />
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="h-6"></div>
+
+          <!-- Payment Link Domain Section -->
+          <div class="border-t border-input-border-color pt-4">
+            <h3 class="text-sm font-semibold text-main-text-color mb-4">Payment Link Domain</h3>
+            <div class="col-span-2">
+              <div
+                class="h-[38px] rounded border border-input-border-color relative flex items-center font-normal px-3 py-1.5"
+              >
+                <span
+                  class="absolute -top-[7px] left-1.5 text-[12px] px-[3px] bg-main-background-color"
+                >
+                  Payment Link
+                </span>
+                <span class="text-[15px] text-secondary-text-color whitespace-nowrap">
+                  {{ staticWhiteLabelConditions.paymentShortLink }}/
+                </span>
+                <input
+                  formControlName="shortUrl"
+                  class="w-full text-[15px]"
+                  type="text"
+                />
+              </div>
+              @if (!shortUrlValidation().valid) {
+                <small
+                  class="flex items-center gap-1 text-warning-color text-sm font-normal pl-1"
+                >
+                  <fa-icon
+                    class="text-common-red-color text-[12px]"
+                    [icon]="faCircleExclamation"
+                    animation="shake"
+                    size="lg"
+                  ></fa-icon>
+                  <p
+                    class="text-common-red-color text-xs font-medium font-roboto"
+                  >
+                    {{
+                      shortUrlValidation().message ||
+                        "This short url is not available!"
+                    }}
+                  </p>
+                </small>
+              } @else {
+                <app-control-message-v35
+                  [control]="form.controls.shortUrl"
+                  [customMessages]="{
+                    pattern:
+                      'Url field only support alphabets, numbers and hyphen!'
+                  }"
+                />
+              }
+            </div>
+          </div>
+
+          <!-- <div class="border-t border-input-border-color pt-4">
+            <h3 class="text-sm font-semibold text-main-text-color mb-4">Payment Link Domain</h3>
+
+            <div class="space-y-3" role="radiogroup" aria-label="Payment Link Domain">
+              @for (domain of availableDomains; track domain.value) {
+                <div
+                  role="radio"
+                  tabindex="0"
+                  [attr.aria-checked]="selectedDomain() === domain.value"
+                  class="flex items-center p-3 border border-input-border-color rounded-lg cursor-pointer hover:border-common-blue-color transition-colors"
+                  [ngClass]="{ 'border-common-blue-color bg-blue-50': selectedDomain() === domain.value }"
+                  (click)="selectDomain(domain.value)"
+                  (keydown.enter)="selectDomain(domain.value)"
+                  (keydown.space)="selectDomain(domain.value); $event.preventDefault()"
+                >
+                  <mat-radio-button
+                    [checked]="selectedDomain() === domain.value"
+                    [value]="domain.value"
+                    (click)="$event.stopPropagation()"
+                    (change)="selectDomain(domain.value)"
+                  >
+                    <span class="text-sm">{{ domain.label }}</span>
+                  </mat-radio-button>
+                  @if (domain.price) {
+                    <span class="ml-auto text-sm text-common-blue-color font-medium">{{ domain.price }}</span>
+                  }
+                  @if (domain.info) {
+                    <fa-icon [icon]="faCircleInfo" class="ml-2 text-common-blue-color" matTooltip="{{ domain.info }}" />
+                  }
+                </div>
+              }
+            </div>
+
+            @if (selectedDomain() === 'custom') {
+              <div class="mt-4 grid grid-cols-12 gap-2">
+                <div class="col-span-2 flex items-center justify-end text-sm text-secondary-text-color">
+                  https://
+                </div>
+                <div class="col-span-5">
+                  <input
+                    type="text"
+                    formControlName="customDomain"
+                    class="input_style w-full"
+                    placeholder="yourdomain.com"
+                  />
+                </div>
+                <div class="col-span-1 flex items-center justify-center text-secondary-text-color">
+                  /
+                </div>
+                <div class="col-span-4">
+                </div>
+              </div>
+            }
+
+            <div class="mt-4 grid grid-cols-12 gap-2 items-center">
+              <div class="col-span-5">
+                <div class="input_style bg-secondary-background-color text-secondary-text-color truncate">
+                  {{ getDomainDisplay() }}/
+                </div>
+              </div>
+              <div class="col-span-7">
+                <input
+                  type="text"
+                  formControlName="shortUrl"
+                  class="input_style w-full"
+                  placeholder="your-link-name"
+                />
+              </div>
+            </div>
+            @if (!shortUrlValidation().valid) {
+              <small class="flex items-center gap-1 text-common-red-color text-xs mt-1">
+                <fa-icon [icon]="faCircleExclamation" size="sm" />
+                {{ shortUrlValidation().message || "This short url is not available!" }}
+              </small>
+            } @else {
+              <app-control-message-v35
+                [control]="form.controls.shortUrl"
+                [customMessages]="{ pattern: 'Only letters, numbers and hyphens allowed' }"
+              />
+            }
+          </div> -->
+
+          <div class="mt-4 flex items-center gap-3">
+            <mat-checkbox formControlName="autoRedirect">
+              <span class="text-sm">Auto Redirect</span>
+            </mat-checkbox>
+            <div class="flex-1 relative single_input">
+              <input
+                type="text"
+                formControlName="redirectUrl"
+                class="input_style w-full"
+                placeholder="Redirect Url"
+                (focus)="toggleComplete(true)"
+                autocomplete="off"
+                #toggleButton
+              />
+              <ul
+                [ngClass]="{ hidden: !autoComplete || !redirectUrls.length }"
+                class="absolute w-full border border-input-border-color p-1 flex flex-col divide-y divide-input-border-color z-50 bg-main-background-color max-h-40 overflow-y-auto"
+                role="listbox"
+                #menu
+              >
+                @for (item of redirectUrls | searchFilter: form.controls.redirectUrl.value; track item) {
+                  <li
+                    role="option"
+                    tabindex="0"
+                    [attr.aria-selected]="form.controls.redirectUrl.value === item"
+                    class="text-ellipsis text-nowrap overflow-hidden hover:bg-tertiary-background-color cursor-pointer py-1 px-2"
+                    (click)="getSelected(item)"
+                    (keydown.enter)="getSelected(item)"
+                  >
+                    {{ item }}
+                  </li>
+                }
+              </ul>
+            </div>
+            <fa-icon
+              [icon]="faQuestionCircle"
+              class="text-secondary-text-color"
+              matTooltip="By adding the URL, the user can redirect to the page after payment."
+            />
+          </div>
+
+          <div class="h-6"></div>
+
+          <!-- Additional Settings Section -->
+          <div class="border-t border-input-border-color pt-4">
+            <h3 class="text-sm font-semibold text-main-text-color mb-4">Additional Settings</h3>
+
+            <!-- Branding Customization -->
+            <!-- <div class="mb-4">
+              <mat-checkbox
+                [(ngModel)]="showBrandingCustomization"
+                [ngModelOptions]="{ standalone: true }"
+              >
+                <span class="font-medium text-sm text-main-text-color">Branding Customization</span>
+              </mat-checkbox>
+
+              @if (showBrandingCustomization) {
+                <div class="mt-4 ml-6">
+                  <div class="mb-4">
+                    <span class="text-sm text-main-text-color mb-2 block" id="bg-image-label">Background Image</span>
+                    <div
+                      role="button"
+                      tabindex="0"
+                      aria-labelledby="bg-image-label"
+                      class="border-2 border-dashed border-input-border-color rounded-lg p-6 text-center cursor-pointer hover:border-common-blue-color transition-colors"
+                      (click)="backgroundImageInput.click()"
+                      (keydown.enter)="backgroundImageInput.click()"
+                      (keydown.space)="backgroundImageInput.click(); $event.preventDefault()"
+                    >
+                      @if (backgroundImagePreview()) {
+                        <img [src]="backgroundImagePreview()" alt="Background preview" class="max-h-20 mx-auto mb-2" />
+                      } @else {
+                        <fa-icon [icon]="faImage" class="text-3xl text-secondary-text-color mb-2" />
+                      }
+                      <p class="text-sm text-secondary-text-color">Upload Background Image</p>
+                    </div>
+                    <input
+                      type="file"
+                      #backgroundImageInput
+                      class="hidden"
+                      accept=".jpg,.jpeg,.png"
+                      (change)="onBackgroundImageSelected($event)"
+                      aria-labelledby="bg-image-label"
+                    />
+                  </div>
+
+                  <div>
+                    <span class="text-sm text-main-text-color mb-2 block" id="color-theme-label">Brand Color Theme</span>
+                    <div class="flex gap-3" role="radiogroup" aria-labelledby="color-theme-label">
+                      @for (color of brandColors; track color.value) {
+                        <button
+                          type="button"
+                          role="radio"
+                          [attr.aria-checked]="selectedBrandColor() === color.value"
+                          [attr.aria-label]="color.name"
+                          class="w-10 h-10 rounded-full border-2 transition-all"
+                          [style.backgroundColor]="color.value"
+                          [ngClass]="{
+                            'border-common-blue-color scale-110': selectedBrandColor() === color.value,
+                            'border-transparent': selectedBrandColor() !== color.value
+                          }"
+                          (click)="selectBrandColor(color.value)"
+                        ></button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div> -->
+
+            <!-- Set Expiry Rules -->
+            <div>
+              <mat-checkbox
+                [(ngModel)]="showExpiryRules"
+                [ngModelOptions]="{ standalone: true }"
+              >
+                <span class="font-medium text-sm text-main-text-color">Set Expiry Rules</span>
+              </mat-checkbox>
+
+              @if (showExpiryRules) {
+                <div class="mt-4 ml-6 space-y-4">
+                  <!-- Expiration Date -->
+                  <div>
+                    <label for="expiryDate" class="text-sm font-medium text-main-text-color mb-2 block">Expiration Date</label>
+                    <input
+                      type="date"
+                      id="expiryDate"
+                      formControlName="expiryDate"
+                      class="input_style w-full"
+                      [min]="minExpiryDate"
+                    />
+                  </div>
+
+                  <!-- Maximum Payments Allowed -->
+                  <div>
+                    <label for="maxTransactionCount" class="text-sm font-medium text-main-text-color mb-2 block">Maximum Payments Allowed</label>
+                    <input
+                      type="number"
+                      id="maxTransactionCount"
+                      formControlName="maxTransactionCount"
+                      class="input_style w-full"
+                      placeholder="e.g., 100"
+                      min="1"
+                    />
+                  </div>
+
+                  <!-- Total Payment Cap -->
+                  <div>
+                    <label for="maxTotalAmount" class="text-sm font-medium text-main-text-color mb-2 block">Total Payment Cap ($)</label>
+                    <input
+                      type="number"
+                      id="maxTotalAmount"
+                      formControlName="maxTotalAmount"
+                      class="input_style w-full"
+                      placeholder="e.g., 10000"
+                      min="1"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="h-6"></div>
+
+          <!-- Advanced Settings Section -->
+          <div class="border-t border-input-border-color pt-4">
+            <h3 class="text-sm font-semibold text-main-text-color mb-4">Advanced Settings</h3>
+
+            <div class="space-y-3 flex flex-col">
+              <mat-checkbox formControlName="isBankVerifyRequired" (change)="onBankVerifyRequiredChange($event.checked)" class="block">
+                <span class="text-sm">Require Bank Verification. If customer pay by Check/ACH</span>
+              </mat-checkbox>
+
+              <mat-checkbox formControlName="deduct_service_fee_from_main_amount" class="block">
+                <span class="text-sm">Add Transaction fee to the customer on top of the payment</span>
+              </mat-checkbox>
+
+              <mat-checkbox formControlName="is_payee_company_required" class="block">
+                <span class="text-sm">Require Company Name</span>
+              </mat-checkbox>
+
+              <mat-checkbox formControlName="address_needed" class="block">
+                <span class="text-sm">Require Address</span>
+              </mat-checkbox>
+
+              <mat-checkbox formControlName="allow_check_number" class="block">
+                <span class="text-sm">Require Check Number</span>
+              </mat-checkbox>
+            </div>
+          </div>
+
+          <div class="h-6"></div>
+
+          <!-- Submit Button -->
+          <app-common-button-v35
+            class="w-full"
+            width="100%"
+            [loading]="loading()"
+            [disabled]="loading()"
+            [type]="{ style: 'filled', name: 'main' }"
+            [text]="mode === 'create' ? 'Create Link' : 'Update'"
+            (clickEvent)="submit()"
+          />
+
+          <div class="h-8"></div>
+        </form>
+      </div>
+
+      <!-- Preview Section -->
+      <div class="w-full 2xl:w-auto 2xl:flex-shrink-0 h-auto 2xl:h-full flex justify-center 2xl:sticky 2xl:top-5">
+        <app-payment-links-preview [config]="previewConfig()" />
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,254 @@
+<div class="">
+  <!-- modal header -->
+  <div class="flex justify-between items-start gap-3 px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex flex-col">
+      <h1 class="text-lg leading-tight font-semibold text-v4-main-text-color font-funnel">
+        Verify Your Bank Account
+      </h1>
+      <h2 class="mt-0.5 text-xs text-v4-secondary-text-color">Choose how you'd like to verify your bank account.</h2>
+    </div>
+    <button
+      (click)="close()"
+      class="w-9 h-9 -mr-1.5 -mt-0.5 shrink-0 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="X" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color font-peridot">
+    <!-- Success View -->
+    @if (verificationStatus() === "success") {
+      <div class="text-center py-6">
+        <div
+          class="w-16 h-16 bg-v4-badge-success-bg-color rounded-full flex items-center justify-center mx-auto mb-3"
+        >
+          <lucide-icon [img]="CheckCircle2" [size]="36" class="text-v4-badge-success-text-color" />
+        </div>
+        <h3 class="text-xl font-semibold text-v4-main-text-color mb-1.5 font-funnel">
+          Bank Verified!
+        </h3>
+        <p class="text-sm text-v4-subtle-text-color m-0">
+          Your bank account has been verified successfully.
+        </p>
+      </div>
+    } @else if (verificationStatus() === "error") {
+      <div class="text-center py-6">
+        <div
+          class="w-16 h-16 bg-v4-badge-error-bg-color rounded-full flex items-center justify-center mx-auto mb-3"
+        >
+          <lucide-icon [img]="X" [size]="36" class="text-v4-badge-error-text-color" />
+        </div>
+        <h3 class="text-xl font-semibold text-v4-main-text-color mb-1.5 font-funnel">
+          Verification Failed
+        </h3>
+        <p class="text-sm text-v4-subtle-text-color mb-5">
+          @if (errorMessage()) {
+            {{ errorMessage() }} Please reach out to our support team for assistance.
+          } @else {
+            Something went wrong. Please try again or reach out to our support team for assistance.
+          }
+        </p>
+        <div class="flex justify-center gap-3">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'Contact Now'"
+            (clickEvent)="contactSupport()"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Try Again'"
+            (clickEvent)="retryVerification()"
+          />
+        </div>
+      </div>
+    } @else if (verificationStatus() === "pending") {
+      <div class="text-center py-6">
+        <div
+          class="w-16 h-16 bg-v4-badge-warning-bg-color rounded-full flex items-center justify-center mx-auto mb-3"
+        >
+          <lucide-icon [img]="Clock" [size]="36" class="text-v4-common-yellow-color" />
+        </div>
+        <h3 class="text-xl font-semibold text-v4-main-text-color mb-1.5 font-funnel">
+          Documents Submitted
+        </h3>
+        <p class="text-sm text-v4-subtle-text-color m-0">
+          Micro-deposits will be sent within 1-2 business days.<br />
+          Please return to confirm the deposit amounts.
+        </p>
+        <div class="mt-5">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'Close'"
+            (clickEvent)="close()"
+          />
+        </div>
+      </div>
+    } @else {
+      <!--
+        One gate for the whole body: the spinner stays up until everything the
+        body needs has landed, so it renders complete instead of growing the
+        action buttons a moment after the rest.
+      -->
+      @if (!contentReady()) {
+        <div class="flex items-center justify-center" style="min-height: 200px">
+          <lucide-icon [img]="Loader2" [size]="32" class="text-v4-badge-info-text-color animate-spin" />
+        </div>
+      } @else if (noBankAccounts()) {
+        <!-- Empty State: No Bank Accounts -->
+        <div class="text-center py-6">
+          <div
+            class="w-16 h-16 bg-v4-badge-info-bg-color rounded-full flex items-center justify-center mx-auto mb-3"
+          >
+            <lucide-icon [img]="Building2" [size]="36" class="text-v4-badge-info-text-color" />
+          </div>
+          <h3 class="text-xl font-semibold text-v4-main-text-color mb-1.5 font-funnel">
+            No Bank Accounts
+          </h3>
+          <p class="text-sm text-v4-subtle-text-color mb-5">
+            You need to add a bank account before you can verify it.
+          </p>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Add Bank Account'"
+            [width]="'100%'"
+            (clickEvent)="goToAddBank()"
+          />
+        </div>
+      } @else {
+        <!-- Icon and Description -->
+        <div class="mb-5 flex items-start gap-3.5">
+          <div
+            class="w-11 h-11 shrink-0 bg-v4-badge-info-bg-color rounded-xl flex items-center justify-center"
+          >
+            <lucide-icon [img]="CheckCircle2" [size]="22" class="text-v4-badge-info-text-color" />
+          </div>
+          <p class="text-sm leading-relaxed text-left text-v4-secondary-text-color m-0 pt-1">
+            Instantly verify your bank account ownership within seconds or provide your bank account details for manual verification
+          </p>
+        </div>
+
+        <!--
+          Bank Account Dropdown — only mounted when the caller left the account
+          open. It loads the accounts list on init, so rendering it hidden for a
+          preselected account would fetch a list nobody sees.
+        -->
+        @if (!bankAccountId()) {
+          <div class="mb-5">
+            <label
+              for="bank-account-select"
+              class="block text-sm font-medium text-v4-main-text-color mb-1"
+              >Select Bank Account</label
+            >
+            <app-bank-ac-dropdown-v4
+              [enableAddNew]="true"
+              [labelIconNeeded]="false"
+              [showVerificationBadge]="true"
+              [excludeVerified]="true"
+              (changeEvent)="onAccountSelect($event)"
+              append="body"
+            />
+          </div>
+        }
+
+        <!-- Canadian bank block -->
+        @if (isCanadianBank()) {
+          <div
+            class="p-3 bg-v4-badge-error-bg-color rounded-xl border border-v4-badge-error-text-color"
+          >
+            <div class="flex items-start gap-3">
+              <lucide-icon [img]="AlertCircle" [size]="20" class="text-v4-badge-error-text-color flex-shrink-0 mt-0.5" />
+              <p class="text-sm text-v4-badge-error-text-color m-0">
+                Verification for Canadian bank accounts is not permitted.
+              </p>
+            </div>
+          </div>
+        }
+        <!-- already verified -->
+        @if (selectedAccount()) {
+          @if (selectedAccount()?.verifiedBy === 1) {
+            <div
+              class="p-3 bg-v4-badge-success-bg-color rounded-xl border border-v4-secondary-brand-color"
+            >
+              <p class="text-sm text-v4-badge-success-text-color m-0">
+                <strong>Already Verified:</strong> Your bank account has already been verified.
+              </p>
+            </div>
+          } @else if (isPending) {
+            <div
+              class="p-3 bg-v4-badge-warning-bg-color rounded-xl border border-v4-common-yellow-color"
+            >
+              <div class="flex items-start gap-3">
+                <lucide-icon [img]="AlertCircle" [size]="20" class="text-v4-common-yellow-color flex-shrink-0 mt-0.5" />
+                <div>
+                  <p class="text-sm text-v4-badge-warning-text-color font-medium m-0">
+                    Your verification is pending
+                  </p>
+                  <p class="text-xs text-v4-badge-warning-text-color m-0">
+                    Please wait while we process your micro-deposit verification. This
+                    may take 1-2 business days.
+                  </p>
+                </div>
+              </div>
+            </div>
+          } @else if (isConfirmMD) {
+            <div
+              class="p-3 bg-v4-badge-info-bg-color rounded-xl border border-v4-common-sky-color mb-3"
+            >
+              <div class="flex items-start gap-3">
+                <lucide-icon [img]="AlertCircle" [size]="20" class="text-v4-common-sky-color  flex-shrink-0 mt-0.5" />
+                <div>
+                  <p class="text-sm text-v4-common-sky-color font-medium m-0">
+                    Pending Micro-Deposit Confirmation
+                  </p>
+                  <p class="text-xs text-v4-common-sky-color m-0">
+                    Micro-deposits have been sent. Please confirm the amounts to
+                    complete verification.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Verify with Micro-Deposits'"
+              [width]="'100%'"
+              [disabled]="!selectedAccount()"
+              (clickEvent)="verifyMicroDeposit()"
+            />
+          } @else {
+            <div class="flex flex-col gap-3">
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                [text]="'Verify Instantly'"
+                [width]="'100%'"
+                [disabled]="!selectedAccount()"
+                (clickEvent)="verifyInstant()"
+              />
+              <app-common-button-v4
+                [type]="{ style: 'outline', name: 'main' }"
+                [text]="'Verify Manually'"
+                [width]="'100%'"
+                [disabled]="!selectedAccount()"
+                (clickEvent)="verifyMicroDeposit()"
+              />
+            </div>
+
+            <!-- Quiet one-line hint instead of a boxed panel: fewer boxes, less height -->
+            <p class="mt-4 flex items-start gap-2 text-xs leading-relaxed text-v4-secondary-text-color m-0">
+              <lucide-icon
+                [img]="Zap"
+                [size]="13"
+                class="shrink-0 mt-px text-v4-badge-success-text-color [&_svg]:fill-current"
+              />
+              <span>
+                <strong class="font-semibold text-v4-main-text-color">Recommended:</strong>
+                Instant verification is the fastest way to confirm your bank account ownership.
+              </span>
+            </p>
+          }
+        }
+      }
+    }
+  </div>
+  <!-- modal body end -->
+</div>

@@ -1,0 +1,213 @@
+<div class="relative w-full font-peridot px-[1px]">
+  <div
+    cdkOverlayOrigin
+    #trigger="cdkOverlayOrigin"
+    class="relative flex items-center w-full"
+  >
+    <!-- The field itself is the search input (combobox) -->
+    <input
+      #searchInput
+      type="text"
+      autocomplete="off"
+      [value]="isOpen ? searchTerm : displayText"
+      [placeholder]="isOpen ? 'Search Payees...' : placeholder"
+      [readonly]="noPermission"
+      [disabled]="noPermission"
+      (click)="openDropdown()"
+      (input)="onSearch($event)"
+      [ngClass]="
+        hasSelection && !isOpen
+          ? 'text-v4-main-text-color'
+          : 'text-v4-subtle-text-color'
+      "
+      class="w-full h-7 pl-2 pr-12 py-1 border border-v4-input-border-color rounded-md bg-v4-secondary-background-color text-[12px] truncate placeholder:text-v4-subtle-text-color hover:bg-v4-tertiary-background-color focus:outline-none focus:ring-1 focus:ring-v4-brand-focus-color disabled:opacity-50"
+    />
+
+    <div
+      class="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5"
+    >
+      @if (isLoading() && isOpen && searchTerm) {
+        <lucide-icon
+          name="loader-circle"
+          [size]="12"
+          class="animate-spin text-v4-subtle-text-color"
+        ></lucide-icon>
+      }
+      @if (hasSelection) {
+        <span
+          role="button"
+          tabindex="0"
+          (click)="clearFilter($event)"
+          (keydown.enter)="clearFilter($event)"
+          (keydown.space)="clearFilter($event); $event.preventDefault()"
+          class="p-0.5 hover:bg-v4-tertiary-background-color rounded cursor-pointer"
+        >
+          <lucide-icon
+            name="x"
+            [size]="10"
+            class="text-v4-subtle-text-color"
+          ></lucide-icon>
+        </span>
+      }
+      <span
+        role="button"
+        aria-label="Open payee filter"
+        tabindex="0"
+        (click)="openDropdown(); $event.stopPropagation()"
+        (keydown.enter)="openDropdown()"
+        class="cursor-pointer"
+      >
+        <lucide-icon
+          name="chevron-down"
+          [size]="14"
+          class="text-v4-subtle-text-color transition-transform"
+          [ngClass]="isOpen ? 'rotate-180' : ''"
+        ></lucide-icon>
+      </span>
+    </div>
+  </div>
+
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="trigger"
+    [cdkConnectedOverlayOpen]="isOpen"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+    (backdropClick)="onBackdropClick()"
+    [cdkConnectedOverlayPositions]="overlayPositions"
+  >
+    <div
+      class="bg-v4-popup-background-color border border-v4-border-color rounded-lg shadow-lg overflow-hidden flex flex-col w-[240px] font-peridot"
+      style="max-height: 280px"
+    >
+      <!-- Select All / count (hidden in single-select mode) -->
+      @if (payeeList.length > 0 && !singleSelect) {
+        <div class="px-3 py-1 flex items-center justify-between flex-shrink-0">
+          <button
+            type="button"
+            (click)="
+              stagedSelections.length === payeeList.length
+                ? deselectAll()
+                : selectAll()
+            "
+            class="text-[12px] font-medium text-v4-primary-brand-bold-color hover:underline"
+          >
+            Select All
+          </button>
+          <span class="text-[12px] text-v4-subtle-text-color">
+            {{ stagedSelections.length }} selected
+          </span>
+        </div>
+      }
+
+      <!-- Payee list -->
+      <div
+        class="overflow-y-auto flex-1 min-h-0 max-h-[160px] px-1 pt-1"
+        (scroll)="onScroll($event)"
+      >
+        @if (isLoading() && payeeList.length === 0) {
+          <div
+            class="py-6 text-xs text-v4-subtle-text-color text-center flex items-center justify-center gap-2"
+          >
+            <lucide-icon
+              name="loader-circle"
+              [size]="14"
+              class="animate-spin"
+            ></lucide-icon>
+            Loading...
+          </div>
+        }
+
+        @for (payee of payeeList; track payee.id) {
+          <div
+            role="button"
+            tabindex="0"
+            class="px-2 py-1.5 cursor-pointer text-xs flex items-center gap-2.5 hover:bg-v4-tertiary-background-color rounded"
+            (click)="togglePayee(payee)"
+            (keydown.enter)="togglePayee(payee)"
+            (keydown.space)="togglePayee(payee); $event.preventDefault()"
+          >
+            @if (singleSelect) {
+              <div
+                class="w-[18px] h-[18px] border-[1.5px] rounded-full flex items-center justify-center flex-shrink-0"
+                [ngClass]="
+                  isStaged(payee)
+                    ? 'border-v4-primary-brand-color'
+                    : 'border-v4-border-color'
+                "
+              >
+                @if (isStaged(payee)) {
+                  <div
+                    class="w-[10px] h-[10px] rounded-full bg-v4-primary-brand-color"
+                  ></div>
+                }
+              </div>
+            } @else {
+              <div
+                class="w-[22px] h-[22px] border-[2px] rounded flex items-center justify-center flex-shrink-0"
+                [ngClass]="
+                  isStaged(payee)
+                    ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                    : 'border-v4-input-border-color'
+                "
+              >
+                @if (isStaged(payee)) {
+                  <lucide-icon
+                    name="check"
+                    [size]="16"
+                    [strokeWidth]="4"
+                    class="text-white"
+                  ></lucide-icon>
+                }
+              </div>
+            }
+            <span class="truncate text-v4-main-text-color text-[12px]">
+              {{ payee.name
+              }}{{ payee.nickName ? " (" + payee.nickName + ")" : "" }}
+            </span>
+          </div>
+        }
+
+        <!-- Loading more -->
+        @if (isLoading() && payeeList.length > 0) {
+          <div
+            class="py-2 text-xs text-v4-subtle-text-color text-center flex items-center justify-center gap-2"
+          >
+            <lucide-icon
+              name="loader-circle"
+              [size]="12"
+              class="animate-spin"
+            ></lucide-icon>
+            Loading more...
+          </div>
+        }
+
+        @if (payeeList.length === 0 && !isLoading()) {
+          <div class="py-4 text-xs text-v4-subtle-text-color text-center">
+            {{ !paymentsService.hasPermission.payee ? 'Permission Denied' : 'No payees found' }}
+          </div>
+        }
+      </div>
+
+      <!-- Footer: Clear + Apply (hidden in single-select mode) -->
+      @if (!singleSelect && paymentsService.hasPermission.payee) {
+        <div
+          class="p-2 border-t border-v4-border-color flex gap-2 flex-shrink-0"
+        >
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'outline', name: 'compact' }"
+            [text]="'Cancel'"
+            (clickEvent)="onClear()"
+          />
+          <app-common-button-v4
+            class="flex-1"
+            [type]="{ style: 'primary', name: 'compact' }"
+            [text]="'Apply'"
+            (clickEvent)="onApply()"
+          />
+        </div>
+      }
+    </div>
+  </ng-template>
+</div>

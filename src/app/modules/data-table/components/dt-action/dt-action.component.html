@@ -1,0 +1,191 @@
+<div
+  class="main flex gap-5 relative"
+  [ngClass]="{ 'edit-mode-bg': actionButtonMode?.editButton }"
+>
+  @if (actionButtonMode?.settingsButton) {
+    <div class="setting-button cursor-pointer">
+      <fa-icon
+        [icon]="['fas', 'cog']"
+        (click)="actionMoreClick('s')"
+        (keydown.enter)="actionMoreClick('s')"
+        tabindex="0"
+      >
+      </fa-icon>
+    </div>
+  }
+
+  @if (actionButtonMode?.eyeButton || env.env_id === "compass") {
+    <div
+      class="eye_btn cursor-pointer flex justify-center items-center"
+      (click)="eyeButtonClick(); $event.stopPropagation()"
+      (keydown.enter)="eyeButtonClick()"
+      tabindex="0"
+    >
+      @if (tableVersion === "v4") {
+        <lucide-icon
+          name="eye"
+          [size]="14"
+          [matTooltip]="'View'"
+          class="text-v4-primary-brand-bold-color"
+        ></lucide-icon>
+      } @else {
+        <fa-icon [icon]="faEye" [matTooltip]="'View'"></fa-icon>
+      }
+    </div>
+  }
+
+  @if (actionButtonMode?.cardButton && env.env_id !== "compass") {
+    <div
+      class="eye_btn cursor-pointer flex justify-center items-center absolute left-5"
+      (click)="cardButtonClick(); $event.stopPropagation()"
+      (keydown.enter)="cardButtonClick()"
+      tabindex="0"
+    >
+      <fa-icon
+        class="text-[12px]"
+        [icon]="faCreditCard"
+        matTooltip="Pay by Credit Card"
+      ></fa-icon>
+    </div>
+  }
+
+  @if (
+    actionButtonMode?.actionButton &&
+    ((params.isHideAction && !params.isHideAction()) || !params.isHideAction)
+  ) {
+    <div class="action_btn center w-1/6">
+      <button
+        class="!flex !justify-center !items-center w-full"
+        [matMenuTriggerFor]="menu"
+        aria-label="Actions"
+        [matTooltip]="showActionTooltip ? 'Actions' : ''"
+        (click)="actionButtonClick(); $event.stopPropagation()"
+      >
+        @if (tableVersion === "v4") {
+          <lucide-icon
+            name="ellipsis-vertical"
+            [size]="14"
+            class="text-v4-primary-brand-bold-color"
+          ></lucide-icon>
+        } @else {
+          <fa-icon
+            class="option-icon"
+            [icon]="['fas', 'ellipsis-vertical']"
+          ></fa-icon>
+        }
+      </button>
+    </div>
+  }
+  @if (actionButtonMode?.dangerButton) {
+    <div class="danger-div eye_btn">
+      <fa-icon
+        class="dangerButton-icon"
+        [icon]="['far', 'triangle-exclamation']"
+        [matTooltip]="'Click here to map bank account for the first time.'"
+        (click)="actionMoreClick('d')"
+        (keydown.enter)="actionMoreClick('d')"
+        tabindex="0"
+      ></fa-icon>
+    </div>
+  }
+  @if (actionButtonMode?.bankNotVerified) {
+    <button
+      class="danger-div eye_btn flex items-center gap-1 cursor-pointer"
+      matTooltip="Click here to map bank account"
+      (click)="actionMoreClick('bnv')"
+      (keydown.enter)="actionMoreClick('bnv')"
+      role="button"
+    >
+      <fa-icon
+        class="text-common-red-color"
+        [icon]="['far', 'triangle-exclamation']"
+        tabindex="0"
+      ></fa-icon>
+      <span
+        class="underline hover:no-underline text-sm !text-common-blue-color !font-medium"
+        >Map</span
+      >
+    </button>
+  }
+  @if (actionButtonMode?.editButton) {
+    <div class="edit-button">
+      <fa-icon
+        [icon]="['fas', 'edit']"
+        [matTooltip]="'Edit'"
+        (click)="actionMoreClick('e')"
+        (keydown.enter)="actionMoreClick('e')"
+        class="cursor-pointer"
+        tabindex="0"
+      ></fa-icon>
+    </div>
+  }
+
+  @if (actionButtonMode?.deleteButton) {
+    <div class="danger-div eye_btn dlt">
+      <fa-icon
+        [icon]="['far', 'trash-alt']"
+        [matTooltip]="'Delete'"
+        (click)="actionMoreClick('dlt'); $event.stopPropagation()"
+        (keydown.enter)="actionMoreClick('dlt')"
+        class="cursor-pointer"
+        tabindex="0"
+      ></fa-icon>
+    </div>
+  }
+</div>
+
+<mat-menu
+  #menu="matMenu"
+  [class]="tableVersion === 'v4' ? 'action-menu v4-action-menu' : 'action-menu'"
+>
+  @for (btn of getValues; track btn; let i = $index) {
+    @if (
+      !(btn.id === "RId_printReceipt" && params.data.cheque_status !== 7) &&
+      !(btn.id === "id_send_now" && params.data?.status !== "pending")
+    ) {
+      @if (tableVersion === "v4" && btn.divider) {
+        <div class="v4-menu-divider"></div>
+      }
+      <li
+        mat-menu-item
+        [disabled]="
+          (isDisableData.isDisable &&
+            isDisableData.selectedIds[i] === btn.id) ||
+          (btn.id === 'RId_void' && params.data.cheque_status === 35)
+        "
+        (click)="onButtonClick(btn.id, i, btn.name, $event, toolTip)"
+        (keydown.enter)="onButtonClick(btn.id, i, btn.name, $event, toolTip)"
+        #toolTip="matTooltip"
+        [matTooltip]="btn.toolTip ?? ''"
+        matTooltipPosition="left"
+        [ngClass]="{
+          'v4-menu-item-danger':
+            tableVersion === 'v4' &&
+            (btn.color === 'red' || btn.color === 'var(--v4-common-red-color)')
+        }"
+      >
+        @if (tableVersion === "v4") {
+          <div class="v4-menu-item">
+            @if (btn.svg) {
+              <img [src]="[btn.svg]" alt="action icon image" />
+            } @else if (btn.icon) {
+              <lucide-icon [name]="btn.icon" [size]="16"></lucide-icon>
+            }
+            <span>{{ btn.name }}</span>
+          </div>
+        } @else {
+          @if (btn.svg) {
+            <img [src]="[btn.svg]" alt="action icon image" />
+          } @else if (btn.icon) {
+            <i
+              [ngStyle]="{ color: btn.color }"
+              [class]="btn.icon"
+              aria-hidden="true"
+            ></i>
+          }
+          <span class="ml-2">{{ btn.name }}</span>
+        }
+      </li>
+    }
+  }
+</mat-menu>

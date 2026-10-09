@@ -1,0 +1,176 @@
+<div class="px-[6px] pb-[6px] test">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <p class="font-inter font-semibold text-base text-main-text-color">
+        Withdraw Funds
+      </p>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="['fas', 'xmark']"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <form [formGroup]="withdrawFundsForm">
+    <div class="flex flex-col gap-5">
+      <div>
+        <app-wallet-dropdown-v3
+          placeholder="From Wallet"
+          [formControl]="selectedWallet"
+          [showLogoUpdateModal]="false"
+        ></app-wallet-dropdown-v3>
+        <app-control-message-v35
+          [control]="withdrawFundsForm.controls.fromWallet"
+        ></app-control-message-v35>
+      </div>
+      <div>
+        <app-bank-ac-dropdown-v3
+          placeholder="To Account"
+          append="body"
+          [formControl]="selectedBankAccount"
+        ></app-bank-ac-dropdown-v3>
+        <app-control-message-v35
+          [control]="withdrawFundsForm.controls.toBankAccountId"
+        ></app-control-message-v35>
+      </div>
+      <div>
+        <div class="flex">
+          <app-amount-input
+            class="w-full"
+            customClass="!rounded-r-none !border-r-0"
+            formControlName="amount"
+            [maxLength]="15"
+          ></app-amount-input>
+          <button
+            class="add_modal_btn !h-[38px] !rounded-l-none border border-input-border-color border-l-0"
+            (click)="openCalculator()"
+          >
+            <fa-icon
+              class="text-secondary-text-color"
+              [icon]="['fas', 'calculator']"
+            ></fa-icon>
+          </button>
+        </div>
+        <app-control-message-v35
+          [control]="withdrawFundsForm.controls.amount"
+        ></app-control-message-v35>
+
+        @if (showMinimumAmountError) {
+          <small
+            class="flex items-center gap-1 text-warning-color text-sm font-normal pl-1 mt-1"
+          >
+            <fa-icon
+              class="text-common-red-color text-[12px]"
+              [icon]="['fas', 'circle-exclamation']"
+              animation="shake"
+              size="lg"
+            ></fa-icon>
+            <p class="text-common-red-color text-xs font-medium font-roboto">
+              Minimum withdrawal amount should be $10.00 to Process via RTP
+            </p>
+          </small>
+        }
+      </div>
+      <div>
+        <app-common-input-field
+          placeholder="Comment"
+          maxlength="50"
+          formControlName="comment"
+        ></app-common-input-field>
+        <app-control-message-v35
+          [control]="withdrawFundsForm.controls.comment"
+        ></app-control-message-v35>
+      </div>
+      <div>
+        <div class="flex pb-3">
+          <mat-radio-group
+            aria-labelledby="radio-label"
+            class="radio-group flex justify-between gap-4"
+            formControlName="selectedWithdrawMethod"
+            (change)="changeWithdrawOption($event.value)"
+          >
+            @for (option of withdrewOptions; track $index) {
+              <mat-radio-button
+                class="radio-button"
+                [value]="option.id"
+                [checked]="selectedWithdrawMethod === option.id"
+              >
+                {{ option.name }}
+                @if (option?.tootTip) {
+                  <fa-icon
+                    class="text-[13px]"
+                    [icon]="faInfoCircle"
+                    [matTooltip]="option?.tootTip"
+                  />
+                }
+              </mat-radio-button>
+            }
+          </mat-radio-group>
+        </div>
+        @if (withdrawFundsForm.controls.isSameDay.value) {
+          <div class="p-3 bg-secondary-background-color">
+            @if (isSameDayFeeLoading) {
+              <div class="skelton h-4 w-full"></div>
+              <div class="skelton h-4 w-3/4 mt-1"></div>
+            } @else {
+              <p class="font-inter font-normal text-xs text-secondary-text-color">
+                Great! Your ACH request will be processed in same day. This
+                process will have a fee of {{ sameDayFeeAmount | currency }}. You should initiate the payment
+                before 10:30 AM PST (12:30 PM CST) to process on same day, else it
+                will be processed on next business day and will be considered as
+                'same day ach' with the same fee.
+              </p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </form>
+
+  @if (showSectionFee) {
+    <div class="w-full mx-auto rounded-lg shadow p-3 text-xs">
+      <h2 class="text-start text-gray-700 font-semibold mb-2 underline">
+        Transfer Fee Details
+      </h2>
+      <div class="space-y-2">
+        <div class="flex">
+          <span class="w-1/2 text-gray-500 text-left">Amount:</span>
+          <span
+            class="w-1/2 text-gray-800 font-medium text-left"
+            [ngClass]="{ 'skelton h-4 w-28': fetchingFeeDetails }"
+            >{{ withdrawFeeDetails?.amount | currency }}</span
+          >
+        </div>
+        <div class="flex">
+          <span class="w-1/2 text-gray-500 text-left">Fee:</span>
+          <span
+            class="w-1/2 text-gray-800 font-medium text-left"
+            [ngClass]="{ 'skelton h-4 w-28': fetchingFeeDetails }"
+            >{{ withdrawFeeDetails?.transfer_fee | currency }}</span
+          >
+        </div>
+        <div class="flex">
+          <span class="w-1/2 text-gray-500 text-left">You Will Receive:</span>
+          <span
+            class="w-1/2 text-gray-800 font-medium text-left"
+            [ngClass]="{ 'skelton h-4 w-28': fetchingFeeDetails }"
+            >{{ withdrawFeeDetails?.transfer_amount | currency }}</span
+          >
+        </div>
+      </div>
+    </div>
+  }
+  <!-- modal body end -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Submit"
+      width="124px"
+      (clickEvent)="onSubmit()"
+      [loading]="isLoading"
+    ></app-common-button-v35>
+  </div>
+</div>

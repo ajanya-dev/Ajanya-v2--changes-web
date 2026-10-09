@@ -1,0 +1,74 @@
+@if (mode === "view") {
+  <div class="flex items-center font-peridot">
+    @if (isDeleted && selectedPayrollId === commonTransactionTableRowData.id) {
+      <span class="action-icon-btn no-hover">
+        <lucide-icon
+          name="loader-circle"
+          [size]="16"
+          class="animate-spin"
+        ></lucide-icon>
+      </span>
+    } @else {
+      <button aria-label="Options"
+        type="button"
+        class="action-icon-btn"
+        matTooltip="Options"
+        [matMenuTriggerFor]="payrollMenu"
+        (click)="$event.stopPropagation()"
+      >
+        <lucide-icon name="ellipsis-vertical" [size]="16"></lucide-icon>
+      </button>
+
+      <mat-menu #payrollMenu="matMenu" class="v4-action-menu">
+        <div class="v4-menu-group-label">Actions</div>
+        <button
+          mat-menu-item
+          (click)="
+            status === 0 || status === 3
+              ? openConfirmationModal('View')
+              : openSummaryModal()
+          "
+        >
+          <div class="v4-menu-item">
+            <lucide-icon name="eye" [size]="16"></lucide-icon>
+            <span>View Statement</span>
+          </div>
+        </button>
+        @if (isManual) {
+          <button
+            mat-menu-item
+            class="v4-menu-item-danger"
+            [disabled]="status !== 0 && status !== 3"
+            (click)="deletePayroll(commonTransactionTableRowData.id)"
+          >
+            <div class="v4-menu-item">
+              <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+              <span>Delete Payroll</span>
+            </div>
+          </button>
+        }
+      </mat-menu>
+    }
+  </div>
+} @else {
+  <div class="flex items-center justify-center w-full font-peridot">
+    @if (status === 0 || status === 3) {
+      <app-common-button-v4
+        text="Confirm Payment"
+        [type]="{ style: 'neon', name: 'main' }"
+        customClasses="action-btn"
+        (clickEvent)="runPayroll()"
+      ></app-common-button-v4>
+    } @else {
+      <span
+        class="status-badge"
+        [ngClass]="{
+          'status-processing': status === 1,
+          'status-completed': status === 2 || status === 5,
+          'status-failed': status === 4 || status === 6
+        }"
+        >{{ statusText }}</span
+      >
+    }
+  </div>
+}

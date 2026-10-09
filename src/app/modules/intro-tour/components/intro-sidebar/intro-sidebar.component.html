@@ -1,0 +1,502 @@
+<section class="h-full bg-common-sidebar-color overflow-hidden">
+  <div
+    class="v3-side-bar-container z-999 h-full hidden lg:block"
+    [ngClass]="{
+      'sidebar-open': sideBarAction === 'open',
+      'sidebar-close': sideBarAction === 'close',
+      'w-[65px]': sideBar,
+      'w-[200px]': !sideBar
+    }"
+  >
+    <div
+      class="v3-sidebar bg-common-sidebar-color w-full h-full bg-repeat flex flex-col"
+    >
+      <div
+        class="pt-4 mx-auto relative transition-all duration-300 ease-in-out w-4/5"
+      >
+        <a
+          class="flex items-center text-center w-full h-16"
+          routerLink="/manage/home"
+        >
+          <img
+            class="mx-auto"
+            [ngClass]="sideBar ? 'hidden' : 'w-4/5'"
+            [src]="appConfig?.whiteLogo || '/assets/main/app_logo_white.svg'"
+            [alt]="appConfig?.websiteTitle"
+            [title]="appConfig?.websiteTitle"
+            loading="lazy"
+          />
+          <fa-icon
+            [icon]="['fas', 'bars']"
+            [class.hidden]="!sideBar"
+            class="text-white text-2xl pb-4 cursor-pointer mx-auto"
+            (click)="collapseSideBar()"
+            role="presentation"
+          ></fa-icon>
+        </a>
+      </div>
+
+      <button
+        class="toggle-area cursor-pointer absolute right-[-12px] top-16 w-6 h-6 bg-white flex justify-center items-center rounded-full shadow-sm z-[99999] hover:bg-common-green-color transition-transform duration-300"
+        (click)="collapseSideBar()"
+        [class.rotate-180]="!sideBar"
+      >
+        <img
+          class="text-xs w-3 h-3"
+          src="/assets/icon/svg/right-arrow.svg"
+          alt="close"
+        />
+      </button>
+
+      <div
+        class="main-items flex flex-col justify-between h-full"
+        [ngClass]="{ 'pt-6': !sideBar, 'pt-0': sideBar }"
+      >
+        <div class="flex flex-col">
+          <div
+            class="first-menu-section pb-5 transition-all duration-300 ease-in-out"
+            *ngIf="!sideBar"
+          >
+            <div
+              *ngFor="
+                let item of firstMenuSection;
+                let i = index;
+                trackBy: trackByFunction
+              "
+              class="flex flex-col items-center pb-1"
+            >
+              <button
+                class="menu-item self-center flex justify-between gap-2.5 text-[13px] cor-pointer rounded-md hover:bg-common-dark-blue-color text-white py-1.5 px-2 group"
+                (click)="toggleExpanded(item.id)"
+                matTooltipPosition="right"
+                [ngClass]="{
+                  'bg-common-dark-blue-color': selectedItem === item?.id,
+                  'w-4/5': !sideBar,
+                  'introTourClass-payment-table': item.id === 'payments-table'
+                }"
+                (click)="!item?.isDropdown && navigate(item, i)"
+                [matTooltip]="sideBar ? item?.tooltip || '' : ''"
+              >
+                <div class="flex gap-2.5">
+                  <span
+                    class="w-[15px] text-common-green-color group-hover:text-white"
+                    [ngClass]="{
+                      'text-white': selectedItem === item?.id
+                    }"
+                  >
+                    <fa-icon
+                      *ngIf="item?.icon"
+                      [icon]="['fas', item.icon]"
+                      role="presentation"
+                    ></fa-icon>
+                  </span>
+                  <span class="whitespace-nowrap">{{ item?.title }}</span>
+                </div>
+                <fa-icon
+                  *ngIf="item?.isDropdown"
+                  [icon]="[
+                    'fas',
+                    expandedMenuIndex !== item.id ? 'caret-down' : 'caret-up'
+                  ]"
+                  class="self-center"
+                  role="presentation"
+                ></fa-icon>
+              </button>
+              <div
+                class="w-4/5 flex flex-col gap-1 pl-1.5"
+                [class.hidden]="expandedMenuIndex !== item.id"
+              >
+                <button
+                  *ngFor="
+                    let subItem of item?.subItem;
+                    let index = index;
+                    trackBy: trackByFunction
+                  "
+                  [ngClass]="{
+                    'bg-common-dark-blue-color': selectedItem === subItem?.id
+                  }"
+                  (click)="navigate(item, index)"
+                  class="sub-menu-item w-full text-xs font-light flex gap-2.5 pl-3.5 pb-2 pt-2 px-1 hover:bg-common-dark-blue-color text-white rounded-md cursor-pointer"
+                >
+                  <div class="flex pt-1.5">
+                    <span
+                      class="dot h-1 w-1 rounded-full bg-white inline-block"
+                    ></span>
+                  </div>
+                  <span class="whitespace-nowrap">{{ subItem?.title }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <ng-container *ngIf="sideBar">
+            <div class="pb-8 transition-all duration-300 ease-in-out">
+              <div
+                class="start flex flex-col items-center pb-1"
+                role="presentation"
+                *ngFor="
+                  let item of firstMenuSection;
+                  let index = index;
+                  trackBy: trackByFunction
+                "
+                (click)="navigate(item, index)"
+              >
+                <div
+                  *ngIf="!item?.isDropdown && item?.id"
+                  matTooltipPosition="right"
+                  [matTooltip]="sideBar ? item?.tooltip || '' : ''"
+                >
+                  <button
+                    class="menu-item self-center flex gap-2.5 text-[13px] rounded-md cursor-pointer hover:bg-common-dark-blue-color text-white py-1.5 px-2"
+                    [ngClass]="{
+                      'bg-common-dark-blue-color': selectedItem === item?.id
+                    }"
+                  >
+                    <span
+                      class="w-[15px] text-common-green-color"
+                      [ngClass]="{
+                        'text-white': selectedItem === item?.id
+                      }"
+                    >
+                      <fa-icon
+                        *ngIf="item?.icon"
+                        [icon]="['fas', item.icon]"
+                        role="presentation"
+                      ></fa-icon
+                    ></span>
+                  </button>
+                </div>
+                <div *ngIf="item?.isDropdown" class="flex flex-col gap-1.5">
+                  <button
+                    *ngFor="
+                      let subItem of item?.subItem;
+                      let index = index;
+                      trackBy: trackByFunction
+                    "
+                    (click)="navigate(subItem, index); $event.stopPropagation()"
+                    [ngClass]="{
+                      'bg-common-dark-blue-color': selectedItem === subItem?.id
+                    }"
+                    matTooltipPosition="right"
+                    [matTooltip]="sideBar ? subItem?.tooltip || '' : ''"
+                    class="menu-item self-center flex gap-2.5 text-[13px] rounded-md cursor-pointer hover:bg-common-dark-blue-color text-white py-1.5 px-2 group"
+                  >
+                    <span
+                      class="w-[15px] text-common-green-color group-hover:text-white"
+                      [ngClass]="{
+                        'text-white': selectedItem === subItem?.id
+                      }"
+                    >
+                      <fa-icon
+                        *ngIf="subItem?.icon"
+                        [icon]="['fas', subItem.icon]"
+                        role="presentation"
+                      ></fa-icon>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <div
+            class="second-menu-section pb-5 transition-all duration-300 ease-in-out"
+          >
+            <ng-container *ngIf="!sideBar">
+              <div
+                class="flex flex-col items-center pb-1"
+                role="presentation"
+                *ngFor="
+                  let item of secondsMenuSection;
+                  let i = index;
+                  trackBy: trackByFunction
+                "
+                (click)="!item?.isDropdown && navigate(item, i)"
+              >
+                <button
+                  class="menu-item self-center flex justify-between text-[13px] rounded-md py-1.5 cursor-pointer hover:bg-common-dark-blue-color text-white px-2 w-4/5"
+                  (click)="toggleExpanded(item.id)"
+                  [ngClass]="{
+                    'bg-common-dark-blue-color': selectedItem === item?.id
+                  }"
+                >
+                  <div class="flex gap-2.5">
+                    <span class="w-[15px]">
+                      <fa-icon
+                        *ngIf="item?.icon"
+                        [icon]="['fas', item.icon]"
+                      ></fa-icon
+                    ></span>
+                    <span class="item_name whitespace-nowrap">{{
+                      item?.title
+                    }}</span>
+                  </div>
+                  <span *ngIf="item.id === ''" class="feature">New</span>
+                  <fa-icon
+                    *ngIf="item?.isDropdown"
+                    [icon]="[
+                      'fas',
+                      expandedMenuIndex !== item.id ? 'caret-down' : 'caret-up'
+                    ]"
+                    class="self-center text-white"
+                  ></fa-icon>
+                </button>
+                <div
+                  class="w-4/5 pl-1.5"
+                  [class.hidden]="expandedMenuIndex !== item.id"
+                >
+                  <button
+                    *ngFor="
+                      let subItem of item?.subItem;
+                      let index = index;
+                      trackBy: trackByFunction
+                    "
+                    [ngClass]="{
+                      'bg-common-dark-blue-color': selectedItem === subItem?.id
+                    }"
+                    (click)="navigate(item, index); $event.stopPropagation()"
+                    class="sub-menu-item text-xs font-light w-full flex gap-2.5 pl-3.5 pb-2 pt-2 px-1 hover:bg-common-dark-blue-color text-white rounded-md cursor-pointer"
+                  >
+                    <div class="flex pt-1.5">
+                      <span
+                        class="dot h-1 w-1 rounded-full bg-white inline-block"
+                      ></span>
+                    </div>
+                    <span class="flex items-center">
+                      <span>{{ subItem?.title }}</span>
+                      @if (
+                        subItem?.title === "Receive Payments" &&
+                        paymentLinkcount > 0
+                      ) {
+                        <span
+                          class="rounded-full w-[20px] h-[20px] bg-sidebar-feature-button-color inline-flex items-center justify-center text-white text-[12px] p-[2px] ml-[3px] whitespace-nowrap"
+                        >
+                          @if (paymentLinkcount <= 99) {
+                            {{ paymentLinkcount }}
+                          } @else {
+                            99+
+                          }
+                        </span>
+                      }
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="sideBar">
+              <div
+                class="small-bar-first-items transition-all duration-300 ease-in-out"
+              >
+                <div
+                  class="start flex flex-col items-center pb-1"
+                  role="presentation"
+                  *ngFor="
+                    let item of secondsMenuSection;
+                    let index = index;
+                    trackBy: trackByFunction
+                  "
+                  (click)="navigate(item, index)"
+                >
+                  <div
+                    *ngIf="!item?.isDropdown && item?.id"
+                    class=""
+                    matTooltipPosition="right"
+                    [matTooltip]="sideBar ? item?.tooltip || '' : ''"
+                  >
+                    <button
+                      class="menu-item self-center flex gap-2.5 text-[13px] rounded-md cursor-pointer hover:bg-common-dark-blue-color text-white py-1.5 px-2"
+                      [ngClass]="{
+                        'bg-common-dark-blue-color': selectedItem === item?.id
+                      }"
+                    >
+                      <span class="w-[15px]"
+                        ><fa-icon
+                          *ngIf="item?.icon"
+                          [icon]="['fas', item.icon]"
+                        ></fa-icon
+                      ></span>
+                    </button>
+                  </div>
+                  <div *ngIf="item?.isDropdown" class="flex flex-col gap-1.5">
+                    <button
+                      *ngFor="
+                        let subItem of item?.subItem;
+                        let index = index;
+                        trackBy: trackByFunction
+                      "
+                      (click)="navigate(item, index); $event.stopPropagation()"
+                      [ngClass]="{
+                        'bg-common-dark-blue-color':
+                          selectedItem === subItem?.id
+                      }"
+                      matTooltipPosition="right"
+                      [matTooltip]="sideBar ? subItem?.tooltip || '' : ''"
+                      class="menu-item self-center flex gap-2.5 text-[13px] rounded-md cursor-pointer hover:bg-common-dark-blue-color text-white py-1.5 px-2"
+                    >
+                      <span class="w-[15px]"
+                        ><fa-icon
+                          *ngIf="subItem?.icon"
+                          [icon]="['fas', subItem.icon]"
+                        ></fa-icon>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <div class="bottom_section" *ngIf="!sideBar">
+          <div
+            class="bottom_menu_items flex flex-col items-center pb-1"
+            *ngFor="
+              let item of bottomSection;
+              let i = index;
+              trackBy: trackByFunction
+            "
+            [matMenuTriggerFor]="item?.id === 'more' ? moreMenu : ''"
+          >
+            <button
+              class="menu-item self-center flex gap-2.5 text-[13px] rounded-md py-1.5 cursor-pointer hover:bg-common-dark-blue-color text-white px-2 w-4/5"
+              [ngClass]="{
+                'bg-common-dark-blue-color': selectedItem === item?.id
+              }"
+              matTooltipPosition="right"
+              [matTooltip]="sideBar ? item?.tooltip || '' : ''"
+              (click)="item?.id === 'more' ? showMoreMenu() : navigate(item, i)"
+            >
+              <span
+                ><fa-icon
+                  *ngIf="item?.icon"
+                  [icon]="['fas', item.icon]"
+                  role="presentation"
+                ></fa-icon
+              ></span>
+              <span class="item_name">{{ item?.title }}</span>
+            </button>
+          </div>
+          <div
+            class="contact text-[13px] flex flex-col items-center w-4/5 pl-2.5 pb-8"
+            *ngIf="!sideBar"
+          >
+            <a class="text-white" *ngIf="supportNo" href="tel:{{ supportNo }}"
+              ><span class="pr-2.5">
+                <fa-icon
+                  [icon]="['fas', 'phone']"
+                  role="presentation"
+                ></fa-icon> </span
+              >{{ supportNo }}</a
+            >
+          </div>
+          <div
+            class="bottom_hr w-full h-[0.1px] rounded bg-secondary-text-color"
+            [ngStyle]="{ bottom: !sideBar ? '30px' : '0px' }"
+            *ngIf="!sideBar"
+          ></div>
+
+          <a
+            class="side-bar-powered-by w-full flex justify-center items-center py-3 bg-transparent"
+            *ngIf="whiteLabelConfig?.zilMoneyLogoVisible && !sideBar"
+          >
+            <h1
+              class="text-white font-semibold whitespace-nowrap text-[12px] pr-2.5"
+            >
+              Powered by
+            </h1>
+            <a href="https://www.zilmoney.com/" target="_blank">
+              <img
+                class="bg-white pb-1.5 px-1.5 rounded-lg w-[70px]"
+                [src]="
+                  appConfig?.zilMoneyLogo || '/assets/main/zil_Money_logo.svg'
+                "
+                alt="Zilmoney Logo"
+              />
+            </a>
+          </a>
+        </div>
+        <ng-container *ngIf="sideBar">
+          <div
+            class="small-bar-first-items pb-3.5 transition-all duration-300 ease-in-out"
+          >
+            <div
+              class="start flex flex-col items-center pb-1"
+              role="presentation"
+              *ngFor="
+                let item of bottomSection;
+                let index = index;
+                trackBy: trackByFunction
+              "
+              (click)="navigate(item, index)"
+              [matMenuTriggerFor]="item?.id === 'more' ? moreMenu : ''"
+            >
+              <div
+                *ngIf="!item?.isDropdown && item?.id"
+                matTooltipPosition="right"
+                [matTooltip]="sideBar ? item?.tooltip || '' : ''"
+              >
+                <button
+                  class="menu-item self-center flex gap-2.5 text-[13px] rounded-sm cursor-pointer hover:bg-common-dark-blue-color text-white py-1.5 px-2"
+                  [ngClass]="{
+                    'bg-common-dark-blue-color': selectedItem === item?.id
+                  }"
+                >
+                  <span class="w-[15px]"
+                    ><fa-icon
+                      *ngIf="item?.icon"
+                      [icon]="['fas', item.icon]"
+                      role="presentation"
+                    ></fa-icon
+                  ></span>
+                </button>
+              </div>
+            </div>
+            <a
+              class="flex justify-center"
+              *ngIf="supportNo"
+              href="tel:{{ supportNo }}"
+              ><span
+                class="self-center flex gap-2.5 text-[13px] rounded-sm cursor-pointer text-white py-1.5 px-2"
+                ><fa-icon
+                  [icon]="['fas', 'phone']"
+                  role="presentation"
+                ></fa-icon></span
+            ></a>
+          </div>
+        </ng-container>
+
+        <mat-menu
+          #moreMenu="matMenu"
+          appOutsideClick
+          [class]="
+            sideBar
+              ? 'absolute left-[66px] bottom-16'
+              : 'absolute left-[195px] bottom-32'
+          "
+        >
+          <ul class="w-full">
+            <li
+              role="presentation"
+              class="flex gap-2 items-center py-2 px-3.5 cursor-pointer hover:bg-common-secondary-blue-color"
+              *ngFor="
+                let list of settingsMenuLinks;
+                let i = index;
+                trackBy: trackByFunction
+              "
+              [routerLink]="list.routerLink"
+              (click)="onSettingsMenuClick()"
+            >
+              <fa-icon
+                *ngIf="list.icon"
+                [icon]="['fas', list.icon]"
+                class="w-5 h-5 !inline-flex justify-center items-center pr-2 text-common-dark-blue-color"
+                role="presentation"
+              ></fa-icon>
+              <span class="text-sm whitespace-nowrap">{{ list.title }}</span>
+            </li>
+          </ul>
+        </mat-menu>
+      </div>
+    </div>
+  </div>
+</section>

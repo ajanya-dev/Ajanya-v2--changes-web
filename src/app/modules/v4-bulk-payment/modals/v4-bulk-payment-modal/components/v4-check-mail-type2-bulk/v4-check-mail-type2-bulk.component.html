@@ -1,0 +1,231 @@
+@if (getFormControl().controls.length > 0) {
+  <div class="mb-4">
+    <!-- Section header -->
+    <div role="presentation"
+      class="flex items-center justify-between px-4 py-3 bg-v4-secondary-background-color rounded-t-xl border border-v4-border-color cursor-pointer"
+      (click)="isCollapsed = !isCollapsed"
+    >
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="MailIcon" [size]="18" class="text-v4-common-blue-color" />
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-funnel">Check Mail</h3>
+        <span class="text-xs text-v4-tertiary-text-color">({{ getFormControl().controls.length }})</span>
+      </div>
+      <lucide-icon
+        [img]="ChevronDownIcon"
+        [size]="18"
+        class="text-v4-subtle-text-color transition-transform"
+        [class.rotate-180]="!isCollapsed"
+      />
+    </div>
+
+    <!-- Table -->
+    @if (!isCollapsed) {
+      <div class="overflow-x-auto border border-t-0 border-v4-border-color rounded-b-xl">
+        <table class="v4-ocw-table" [formGroup]="dynamicForm">
+          <thead>
+            <tr class="align-middle">
+              <th class="!text-center w-8">#</th>
+              <th>From</th>
+              <th>Payee</th>
+              <th>Amount</th>
+              <th class="min-w-[180px]">Email</th>
+              <th>Memo</th>
+              <th>Invoice No</th>
+              @if (v3BulkPaymentService.isWalletCheckMail()) {
+                <th class="min-w-[360px]">
+                  <div class="flex items-center gap-3">
+                    <span class="whitespace-nowrap flex-shrink-0">Shipping Type</span>
+                    <div class="w-[240px] angular-ocw-v4-ng-select-dropdown">
+                      <ng-select
+                        #bulkShippingSelect
+                        class="height-1 ng-dropdown-panel-v4 text-[12px]"
+                        [clearable]="true"
+                        [formControl]="bulkShippingTypeControl"
+                        placeholder="Apply shipping to all"
+                        appendTo="body"
+                        (open)="onShippingDropdownOpen(bulkShippingSelect)"
+                      >
+                        @for (item of updatedShippingTypeList(); track item) {
+                          <ng-option [value]="item.carrier_code">
+                            <div class="w-full flex items-center gap-2 font-funnel">
+                              <div class="flex-shrink-0 w-10">
+                                <img
+                                  [src]="item.carrier === 'FEDEX' ? 'assets/images/fedex.svg' : 'assets/images/usps-logo.png'"
+                                  class="w-8 h-6 object-contain"
+                                  alt=""
+                                />
+                              </div>
+                              <span class="text-v4-main-text-color text-xs whitespace-nowrap">{{ item.name }}</span>
+                              <span class="font-semibold text-v4-common-green-color text-xs whitespace-nowrap">${{ item.cost }}</span>
+                            </div>
+                          </ng-option>
+                        }
+                      </ng-select>
+                    </div>
+                  </div>
+                </th>
+                <th>Attachment</th>
+              }
+              @if (isShowMoreColumn) {
+                <th>More</th>
+              }
+            </tr>
+          </thead>
+          <tbody formArrayName="checkMailType2FormArray">
+            @for (data of getFormControl().controls; track data; let i = $index) {
+              <tr [formGroupName]="i">
+                <!-- # -->
+                <td class="!text-center w-8">
+                  <span class="text-xs text-v4-tertiary-text-color">{{ i + 1 }}</span>
+                </td>
+
+                <!-- From (icon) -->
+                <td>
+                  @if (data?.value?.from === 'WALLET') {
+                    <lucide-icon
+                      [img]="WalletIcon"
+                      [size]="16"
+                      class="text-[#5b6be8]"
+                      [matTooltip]="data?.value?.source?.walletName || ''"
+                    />
+                  }
+                  @if (data?.value?.from === 'CARD') {
+                    <lucide-icon
+                      [img]="CreditCardIcon"
+                      [size]="16"
+                      class="text-[#d4553b]"
+                      [matTooltip]="data?.value?.source?.nickName || ''"
+                    />
+                  }
+                </td>
+
+                <!-- Payee -->
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-medium text-v4-main-text-color whitespace-nowrap truncate max-w-[180px] inline-block">
+                      {{ data?.value?.payee?.name }}
+                    </span>
+                    @if (data?.value?.isAddressMissing) {
+                      <button aria-label="Click to add address"
+                        type="button"
+                        class="text-v4-common-blue-color flex-shrink-0"
+                        matTooltip="Click to add address"
+                        (click)="onPayeeEditClicked(dynamicForm.get('checkMailType2FormArray')?.at(i))"
+                      >
+                        <lucide-icon [img]="PenSquareIcon" [size]="14" />
+                      </button>
+                    }
+                  </div>
+                </td>
+
+                <!-- Amount -->
+                <td>
+                  <span class="text-xs font-medium text-v4-main-text-color whitespace-nowrap">
+                    {{ data?.value?.amount | currency }}
+                  </span>
+                </td>
+
+                <!-- Email -->
+                <td class="min-w-[180px]">
+                  <span class="text-xs text-v4-secondary-text-color truncate max-w-[150px] inline-block">
+                    {{ data?.value?.email || '--' }}
+                  </span>
+                </td>
+
+                <!-- Memo -->
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color truncate max-w-[120px] inline-block">
+                    {{ data?.value?.memo || 'N/A' }}
+                  </span>
+                </td>
+
+                <!-- Invoice No -->
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color">
+                    {{ data?.value?.invoice || '--' }}
+                  </span>
+                </td>
+
+                <!-- Shipping Type (wallet only) -->
+                @if (v3BulkPaymentService.isWalletCheckMail()) {
+                  <td>
+                    <div class="w-[340px] angular-ocw-v4-ng-select-dropdown">
+                      <ng-select
+                        class="height-1 ng-dropdown-panel-v4 text-sm"
+                        [class.v4-dropdown-invalid]="data.get('mail_type')?.invalid && data.get('mail_type')?.touched"
+                        [clearable]="false"
+                        formControlName="mail_type"
+                        placeholder="Shipping Type *"
+                        appendTo="body"
+                        dropdownPosition="top"
+                      >
+                        @for (item of updatedShippingTypeList(); track item) {
+                          <ng-option [value]="item.carrier_code">
+                            <div class="w-full flex items-center gap-2 font-funnel">
+                              <div class="flex-shrink-0 w-10">
+                                <img
+                                  [src]="item.carrier === 'FEDEX' ? 'assets/images/fedex.svg' : 'assets/images/usps-logo.png'"
+                                  class="w-8 h-6 object-contain"
+                                  alt=""
+                                />
+                              </div>
+                              <div class="flex-1 min-w-0">
+                                <span class="text-v4-main-text-color text-xs">{{ item.name }}</span>
+                              </div>
+                              <div class="flex-shrink-0 font-semibold text-v4-common-green-color text-xs">
+                                ${{ item.cost }}
+                              </div>
+                            </div>
+                          </ng-option>
+                        }
+                      </ng-select>
+                    </div>
+                  </td>
+
+                  <!-- Attachment (wallet only) -->
+                  <td class="text-center">
+                    <button aria-label="Add attachments to the payment"
+                      type="button"
+                      class="p-1.5 rounded hover:bg-v4-tertiary-background-color text-v4-subtle-text-color"
+                      [matBadge]="getAttachmentCountForRow(dynamicForm.get('checkMailType2FormArray')?.at(i)?.get('zilpaymentId')?.value)"
+                      matBadgeSize="small"
+                      [matBadgeHidden]="getAttachmentCountForRow(dynamicForm.get('checkMailType2FormArray')?.at(i)?.get('zilpaymentId')?.value) < 1"
+                      matTooltip="Add attachments to the payment"
+                      (click)="openAddAttachment(dynamicForm.get('checkMailType2FormArray')?.at(i))"
+                    >
+                      <lucide-icon [img]="PaperclipIcon" [size]="16" />
+                    </button>
+                  </td>
+                }
+
+                <!-- More (CARD only) -->
+                @if (isShowMoreColumn) {
+                  <td>
+                    @if (dynamicForm.get('checkMailType2FormArray')?.at(i)?.get('documents')?.invalid) {
+                      <div role="presentation"
+                        class="flex gap-1 items-center cursor-pointer text-v4-common-red-color"
+                        matTooltip="Click to verify payment"
+                        (click)="openVerifyCardInvoiceModal(dynamicForm.get('checkMailType2FormArray')?.at(i))"
+                      >
+                        <lucide-icon [img]="CircleAlertIcon" [size]="14" />
+                        <span class="text-xs font-medium text-v4-common-blue-color underline">Verify</span>
+                      </div>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+
+            @if (getFormControl().controls.length === 0) {
+              <tr>
+                <td [attr.colspan]="isShowMoreColumn ? 10 : 9" class="text-center !py-8">
+                  <span class="text-sm text-v4-subtle-text-color">No check mail payments</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

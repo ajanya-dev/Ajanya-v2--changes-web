@@ -1,0 +1,537 @@
+<div class="w-full max-w-[900px] mx-auto lg:mx-0" [class.blur-sm]="isLogout()">
+  <!-- Title -->
+  <h2 class="text-2xl font-bold text-v4-main-text-color font-funnel mb-4">
+    Security
+  </h2>
+
+  <!-- Change Password Card -->
+  <div
+    class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color px-6 py-5 mb-4"
+  >
+    <h4 class="text-sm font-bold text-v4-main-text-color font-peridot mb-4">
+      Change Password
+    </h4>
+
+    <div class="flex flex-col gap-4" [formGroup]="securityForm">
+      <!-- Old Password (full width) -->
+      <div class="relative security-floating-field">
+        <app-common-input-v4
+          fieldLabel="Old Password"
+          placeholder=" "
+          formControlName="oldPassword"
+          [type]="oldPasswordHide() ? 'password' : 'text'"
+          [control]="securityForm.controls.oldPassword"
+          autocomplete="new-password"
+        />
+        <button
+          class="absolute right-3 top-[34px] text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+          (click)="oldPasswordHide.set(!oldPasswordHide())"
+        >
+          <lucide-icon
+            [img]="oldPasswordHide() ? EyeIcon : EyeOffIcon"
+            [size]="16"
+          />
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- New Password -->
+        <div class="relative security-floating-field">
+          <app-common-input-v4
+            fieldLabel="New Password"
+            placeholder=" "
+            formControlName="newPassword"
+            [type]="newPasswordHide() ? 'password' : 'text'"
+            maxlength="50"
+            [control]="securityForm.controls.newPassword"
+            (input)="isPasswordValid()"
+            (focus)="showValidBox.set(true)"
+            (focusout)="showValidBox.set(false)"
+            autocomplete="new-password"
+          />
+          <button
+            class="absolute right-3 top-[34px] text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+            (click)="newPasswordHide.set(!newPasswordHide())"
+          >
+            <lucide-icon
+              [img]="newPasswordHide() ? EyeIcon : EyeOffIcon"
+              [size]="16"
+            />
+          </button>
+
+          <!-- Password validation box -->
+          @if (showValidBox()) {
+            <div
+              class="absolute top-full left-0 mt-2 p-3 bg-v4-secondary-background-color border border-v4-border-color rounded-lg shadow-lg z-10 w-full"
+            >
+              <ul class="flex flex-col gap-1.5">
+                <li
+                  class="text-xs font-peridot flex items-center gap-1.5"
+                  [class.text-v4-badge-success-text-color]="hasLowerCase()"
+                  [class.text-v4-badge-error-text-color]="!hasLowerCase()"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-v4-badge-success-text-color]="hasLowerCase()"
+                    [class.bg-v4-badge-error-text-color]="!hasLowerCase()"
+                  ></span>
+                  At least one lower case
+                </li>
+                <li
+                  class="text-xs font-peridot flex items-center gap-1.5"
+                  [class.text-v4-badge-success-text-color]="hasUpperCase()"
+                  [class.text-v4-badge-error-text-color]="!hasUpperCase()"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-v4-badge-success-text-color]="hasUpperCase()"
+                    [class.bg-v4-badge-error-text-color]="!hasUpperCase()"
+                  ></span>
+                  At least one capital letter
+                </li>
+                <li
+                  class="text-xs font-peridot flex items-center gap-1.5"
+                  [class.text-v4-badge-success-text-color]="hasNumber()"
+                  [class.text-v4-badge-error-text-color]="!hasNumber()"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-v4-badge-success-text-color]="hasNumber()"
+                    [class.bg-v4-badge-error-text-color]="!hasNumber()"
+                  ></span>
+                  At least one number
+                </li>
+                <li
+                  class="text-xs font-peridot flex items-center gap-1.5"
+                  [class.text-v4-badge-success-text-color]="hasSpecialChar()"
+                  [class.text-v4-badge-error-text-color]="!hasSpecialChar()"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-v4-badge-success-text-color]="hasSpecialChar()"
+                    [class.bg-v4-badge-error-text-color]="!hasSpecialChar()"
+                  ></span>
+                  At least one special character
+                </li>
+                <li
+                  class="text-xs font-peridot flex items-center gap-1.5"
+                  [class.text-v4-badge-success-text-color]="hasMinLength()"
+                  [class.text-v4-badge-error-text-color]="!hasMinLength()"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-v4-badge-success-text-color]="hasMinLength()"
+                    [class.bg-v4-badge-error-text-color]="!hasMinLength()"
+                  ></span>
+                  Be at least 8 characters
+                </li>
+              </ul>
+            </div>
+          }
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="relative security-floating-field">
+          <app-common-input-v4
+            fieldLabel="Confirm New Password"
+            placeholder=" "
+            [type]="confirmPasswordHide() ? 'password' : 'text'"
+            maxlength="50"
+            formControlName="confirmPassword"
+            [control]="securityForm.controls.confirmPassword"
+            autocomplete="new-password"
+          />
+          @if (passWordMismatch()) {
+            <span
+              class="text-v4-badge-error-text-color text-xs font-medium font-peridot absolute -bottom-5 left-0"
+            >
+              Passwords doesn't match
+            </span>
+          }
+          <button
+            class="absolute right-3 top-[34px] text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer z-10"
+            (click)="confirmPasswordHide.set(!confirmPasswordHide())"
+          >
+            <lucide-icon
+              [img]="confirmPasswordHide() ? EyeIcon : EyeOffIcon"
+              [size]="16"
+            />
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <app-common-button-v4
+          [type]="{ style: 'neon', name: 'main' }"
+          text="Update"
+          [customClasses]="'!py-3 !px-8'"
+          [textClasses]="'!text-sm'"
+          (clickEvent)="securityFormSubmit()"
+          [disabled]="isSubmit()"
+          [loading]="isSubmit()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-Steps Verification Card -->
+  <div
+    class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color px-6 py-5 mb-4"
+  >
+    <h4 class="text-sm font-bold text-v4-main-text-color font-peridot mb-4">
+      Two-steps Verification
+    </h4>
+
+    <div class="flex flex-col xl:grid xl:grid-cols-2 gap-4">
+      <!-- Regular 2FA -->
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm text-v4-main-text-color font-peridot flex items-center gap-1.5">
+          Two Factor Authentication
+          <lucide-angular
+            name="circle-help"
+            [size]="14"
+            class="text-v4-secondary-text-color cursor-pointer"
+            matTooltip="This adds an extra layer of security to protect your account"
+          />
+        </span>
+        <button
+          class="flex rounded-full h-6 w-11 p-0.5 transition-all duration-300"
+          (click)="turnOnTwoFactor()"
+          [class.justify-end]="isTwoFactorActive()"
+          [class.bg-v4-primary-brand-bold-color]="isTwoFactorActive()"
+          [class.justify-start]="!isTwoFactorActive()"
+          [class.bg-v4-border-color]="!isTwoFactorActive()"
+          [class.pointer-events-none]="diasbleTwoFactorToggle()"
+          [class.cursor-pointer]="!diasbleTwoFactorToggle()"
+        >
+          <div
+            class="rounded-full h-5 w-5 transition-all duration-300 shadow-sm"
+            [class.bg-v4-secondary-background-color]="isTwoFactorActive()"
+            [class.bg-v4-secondary-text-color]="!isTwoFactorActive()"
+          ></div>
+        </button>
+      </div>
+
+      <!-- Advanced 2FA -->
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm text-v4-main-text-color font-peridot flex items-center gap-1.5">
+          Advanced Two Factor Authentication
+          <lucide-angular
+            name="circle-help"
+            [size]="14"
+            class="text-v4-secondary-text-color cursor-pointer"
+            matTooltip="If enabled, you must approve login from the same device you attempted to sign in with."
+          />
+        </span>
+        <button
+          class="flex rounded-full h-6 w-11 p-0.5 transition-all duration-300"
+          (click)="turnOnAdvancedTwoFactor()"
+          [class.justify-end]="isAdvancedTwoFactorActive()"
+          [class.bg-v4-primary-brand-bold-color]="isAdvancedTwoFactorActive()"
+          [class.justify-start]="!isAdvancedTwoFactorActive()"
+          [class.bg-v4-border-color]="!isAdvancedTwoFactorActive()"
+          [class.pointer-events-none]="diasbleAdvancedTwoFactorToggle()"
+          [class.cursor-pointer]="!diasbleAdvancedTwoFactorToggle()"
+        >
+          <div
+            class="rounded-full h-5 w-5 transition-all duration-300 shadow-sm"
+            [class.bg-v4-secondary-background-color]="
+              isAdvancedTwoFactorActive()
+            "
+            [class.bg-v4-secondary-text-color]="!isAdvancedTwoFactorActive()"
+          ></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IP Whitelist Management -->
+  @if (isParentCompany()) {
+    <div
+      class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color px-6 py-5 mb-4"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-sm font-bold text-v4-main-text-color font-peridot">
+          IP Whitelist Management
+        </h4>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Add IP Address"
+          [lucideIcon]="PlusIcon"
+          [lucideIconSize]="16"
+          [disabled]="isLogout()"
+          (clickEvent)="addIpWhitelist()"
+        />
+      </div>
+
+      @if (!isLoadIpWhitelist() && ipWhitelist().length > 0) {
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <table class="v4-ocw-table w-full text-sm">
+            <thead>
+              <tr
+                class="bg-v4-tertiary-background-color border-b border-v4-border-color sticky top-0 z-10"
+              >
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+                >
+                  IP Address
+                </th>
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+                >
+                  Nickname
+                </th>
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+                >
+                  Created At
+                </th>
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-v4-border-color">
+              @for (ip of ipWhitelist(); track ip.ip) {
+                <tr
+                  class="hover:bg-v4-secondary-background-color transition-colors"
+                >
+                  <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                    {{ ip.ip }}
+                  </td>
+                  <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                    {{ ip.nickname }}
+                  </td>
+                  <td
+                    class="px-4 py-2.5 text-sm text-v4-main-text-color whitespace-nowrap"
+                  >
+                    {{ ip.created_at | date: "dd/MM/yyyy HH:mm" }}
+                  </td>
+                  <td class="px-4 py-2.5">
+                    <button
+                      class="transition-colors cursor-pointer"
+                      style="color: var(--v4-badge-error-text-color)"
+                      (click)="removeIpWhitelist(ip.ip)"
+                    >
+                      <lucide-icon [img]="TrashIcon" [size]="16" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (isLoadIpWhitelist()) {
+        <div class="flex flex-col gap-2">
+          @for (_ of [].constructor(3); track $index) {
+            <div
+              class="w-full h-10 rounded bg-v4-border-color animate-pulse"
+            ></div>
+          }
+        </div>
+      } @else {
+        <div class="flex justify-center items-center py-6">
+          <span class="text-sm text-v4-secondary-text-color font-peridot">
+            No IP addresses found
+          </span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Your Devices Card -->
+  <div
+    class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color px-6 py-5 mb-4"
+  >
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-sm font-bold text-v4-main-text-color font-peridot">
+        Your Devices
+      </h4>
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Remove All Other Devices"
+        textColorInput="var(--v4-common-red-color)"
+        backGroundInput="transparent"
+        [disabled]="isLogout()"
+        (clickEvent)="logout()"
+      />
+    </div>
+
+    @if (devices()?.length > 0 && !isLoadActiveDevices()) {
+      <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+        <table class="v4-ocw-table w-full text-sm">
+          <thead>
+            <tr
+              class="bg-v4-tertiary-background-color border-b border-v4-border-color sticky top-0 z-10"
+            >
+              <th
+                class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+              >
+                Device
+              </th>
+              <th
+                class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+              >
+                IP Address
+              </th>
+              <th
+                class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+              >
+                Activity
+              </th>
+              <th
+                class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-left"
+              >
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-v4-border-color">
+            @for (device of devices(); track device.id) {
+              <tr
+                class="hover:bg-v4-secondary-background-color transition-colors"
+              >
+                <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                  <div class="flex items-center gap-2">
+                    <lucide-icon
+                      [img]="MonitorIcon"
+                      [size]="14"
+                      class="text-v4-secondary-text-color"
+                    />
+                    {{ device.deviceType }} - {{ device.browser }}
+                  </div>
+                </td>
+                <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                  {{ device.ipAddress }}
+                </td>
+                <td class="px-4 py-2.5 text-sm">
+                  @if (device.isCurrentLogin === 1) {
+                    <span
+                      class="flex items-center gap-1.5 text-v4-badge-success-text-color font-medium"
+                    >
+                      <span aria-hidden="true"
+                        class="w-2 h-2 rounded-full bg-v4-badge-success-text-color"
+                      ></span>
+                      Current Device
+                    </span>
+                  } @else {
+                    <span class="text-v4-secondary-text-color">
+                      Last Active in {{ device.city }} - {{ device.country }}
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-2.5">
+                  @if (device.isCurrentLogin !== 1) {
+                    @if (
+                      isSingleDeviceLogout() && selectedDeviceId === device.id
+                    ) {
+                      <div
+                        class="w-8 h-8 rounded-lg bg-v4-badge-error-bg-color flex items-center justify-center"
+                      >
+                        <lucide-icon
+                          [img]="LoaderIcon"
+                          [size]="16"
+                          class="text-v4-badge-error-text-color animate-spin"
+                        />
+                      </div>
+                    } @else {
+                      <button aria-label="Sign out"
+                        matTooltip="Sign out"
+                        class="w-8 h-8 rounded-lg bg-v4-insight-card-background-red flex items-center justify-center text-v4-badge-error-text-color hover:opacity-80 transition-opacity cursor-pointer"
+                        (click)="logout(device.id)"
+                      >
+                        <lucide-icon [img]="LogOutIcon" [size]="16" />
+                      </button>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPage > 1 && devices().length) {
+        <div class="flex justify-end mt-4">
+          <nav class="inline-flex items-center gap-1" aria-label="Pagination">
+            <button
+              class="px-2 py-1.5 text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer"
+              (click)="onPrevious()"
+            >
+              <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
+            </button>
+            @for (item of pageArr; let i = $index; track i) {
+              <button
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-peridot transition-colors cursor-pointer"
+                [class.bg-v4-primary-brand-color]="paginationPage === item"
+                [class.text-white]="paginationPage === item"
+                [class.border]="item !== '...' && paginationPage !== item"
+                [class.border-v4-border-color]="
+                  item !== '...' && paginationPage !== item
+                "
+                [class.text-v4-main-text-color]="paginationPage !== item"
+                [class.hover:bg-v4-tertiary-background-color]="
+                  paginationPage !== item && item !== '...'
+                "
+                (click)="gotoPage(item)"
+              >
+                {{ item ? item : "..." }}
+              </button>
+            }
+            <button
+              class="px-2 py-1.5 text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors cursor-pointer"
+              (click)="onNext()"
+            >
+              <lucide-icon [img]="ChevronRightIcon" [size]="16" />
+            </button>
+          </nav>
+        </div>
+      }
+    } @else if (isLoadActiveDevices()) {
+      <div class="flex flex-col gap-2">
+        @for (_ of [].constructor(3); track $index) {
+          <div
+            class="w-full h-10 rounded bg-v4-border-color animate-pulse"
+          ></div>
+        }
+      </div>
+    } @else {
+      <div class="flex justify-center items-center py-10">
+        <span class="text-sm text-v4-secondary-text-color font-peridot">
+          No devices found
+        </span>
+      </div>
+    }
+  </div>
+
+  <!--
+    Wrap the Close My Account button in the same v4 card surface used by
+    the other security sections so it sits on a panel instead of floating
+    against the page background. The button itself (outline + red text)
+    is unchanged.
+  -->
+  <div
+    class="rounded-2xl border border-v4-border-color bg-v4-secondary-background-color px-6 py-5 flex justify-end"
+  >
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Close My Account"
+      textColorInput="var(--v4-common-red-color)"
+      backGroundInput="transparent"
+      (clickEvent)="closeAccount()"
+    />
+  </div>
+</div>
+
+@if (isLogout()) {
+  <div class="absolute inset-0 flex items-center justify-center z-10">
+    <lucide-icon
+      [img]="LoaderIcon"
+      [size]="32"
+      class="text-v4-primary-brand-color animate-spin"
+    />
+  </div>
+}

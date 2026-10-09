@@ -1,0 +1,342 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [backdropZIndex]="backdropZIndex()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'credit-memo-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [subtitle]="panelSubtitle()"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="statusBadge()"
+  [actionButtons]="actionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="onClosed()"
+  (actionButtonClicked)="onActionClicked($event)"
+/>
+
+<ng-template #panelIcon>
+  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#7924FF]">
+    <lucide-icon name="file-minus" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="7" [tiles]="3" [party]="false" />
+    } @else {
+      @if (details(); as d) {
+
+        <!-- ── Card 1: Summary ─────────────────────────────────────────── -->
+        <!-- Full width when there are no Credit Memo Items to pair beside it. -->
+        <div class="pd-card" [class.pd-full]="!filteredItems().length">
+          <button type="button" class="pd-card-head" (click)="toggleCard('summary')">
+            <span class="pd-card-title">Summary</span>
+            <lucide-icon
+              [name]="isCardCollapsed('summary') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed('summary')) {
+            <div class="pd-card-body cm-summary-rows">
+              @if (d.creditMemoNo) {
+                <div class="pd-row border-b border-v4-border-color">
+                  <span class="pd-row-label">Credit Memo #</span>
+                  <span class="pd-row-value">{{ d.creditMemoNo }}</span>
+                </div>
+              }
+              @if (d.bankAccountName) {
+                <div class="pd-row border-b border-v4-border-color">
+                  <span class="pd-row-label">Credit Memo From</span>
+                  <span class="pd-row-value">{{ d.bankAccountName }}</span>
+                </div>
+              }
+              @if (d.payeeName) {
+                <div class="pd-row border-b border-v4-border-color">
+                  <span class="pd-row-label">Client Name</span>
+                  <span class="pd-row-value">{{ d.payeeName }}</span>
+                </div>
+              }
+              @if (d.creditMemoDate) {
+                <div class="pd-row border-b border-v4-border-color">
+                  <span class="pd-row-label">Credit Memo Date</span>
+                  <span class="pd-row-value">{{ d.creditMemoDate }}</span>
+                </div>
+              }
+              @if (row()?.po_no) {
+                <div class="pd-row border-b border-v4-border-color">
+                  <span class="pd-row-label">Purchase Order #</span>
+                  <span class="pd-row-value">{{ row()?.po_no }}</span>
+                </div>
+              }
+              <div class="pd-row border-b border-v4-border-color">
+                <span class="pd-row-label">Total</span>
+                <span class="pd-row-value font-semibold">{{ d.amount | currency }}</span>
+              </div>
+              <div class="pd-row border-b border-v4-border-color">
+                <span class="pd-row-label">Used</span>
+                <span class="pd-row-value">{{ d.used | currency }}</span>
+              </div>
+              <div class="pd-row">
+                <span class="pd-row-label">Available Balance</span>
+                <span class="pd-row-value font-semibold text-green-600">{{ d.balance | currency }}</span>
+              </div>
+              @if (d.memo) {
+                <div class="pd-row-block">
+                  <span class="pd-row-label">Memo</span>
+                  <span class="pd-row-value">{{ d.memo }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ── Card 2: Credit Memo Items ──────────────────────────────── -->
+        <!-- Normal tile (not pd-full) so it pairs beside Summary as a row-mate when expanded. -->
+        @if (filteredItems().length) {
+          <div class="pd-card">
+            <button type="button" class="pd-card-head" (click)="toggleCard('items')">
+              <span class="pd-card-title">Credit Memo Items</span>
+              <lucide-icon
+                [name]="isCardCollapsed('items') ? 'chevron-down' : 'chevron-up'"
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+
+            @if (!isCardCollapsed('items')) {
+              <div class="pd-card-body p-0">
+                <div class="overflow-x-auto">
+                  <table class="v4-ocw-table w-full">
+                    <thead>
+                      <tr>
+                        <th class="w-8">#</th>
+                        <th>Item</th>
+                        <th>Note</th>
+                        <th class="text-right whitespace-nowrap">Unit Price</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of filteredItems(); track $index) {
+                        <tr>
+                          <td class="text-v4-subtle-text-color">{{ $index + 1 }}</td>
+                          <td class="font-medium">{{ item.itemName }}</td>
+                          <td class="text-v4-subtle-text-color">{{ item.note }}</td>
+                          <td class="text-right whitespace-nowrap">{{ item.unitPrice | currency }}</td>
+                          <td class="text-right">{{ item.units }}</td>
+                          <td class="text-right font-semibold">{{ item.total | currency }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── Card 3: Payment Details ──────────────────────────────────── -->
+        <!-- Normal tile so it pairs beside Usage Summary as a row-mate when expanded. -->
+        <div class="pd-card">
+          <button type="button" class="pd-card-head" (click)="toggleCard('payment-details')">
+            <span class="pd-card-title">Payment Details</span>
+            <lucide-icon
+              [name]="isCardCollapsed('payment-details') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed('payment-details')) {
+            <div class="pd-card-body p-0">
+              @if (rowTransactions().length) {
+                <div class="overflow-x-auto">
+                  <table class="v4-ocw-table w-full">
+                    <thead>
+                      <tr>
+                        <th class="whitespace-nowrap">Payment Date</th>
+                        <th>Reference</th>
+                        <th class="whitespace-nowrap">Invoice #</th>
+                        <th class="text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (txn of rowTransactions(); track $index) {
+                        <tr>
+                          <td class="whitespace-nowrap">{{ txn.payment_date }}</td>
+                          <td>{{ txn.reference }}</td>
+                          <td>{{ txn.invoice_no }}</td>
+                          <td class="text-right">{{ txn.amount | currency }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <div class="pd-empty">
+                  <p class="m-0 py-6 text-center text-sm text-v4-tertiary-text-color">No payment records.</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ── Card 3b: Usage Summary ───────────────────────────────────── -->
+        <div class="pd-card">
+          <button type="button" class="pd-card-head" (click)="toggleCard('usage-summary')">
+            <span class="pd-card-title">Usage Summary</span>
+            <lucide-icon
+              [name]="isCardCollapsed('usage-summary') ? 'chevron-down' : 'chevron-up'"
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed('usage-summary')) {
+            <div class="pd-card-body">
+              <div class="pd-row border-b border-v4-border-color">
+                <span class="pd-row-label">Total Credit</span>
+                <span class="pd-row-value">{{ d.amount | currency }}</span>
+              </div>
+              <div class="pd-row border-b border-v4-border-color">
+                <span class="pd-row-label">Applied Amount</span>
+                <span class="pd-row-value">{{ d.used | currency }}</span>
+              </div>
+              <div class="pd-row">
+                <span class="pd-row-label font-semibold">Remaining Balance</span>
+                <span class="pd-row-value font-semibold text-green-600">{{ d.balance | currency }}</span>
+              </div>
+
+              <div class="mt-3">
+                <div class="h-2 w-full overflow-hidden rounded-full bg-v4-border-color">
+                  <div
+                    class="h-full rounded-full bg-v4-primary-brand-color transition-all"
+                    [style.width.%]="d.amount ? (d.balance / d.amount) * 100 : 0"
+                  ></div>
+                </div>
+                <p class="m-0 mt-1 text-[12px] text-v4-subtle-text-color">
+                  {{ d.amount ? ((d.balance / d.amount) * 100 | number: '1.0-0') : 0 }}% available
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ── Card 4: Action grid (3 tiles) ─────────────────────────── -->
+        <div
+          class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+        >
+          <!-- Tile row -->
+          <div
+            class="pd-card-head-flush grid grid-cols-3 gap-1.5 px-3 py-2"
+            [ngClass]="openActionSection() ? 'border-b border-v4-border-color' : ''"
+          >
+            @for (tile of actionTiles; track tile.key) {
+              <button
+                type="button"
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+                [ngClass]="
+                  openActionSection() === tile.key
+                    ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                    : 'border-v4-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+                "
+                (click)="selectSection(tile.key)"
+              >
+                <lucide-icon [name]="tile.icon" [size]="16" class="shrink-0"></lucide-icon>
+                <span class="block w-full max-w-full text-center text-[12px] font-medium leading-tight">
+                  {{ tile.label }}
+                </span>
+              </button>
+            }
+          </div>
+
+          <!-- Activity section -->
+          @if (openActionSection() === 'activity') {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading('activity')) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-audit-log-list
+                  [bare]="true"
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [emptyHint]="'Actions taken on this credit memo will show up here.'"
+                  [logs]="auditLogs()"
+                />
+              }
+            </div>
+          }
+
+          <!-- Comments section -->
+          @if (openActionSection() === 'comments') {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading('comments')) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-comments-list
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  variant="view-panel"
+                  [emptyHint]="'Notes you add here stay with this credit memo.'"
+                  [comments]="commentsForList()"
+                  [maxHeight]="'400px'"
+                  [posting]="commentPosting()"
+                  [error]="commentError()"
+                  (submitComment)="onSubmitComment($event)"
+                  (deleteComment)="onDeleteComment($event)"
+                  (closed)="closeSection()"
+                />
+              }
+            </div>
+          }
+
+          <!-- Attachments section -->
+          @if (openActionSection() === 'attachments') {
+            <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+              @if (isSectionLoading('attachments')) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else {
+                <app-po-attachments-list
+                  [collapsedCount]="4"
+                  [forceExpand]="isPanelExpanded()"
+                  [bare]="true"
+                  variant="view-panel"
+                  [emptyHint]="'Files attached to this credit memo will show up here.'"
+                  [attachments]="attachmentsForList()"
+                  [maxHeight]="'400px'"
+                  [deletingId]="deletingAttachmentId()"
+                  [uploading]="attachmentUploading()"
+                  [error]="attachmentError()"
+                  (fileSelected)="onAttachmentSelected($event)"
+                  (openAttachment)="onOpenAttachment($event)"
+                  (deleteAttachment)="onDeleteAttachment($event)"
+                  (closed)="closeSection()"
+                />
+              }
+            </div>
+          }
+
+        </div>
+
+      } @else {
+        <div class="pd-empty">
+          <p class="m-0 py-10 text-center text-sm text-v4-tertiary-text-color">No details available.</p>
+        </div>
+      }
+    }
+  </div>
+</ng-template>

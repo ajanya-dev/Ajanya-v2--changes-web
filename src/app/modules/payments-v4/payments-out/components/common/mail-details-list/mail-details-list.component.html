@@ -1,0 +1,276 @@
+<div
+  class="mail-details-list rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-3"
+  [style.max-height]="maxHeight()"
+>
+  <button
+    type="button"
+    class="pd-card-head"
+    [class.mb-2]="!collapsed()"
+    (click)="toggleFold()"
+  >
+    <span class="font-peridot text-[12px] font-bold text-v4-main-text-color">
+      Mail details
+    </span>
+    <lucide-icon
+      [img]="collapsed() ? ChevronDownIcon : ChevronUpIcon"
+      [size]="15"
+      class="text-v4-tertiary-text-color"
+    ></lucide-icon>
+  </button>
+  @if (!collapsed()) {
+    @if (mailDetails()) {
+      <div class="flex flex-col gap-1.5">
+        <!-- Mailed Using -->
+        <div class="flex justify-between items-start gap-3">
+          <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+            >Mailed Using</span
+          >
+          <span
+            class="text-[12px] font-semibold text-v4-main-text-color text-right"
+            >{{ mailDetails()!.mailedUsing ?? "—" }}
+            @if (isImbLimitedTracking()) {
+              <span class="text-v4-text-warning">&nbsp;(Without Tracking)</span>
+            }
+          </span>
+        </div>
+
+        <!-- Tracking Link -->
+        <div class="flex justify-between items-start gap-3">
+          <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+            >Tracking Link</span
+          >
+          <div class="text-[12px] text-right">
+            @if (mailDetails()!.trackingCode) {
+              @if (
+                mailDetails()!.mailedType === 1 ||
+                mailDetails()!.mailedType === 14
+              ) {
+                @if (
+                  mailDetails()!.trackingUrl &&
+                  mailDetails()!.trackingUrl !== ""
+                ) {
+                  <span
+                    role="presentation"
+                    class="cursor-pointer ml-auto shrink-0 whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                    (click)="trackClicked.emit()"
+                    >IMB Complimentary Tracking</span
+                  >
+                  @if (!isImbLimitedTracking()) {
+                    <span class="text-v4-secondary-text-color text-[12px] ml-1"
+                      >(May Not Be Accurate)</span
+                    >
+                  }
+                } @else if (
+                  mailDetails()!.trackingData?.data?.details?.length > 0
+                ) {
+                  <span
+                    role="presentation"
+                    class="cursor-pointer ml-auto shrink-0 whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                    (click)="trackClicked.emit()"
+                    >Track</span
+                  >
+                } @else {
+                  <span class="text-v4-secondary-text-color"
+                    >Tracking not available</span
+                  >
+                }
+              } @else {
+                <span
+                  role="presentation"
+                  class="cursor-pointer ml-auto shrink-0 whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                  (click)="trackClicked.emit()"
+                  >Track</span
+                >
+              }
+            } @else {
+              <span class="text-v4-secondary-text-color"
+                >Tracking not available</span
+              >
+            }
+          </div>
+        </div>
+
+        <!-- Carrier Type -->
+        <div class="flex justify-between items-start gap-3">
+          <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+            >Carrier Type</span
+          >
+          <span
+            class="text-[12px] font-semibold text-v4-main-text-color text-right"
+            >{{ mailDetails()!.carrier ?? "—" }}</span
+          >
+        </div>
+
+        <!-- Mail From (custom address) -->
+        @if (customFromAddress()) {
+          <div class="flex justify-between items-start gap-3">
+            <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+              >Mail From</span
+            >
+            <div
+              class="flex flex-col items-end text-[12px] font-semibold text-v4-main-text-color"
+            >
+              @if (customFromAddress()!.name) {
+                <span>{{ customFromAddress()!.name }}</span>
+              }
+              @if (customFromAddress()!.company_name) {
+                <span>{{ customFromAddress()!.company_name }}</span>
+              }
+              @if (customFromAddress()!.address_line_1) {
+                <span>{{ customFromAddress()!.address_line_1 }}</span>
+              }
+              @if (customFromAddress()!.address_line_2) {
+                <span>{{ customFromAddress()!.address_line_2 }}</span>
+              }
+              <span>
+                {{
+                  customFromAddress()!.city
+                    ? customFromAddress()!.city + ", "
+                    : ""
+                }}
+                {{
+                  customFromAddress()!.state
+                    ? customFromAddress()!.state + " "
+                    : ""
+                }}
+                {{ customFromAddress()!.zip ?? "" }}
+                {{
+                  customFromAddress()!.country
+                    ? ", " + customFromAddress()!.country
+                    : ""
+                }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Mail To (custom address) -->
+        @if (customToAddress()) {
+          <div class="flex justify-between items-start gap-3">
+            <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+              >Mail To</span
+            >
+            <div
+              class="flex flex-col items-end text-[12px] font-semibold text-v4-main-text-color"
+            >
+              @if (customToAddress()!.name) {
+                <span>{{ customToAddress()!.name }}</span>
+              }
+              @if (customToAddress()!.company_name) {
+                <span>{{ customToAddress()!.company_name }}</span>
+              }
+              @if (customToAddress()!.address_line_1) {
+                <span>{{ customToAddress()!.address_line_1 }}</span>
+              }
+              @if (customToAddress()!.address_line_2) {
+                <span>{{ customToAddress()!.address_line_2 }}</span>
+              }
+              <span>
+                {{
+                  customToAddress()!.city ? customToAddress()!.city + ", " : ""
+                }}
+                {{
+                  customToAddress()!.state ? customToAddress()!.state + " " : ""
+                }}
+                {{ customToAddress()!.zip ?? "" }}
+                {{
+                  customToAddress()!.country
+                    ? ", " + customToAddress()!.country
+                    : ""
+                }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Mailed Address (payee address, when no custom addresses) -->
+        @if (!customFromAddress() && !customToAddress() && payeeAddress()) {
+          <div class="flex justify-between items-start gap-3">
+            <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+              >Mailed Address</span
+            >
+            <div
+              class="flex flex-col items-end text-[12px] font-semibold text-v4-main-text-color"
+            >
+              @if (payeeAddress()!.name) {
+                <span>{{ payeeAddress()!.name }}</span>
+              }
+              @if (payeeAddress()!.companyName) {
+                <span>{{ payeeAddress()!.companyName }}</span>
+              }
+              @if (payeeAddress()!.address1) {
+                <span>{{ payeeAddress()!.address1 }}</span>
+              }
+              @if (payeeAddress()!.address2) {
+                <span>{{ payeeAddress()!.address2 }}</span>
+              }
+              <span>
+                {{ payeeAddress()!.city ? payeeAddress()!.city + ", " : "" }}
+                {{ payeeAddress()!.state ? payeeAddress()!.state + " " : "" }}
+                {{ payeeAddress()!.zip ?? "" }}
+                {{
+                  payeeAddress()!.country ? ", " + payeeAddress()!.country : ""
+                }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Group Mailing Details -->
+        @if (groupMailingDetails()) {
+          <div
+            class="mt-1 border-t border-v4-border-color pt-2 flex flex-col gap-1.5"
+          >
+            <div class="flex justify-between items-start gap-3">
+              <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+                >Group Mailing ID</span
+              >
+              <span
+                role="presentation"
+                class="cursor-pointer ml-auto shrink-0 whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                (click)="
+                  groupMailingClicked.emit(
+                    groupMailingDetails()!.check_mailing_group_id
+                  )
+                "
+                >{{ groupMailingDetails()!.check_mailing_group_id }}</span
+              >
+            </div>
+            <div class="flex justify-between items-start gap-3">
+              <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+                >Group Mailing Name</span
+              >
+              <span
+                class="text-[12px] font-semibold text-v4-main-text-color text-right"
+                >{{ groupMailingDetails()!.check_mailing_group_name }}</span
+              >
+            </div>
+            @if (
+              groupMailingDetails()!.check_mailing_group_check_ids?.length > 0
+            ) {
+              <div class="flex justify-between items-start gap-3">
+                <span class="text-[12px] text-v4-tertiary-text-color shrink-0"
+                  >Check IDs</span
+                >
+                <span
+                  class="text-[12px] font-semibold text-v4-main-text-color text-right"
+                  >{{
+                    groupMailingDetails()!.check_mailing_group_check_ids.join(
+                      ", "
+                    )
+                  }}</span
+                >
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="pd-empty">
+        <p class="text-[12px] text-v4-tertiary-text-color text-center py-6 m-0">
+          No mail details available.
+        </p>
+      </div>
+    }
+  }
+</div>

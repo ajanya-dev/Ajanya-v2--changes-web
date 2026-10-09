@@ -1,0 +1,313 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >Edit Bank Account Information</span
+        >
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div [formGroup]="bankForm">
+    <div class="flex flex-wrap gap-5 bank_credential">
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Bank Account Holder Name"
+          formControlName="accHolderName"
+          [maxlength]="60"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+        @if(isMatchHolderName()){
+        <small
+          class="flex items-center gap-1 text-warning-color text-sm font-normal pl-1 pb-2"
+        >
+          <fa-icon
+            [icon]="faCircleExclamation"
+            animation="shake"
+            class="text-common-red-color text-[12px]"
+          />
+          <p class="text-common-red-color text-xs font-medium font-roboto">
+            Must match the business name
+          </p>
+        </small>
+        }@else {
+          <app-control-message-v35 [control]="bankForm.controls.accHolderName" />
+        }
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Account Nick Name "
+          formControlName="AccountNickName"
+          [maxlength]="60"
+          [minlength]="3"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+        <app-control-message-v35
+          [control]="bankForm.controls.AccountNickName"
+        />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Account Number"
+          formControlName="AccountNumber"
+          [maxlength]="20"
+          [isNumberOnly]="true"
+          [isAllowHyphen]="isCanadianBank()"
+          [readOnly]="isVerifiedBank()"
+        />
+        <app-control-message-v35 [control]="bankForm.controls.AccountNumber" />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Confirm Account Number"
+          formControlName="ConfirmAccountNumber"
+          [maxlength]="20"
+          [isNumberOnly]="true"
+          [isAllowHyphen]="isCanadianBank()"
+          [readOnly]="isVerifiedBank()"
+        />
+        <app-control-message-v35
+          [control]="bankForm.controls.ConfirmAccountNumber"
+        />
+      </div>
+        @if (hasSplitCanadianFields()) {
+          <div [ngClass]="{ skelton: isLoading() }">
+            <app-common-input-field
+              placeholder="Transit Number"
+              formControlName="transitNumber"
+              [maxLength]="5"
+              [isNumberOnly]="true"
+              [readOnly]="isVerifiedBank()"
+            />
+            <app-control-message-v35
+              [control]="bankForm.controls.transitNumber"
+              [customMessages]="{ pattern: 'Transit Number must be 5 digits' }"
+            />
+          </div>
+          <div [ngClass]="{ skelton: isLoading() }">
+            <app-common-input-field
+              placeholder="Financial Institute No."
+              formControlName="financialInstituteNumber"
+              [maxLength]="3"
+              [isNumberOnly]="true"
+              [readOnly]="isVerifiedBank()"
+            />
+            <app-control-message-v35
+              [control]="bankForm.controls.financialInstituteNumber"
+              [customMessages]="{ pattern: 'Financial Institute Number must be 3 digits' }"
+            />
+          </div>
+        } @else {
+          <div [ngClass]="{ skelton: isLoading() }">
+            <app-common-input-field
+              placeholder="Routing Number"
+              formControlName="routingNumber"
+              maxLength="9"
+              [isNumberOnly]="true"
+              [readOnly]="isVerifiedBank()"
+              (inputEvent)="lookupRoutingNumber($event.value, false)"
+            />
+            <app-control-message-v35
+              [control]="bankForm.controls.routingNumber"
+            />
+          </div>
+        }
+        <div class="single_input" [ngClass]="{ skelton: isLoading() }">
+          <small
+            class="small_floating_label active selected_type !bg-main-background-color"
+            #small
+            >Bank Account Type</small
+          >
+          <select
+            name="accType"
+            disabled
+            formControlName="bankAccountType"
+            class="form-select input_style"
+          >
+            <option [value]=null disabled selected>Select Account Type</option>
+            <option value="5">Personal Checking</option>
+            <option value="6">Business Checking</option>
+            <option value="7">Personal Savings</option>
+            <option value="8">Business Savings</option>
+          </select>
+        </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Phone"
+          formControlName="phone"
+          [isNumberOnly]="true"
+          customMask="(000) 000-0000"
+          [isFieldRequired]="false"
+        />
+        <app-control-message-v35 [control]="bankForm.controls.phone" />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Address Line 1"
+          formControlName="AccountAddressLine1"
+          [maxlength]="150"
+          autocomplete="off"
+          (inputFocusEvent)="loadGoogleAddress($event)"
+        />
+        <app-control-message-v35
+          [control]="bankForm.controls.AccountAddressLine1"
+        />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Address Line 2"
+          formControlName="AccountAddressLine2"
+          [maxlength]="100"
+          [isFieldRequired]="false"
+        />
+        <app-control-message-v35
+          [control]="bankForm.controls.AccountAddressLine2"
+        />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="City"
+          formControlName="city"
+          [maxlength]="50"
+          [isFieldRequired]="false"
+        />
+        <app-control-message-v35 [control]="bankForm.controls.city" />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="State"
+          formControlName="state"
+          [maxlength]="100"
+          [isFieldRequired]="false"
+        />
+        <app-control-message-v35 [control]="bankForm.controls.state" />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Zip"
+          formControlName="zip"
+          [maxlength]="10"
+          [isFieldRequired]="false"
+        />
+        <app-control-message-v35 [control]="bankForm.controls.zip" />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-country-select
+          formControlName="country"
+          bindValue="name"
+          placeholder="Country"
+          controlClass="height-0"
+          [allowedCountries]="countryOptions"
+          [isRequired]="true"
+          [isDisabled]="isVerifiedBank() && !isCountryMissing()"
+          [customMessages]="countryMismatchMessage"
+          (countryChange)="onCountryChange($event?.name ?? '')"
+        />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Email"
+          formControlName="email"
+          [isFieldRequired]="false"
+        />
+        <app-control-message-v35 [control]="bankForm.controls.email" />
+      </div>
+      <div [ngClass]="{ skelton: isLoading() }">
+        <app-common-input-field
+          placeholder="Next Check Starting Number"
+          formControlName="nextCheckStartNo"
+          [isFieldRequired]="false"
+          [isNumberOnly]="true"
+        />
+        <app-control-message-v35
+          [control]="bankForm.controls.nextCheckStartNo"
+        />
+      </div>
+    </div>
+    @if (
+      (!isRoutingNumberInitiallyChecked() && bankForm.controls.bankName.value) ||
+      bankFormHasAnyError()
+    ) {
+      <div class="flex flex-wrap gap-5 bank_credential pt-5">
+        <div [ngClass]="{ skelton: isLoading() }">
+          <app-common-input-field
+            placeholder="Bank Name"
+            formControlName="bankName"
+            [maxlength]="50"
+            [isNeedPreventKey]="true"
+            [preventCharacters]="['`']"
+            [readOnly]="isVerifiedBank()"
+          />
+          <app-control-message-v35 [control]="bankForm.controls.bankName" />
+        </div>
+        <div [ngClass]="{ skelton: isLoading() }">
+          <app-common-input-field
+            placeholder="Street Address"
+            formControlName="bankAddress1"
+            [maxlength]="150"
+            [readOnly]="isVerifiedBank()"
+          />
+          <app-control-message-v35 [control]="bankForm.controls.bankAddress1" />
+        </div>
+        <div [ngClass]="{ skelton: isLoading() }">
+          <app-common-input-field
+            placeholder="City"
+            formControlName="bankCity"
+            [maxlength]="50"
+            [readOnly]="isVerifiedBank()"
+          />
+          <app-control-message-v35 [control]="bankForm.controls.bankCity" />
+        </div>
+        <div [ngClass]="{ skelton: isLoading() }">
+          <app-common-input-field
+            placeholder="State"
+            formControlName="bankState"
+            [maxlength]="100"
+            [readOnly]="isVerifiedBank()"
+          />
+          <app-control-message-v35 [control]="bankForm.controls.bankState" />
+        </div>
+        <div [ngClass]="{ skelton: isLoading() }">
+          <app-common-input-field
+            placeholder="Zip"
+            formControlName="bankZip"
+            [maxlength]="10"
+            [readOnly]="isVerifiedBank()"
+          />
+          <app-control-message-v35 [control]="bankForm.controls.bankZip" />
+        </div>
+      </div>
+    }
+  </div>
+  <!-- modal body end -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      [ngClass]="{ skelton: isLoading() }"
+      mat-dialog-close
+      width="125px"
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      [ngClass]="{ skelton: isLoading() }"
+      width="125px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Update"
+      [disabled]="isSubmit()"
+      [loading]="isSubmit()"
+      (clickEvent)="submit()"
+    ></app-common-button-v35>
+  </div>
+</div>

@@ -1,0 +1,799 @@
+<div
+  class="top-section h-[38px] flex justify-between items-center px-5"
+  [ngClass]="{ 'shadow-common-tab-bottom z-50': isShadow }"
+>
+  <div
+    class="h-full flex-1 flex justify-between items-center border-b border-input-border-color"
+    [ngClass]="{ '!border-b-0': isShadow }"
+  >
+    <div class="tab-group flex h-full">
+      <ng-container>
+        @for (tab of tabs; track tab) {
+          <div
+            role="presentation"
+            class="tab-item flex items-center"
+            (click)="toggleAccountDetails(tab.value)"
+            [ngClass]="{
+              'border-b-common-blue-color border-b-2 !text-common-blue-color':
+                currentTab === tab.value
+            }"
+          >
+            <fa-icon [icon]="tab.icon" class="mr-2"></fa-icon>
+            <span>{{ tab.label }}</span>
+          </div>
+        }
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+@if (currentTab === "zilDebitCards") {
+  <div class="w-full h-full gap-4 flex pt-2 text-main-text-color pr-5">
+    <div
+      class="cards-list flex flex-col bg-secondary-background-color rounded-t-[3px] h-full w-56 shrink-0"
+    >
+      <app-list-header-v35
+        header="Visa Spend Card"
+        [isSwitchOption]="false"
+        (addButtonClickEvent)="
+          createCard(walletDataService.walletDataSignal() ?? undefined)
+        "
+        (searchEvent)="onCardSearch($event)"
+      ></app-list-header-v35>
+      <div
+        class="card-list flex flex-col gap-2 overflow-auto h-[calc(100%-340px)] laptop:h-[calc(100%-138px)] px-5 pb-10"
+        #mainSection
+        (scroll)="onScroll()"
+        appScrollToEnd
+        (scrollToEnd)="onScrollToEnd()"
+      >
+        @for (card of cardsList; track $index) {
+          @if (walletDataService.selectedCardSignal()) {
+            <div
+              role="presentation"
+              (click)="selectCard(card)"
+              class="rounded-[3px] flex flex-col px-2 py-1.5 gap-0.5 cursor-pointer"
+              [ngClass]="
+                card.id === walletDataService.selectedCardSignal()?.id
+                  ? 'bg-common-dark-blue-color text-white'
+                  : 'bg-main-background-color'
+              "
+            >
+              <span class="font-roboto text-xs font-medium truncate">{{
+                card.label
+              }}</span>
+              <div class="flex justify-between">
+                <span class="font-normal text-xs font-roboto"
+                  >****{{ card.last4 }}</span
+                >
+                <div class="flex gap-1 items-center text-xs">
+                  <span>{{ card.cardStatus | titlecase }}</span
+                  ><fa-icon
+                    class="text-[12px]"
+                    [icon]="['fas', 'circle']"
+                    [ngClass]="
+                      card.cardStatus === 'active'
+                        ? 'text-common-green-color'
+                        : 'text-common-red-color'
+                    "
+                  ></fa-icon>
+                </div>
+              </div>
+            </div>
+          }
+        }
+
+        @if (isLoadingMoreResults()) {
+          <div>
+            <app-common-list-skelton [items]="2"></app-common-list-skelton>
+          </div>
+        }
+
+        @if (
+          !walletDataService.selectedCardSignal() &&
+          !walletDataService.cardLoadingSignal() &&
+          cardsList.length === 0
+        ) {
+          <div class="h-full w-full flex justify-center items-center">
+            <div>Sorry! No cards found.</div>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="w-full h-full relative overflow-auto">
+      <div class="w-full h-full flex flex-col gap-6">
+        @if (walletDataService.selectedCardSignal(); as selectedCard) {
+          <div
+            class="flex flex-col h-full w-full 2xl:h-auto 2xl:flex-row gap-4"
+          >
+            <div class="flex flex-col">
+              <span
+                class="font-inter font-medium text-sm text-main-text-color pt-1.5 pb-3.5"
+                >Card Details
+                <span class="font-normal text-sm text-secondary-text-color"
+                  >({{ walletDataService.walletDataSignal().walletName }})</span
+                ></span
+              >
+              <div
+                class="aspect-[85.60/53.98] w-[273px] h-[170px] bg-[#d5af34] relative p-2 flex flex-col justify-between rounded-[9px] shrink-0 border-[.66px] border-[#fffac2] shadow-[-5px_5px_4px_0px_rgba(0,0,0,0.18)] ml-2"
+                [ngClass]="{ skelton: walletDataService.cardLoadingSignal() }"
+              >
+                <div class="flex justify-end">
+                  <img
+                    ngSrc="assets/images/virtual-card/zm logo.svg"
+                    alt=""
+                    width="94"
+                    height="25"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <div class="flex flex-col px-4">
+                    <div class="flex gap-1">
+                      <img
+                        ngSrc="assets/images/virtual-card/chip.svg"
+                        alt=""
+                        width="35"
+                        height="35"
+                      />
+                      <img
+                        ngSrc="assets/images/virtual-card/wifi.svg"
+                        alt=""
+                        width="18"
+                        height="24"
+                      />
+                      <div></div>
+                    </div>
+                    <div class="credit-card-font font-normal">
+                      @if (
+                        !walletDataService.cardNumberLoadingSignal() &&
+                          walletDataService.cardNumberURLSignal();
+                        as cardNumber
+                      ) {
+                        <div class="card-number">
+                          <div
+                            class="text-white font-normal text-[14.8px]"
+                            style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                          >
+                            {{ cardNumber }}
+                          </div>
+                        </div>
+                      } @else if (walletDataService.cardNumberLoadingSignal()) {
+                        <div class="card-skeleton h-7 w-[222px]"></div>
+                      } @else {
+                        <div class="text-white text-[19px]">
+                          **** **** **** {{ selectedCard?.last4 }}
+                        </div>
+                      }
+                    </div>
+                    <div
+                      class="flex justify-end items-center lato-regular text-white text-[12px]"
+                    >
+                      <div class="whitespace-nowrap pr-[2px]">CVV</div>
+                      @if (
+                        !walletDataService.cardNumberLoadingSignal() &&
+                        walletDataService.cardSecurityURLSignal()
+                      ) {
+                        <div class="text-white">
+                          @if (
+                            walletDataService.cardSecurityURLSignal();
+                            as cardSecurity
+                          ) {
+                            {{ cardSecurity }}
+                          }
+                        </div>
+                      } @else if (walletDataService.cardNumberLoadingSignal()) {
+                        <div class="card-skeleton h-3 w-9"></div>
+                      } @else {
+                        <div class="text-white">****</div>
+                      }
+                    </div>
+                  </div>
+                  <div class="flex flex-col pl-4">
+                    <div class="flex items-center justify-center">
+                      <div
+                        class="flex flex-col items-start lato-regular text-white text-[7px] pr-[2px] leading-tight"
+                      >
+                        <div>VALID</div>
+                        <div>THRU</div>
+                      </div>
+                      @if (
+                        !walletDataService.cardNumberLoadingSignal() &&
+                        walletDataService.cardExpiryURLSignal()
+                      ) {
+                        <div
+                          class="text-white font-roboto text-lg"
+                          style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                        >
+                          @if (
+                            walletDataService.cardExpiryURLSignal();
+                            as cardExpiry
+                          ) {
+                            {{ cardExpiry }}
+                          }
+                        </div>
+                      } @else if (walletDataService.cardNumberLoadingSignal()) {
+                        <div class="card-skeleton h-7 w-9"></div>
+                      } @else {
+                        <div class="text-white font-roboto text-lg">**/**</div>
+                      }
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div
+                          class="text-white font-medium truncate font-roboto text-base leading-[14px]"
+                          style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                          [matTooltip]="
+                            selectedCard?.nameOnCard ?? selectedCard?.label
+                          "
+                        >
+                          {{
+                            selectedCard?.nameOnCard ?? selectedCard?.label
+                              | truncate: 25
+                          }}
+                        </div>
+                      </div>
+                      <div>
+                        <img
+                          ngSrc="assets/images/virtual-card/visa logo.svg"
+                          alt="visa-logo"
+                          width="59"
+                          height="18"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col min-h-full w-full gap-2">
+              <div class="flex gap-2 relative">
+                <app-common-button-v35
+                  [ngClass]="{
+                    skelton: walletDataService.cardLoadingSignal()
+                  }"
+                  (clickEvent)="revealCard(selectedCard)"
+                  [type]="{ name: 'action', style: 'blue' }"
+                  text="Reveal Details"
+                  [loading]="
+                    walletDataService.cardNumberLoadingSignal() ||
+                    walletDataService.cardExpiryLoadingSignal() ||
+                    walletDataService.cardSecurityLoadingSignal()
+                  "
+                  [disabled]="
+                    !selectedCard?.cardStatus ||
+                    selectedCard?.cardStatus !== 'active' ||
+                    walletDataService.cardNumberURLSignal()
+                  "
+                ></app-common-button-v35>
+              </div>
+              <div
+                [ngClass]="{ skelton: walletDataService.cardLoadingSignal() }"
+                class="flex gap-x-7 gap-y-5 items-start justify-start bg-secondary-background-color rounded p-5 w-full h-full"
+              >
+                <div class="flex flex-col gap-5">
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Card Label</span
+                    >
+                    <div class="flex gap-2 w-32">
+                      <span
+                        class="font-inter font-medium text-sm text-main-text-color truncate"
+                        >{{ selectedCard?.label }}</span
+                      >
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Last 4 digit</span
+                    >
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                      >****{{ selectedCard?.last4 }}</span
+                    >
+                  </div>
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Wallet</span
+                    >
+                    <div class="flex gap-2 w-32">
+                      <span
+                        class="font-inter font-medium text-sm text-main-text-color truncate"
+                        >{{
+                          walletDataService.walletDataSignal().walletName
+                        }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-5">
+                  <div class="flex flex-col gap-1 w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Type</span
+                    >
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                      >{{ selectedCard?.cardType | titlecase }}</span
+                    >
+                  </div>
+                  <div class="flex flex-col gap-1 w-fit">
+                    <div class="flex gap-1">
+                      <span
+                        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                        >Spending Limit</span
+                      >
+                      <span
+                        class="font-inter font-semibold text-xs text-common-blue-color bg-common-secondary-blue-color whitespace-nowrap rounded-sm px-1"
+                      >
+                        {{ selectedCard?.limitInterval ?? "" | camelToTitle }}
+                      </span>
+                    </div>
+                    <div class="flex gap-2 h-6">
+                      <div
+                        class="border-none rounded text-sm font-roboto font-medium w-28 bg-main-background-color flex justify-end items-center p-1"
+                      >
+                        {{ selectedCard?.limitAmount }}
+                      </div>
+                      <app-common-button-v35
+                        type="small"
+                        text="Edit"
+                        (clickEvent)="editCard(selectedCard)"
+                      ></app-common-button-v35>
+                    </div>
+                  </div>
+                  <div class="flex flex-col w-fit">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Status</span
+                    >
+                    <div class="flex items-center gap-3">
+                      <!-- Status Label -->
+                      <span
+                        class="text-sm font-medium transition-colors duration-300 font-inter"
+                        [ngClass]="{
+                          'text-common-green-color':
+                            selectedCard?.cardStatus === 'active',
+                          'text-common-red-color':
+                            selectedCard?.cardStatus === 'inactive'
+                        }"
+                      >
+                        {{ selectedCard?.cardStatus | titlecase }}
+                      </span>
+
+                      <!-- Modern Toggle Switch -->
+                      <div class="relative">
+                        <button
+                          type="button"
+                          role="switch"
+                          [attr.aria-checked]="
+                            selectedCard?.cardStatus === 'active'
+                          "
+                          [matTooltip]="
+                            'Change status to ' +
+                            (selectedCard?.cardStatus === 'active'
+                              ? 'Inactive'
+                              : 'Active')
+                          "
+                          [disabled]="
+                            walletDataService.cardStatusLoadingSignal()
+                          "
+                          (click)="changeStatus(selectedCard)"
+                          class="group relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          [ngClass]="{
+                            'bg-common-green-color':
+                              selectedCard?.cardStatus === 'active',
+                            'bg-common-red-color':
+                              selectedCard?.cardStatus === 'inactive'
+                          }"
+                        >
+                          <!-- Toggle Thumb -->
+                          <span
+                            class="inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-all duration-300 ease-in-out group-hover:scale-110"
+                            [ngClass]="{
+                              'translate-x-6':
+                                selectedCard?.cardStatus === 'active',
+                              'translate-x-0.5':
+                                selectedCard?.cardStatus === 'inactive'
+                            }"
+                          >
+                            <!-- Status Icon -->
+                            <div
+                              class="absolute inset-0 flex items-center justify-center"
+                            >
+                              @if (selectedCard?.cardStatus === "active") {
+                                <fa-icon
+                                  class="text-common-green-color text-sm pt-[2px]"
+                                  [icon]="faCheck"
+                                ></fa-icon>
+                              }
+                              @if (selectedCard?.cardStatus === "inactive") {
+                                <fa-icon
+                                  class="text-common-red-color text-sm pt-[2px]"
+                                  [icon]="faTimes"
+                                ></fa-icon>
+                              }
+                            </div>
+                          </span>
+
+                          <!-- Loading Overlay -->
+                          @if (walletDataService.cardStatusLoadingSignal()) {
+                            <div
+                              class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-full"
+                            >
+                              <div
+                                class="h-4 w-4 animate-spin rounded-full border-2 border-[#93C5FD] border-t-[#2563EB]"
+                              ></div>
+                            </div>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+        @if (walletDataService.selectedCardSignal(); as selectedCard) {
+          <div class="flex-1">
+            <app-rain-card-transactions-v35></app-rain-card-transactions-v35>
+          </div>
+        } @else if (walletDataService.cardLoadingSignal()) {
+          <div class="justify-center items-center">
+            <span class="data_spinner"></span>
+          </div>
+        } @else if (
+          !walletDataService.selectedCardSignal() &&
+          !walletDataService.cardLoadingSignal() &&
+          cardsList.length === 0
+        ) {
+          <div class="w-full h-full flex justify-center items-center">
+            <div class="flex flex-col items-center justify-center">
+              <img
+                ngSrc="assets/images/empty-box-v3.svg"
+                alt=""
+                width="80"
+                height="40"
+              />
+              <div>Sorry. There are no cards in your account.</div>
+              <div class="text-common-blue-color text-sm pb-5">
+                Add your first card now.
+              </div>
+              <app-common-button-v35
+                type="list"
+                text="Add"
+                [isAddIcon]="true"
+                (clickEvent)="
+                  createCard(walletDataService.walletDataSignal() ?? undefined)
+                "
+              ></app-common-button-v35>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+@if (currentTab === "giftCards") {
+  <div class="w-full h-full gap-4 flex pt-2 text-main-text-color">
+    <div
+      class="cards-list flex flex-col bg-secondary-background-color rounded-t-[3px] h-full w-56 shrink-0"
+    >
+      <app-list-header-v35
+        header="Visa Gift Card"
+        [isSwitchOption]="false"
+        (addButtonClickEvent)="
+          createCard(walletDataService.walletDataSignal() ?? undefined, true)
+        "
+        (searchEvent)="onGiftCardSearch($event)"
+      ></app-list-header-v35>
+      <div
+        class="card-list flex flex-col gap-2 overflow-auto h-[calc(100%-340px)] laptop:h-[calc(100%-138px)] px-5 pb-2"
+      >
+        @for (
+          card of giftCardsList | searchFilter: giftCardSearchString : "label";
+          track $index
+        ) {
+          @if (walletDataService.selectedGiftCardSignal()) {
+            <div
+              role="presentation"
+              (click)="selectGiftCard(card)"
+              class="rounded-[3px] flex flex-col px-2 py-1.5 gap-0.5 cursor-pointer"
+              [ngClass]="
+                card.id === walletDataService.selectedGiftCardSignal()?.id
+                  ? 'bg-common-dark-blue-color text-white'
+                  : 'bg-main-background-color'
+              "
+            >
+              <span class="font-roboto text-xs font-medium truncate">{{
+                card.label
+              }}</span>
+              <div class="flex justify-between">
+                <span class="font-normal text-xs font-roboto"
+                  >****{{ card.last4 }}</span
+                >
+                <div class="flex gap-1 items-center text-xs">
+                  <span>{{
+                    card.cardStatus === "active"
+                      ? "Active"
+                      : card.cardStatus === "pending_activation"
+                        ? "Pending"
+                        : "Inactive"
+                  }}</span>
+                  <fa-icon
+                    class="text-[12px]"
+                    [icon]="['fas', 'circle']"
+                    [ngClass]="{
+                      'text-common-green-color': card.cardStatus === 'active',
+                      'text-common-yellow-color':
+                        card.cardStatus === 'pending_activation',
+                      'text-common-red-color':
+                        card.cardStatus !== 'active' &&
+                        card.cardStatus !== 'pending_activation'
+                    }"
+                  ></fa-icon>
+                </div>
+              </div>
+            </div>
+          }
+        }
+        @if (walletDataService.giftCardLoadingSignal()) {
+          <app-common-list-skelton
+            class="border-t border-input-border-color max-h-full"
+            [items]="14"
+          ></app-common-list-skelton>
+        }
+        @if (
+          !walletDataService.selectedGiftCardSignal() &&
+          !walletDataService.giftCardLoadingSignal()
+        ) {
+          <div class="h-full w-full flex justify-center items-center">
+            <div>Sorry! No cards found.</div>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="w-full h-full relative overflow-auto">
+      <div class="w-full h-full flex flex-col gap-6">
+        @if (walletDataService.selectedGiftCardSignal(); as selectedCard) {
+          <div
+            class="flex flex-col h-full w-full 2xl:h-auto 2xl:flex-row gap-4"
+          >
+            <div class="flex flex-col">
+              <span
+                class="font-inter font-medium text-sm text-main-text-color pt-1.5 pb-3.5"
+                >Card Details
+                <span class="font-normal text-sm text-secondary-text-color"
+                  >({{ walletDataService.walletDataSignal().walletName }})</span
+                ></span
+              >
+              <div
+                class="aspect-[85.60/53.98] w-[273px] h-[170px] bg-[#d5af34] relative p-2 flex flex-col gap-6 rounded-[9px] shrink-0 border-[.66px] border-[#fffac2] shadow-[-5px_5px_4px_0px_rgba(0,0,0,0.18)] ml-2"
+                [ngClass]="{
+                  skelton: walletDataService.giftCardLoadingSignal()
+                }"
+              >
+                <div class="flex justify-end">
+                  <img
+                    ngSrc="assets/images/virtual-card/zm logo.svg"
+                    alt=""
+                    width="94"
+                    height="25"
+                  />
+                </div>
+                <div class="flex flex-col justify-between h-full">
+                  <div class="flex flex-col px-4">
+                    <div class="flex gap-1 items-center">
+                      <fa-icon class="text-white text-[32px]" [icon]="faGift" />
+                      <span class="text-white text-base font-roboto pt-2">
+                        {{
+                          selectedCard?.cardIssueType === "ONETIME_GIFT_CARD"
+                            ? "One Time"
+                            : selectedCard?.cardIssueType === "GIFT_CARD"
+                              ? "Rechargable"
+                              : ""
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col pl-4">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div
+                          class="text-white font-medium truncate font-roboto text-base leading-[14px]"
+                          style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3)"
+                          [matTooltip]="
+                            selectedCard?.nameOnCard ?? selectedCard?.label
+                          "
+                        >
+                          {{
+                            selectedCard?.nameOnCard ?? selectedCard?.label
+                              | truncate: 25
+                          }}
+                        </div>
+                      </div>
+                      <div>
+                        <img
+                          ngSrc="assets/images/virtual-card/visa logo.svg"
+                          alt="visa-logo"
+                          width="59"
+                          height="18"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col min-h-full w-full gap-2">
+              <div class="flex gap-2 relative"></div>
+              <div class="flex flex-col gap-1 pr-5">
+                <ng-container *ngTemplateOutlet="excelImport"></ng-container>
+                <div
+                  [ngClass]="{
+                    skelton: walletDataService.giftCardLoadingSignal()
+                  }"
+                  class="flex gap-x-7 gap-y-5 items-start justify-start bg-secondary-background-color rounded p-5 w-full h-full"
+                >
+                  <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1 w-fit">
+                      <span
+                        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                        >Card Label</span
+                      >
+                      <div class="flex gap-2 w-32">
+                        <span
+                          class="font-inter font-medium text-sm text-main-text-color truncate"
+                          >{{ selectedCard?.label }}</span
+                        >
+                      </div>
+                    </div>
+                    <div class="flex flex-col gap-1 w-fit">
+                      <span
+                        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                        >Last 4 digit</span
+                      >
+                      <span
+                        class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                        >****{{ selectedCard?.last4 }}</span
+                      >
+                    </div>
+                    <div class="flex flex-col gap-1 w-fit">
+                      <span
+                        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                        >Wallet</span
+                      >
+                      <div class="flex gap-2 w-32">
+                        <span
+                          class="font-inter font-medium text-sm text-main-text-color truncate"
+                          >{{
+                            walletDataService.walletDataSignal().walletName
+                          }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1 w-fit">
+                      <span
+                        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                        >Type</span
+                      >
+                      <span
+                        class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                        >{{ selectedCard?.cardType | titlecase }}</span
+                      >
+                    </div>
+                    <div class="flex flex-col gap-1 w-fit">
+                      <div class="flex gap-1">
+                        <span
+                          class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                          >Amount</span
+                        >
+                      </div>
+                      <div class="flex gap-2 h-6">
+                        <span
+                          class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                          >$ {{ selectedCard?.limitAmount }}</span
+                        >
+                        @if (selectedCard?.cardIssueType === "GIFT_CARD") {
+                          <app-common-button-v35
+                            type="small"
+                            text="Add fund"
+                            (clickEvent)="addFund(selectedCard)"
+                          ></app-common-button-v35>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1 w-fit">
+                      <span
+                        class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                        >Issued Type</span
+                      >
+                      <div class="flex gap-2 w-32">
+                        <span
+                          class="font-inter font-medium text-sm text-main-text-color truncate"
+                          >{{
+                            selectedCard?.cardIssueType === "ONETIME_GIFT_CARD"
+                              ? "One Time"
+                              : selectedCard?.cardIssueType === "GIFT_CARD"
+                                ? "Rechargable"
+                                : ""
+                          }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+        @if (walletDataService.selectedGiftCardSignal(); as selectedCard) {
+          <!-- <div class="flex-1">
+          <app-rain-card-transactions-v35></app-rain-card-transactions-v35>
+        </div> -->
+        } @else if (walletDataService.giftCardLoadingSignal()) {
+          <div class="justify-center items-center">
+            <span class="data_spinner"></span>
+          </div>
+        } @else if (
+          !walletDataService.selectedGiftCardSignal() &&
+          !walletDataService.giftCardLoadingSignal()
+        ) {
+          <div class="w-full h-full flex justify-center items-center">
+            <div class="flex flex-col items-center justify-center">
+              <img
+                ngSrc="assets/images/empty-box-v3.svg"
+                alt=""
+                width="80"
+                height="40"
+              />
+              <div
+                class="text-main-text-color font-inter text-base font-normal"
+              >
+                Sorry. There are no cards in your account.
+              </div>
+              <div class="text-common-blue-color text-sm pb-5">
+                Add your first card now.
+              </div>
+              <div class="flex gap-2">
+                <app-common-button-v35
+                  type="list"
+                  text="Add"
+                  [isAddIcon]="true"
+                  (clickEvent)="
+                    createCard(
+                      walletDataService.walletDataSignal() ?? undefined,
+                      true
+                    )
+                  "
+                ></app-common-button-v35>
+                <div class="border-r-[1px] border-input-border-color"></div>
+                <ng-container *ngTemplateOutlet="excelImport"></ng-container>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<ng-template #excelImport>
+  <div class="flex justify-end">
+    <app-common-button-v35
+      class="whitespace-nowrap"
+      text="Import From Excel"
+      [type]="{ name: 'action', style: 'green' }"
+      [disableHoverEffect]="false"
+      customClasses="font-extralight p-0"
+      (clickEvent)="importFromExcel()"
+    />
+  </div>
+</ng-template>

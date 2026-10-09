@@ -1,0 +1,422 @@
+<div class="flex flex-col h-[85vh] font-peridot">
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-v4-border-color bg-v4-popup-header-footer-color shrink-0"
+  >
+    <div class="flex items-center gap-3">
+      <div
+        class="w-10 h-10 rounded-lg bg-v4-badge-info-bg-color flex items-center justify-center"
+      >
+        <lucide-icon
+          name="activity"
+          [size]="20"
+          class="text-v4-primary-brand-color"
+        ></lucide-icon>
+      </div>
+      <div>
+        <h2 class="text-base font-bold text-v4-main-text-color">
+          User Activity
+        </h2>
+        <p class="text-xs text-v4-secondary-text-color mt-0.5">
+          {{ displayTotal }} activities · {{ userName }}
+        </p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- View filter toggle: list (tabbed per-category) | date (chronological) -->
+      <div
+        class="flex items-center bg-v4-tertiary-background-color border border-v4-border-color rounded-lg p-1 gap-1"
+      >
+        <button aria-label="Switch to Feature Wise"
+          type="button"
+          (click)="showActivity('list')"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer"
+          [ngClass]="
+            selectedFilter === 'list'
+              ? 'bg-v4-primary-brand-color text-white shadow-sm'
+              : 'text-v4-secondary-text-color hover:text-v4-main-text-color'
+          "
+          matTooltip="Switch to Feature Wise"
+          [matTooltipDisabled]="selectedFilter === 'list'"
+        >
+          <lucide-icon name="funnel" [size]="14"></lucide-icon>
+        </button>
+        <button aria-label="Switch to Date Wise"
+          type="button"
+          (click)="showActivity('date')"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer"
+          [ngClass]="
+            selectedFilter === 'date'
+              ? 'bg-v4-primary-brand-color text-white shadow-sm'
+              : 'text-v4-secondary-text-color hover:text-v4-main-text-color'
+          "
+          matTooltip="Switch to Date Wise"
+          [matTooltipDisabled]="selectedFilter === 'date'"
+        >
+          <lucide-icon name="calendar-days" [size]="14"></lucide-icon>
+        </button>
+      </div>
+
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Export CSV'"
+        [lucideIcon]="'upload'"
+        [lucideIconSize]="16"
+        [customHeight]="'36px'"
+        [loading]="exportLoading()"
+        [matMenuTriggerFor]="exportMenu"
+      />
+      <button
+        [mat-dialog-close]="false"
+        class="text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors p-1"
+      >
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs (hidden in date mode — date view is a flat chronological list) -->
+  @if (selectedFilter === "list") {
+    <div class="px-5 sm:px-6 pt-4 shrink-0 overflow-x-auto">
+      <app-common-tab-v4
+        [tabs]="tabs"
+        [(activeTab)]="activeTab"
+        [variant]="'underline'"
+        [size]="'xs'"
+        (tabChange)="onTabChange($event)"
+      />
+    </div>
+  }
+
+  <!-- Table Content -->
+  <div class="flex-1 overflow-auto px-5 sm:px-6 pt-3">
+    <div class="border border-v4-border-color rounded-xl overflow-hidden">
+      <table class="v4-ocw-table">
+        <!-- Table Header -->
+        <thead>
+          <tr>
+            <th>ACTION</th>
+            <th>REF NO.</th>
+            <th>DATE</th>
+            @if (selectedFilter === "date") {
+              <th>TYPE</th>
+            }
+            <th>SOURCE/BANK</th>
+            <th>AMOUNT</th>
+            <th>MEMO</th>
+            <!-- <th>STATUS</th> -->
+            <th class="w-[60px]">VIEW</th>
+          </tr>
+
+          <!-- Filter Row -->
+          <!-- <tr class="filter-row">
+            <td>
+              <app-v4-common-dropdown
+                [config]="{ placeholder: 'Status' }"
+                [listData]="statusOptions"
+                [clearable]="false"
+                [searchable]="false"
+                [(ngModel)]="filters.status"
+                (ngModelChange)="applyFilters()"
+              />
+            </td>
+            <td>
+              <app-common-input-v4
+                [placeholder]="'Search...'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'32px'"
+                [(ngModel)]="filters.refNo"
+                (ngModelChange)="applyFilters()"
+              />
+            </td>
+            <td>
+              <app-common-input-v4
+                [placeholder]="'Date...'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'32px'"
+                [(ngModel)]="filters.date"
+                (ngModelChange)="applyFilters()"
+              />
+            </td>
+            <td>
+              <app-common-input-v4
+                [placeholder]="'Search...'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'32px'"
+                [(ngModel)]="filters.source"
+                (ngModelChange)="applyFilters()"
+              />
+            </td>
+            <td>
+              <app-common-input-v4
+                [placeholder]="'Amount...'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'32px'"
+                [(ngModel)]="filters.amount"
+                (ngModelChange)="applyFilters()"
+              />
+            </td>
+            <td>
+              <app-common-input-v4
+                [placeholder]="'Search...'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'32px'"
+                [(ngModel)]="filters.memo"
+                (ngModelChange)="applyFilters()"
+              />
+            </td>
+            <td></td>
+          </tr> -->
+        </thead>
+
+        <!-- Table Body -->
+        <tbody>
+          @if (isLoadingPage()) {
+            <tr>
+              <td colspan="8" class="!py-12 text-center">
+                <div
+                  class="flex flex-col items-center text-v4-secondary-text-color h-[390px] justify-center"
+                >
+                  <lucide-icon
+                    name="loader-circle"
+                    [size]="24"
+                    class="animate-spin text-v4-primary-brand-color"
+                  ></lucide-icon>
+                  <p class="text-sm m-0">Loading activities...</p>
+                </div>
+              </td>
+            </tr>
+          } @else {
+            @for (row of paginatedRows; track row.id) {
+              <tr>
+                <td>
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold"
+                    [ngClass]="[
+                      getStatusBadgeClasses(row.status).bg,
+                      getStatusBadgeClasses(row.status).text
+                    ]"
+                  >
+                    {{ row.status | titlecase }}
+                  </span>
+                </td>
+                <td class="font-mono">
+                  {{ row.referenceNumber }}
+                </td>
+                <td>
+                  {{ row.date }}
+                </td>
+                @if (selectedFilter === "date") {
+                  <td>
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded-md text-[12px] font-medium bg-v4-badge-info-bg-color text-v4-badge-info-text-color"
+                    >
+                      {{ row.type }}
+                    </span>
+                  </td>
+                }
+                <td>
+                  {{ row.bank_name || row.source_name || "" }}
+                </td>
+                <td
+                  class="font-semibold"
+                  [class.text-v4-badge-success-text-color]="row.amount > 0"
+                >
+                  {{ formatAmount(row.amount) }}
+                </td>
+                <td>
+                  <p class="truncate max-w-[200px] m-0">{{ row.memo }}</p>
+                </td>
+                <td class="text-center">
+                  <button [attr.aria-label]="(row.status === 'deleted' || (row.type === 'Received Checklist' && row.status === 'created') ? '' : 'View Details') || null"
+                    class="text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors p-1"
+                    [class.opacity-30]="row.status === 'deleted' || (row.type === 'Received Checklist' && row.status === 'created')"
+                    [class.cursor-not-allowed]="row.status === 'deleted' || (row.type === 'Received Checklist' && row.status === 'created')"
+                    [disabled]="row.status === 'deleted' || (row.type === 'Received Checklist' && row.status === 'created')"
+                    [matTooltip]="row.status === 'deleted' || (row.type === 'Received Checklist' && row.status === 'created') ? '' : 'View Details'"
+                    (click)="onViewRow(row)"
+                  >
+                    <lucide-icon name="eye" [size]="16"></lucide-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+
+            <!-- Empty State -->
+            @if (paginatedRows.length === 0) {
+              <tr>
+                <td colspan="8" class="!py-12 text-center">
+                  <div
+                    class="flex flex-col items-center text-v4-secondary-text-color h-[390px] justify-center"
+                  >
+                    <lucide-icon
+                      name="file-text"
+                      [size]="32"
+                      class="mb-2 opacity-40"
+                    ></lucide-icon>
+                    <p class="text-sm m-0">No activities found.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination Footer -->
+  @if (displayTotal > 0) {
+    <div
+      class="flex items-center justify-between px-5 sm:px-6 py-3 border-t border-v4-border-color bg-v4-secondary-background-color shrink-0"
+    >
+      <div class="text-sm font-semibold text-v4-main-text-color">
+        Showing {{ showingFrom }}-{{ showingTo }} of
+        {{ displayTotal }} activities
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <!-- Previous -->
+        <button
+          class="pagination-btn"
+          [class.opacity-50]="currentPage === 1"
+          [class.cursor-not-allowed]="currentPage === 1"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >
+          Previous
+        </button>
+
+        <!-- Page Numbers -->
+        @for (pageNum of getPageNumbers(); track pageNum) {
+          <button
+            class="pagination-btn pagination-num"
+            [class.pagination-active]="pageNum === currentPage"
+            (click)="goToPage(pageNum)"
+          >
+            {{ pageNum }}
+          </button>
+        }
+
+        <!-- Next -->
+        <button
+          class="pagination-btn"
+          [class.opacity-50]="currentPage === totalPages"
+          [class.cursor-not-allowed]="currentPage === totalPages"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Export Menu -->
+<mat-menu #exportMenu class="action-menu">
+  <div
+    class="p-3 min-w-[260px]"
+    tabindex="0"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+  >
+    <div class="mb-2">
+      <label for="exportType"
+        class="block text-xs font-medium text-v4-secondary-text-color mb-1.5"
+      >
+        Category
+      </label>
+      <app-v4-common-dropdown
+        [config]="exportTypeConfig"
+        [listData]="availableExportTabs"
+        [(ngModel)]="selectedExportType"
+        [clearable]="false"
+        [searchable]="false"
+        [appendTo]="'body'"
+      />
+    </div>
+    <app-date-range-main
+      [enableCustom]="true"
+      (selectedRange)="filterAndExportDateChange($event)"
+    ></app-date-range-main>
+    <div class="grid grid-cols-2 gap-2 mt-2">
+      <button
+        class="h-8 rounded-lg border border-v4-border-color text-xs font-medium text-v4-main-text-color hover:bg-v4-secondary-background-color transition-colors"
+        (click)="exportFile('xlsx')"
+      >
+        Excel
+      </button>
+      <button
+        class="h-8 rounded-lg border border-v4-border-color text-xs font-medium text-v4-main-text-color hover:bg-v4-secondary-background-color transition-colors"
+        (click)="exportFile('csv')"
+      >
+        CSV
+      </button>
+      <button
+        class="h-8 rounded-lg border border-v4-border-color text-xs font-medium text-v4-main-text-color hover:bg-v4-secondary-background-color transition-colors col-span-2"
+        (click)="exportFile('pdf')"
+      >
+        PDF
+      </button>
+    </div>
+  </div>
+</mat-menu>
+
+<!-- Detail Side Panels -->
+@if (detailPanelType() === "cashExpense") {
+  <app-cash-expense-detail-panel-v4
+    [cashExpenseId]="cashExpenseId()"
+    [isOpen]="isDetailPanelOpen()"
+    [backdropZIndex]="10005"
+    (closed)="closeCashExpensePanel()"
+    (actionSuccess)="onCashExpenseActionSuccess()"
+  />
+}
+
+@if (detailPanelType() === "bill") {
+  <app-v4-bills-details-panel
+    [billId]="billId()"
+    [isOpen]="isDetailPanelOpen()"
+    [backdropZIndex]="10005"
+    (closed)="closeDetailPanel()"
+  />
+}
+
+@if (detailPanelType() === "payment") {
+  <app-payments-out-detail-panel
+    [uuid]="paymentUuid()"
+    [row]="paymentRow()"
+    [isOpen]="isDetailPanelOpen()"
+    [backdropZIndex]="10005"
+    (closed)="closeDetailPanel()"
+  />
+}
+
+@if (detailPanelType() === "invoice") {
+  <app-v4-invoice-detail-panel
+    [row]="invoiceRow()"
+    [isOpen]="isDetailPanelOpen()"
+    [backdropZIndex]="10005"
+    (closed)="closeDetailPanel()"
+    (actionButtonClicked)="onInvoicePanelAction($event)"
+  />
+}
+
+@if (detailPanelType() === "depositSlip") {
+  <app-detail-side-panel
+    [isOpen]="isDetailPanelOpen()"
+    [title]="'Deposit Slip Details'"
+    [contentTemplate]="depositSlipContent"
+    [backdropZIndex]="10005"
+    (closed)="closeDetailPanel()"
+  />
+  <ng-template #depositSlipContent>
+    <app-deposit-slip-detail-panel-v4
+      [slipId]="depositSlipId()"
+      [slipData]="depositSlipData()"
+      [loading]="depositSlipLoading()"
+      (footerAction)="onDepositSlipPanelAction($event)"
+    />
+  </ng-template>
+}

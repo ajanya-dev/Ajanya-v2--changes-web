@@ -1,0 +1,464 @@
+<div
+  class="flex h-full w-full flex-col bg-secondary-background-color font-inter text-main-text-color"
+>
+  <!-- Eyebrow: live-preview status -->
+  <div
+    class="flex shrink-0 items-center justify-between gap-2 border-b border-input-border-color bg-secondary-background-color px-4 py-3"
+  >
+    <div class="flex min-w-0 items-center gap-2">
+      @if (showBackButton()) {
+        <button
+          type="button"
+          class="inline-flex flex-shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[12px] font-semibold text-common-green-color transition hover:bg-common-secondary-green-color"
+          (click)="back.emit()"
+          aria-label="Back to form"
+        >
+          <fa-icon
+            [icon]="faChevronLeft"
+            class="text-[12px]"
+            aria-hidden="true"
+          ></fa-icon>
+          Back
+        </button>
+      }
+      <span
+        class="flex min-w-0 items-center gap-2 text-[12px] font-bold uppercase tracking-[0.08em] text-secondary-text-color"
+      >
+        <fa-icon [icon]="faEye" class="text-[12px]" aria-hidden="true"></fa-icon>
+        <span class="truncate">Your application — live preview</span>
+      </span>
+    </div>
+    <span
+      class="inline-flex items-center gap-1.5 rounded-full bg-common-secondary-green-color px-2.5 py-1 text-[12px] font-semibold text-common-green-color"
+    >
+      <span
+        class="h-1.5 w-1.5 rounded-full bg-common-green-color"
+        [ngClass]="{ 'animate-pulse': pollStatus() === 'live' }"
+      ></span>
+      {{ pollStatusLabel() }}
+    </span>
+  </div>
+
+  <!-- Title block -->
+  <div
+    class="shrink-0 border-b border-input-border-color bg-secondary-background-color px-5 py-4"
+  >
+    <p class="mt-1.5 text-[12px] leading-[1.45] text-secondary-text-color">
+      Here's what you've shared with us so far. Tap any section to expand it and
+      review the details.
+    </p>
+  </div>
+
+  <!-- Sections -->
+  <div class="flex-1 overflow-y-auto px-4 py-4" #sectionsScroll>
+    @for (section of previewSections(); track trackBySection($index, section)) {
+      <div
+        class="mb-2 overflow-hidden rounded-[10px] border border-input-border-color bg-main-background-color transition-colors"
+        [attr.data-section]="section.id"
+      >
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 px-3 py-3 text-left transition hover:bg-tertiary-background-color"
+          (click)="toggle(section)"
+          [attr.aria-expanded]="isOpen(section)"
+        >
+          <span
+            class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
+            [ngClass]="{
+              'bg-common-secondary-green-color text-common-green-color':
+                section.status === 'done',
+              'bg-common-secondary-blue-color text-common-blue-color':
+                section.status === 'current',
+              'bg-tertiary-background-color text-secondary-text-color':
+                section.status === 'upcoming'
+            }"
+          >
+            @if (section.status === "done") {
+              <fa-icon
+                [icon]="faCheck"
+                class="text-[12px]"
+                aria-hidden="true"
+              ></fa-icon>
+            } @else if (section.status === "current") {
+              <span
+                class="h-[7px] w-[7px] rounded-full bg-common-blue-color"
+              ></span>
+            } @else {
+              {{ section.number }}
+            }
+          </span>
+
+          <span class="min-w-0 flex-1">
+            <span
+              class="block text-[12.5px] font-semibold text-main-text-color"
+              >{{ section.label }}</span
+            >
+            @if (outstandingForSection(section.id).length) {
+              <span
+                class="mt-px block truncate text-[12px] font-medium text-common-yellow-color"
+                >Missing Details</span
+              >
+            } @else {
+              <span
+                class="mt-px block truncate text-[12px] text-secondary-text-color"
+                >{{ section.summary }}</span
+              >
+            }
+          </span>
+
+          <fa-icon
+            [icon]="faChevronDown"
+            class="text-[13px] text-secondary-text-color transition-transform duration-200"
+            [ngClass]="{ 'rotate-180': isOpen(section) }"
+            aria-hidden="true"
+          ></fa-icon>
+        </button>
+
+        @if (isOpen(section)) {
+          <div class="border-t border-input-border-color px-3 py-3">
+            @if (outstandingForSection(section.id).length) {
+              <p
+                class="mb-3 text-[13px]  leading-[18px] text-secondary-text-color"
+              >
+                We still need your {{ outstandingPhrase(section.id) }}.
+              </p>
+            }
+            @if (section.id === "review") {
+              <p class="text-[13px] leading-[18px] text-secondary-text-color">
+                A final review of everything you've provided before submission.
+              </p>
+            } @else if (section.id === "owners") {
+              @if (section.people.length === 0) {
+                @if (detailsLoading()) {
+                  <ng-container
+                    [ngTemplateOutlet]="sectionSkeleton"
+                  ></ng-container>
+                } @else if (!outstandingForSection(section.id).length) {
+                  <p class="text-[13px] italic text-secondary-text-color">
+                    Not started yet.
+                  </p>
+                }
+              } @else {
+                @for (person of section.people; track $index) {
+                  <div
+                    class="border-b border-input-border-color py-3 first:pt-0 last:border-b-0 last:pb-0"
+                  >
+                    <div
+                      class="text-[14px] font-semibold text-main-text-color"
+                    >
+                      {{ person.name }}
+                    </div>
+                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      @if (person.role) {
+                        <span
+                          class="inline-flex items-center rounded-full bg-common-secondary-blue-color px-2.5 py-1 text-[12px] font-medium text-common-blue-color"
+                          >{{ person.role }}</span
+                        >
+                      }
+                      @if (person.ownership) {
+                        <span
+                          class="inline-flex items-center rounded-full bg-common-secondary-yellow-color px-2.5 py-1 text-[12px] font-medium text-common-yellow-color"
+                          >{{ person.ownership }}</span
+                        >
+                      }
+                      @if (person.badge) {
+                        <span
+                          class="inline-flex items-center rounded-full bg-common-secondary-green-color px-2.5 py-1 text-[12px] font-medium text-common-green-color"
+                          >{{ person.badge }}</span
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+              }
+            } @else {
+              @if (section.id === "documents" && formationDocumentExample()) {
+                <div
+                  class="mb-3 flex items-center justify-between gap-3 rounded-[8px] border border-input-border-color bg-tertiary-background-color px-3 py-2"
+                >
+                  <div class="min-w-0">
+                    <div
+                      class="truncate text-[12px] font-semibold text-main-text-color"
+                    >
+                      {{ formationDocumentExample()?.name }} formation document
+                    </div>
+                    <div
+                      class="truncate text-[12px] text-secondary-text-color"
+                    >
+                      See what your state's document looks like
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="persona-accent-pill inline-flex shrink-0 items-center gap-1.5 rounded-full bg-common-secondary-green-color px-3 py-1.5 text-[12px] font-semibold text-common-green-color transition hover:bg-common-green-color hover:text-white"
+                    (click)="openFormationDocumentExamples()"
+                    aria-label="View state-specific formation document examples"
+                  >
+                    <fa-icon
+                      [icon]="faFileLines"
+                      class="text-[12px]"
+                      aria-hidden="true"
+                    ></fa-icon>
+                    View examples
+                  </button>
+                </div>
+              }
+
+              @if (section.id === "documents" && sampleFormationDocument()) {
+                <div
+                  class="mb-3 flex items-center justify-between gap-3 rounded-[8px] border border-input-border-color bg-tertiary-background-color px-3 py-2"
+                >
+                  <div class="min-w-0">
+                    <div
+                      class="truncate text-[12px] font-semibold text-main-text-color"
+                    >
+                      Sample formation document
+                    </div>
+                    <div
+                      class="truncate text-[12px] text-secondary-text-color"
+                    >
+                      Reference PDF to guide your upload
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="persona-accent-pill inline-flex shrink-0 items-center gap-1.5 rounded-full bg-common-secondary-green-color px-3 py-1.5 text-[12px] font-semibold text-common-green-color transition hover:bg-common-green-color hover:text-white"
+                    (click)="openSampleFormationDocument()"
+                    aria-label="Download sample formation document"
+                  >
+                    <fa-icon
+                      [icon]="faDownload"
+                      class="text-[12px]"
+                      aria-hidden="true"
+                    ></fa-icon>
+                    Download
+                  </button>
+                </div>
+              }
+
+              @if (
+                section.fields.length === 0 && section.photoGroups.length === 0
+              ) {
+                @if (detailsLoading()) {
+                  <ng-container
+                    [ngTemplateOutlet]="sectionSkeleton"
+                  ></ng-container>
+                } @else if (!outstandingForSection(section.id).length) {
+                  <p class="text-[13px] italic text-secondary-text-color">
+                    Not started yet.
+                  </p>
+                }
+              } @else {
+                <!-- <span class="uppercase text-main-text-color font-medium leading-3 text-xs">Where the business operates</span> -->
+                @for (
+                  field of section.fields;
+                  track trackByField($index, field);
+                  let fi = $index
+                ) {
+                  @if (
+                    field.subgroup &&
+                    (fi === 0 ||
+                      section.fields[fi - 1].subgroup !== field.subgroup)
+                  ) {
+                    <div
+                      class="mb-1 mt-3 flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-secondary-text-color first:mt-0"
+                    >
+                      <!-- <span class="h-px flex-1 bg-input-border-color"></span> -->
+                      <span>{{ field.subgroup }}</span>
+                      <!-- <span class="h-px flex-1 bg-input-border-color"></span> -->
+                    </div>
+                  }
+                  <div
+                    class="flex items-start justify-between gap-3 border-b border-input-border-color py-2 text-[12px] last:border-b-0"
+                  >
+                    <span
+                      class="min-w-0 flex-1 text-[12px] font-medium text-secondary-text-color"
+                      [title]="field.linkUrl ? field.title : field.key"
+                    >
+                      @if (field.linkUrl) {
+                        <a
+                          [href]="field.linkUrl"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="hover:text-common-blue-color hover:underline"
+                          >{{ field.title }}</a
+                        >
+                      } @else {
+                        {{ field.title }}
+                      }
+                    </span>
+                    <span
+                      class="flex flex-wrap items-center justify-end gap-2 text-right text-[12px] font-medium text-main-text-color"
+                    >
+                      @if (field.isBoolean) {
+                        @if (field.boolValue) {
+                          <span
+                            class="inline-flex items-center rounded border border-common-green-color bg-common-secondary-green-color px-2.5 py-0.5 text-[12px] font-semibold text-common-green-color"
+                            >Yes</span
+                          >
+                        } @else {
+                          <span
+                            class="inline-flex items-center rounded border border-common-red-color bg-common-secondary-red-color px-2.5 py-0.5 text-[12px] font-semibold text-common-red-color"
+                            >No</span
+                          >
+                        }
+                      } @else if (field.linkUrl) {
+                        <a
+                          [href]="field.linkUrl"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-flex items-center gap-1.5 rounded-full bg-common-secondary-blue-color px-3 py-1 text-[12px] font-semibold text-common-blue-color transition hover:bg-common-blue-color hover:text-white"
+                          [attr.aria-label]="
+                            'View ' + field.title + ' in a new tab'
+                          "
+                        >
+                          <fa-icon
+                            [icon]="faArrowUpRightFromSquare"
+                            class="text-[12px]"
+                            aria-hidden="true"
+                          ></fa-icon>
+                          View
+                        </a>
+                      } @else if (field.masked) {
+                        <span
+                          class="font-mono text-[12px] tracking-wider text-secondary-text-color"
+                          >{{
+                            field.unmaskable && isFieldRevealed(field.key)
+                              ? field.rawValue
+                              : field.displayValue
+                          }}</span
+                        >
+                        @if (field.unmaskable) {
+                          <button
+                            type="button"
+                            class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-secondary-text-color transition hover:text-main-text-color"
+                            (click)="toggleFieldVisibility(field.key)"
+                            [attr.aria-label]="
+                              isFieldRevealed(field.key)
+                                ? 'Hide value'
+                                : 'Show value'
+                            "
+                          >
+                            <fa-icon
+                              [icon]="
+                                isFieldRevealed(field.key) ? faEyeSlash : faEye
+                              "
+                              class="text-[12px]"
+                              aria-hidden="true"
+                            ></fa-icon>
+                          </button>
+                        }
+                      } @else if (field.empty) {
+                        <span class="italic text-input-border-color">--</span>
+                      } @else if (field.urlHref) {
+                        <a
+                          [href]="field.urlHref"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="break-all font-medium text-common-blue-color hover:underline"
+                          >{{ field.displayValue }}</a
+                        >
+                      } @else {
+                        <span class="break-words font-medium">{{
+                          field.displayValue
+                        }}</span>
+                      }
+                    </span>
+                  </div>
+                }
+              }
+
+              @if (section.addressSameAsPhysical) {
+                <div
+                  class="mb-1 mt-3 flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-secondary-text-color first:mt-0"
+                >
+                  <span>Legal Registered Address</span>
+                </div>
+                <div
+                  class="mt-1 rounded-[8px] border border-common-blue-color bg-common-secondary-blue-color px-3 py-2.5 text-[12px] leading-[17px]"
+                >
+                  <span class="font-semibold text-main-text-color"
+                    >Same as the address above.</span
+                  >
+                  <span class="text-secondary-text-color">
+                    This is what you have on file with the state.</span
+                  >
+                </div>
+              }
+
+              @if (section.photoGroups.length) {
+                @for (group of section.photoGroups; track group.label) {
+                  <div
+                    class="mb-1.5 mt-3 flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-secondary-text-color first:mt-0"
+                  >
+                    <span>{{ group.label }}</span>
+                  </div>
+                  <div class="flex flex-wrap gap-2.5">
+                    @for (photo of group.photos; track photo.key) {
+                      <div
+                        class="relative aspect-[4/3] min-w-[110px] flex-1 overflow-hidden rounded-[10px] border border-input-border-color bg-tertiary-background-color"
+                      >
+                        <img
+                          [src]="photo.url"
+                          [alt]="photo.label"
+                          class="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          class="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-main-background-color text-main-text-color shadow-sm transition"
+                          (click)="openPhoto(photo.url)"
+                          [matTooltip]="'View ' + photo.label + ' full screen'"
+                          [attr.aria-label]="'View ' + photo.label + ' full screen'"
+                        >
+                          <fa-icon
+                            [icon]="faArrowUpRightFromSquare"
+                            class="text-[12px]"
+                            aria-hidden="true"
+                          ></fa-icon>
+                        </button>
+                        <span
+                          class="absolute bottom-1.5 left-1.5 rounded-md bg-main-background-color px-2 py-0.5 text-[12px] font-medium text-main-text-color"
+                          >{{ photo.label }}</span
+                        >
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex shrink-0 items-center gap-2 border-t border-input-border-color bg-secondary-background-color px-5 py-3 text-[12px] leading-[15px] text-secondary-text-color"
+  >
+    <fa-icon
+      [icon]="faLock"
+      class="mt-0.5 text-[12px] opacity-60"
+      aria-hidden="true"
+    ></fa-icon>
+    <span
+      >Read-only preview. Encrypted in transit, used only to verify your
+      business, never sold.</span
+    >
+  </div>
+</div>
+
+<!-- Placeholder rows for a section whose data is still loading: label/value
+     pairs shaped like the real field rows, so the layout doesn't jump. -->
+<ng-template #sectionSkeleton>
+  <div aria-busy="true" aria-label="Loading section details">
+    @for (w of skeletonRowWidths; track $index) {
+      <div
+        class="flex items-center justify-between gap-3 border-b border-input-border-color py-2.5 last:border-b-0"
+      >
+        <span class="persona-skel-line" [style.width]="w.label"></span>
+        <span class="persona-skel-line" [style.width]="w.value"></span>
+      </div>
+    }
+  </div>
+</ng-template>

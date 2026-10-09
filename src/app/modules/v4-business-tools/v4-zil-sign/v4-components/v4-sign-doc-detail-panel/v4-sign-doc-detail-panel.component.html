@@ -1,0 +1,362 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'zil-sign-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelHeaderTitle()"
+  [subtitleTemplate]="docMeta"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="detailContent"
+  (closed)="onClose()"
+  (actionButtonClicked)="onActionButtonClicked($event)"
+/>
+
+<!-- Header icon: navy circle -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="file-text" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<ng-template #docMeta>
+  @if (isPanelExpanded()) {
+    <div class="flex min-w-0 items-center gap-2 whitespace-nowrap">
+      @for (part of subtitleParts(); track part; let first = $first) {
+        @if (!first) {
+          <span
+            class="h-1 w-1 shrink-0 rounded-full bg-v4-secondary-text-color"
+          ></span>
+        }
+        <span class="shrink-0">{{ part }}</span>
+      }
+    </div>
+  } @else {
+    <p class="m-0 min-w-0 truncate">
+      @for (part of subtitleParts(); track part; let first = $first) {
+        @if (!first) {
+          &middot;
+        }
+        {{ part }}
+      }
+    </p>
+  }
+</ng-template>
+
+<ng-template #detailContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+    [ngClass]="
+      loading()
+        ? ''
+        : isPanelExpanded()
+          ? 'h-full grid-rows-[auto_minmax(0,1fr)] [&>.pd-card:nth-last-child(-n+2)]:!max-h-none'
+          : 'h-full'
+    "
+  >
+    @if (loading()) {
+      <app-pd-skeleton [rows]="4" [tiles]="0" [timeline]="2" />
+    } @else {
+      <!-- Document details -->
+      <div class="pd-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('details')"
+        >
+          <span class="pd-card-title">Document details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('details') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("details")) {
+          <div
+            class="pd-card-body divide-y divide-v4-border-color [&>.pd-row]:py-1.5"
+          >
+            <div class="pd-row">
+              <span class="pd-row-label">Recipients</span>
+              <span class="pd-row-value">{{ recipientCount() }}</span>
+            </div>
+            @if (documentDetails().createdDate) {
+              <div class="pd-row">
+                <span class="pd-row-label">Created date</span>
+                <span class="pd-row-value">{{
+                  documentDetails().createdDate
+                }}</span>
+              </div>
+            }
+            @if (documentDetails().signedDate) {
+              <div class="pd-row">
+                <span class="pd-row-label">Signed date</span>
+                <span class="pd-row-value">{{
+                  documentDetails().signedDate
+                }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Documents -->
+      <div class="pd-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('documents')"
+        >
+          <span class="pd-card-title">Documents</span>
+          <lucide-icon
+            [name]="
+              isCardCollapsed('documents') ? 'chevron-down' : 'chevron-up'
+            "
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("documents")) {
+          <div class="pd-card-body">
+            @if (documents().length === 0) {
+              <div class="pd-empty">
+                <p class="m-0 py-6 text-center text-v4-tertiary-text-color">
+                  No documents available.
+                </p>
+              </div>
+            } @else {
+              @for (doc of documents(); track doc.id; let last = $last) {
+                <div
+                  class="flex items-center gap-2.5 py-2"
+                  [class.border-b]="!last"
+                  [class.border-v4-border-color]="!last"
+                >
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-badge-info-text-color"
+                  >
+                    <lucide-icon name="file-text" [size]="14"></lucide-icon>
+                  </span>
+                  <div class="min-w-0 flex-1 leading-tight">
+                    <p
+                      class="m-0 truncate font-peridot text-xs font-semibold text-v4-main-text-color"
+                      [title]="doc.name"
+                    >
+                      {{ doc.name }}
+                    </p>
+                    @if (doc.size && doc.size !== "N/A") {
+                      <p
+                        class="m-0 font-peridot text-[12px] text-v4-secondary-text-color"
+                      >
+                        {{ doc.size }}
+                      </p>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-v4-primary-brand-bold-color hover:bg-v4-list-hover-color"
+                    matTooltip="View"
+                    aria-label="View document"
+                    (click)="viewDocument(doc.id)"
+                  >
+                    <lucide-icon name="eye" [size]="14"></lucide-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-v4-primary-brand-bold-color hover:bg-v4-list-hover-color"
+                    matTooltip="Download"
+                    aria-label="Download document"
+                    (click)="downloadDocument(doc.id)"
+                  >
+                    <lucide-icon name="download" [size]="14"></lucide-icon>
+                  </button>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Recipients — one party block per signer -->
+      <div
+        class="pd-card"
+        [ngClass]="
+          isCardCollapsed('recipients')
+            ? ''
+            : 'flex min-h-[10rem] flex-[1_1_0] flex-col'
+        "
+      >
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('recipients')"
+        >
+          <span class="pd-card-title">Recipients</span>
+          <lucide-icon
+            [name]="
+              isCardCollapsed('recipients') ? 'chevron-down' : 'chevron-up'
+            "
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("recipients")) {
+          <div class="pd-card-body min-h-0 flex-1 overflow-y-auto pr-1.5 [contain:size]">
+            @if (recipients().length === 0) {
+              <div class="pd-empty">
+                <p class="m-0 py-6 text-center text-v4-tertiary-text-color">
+                  No recipients.
+                </p>
+              </div>
+            } @else {
+              @for (
+                recipient of recipients();
+                track recipient.id;
+                let last = $last
+              ) {
+                <div
+                  class="flex items-center gap-2.5 py-2"
+                  [class.border-b]="!last"
+                  [class.border-v4-border-color]="!last"
+                >
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color font-peridot text-[12px] font-bold text-white"
+                  >
+                    {{ getInitials(recipient.name) }}
+                  </span>
+                  <div class="min-w-0 flex-1 leading-tight">
+                    <p
+                      class="m-0 truncate font-peridot text-xs font-semibold text-v4-main-text-color"
+                      [title]="recipient.name"
+                    >
+                      {{ recipient.name }}
+                    </p>
+                    @if (recipient.email || recipient.role) {
+                      <p
+                        class="m-0 truncate font-peridot text-[12px] text-v4-secondary-text-color"
+                      >
+                        {{ recipient.email
+                        }}{{ recipient.email && recipient.role ? " · " : ""
+                        }}{{ recipient.role ? "Role: " + recipient.role : "" }}
+                      </p>
+                    }
+                    @if (recipient.signedDate) {
+                      <p
+                        class="m-0 font-peridot text-[12px] text-v4-secondary-text-color"
+                      >
+                        Signed {{ recipient.signedDate }}
+                      </p>
+                    }
+                  </div>
+                  <app-v4-zil-sign-status-badge
+                    class="shrink-0"
+                    [status]="recipient.status"
+                    [plain]="true"
+                  />
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Activity timeline -->
+      <div
+        class="pd-card"
+        [ngClass]="
+          isCardCollapsed('activity')
+            ? ''
+            : 'flex min-h-[10rem] flex-[1_1_0] flex-col'
+        "
+      >
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('activity')"
+        >
+          <span class="pd-card-title">Activity timeline</span>
+          <lucide-icon
+            [name]="isCardCollapsed('activity') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("activity")) {
+          <div class="pd-card-body min-h-0 flex-1 overflow-y-auto pr-1.5 [contain:size]">
+            @if (loadingActivities()) {
+              <app-pd-skeleton variant="section" />
+            } @else if (activities().length === 0) {
+              <div class="pd-empty">
+                <p class="m-0 py-6 text-center text-v4-tertiary-text-color">
+                  No activity yet.
+                </p>
+              </div>
+            } @else {
+              @for (
+                item of visibleActivities();
+                track item.id;
+                let last = $last
+              ) {
+                <div class="flex gap-2.5">
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                      [style.background-color]="
+                        getActivityIconColor(item.type).fg
+                      "
+                    ></span>
+                    @if (!last) {
+                      <span class="mt-1 w-px flex-1 bg-v4-border-color"></span>
+                    }
+                  </div>
+                  <div class="min-w-0 pb-2.5 leading-tight">
+                    <!-- The activity API sends no `type`, so the description is the headline. -->
+                    <p
+                      class="m-0 font-peridot text-xs font-semibold text-v4-main-text-color"
+                    >
+                      {{ item.description }}
+                    </p>
+                    @if (item.user || item.actor || item.ip_address) {
+                      <p
+                        class="m-0 mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color"
+                      >
+                        @if (item.user || item.actor) {
+                          User: {{ item.user || item.actor }}
+                        }
+                        @if ((item.user || item.actor) && item.ip_address) {
+                          ·
+                        }
+                        @if (item.ip_address) {
+                          Device: {{ item.ip_address }}
+                        }
+                      </p>
+                    }
+                    <app-pd-date-time
+                      class="mt-0.5 font-peridot text-[12px] text-v4-secondary-text-color [&_.pd-time]:![color:inherit]"
+                      [value]="item.formatted_date || item.timestamp"
+                    />
+                  </div>
+                </div>
+              }
+              @if (hasMoreActivities()) {
+                <app-pd-show-more
+                  [hiddenCount]="hiddenActivityCount()"
+                  [showingAll]="activityExpanded()"
+                  (toggled)="toggleActivityExpansion()"
+                />
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

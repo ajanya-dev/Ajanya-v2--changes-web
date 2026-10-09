@@ -1,0 +1,687 @@
+<div class="w-full min-h-full font-peridot">
+  <!-- Header -->
+  <div class="mb-6 flex items-start justify-between">
+    <div class="flex flex-col gap-1">
+      <h1
+        class="text-xl md:text-2xl font-bold text-v4-main-text-color font-funnel"
+      >
+        My Credits
+      </h1>
+      <p
+        class="hidden md:block text-sm text-v4-secondary-text-color font-funnel"
+      >
+        Manage your credits, payment sources, and redeem coupons
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span
+        class="text-xs font-semibold text-v4-secondary-text-color font-funnel tracking-wide"
+        >HELP</span
+      >
+      <button aria-label="Live Chat"
+        class="w-9 h-9 rounded-lg border border-v4-border-color bg-v4-secondary-background-color flex items-center justify-center hover:bg-v4-tertiary-background-color transition-colors cursor-pointer"
+        matTooltip="Live Chat"
+        (click)="goToLiveChat()"
+      >
+        <lucide-icon
+          name="message-circle"
+          [size]="16"
+          class="text-v4-secondary-text-color"
+        ></lucide-icon>
+      </button>
+      <a
+        class="w-9 h-9 rounded-lg border border-v4-border-color bg-v4-secondary-background-color flex items-center justify-center hover:bg-v4-tertiary-background-color transition-colors"
+        [href]="'mailto:' + staticWhiteLabelConditions.customerSupportEmail"
+        matTooltip="{{ staticWhiteLabelConditions.customerSupportEmail }}"
+      >
+        <lucide-icon
+          name="mail"
+          [size]="16"
+          class="text-v4-secondary-text-color"
+        ></lucide-icon>
+      </a>
+      @if (staticWhiteLabelConditions.customerSupportNo) {
+        <a
+          class="w-9 h-9 rounded-lg border border-v4-border-color bg-v4-secondary-background-color flex items-center justify-center hover:bg-v4-tertiary-background-color transition-colors"
+          [href]="'tel:' + staticWhiteLabelConditions.customerSupportNo"
+          matTooltip="{{ staticWhiteLabelConditions.customerSupportNo }}"
+        >
+          <lucide-icon
+            name="phone"
+            [size]="16"
+            class="text-v4-secondary-text-color"
+          ></lucide-icon>
+        </a>
+      }
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 mb-6">
+    <!-- Left Column -->
+    <div class="col-span-1 xl:col-span-2 space-y-3 lg:space-y-4">
+      <!-- Balance Card Skeleton -->
+      @if (isCreditLoading) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-border-color p-4 lg:p-6 bg-v4-secondary-background-color shadow-sm"
+        >
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 lg:mb-6"
+          >
+            <div class="flex items-center gap-3 lg:gap-4">
+              <div
+                class="shimmer w-12 h-12 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl flex-shrink-0"
+              ></div>
+              <div class="space-y-2">
+                <div class="shimmer h-3 w-16"></div>
+                <div class="shimmer h-8 w-36"></div>
+              </div>
+            </div>
+            <div class="shimmer h-10 w-full sm:w-32 rounded-lg"></div>
+          </div>
+          <div class="border-t border-v4-border-color my-4 lg:my-6"></div>
+          <div
+            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:gap-3"
+          >
+            <div class="shimmer h-10 w-full sm:w-44 rounded-lg"></div>
+            <div class="shimmer h-10 w-full sm:w-40 rounded-lg"></div>
+          </div>
+        </div>
+      }
+
+      <!-- Balance Card -->
+      @if (!isCreditLoading) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-border-color p-4 lg:p-6 bg-v4-secondary-background-color shadow-sm"
+        >
+          <div class="relative z-10">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 lg:mb-6"
+            >
+              <div class="flex items-center gap-3 lg:gap-4">
+                <div
+                  class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl bg-v4-primary-brand-color flex items-center justify-center shadow-lg flex-shrink-0"
+                >
+                  <lucide-icon
+                    [img]="dollarSignIcon"
+                    [size]="24"
+                    class="lg:hidden text-v4-secondary-brand-color"
+                  />
+                  <lucide-icon
+                    [img]="dollarSignIcon"
+                    [size]="28"
+                    class="hidden lg:block text-v4-secondary-brand-color"
+                  />
+                </div>
+                <div>
+                  <div
+                    class="text-xs lg:text-sm text-v4-secondary-text-color mb-0.5 lg:mb-1"
+                  >
+                    Balance
+                  </div>
+                  <div
+                    class="text-2xl lg:text-3xl font-bold text-v4-main-text-color"
+                  >
+                    {{ credit | currency }}
+                  </div>
+                </div>
+              </div>
+              <app-common-button-v4
+                [type]="{ style: 'neon', name: 'main' }"
+                [text]="'Recharge'"
+                [width]="'140px'"
+                [lucideIcon]="'plus'"
+                [isAddIcon]="true"
+                [icon]="['fas', 'plus']"
+                (clickEvent)="openRechargeModal()"
+                [customClasses]="'w-full sm:w-auto'"
+              />
+            </div>
+
+            <div class="border-t border-v4-border-color my-4 lg:my-6"></div>
+
+            <!-- Payment Action Buttons -->
+            <div
+              class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:gap-3"
+            >
+              @if (currentPlan) {
+                <app-common-button-v4
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Change Payment Source'"
+                  [isAddIcon]="true"
+                  [icon]="faArrowsRotate"
+                  (clickEvent)="onChangePaymentMethod()"
+                  [customClasses]="'text-xs lg:text-sm'"
+                />
+                <app-common-button-v4
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'New / Update Card'"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'plus']"
+                  (clickEvent)="onUpdateCard()"
+                  [customClasses]="'text-xs lg:text-sm'"
+                />
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Payment Source Details -->
+      @if (
+        !isPaymentDetailsLoading &&
+        currentPlan &&
+        defaultPayment[currentPlan?.subscription?.paymentMethod] &&
+        defaultPayment[currentPlan?.subscription?.paymentMethod] !== "check"
+      ) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-border-color p-4 lg:p-6 bg-v4-secondary-background-color shadow-sm"
+        >
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-xl bg-v4-main-background-color flex items-center justify-center shadow-sm flex-shrink-0"
+              >
+                @if (
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                  "Card"
+                ) {
+                  <lucide-icon
+                    [img]="creditCardIcon"
+                    [size]="18"
+                    class="text-v4-common-blue-color"
+                  />
+                } @else if (
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                  "wallet"
+                ) {
+                  <lucide-icon
+                    [img]="walletIcon"
+                    [size]="18"
+                    class="text-v4-common-blue-color"
+                  />
+                } @else if (
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                  "Paypal"
+                ) {
+                  <lucide-icon
+                    [img]="dollarSignIcon"
+                    [size]="18"
+                    class="text-v4-common-blue-color"
+                  />
+                } @else {
+                  <lucide-icon
+                    [img]="refreshCwIcon"
+                    [size]="18"
+                    class="text-v4-common-blue-color"
+                  />
+                }
+              </div>
+
+              @if (
+                defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                "Card"
+              ) {
+                <div>
+                  <div class="text-xs text-v4-secondary-text-color">
+                    Card Number
+                  </div>
+                  <div class="text-sm font-semibold text-v4-main-text-color">
+                    **** **** ****
+                    {{ currentPlan?.subscription?.cardLastFour }}
+                  </div>
+                </div>
+              } @else if (
+                defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                "wallet"
+              ) {
+                <div>
+                  <div class="text-xs text-v4-secondary-text-color">
+                    Wallet Name
+                  </div>
+                  <div class="text-sm font-semibold text-v4-main-text-color">
+                    {{ currentPlan?.subscription?.wallet }}
+                  </div>
+                </div>
+              } @else if (
+                defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                "Paypal"
+              ) {
+                <div>
+                  <div class="text-xs text-v4-secondary-text-color">PayPal</div>
+                  <div class="text-sm font-semibold text-v4-main-text-color">
+                    {{ currentPlan?.subscription?.paypalEmail }}
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (
+              defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+              "Card"
+            ) {
+              <div>
+                <div class="text-xs text-v4-secondary-text-color">
+                  Expiry Date
+                </div>
+                <div class="text-sm font-semibold text-v4-main-text-color">
+                  {{ expiryMonth }} /
+                  {{ currentPlan?.subscription?.cardExpireYear }}
+                </div>
+              </div>
+            } @else if (
+              defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+              "wallet"
+            ) {
+              <div>
+                <div class="text-xs text-v4-secondary-text-color">Balance</div>
+                <div class="text-sm font-semibold text-v4-main-text-color">
+                  {{
+                    currentPlan?.subscription?.wallet_available_balance
+                      | currency
+                  }}
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Subscribe Now Skeleton -->
+      @if (isPaymentDetailsLoading) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-border-color p-3 lg:p-4 bg-v4-secondary-background-color shadow-sm"
+        >
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 lg:gap-4"
+          >
+            <div class="flex items-center gap-3">
+              <div class="shimmer w-10 h-10 rounded-xl flex-shrink-0"></div>
+              <div class="space-y-2">
+                <div class="shimmer h-4 w-28"></div>
+                <div class="shimmer h-3 w-64"></div>
+              </div>
+            </div>
+            <div class="shimmer h-10 w-full sm:w-28 rounded-lg"></div>
+          </div>
+        </div>
+      }
+
+      <!-- Subscribe Now Card -->
+      @if (!currentPlan && !isPaymentDetailsLoading) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-badge-accent-text-color p-3 lg:p-4 border-l-4 border-l-v4-badge-accent-text-color shadow-sm"
+        >
+          <div class="relative z-10">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 lg:gap-4"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-xl bg-v4-main-background-color flex items-center justify-center relative flex-shrink-0"
+                >
+                  <lucide-icon
+                    [img]="bellRingIcon"
+                    [size]="20"
+                    class="text-v4-badge-accent-text-color"
+                  />
+                  <div
+                    class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-v4-border-success rounded-full flex items-center justify-center border-2 border-white"
+                  >
+                    <lucide-icon
+                      [img]="checkIcon"
+                      [size]="10"
+                      class="text-v4-main-text-color"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-v4-main-text-color">
+                    Subscribe Now!
+                  </h3>
+                  <p class="text-xs text-v4-secondary-text-color">
+                    To continue enjoying uninterrupted services, please
+                    subscribe to one of our plans.
+                  </p>
+                </div>
+              </div>
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                [text]="'Choose Plan'"
+                (clickEvent)="goToSubscription()"
+                [backGroundInput]="'var(--v4-accent-violet-color)'"
+                [textColorInput]="'white'"
+                [customClasses]="'whitespace-nowrap w-full sm:w-auto'"
+                [width]="'140px'"
+              />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Auto Recharge Skeleton -->
+      @if (isPaymentDetailsLoading) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-border-color p-4 lg:p-6 bg-v4-secondary-background-color shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="shimmer w-10 h-10 rounded-xl flex-shrink-0"></div>
+              <div class="space-y-2">
+                <div class="shimmer h-4 w-32"></div>
+                <div class="shimmer h-3 w-48"></div>
+              </div>
+            </div>
+            <div class="shimmer w-12 h-6 rounded-full"></div>
+          </div>
+        </div>
+      }
+
+      <!-- Auto Recharge Card -->
+      @if (!isPaymentDetailsLoading) {
+        <div
+          class="relative rounded-xl overflow-hidden border border-v4-border-color p-4 lg:p-6 bg-v4-secondary-background-color shadow-sm"
+        >
+          <div class="relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-xl bg-v4-main-background-color flex items-center justify-center flex-shrink-0"
+                >
+                  <lucide-icon
+                    [img]="zapIcon"
+                    [size]="20"
+                    class="text-v4-badge-accent-text-color"
+                  />
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-v4-main-text-color">
+                    Auto Recharge
+                  </h3>
+                  <p class="text-xs text-v4-secondary-text-color">
+                    Automatically recharge when balance is low
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <lucide-icon
+                  [img]="infoIcon"
+                  [size]="16"
+                  class="text-v4-secondary-text-color cursor-default flex-shrink-0"
+                  matTooltip="Automatically recharge your balance when it hits a set low point. How it works: If your balance drops below the amount set in the first field, we'll automatically recharge it by the amount set in the second field using your saved payment method"
+                  matTooltipPosition="above"
+                />
+                <button
+                  class="relative w-12 h-6 rounded-full transition-colors flex-shrink-0"
+                  [ngClass]="
+                    autoRecharge
+                      ? 'bg-v4-secondary-brand-color'
+                      : 'bg-v4-input-border-color'
+                  "
+                  (click)="autoRecharge = !autoRecharge; autoRechargeChange()"
+                  [disabled]="autoRechargeLoading || !isSubscribed"
+                >
+                  <div
+                    class="absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all"
+                    [style.left]="autoRecharge ? '28px' : '4px'"
+                  ></div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Auto Recharge Expanded Section -->
+            <div
+              class="overflow-hidden transition-all duration-500 ease-in-out"
+              [ngClass]="autoRecharge ? 'max-h-[500px]' : 'max-h-0'"
+            >
+              <div class="pt-4 mt-4 border-t border-v4-border-color space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                  <div>
+                    <label
+                      for="amount"
+                      class="block text-xs font-semibold text-v4-secondary-text-color mb-2"
+                    >
+                      Recharge Amount
+                    </label>
+                    <app-common-amount-input-v4
+                      [maxLength]="5"
+                      [formControl]="amount"
+                      [isRequired]="false"
+                    ></app-common-amount-input-v4>
+                    @if (autoRecharge) {
+                      <app-control-message-v4
+                        [control]="amount"
+                        [label]="'Amount must be between $30 and $999'"
+                      ></app-control-message-v4>
+                    }
+                  </div>
+                  <div>
+                    <label
+                      for="threshold"
+                      class="block text-xs font-semibold text-v4-secondary-text-color mb-2"
+                    >
+                      When Balance Falls Below
+                    </label>
+                    <app-common-amount-input-v4
+                      [maxLength]="5"
+                      [formControl]="threshold"
+                      [isRequired]="false"
+                    ></app-common-amount-input-v4>
+                    @if (autoRecharge) {
+                      <app-control-message-v4
+                        [control]="threshold"
+                      ></app-control-message-v4>
+                    }
+                  </div>
+                </div>
+
+                @if (autoRechargeUpdateSuccess) {
+                  <div
+                    class="flex items-center gap-2 p-3 bg-v4-badge-info-bg-color rounded-lg"
+                  >
+                    <lucide-icon
+                      [img]="infoIcon"
+                      [size]="14"
+                      class="text-v4-common-blue-color flex-shrink-0"
+                    />
+                    <span class="text-xs text-v4-common-blue-color">
+                      Your account will be recharged with
+                      {{ dbRechargeValue.amount | currency }} when the balance
+                      goes below {{ dbRechargeValue.threshold | currency }}.
+                    </span>
+                  </div>
+                }
+
+                <div class="flex justify-end">
+                  <app-common-button-v4
+                    [type]="{ style: 'primary', name: 'main' }"
+                    [text]="'Save'"
+                    [width]="'100px'"
+                    [disabled]="autoRechargeLoading || !autoRecharge"
+                    [loading]="autoRechargeLoading"
+                    (clickEvent)="saveAutoRechargeSetting()"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Right Column - Coupon Card -->
+    <div class="block xl:relative">
+      <div
+        class="rounded-xl p-6 border border-v4-border-color bg-v4-primary-brand-color pt-5 px-5 pb-4 text-white overflow-hidden xl:absolute xl:inset-0 flex flex-col shadow-sm min-h-[320px]"
+      >
+        <div class="relative z-10 flex flex-col flex-1 min-h-0">
+          <!-- Dot pattern overlay -->
+          <div class="absolute inset-0 opacity-10 pointer-events-none">
+            <div class="w-full h-full bg-white/10 flex flex-wrap gap-20">
+              @for (_ of [].constructor(25); track $index) {
+                <div
+                  class="w-5 h-5 rounded-full bg-white/50"
+                  [style.left]="$index * 10 + '%'"
+                ></div>
+              }
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 mb-3">
+            <div
+              class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center"
+            >
+              <lucide-icon
+                [img]="sparklesIcon"
+                [size]="18"
+                class="text-v4-secondary-brand-color"
+              />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold">Unlock your rewards!</h3>
+              <p class="text-[12px] text-white/80">
+                Redeem your coupon and unlock exclusive features
+              </p>
+            </div>
+          </div>
+
+          <!-- Coupon Input -->
+          <div class="flex gap-2 mb-3">
+            <input
+              type="text"
+              [formControl]="couponCode"
+              placeholder="Coupon Code"
+              class="flex-1 min-h-[44px] px-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 text-sm outline-none focus:border-v4-secondary-brand-color transition-colors"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'neon', name: 'main' }"
+              [text]="'Apply'"
+              [width]="'80px'"
+              [disabled]="applying"
+              [loading]="applying"
+              (clickEvent)="applyCoupon()"
+            />
+          </div>
+
+          <!-- Rewards Content -->
+          <div
+            class="flex-1 flex flex-col rounded-lg bg-white/10 backdrop-blur-sm overflow-hidden min-h-0"
+            [class.items-center]="loading() || !featureCreditList.length"
+            [class.justify-center]="loading() || !featureCreditList.length"
+          >
+            @if (loading()) {
+              <div
+                class="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              ></div>
+            } @else if (featureCreditList.length) {
+              <div class="overflow-y-auto flex-1">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-white/20">
+                      <th
+                        class="text-left text-[12px] font-bold uppercase tracking-wider text-white/70 px-3 py-2"
+                      >
+                        Feature
+                      </th>
+                      <th
+                        class="text-left text-[12px] font-bold uppercase tracking-wider text-white/70 px-3 py-2"
+                      >
+                        Balance
+                      </th>
+                      <th
+                        class="text-left text-[12px] font-bold uppercase tracking-wider text-white/70 px-3 py-2"
+                      >
+                        Validity
+                      </th>
+                      <th
+                        class="text-left text-[12px] font-bold uppercase tracking-wider text-white/70 px-3 py-2"
+                      >
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-white/10">
+                    @for (item of featureCreditList; track item) {
+                      <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-3 py-2 text-xs text-white font-medium">
+                          @if (item.credit_type === 3) {
+                            @for (feature of item.features; track $index) {
+                              <span class="block">{{
+                                feature.feature_name ?? "All Feature"
+                              }}</span>
+                            }
+                          } @else {
+                            {{
+                              item.credit_type === 1
+                                ? (item.feature_name ?? "All Feature")
+                                : "All Feature"
+                            }}
+                          }
+                        </td>
+                        <td class="px-3 py-2 text-xs text-white/90">
+                          {{ item.balance | currency }}
+                        </td>
+                        <td class="px-3 py-2 text-xs text-white/70">
+                          {{ item.expire_at }}
+                        </td>
+                        <td class="px-3 py-2">
+                          <span
+                            class="text-[12px] font-semibold capitalize"
+                            [ngClass]="
+                              item.status === 1
+                                ? 'text-v4-secondary-brand-color'
+                                : 'text-v4-badge-error-text-color'
+                            "
+                          >
+                            {{ item.status === 1 ? "Active" : "Expired" }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div
+                class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4"
+              >
+                <fa-icon
+                  [icon]="faGift"
+                  class="text-white/40 text-2xl"
+                ></fa-icon>
+              </div>
+              <p class="text-sm font-semibold text-white">
+                No rewards unlocked
+              </p>
+              <p class="text-[12px] text-white/50 text-center mt-1">
+                Enter a coupon code above to unlock exclusive features and
+                credits
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-between">
+    <h2 class="text-lg font-bold text-v4-main-text-color">
+      Recent Transactions
+    </h2>
+    <button
+      class="relative inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 overflow-hidden h-10 min-h-[44px] px-4 rounded-lg text-xs text-v4-primary-brand-bold-color whitespace-nowrap"
+      tabindex="0"
+      style="transform: none"
+      (click)="goToFinancialStatement()"
+    >
+      View All<lucide-icon [img]="chevronRightIcon" [size]="14" />
+    </button>
+  </div>
+  <div>
+    <app-financial-statement-list-v4
+      [isChildComponent]="true"
+      (rechargeClick)="openRechargeModal()"
+    />
+  </div>
+</div>

@@ -1,0 +1,557 @@
+<div
+  [class.embedded-mode]="isEmbedded"
+  class="flex flex-col overflow-hidden max-h-[95vh]"
+>
+  <!-- Header -->
+  @if (!isOpenedFromInvoiceView) {
+    <div
+      class="flex items-center justify-between px-6 py-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+    >
+      <div>
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          {{ modalTitle }}
+        </h1>
+        <p class="text-xs text-v4-subtle-text-color mt-0.5">
+          {{
+            data?.mode === "edit"
+              ? "Edit bill details"
+              : "Add a new bill manually"
+          }}
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        @if (formattedAmount) {
+          <div class="amount-badge px-4 py-2 rounded-lg">
+            <div class="text-xs text-v4-subtle-text-color">Amount</div>
+            <div class="text-lg font-bold text-v4-primary-brand-bold-color">
+              ${{ formattedAmount }}
+            </div>
+          </div>
+        }
+        <div
+          [mat-dialog-close]="false"
+          class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+        >
+          <lucide-icon
+            [img]="XIcon"
+            class="text-v4-subtle-text-color"
+            [size]="18"
+          />
+        </div>
+      </div>
+    </div>
+  }
+
+  <form
+    [formGroup]="addBillForm"
+    [class.embedded-form]="isEmbedded"
+    class="flex-1 flex flex-col overflow-hidden min-h-0"
+  >
+    @if (isLoadingBillData()) {
+      <div
+        class="flex-1 flex justify-center items-center bg-v4-tertiary-background-color min-h-[300px]"
+      >
+        <lucide-icon
+          [img]="LoaderCircleIcon"
+          [size]="28"
+          class="text-v4-subtle-text-color animate-spin"
+        />
+      </div>
+    } @else {
+      <!-- Scrollable Content -->
+      <div
+        class="flex-1 overflow-y-auto py-6 px-6 space-y-5 bg-v4-tertiary-background-color min-h-0"
+        [class.embedded-body]="isEmbedded"
+        (scroll)="istItemScroll()"
+      >
+        <!-- Card 1: Vendor Selection (always visible) -->
+        <div class="bill-card">
+          <span
+            class="block text-base font-medium text-v4-secondary-text-color mb-4"
+          >
+            Who is this bill from?
+          </span>
+          <app-payments-payee-list
+            (payeeSelected)="onPayeeSelected($event)"
+            [payeeId]="preSelectedPayeeId()"
+            [hidePayeeSummary]="true"
+          />
+          <app-control-message-v4
+            [control]="addBillForm.controls.payee"
+            label="Payee is required"
+          />
+        </div>
+
+        <!-- Card 2: Amount & Vendor Credit (visible when vendor selected) -->
+        @if (isVendorSelected || isEditOrCloneMode) {
+          <div class="bill-card animate-card-in space-y-4">
+            <!-- Amount -->
+            <div>
+              <app-common-amount-input-v4
+                fieldLabel="Amount ($)"
+                formControlName="amount"
+              />
+              <app-control-message-v4
+                [control]="addBillForm.controls.amount"
+                label="Amount is required"
+              />
+            </div>
+
+            <!-- Vendor Credit -->
+            <div
+              class="vendor-credit-section rounded-lg p-4 border"
+              [class.credit-available]="creditAmount > 0"
+              [class.credit-unavailable]="creditAmount <= 0"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <lucide-icon
+                    [img]="CreditCardIcon"
+                    [size]="16"
+                    [class.text-v4-common-green-color]="creditAmount > 0"
+                    [class.text-v4-subtle-text-color]="creditAmount <= 0"
+                  />
+                  <span
+                    class="text-xs font-semibold"
+                    [class.text-v4-common-green-color]="creditAmount > 0"
+                    [class.text-v4-subtle-text-color]="creditAmount <= 0"
+                  >
+                    Vendor Credit Available: ${{ creditAmount.toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+              <app-common-amount-input-v4
+                fieldLabel="Enter Credit"
+                [isRequired]="false"
+                customClass="w-full"
+                formControlName="credit"
+                [maxLength]="13"
+              />
+              @if (wrongCreditInput()) {
+                <span class="text-xs text-v4-common-red-color mt-1 block">
+                  Amount cannot exceed the Bill amount or Credit Amount
+                </span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Card 3: Invoice Details (visible when amount entered) -->
+        @if (hasAmount || isEditOrCloneMode) {
+          <div class="bill-card animate-card-in">
+            <h3 class="text-base font-medium text-v4-secondary-text-color mb-4">
+              Invoice Details
+            </h3>
+            <div class="space-y-4">
+              <!-- Row: Invoice Number & PO Number -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col">
+                  <span
+                    class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                  >
+                    Invoice Number
+                    <span class="text-v4-common-red-color">*</span>
+                  </span>
+                  <app-common-input-v4
+                    placeholder="Invoice Number"
+                    formControlName="inv_no"
+                    [control]="addBillForm.controls.inv_no"
+                    [maxLength]="20"
+                    errorLabel="Invoice Number is required"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <span
+                    class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                  >
+                    PO Number
+                  </span>
+                  <app-common-input-v4
+                    placeholder="PO Number"
+                    formControlName="po_no"
+                    [maxLength]="40"
+                  />
+                </div>
+              </div>
+
+              <!-- Row: Invoice Date & Due Date -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col">
+                  <span
+                    class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                  >
+                    Invoice Date <span class="text-v4-common-red-color">*</span>
+                  </span>
+                  <app-v4-date-picker
+                    placeholder="Invoice Date"
+                    formControlName="inv_date"
+                    [control]="addBillForm.controls.inv_date"
+                    errorLabel="Invoice Date is required"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <span
+                    class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                  >
+                    Due Date
+                  </span>
+                  <app-v4-date-picker
+                    placeholder="Due Date"
+                    formControlName="due_date"
+                    [isFieldRequired]="false"
+                  />
+                </div>
+              </div>
+
+              <!-- Account Number -->
+              <div class="flex flex-col">
+                <span
+                  class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                >
+                  Account Number
+                </span>
+                <app-common-input-v4
+                  placeholder="Account Number"
+                  formControlName="acc_no"
+                  [maxLength]="20"
+                />
+              </div>
+
+              <!-- Row: Category & Bank Account -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col">
+                  <span
+                    class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                  >
+                    Category
+                  </span>
+                  <app-category-dropdown-v4
+                    class="w-full block"
+                    [placeholder]="'Select category'"
+                    [selectDropdownItem]="selectedCategory()"
+                    [enableAddNew]="true"
+                    [appendTo]="'body'"
+                    [fontClass]="'font-peridot'"
+                    (selectionEvent)="onCategorySelected($event)"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <span
+                    class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                  >
+                    Bank Account
+                  </span>
+                  <app-bank-ac-dropdown-v4
+                    class="drop_style w-full"
+                    [placeholder]="'Select bank account'"
+                    [formControl]="selectedBankAccount"
+                    [enableAddNew]="true"
+                    [permissionContext]="'forBill'"
+                    [append]="'body'"
+                    [fontClass]="'font-peridot'"
+                    (ready)="onBankDropdownReady($event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Memo -->
+              <div class="flex flex-col">
+                <span
+                  class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+                >
+                  Memo (Optional)
+                </span>
+                <app-common-input-v4
+                  placeholder="Add a note..."
+                  formControlName="memo"
+                  [maxLength]="150"
+                />
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Card 4: Additional Options (visible when invoice number entered) -->
+        @if (hasInvoiceNumber || isEditOrCloneMode) {
+          <div class="bill-card animate-card-in">
+            <h3 class="text-base font-medium text-v4-secondary-text-color">
+              Additional Options
+            </h3>
+
+            <!-- Tab Bar -->
+            <div class="mt-3 border-b border-v4-border-color overflow-x-auto">
+              <div class="flex items-center gap-4 min-w-max">
+                <!-- Comments Tab -->
+                @if (data?.mode === "new") {
+                  <button
+                    type="button"
+                    (click)="setActiveTab('comments')"
+                    class="additional-tab"
+                  >
+                    <lucide-icon
+                      [img]="MessageSquareIcon"
+                      [size]="14"
+                      class="text-v4-subtle-text-color"
+                    />
+                    Comments
+                    @if (comments.length > 0) {
+                      <span class="tab-badge">
+                        {{ comments.length }}
+                      </span>
+                    }
+                  </button>
+                }
+
+                <!-- Items Tab -->
+                <button
+                  type="button"
+                  (click)="setActiveTab('items')"
+                  class="additional-tab"
+                  [class.additional-tab-active]="
+                    activeAdditionalTab === 'items'
+                  "
+                >
+                  <lucide-icon
+                    [img]="ShoppingCartIcon"
+                    [size]="14"
+                    [class.text-v4-primary-brand-bold-color]="
+                      activeAdditionalTab === 'items'
+                    "
+                    [class.text-v4-subtle-text-color]="
+                      activeAdditionalTab !== 'items'
+                    "
+                  />
+                  Items
+                </button>
+
+
+                <!-- Attachments Tab -->
+                @if (data?.mode === "new") {
+                  <button
+                    type="button"
+                    (click)="setActiveTab('attachments')"
+                    class="additional-tab"
+                  >
+                    <lucide-icon
+                      [img]="PaperclipIcon"
+                      [size]="14"
+                      class="text-v4-subtle-text-color"
+                    />
+                    Attachments
+                    @if (attachments.length > 0) {
+                      <span class="tab-badge">
+                        {{ attachments.length }}
+                      </span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="pt-4">
+              <!-- Items Tab Content (use [hidden] to preserve component state) -->
+              <div [hidden]="activeAdditionalTab !== 'items'" class="add_items">
+                <app-add-items-v4
+                  (itemTotal)="setBillItems($event)"
+                  [mode]="data?.mode"
+                  [isEmbedded]="isEmbedded"
+                  [hasIncomingItems]="hasInvoiceItems()"
+                  (tableScroll)="istItemScroll()"
+                />
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- Credits Applied -->
+        @if (creditsApplied?.length) {
+          <div class="bill-card animate-card-in">
+            <span class="text-sm font-semibold text-v4-main-text-color"
+              >Credit Applied</span
+            >
+            <div class="mt-2 space-y-1">
+              @for (
+                item of creditsApplied;
+                track item.payment;
+                let i = $index
+              ) {
+                <div
+                  class="flex items-center justify-between py-2 px-3 rounded-lg bg-v4-tertiary-background-color"
+                >
+                  <span class="text-sm text-v4-secondary-text-color">{{
+                    item.amount
+                  }}</span>
+                  <lucide-icon
+                    name="trash-2"
+                    [size]="14"
+                    class="text-v4-common-red-color cursor-pointer"
+                    (click)="deleteCredit(item.payment, i)"
+                  />
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Upload & Extract (inline, opened from the total row) -->
+        @if (showExtractSection()) {
+          <div #extractSection class="bill-card animate-card-in">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <lucide-icon
+                  [img]="SparklesIcon"
+                  [size]="16"
+                  class="text-v4-primary-brand-bold-color"
+                />
+                <h3 class="text-base font-medium text-v4-secondary-text-color">
+                  Upload and Extract
+                </h3>
+              </div>
+              <lucide-icon
+                [img]="XIcon"
+                [size]="18"
+                class="text-v4-subtle-text-color cursor-pointer"
+                role="presentation"
+                (click)="closeExtractSection()"
+              />
+            </div>
+
+            <div class="upload-extract-content mt-4">
+              <!-- Upload Section -->
+              <div class="mb-4">
+                @if (!extractFile) {
+                  <label
+                    class="border-2 border-dashed border-v4-border-color rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-v4-brand-focus-color transition-colors bg-v4-secondary-background-color"
+                    [class.border-v4-brand-focus-color]="isExtractDragOver"
+                    (dragover)="onExtractDragOver($event)"
+                    (dragleave)="onExtractDragLeave($event)"
+                    (drop)="onExtractFileDrop($event)"
+                  >
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".jpg,.png,.jpeg,.pdf"
+                      (change)="onExtractInputChange($event)"
+                    />
+                    <lucide-icon
+                      [img]="UploadIcon"
+                      [size]="24"
+                      class="text-v4-tertiary-text-color"
+                    />
+                    <p class="text-xs font-medium text-v4-main-text-color">
+                      Click to upload or drag and drop
+                    </p>
+                    <p class="text-[12px] text-v4-tertiary-text-color">
+                      Images, PDF (for AI extraction)
+                    </p>
+                  </label>
+                } @else {
+                  <div
+                    class="flex items-center justify-between border border-v4-border-color rounded-xl px-4 py-3 bg-v4-tertiary-background-color"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <lucide-icon
+                        [img]="CheckCircle2Icon"
+                        [size]="14"
+                        class="text-v4-common-green-color shrink-0"
+                      />
+                      <span class="text-sm text-v4-main-text-color truncate">
+                        {{ extractFile.name }}
+                      </span>
+                    </div>
+                    <lucide-icon
+                      [img]="XIcon"
+                      [size]="14"
+                      class="text-v4-subtle-text-color cursor-pointer shrink-0"
+                      role="presentation"
+                      (click)="clearExtractFile()"
+                    />
+                  </div>
+                }
+              </div>
+
+              <!-- Instructions -->
+              <div class="mb-4 p-3 bg-v4-tertiary-background-color rounded-lg">
+                <h4 class="text-sm font-semibold text-v4-main-text-color mb-1">
+                  Instructions
+                </h4>
+                <p
+                  class="text-xs text-v4-subtle-text-color tracking-wide leading-relaxed"
+                >
+                  Select a bill Image or PDF, then click Extract to generate the
+                  bill details.
+                </p>
+              </div>
+
+              <!-- Extract Button -->
+              <app-common-button-v4
+                [text]="extractLoading() ? 'Extracting...' : 'Extract'"
+                [type]="{ style: 'primary', name: 'main' }"
+                [width]="'100px'"
+                [disabled]="!extractFile || extractLoading()"
+                [loading]="extractLoading()"
+                (clickEvent)="extractInvoiceImage()"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- Bill Total -->
+        <div class="flex justify-between items-center w-full pt-2 gap-3">
+          @if (data?.mode === "new" && !showExtractSection()) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap cursor-pointer border border-v4-border-color bg-v4-secondary-background-color text-v4-primary-brand-bold-color transition-colors hover:border-v4-brand-focus-color hover:bg-v4-tertiary-background-color"
+              (click)="openExtractSection()"
+            >
+              <lucide-icon [img]="SparklesIcon" [size]="14" />
+              Upload and Extract
+            </button>
+          } @else {
+            <span></span>
+          }
+          <span class="text-base text-v4-main-text-color"
+            >Bill Total:
+            <span class="font-semibold text-v4-primary-brand-bold-color">{{
+              billTotal | currency
+            }}</span></span
+          >
+        </div>
+      </div>
+    }
+
+    <!-- Footer -->
+    <div
+      class="border-t border-v4-border-color p-6 bg-v4-secondary-background-color"
+    >
+      <div class="flex justify-end gap-3">
+        @if (isEmbedded) {
+          <app-common-button-v4
+            width="125px"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Close"
+            (clickEvent)="closed.emit()"
+          />
+        } @else {
+          <app-common-button-v4
+            mat-dialog-close=""
+            width="125px"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Close"
+          />
+        }
+        <app-common-button-v4
+          width="125px"
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="data?.mode === 'edit' ? 'Update Bill' : 'Create Bill'"
+          (clickEvent)="onSubmit()"
+          [disabled]="loading()"
+          [loading]="loading()"
+        />
+      </div>
+    </div>
+  </form>
+
+</div>

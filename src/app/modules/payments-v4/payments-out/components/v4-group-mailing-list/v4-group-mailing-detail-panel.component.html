@@ -1,0 +1,432 @@
+<app-detail-side-panel
+  [isOpen]="panelService.isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'group-mailing-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [subtitle]="panelSubtitle()"
+  [iconTemplate]="panelIcon"
+  [contentTemplate]="panelContent"
+  (closed)="onClose()"
+/>
+
+<!-- O3 header icon: navy circle. A group mailing is a batch of mail. -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="mail" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<!-- Panel-wide loading state: plain bars in the panel's own card shell. -->
+<ng-template #panelSkeleton>
+  <app-pd-skeleton [rows]="4" [tiles]="3" [party]="false" />
+</ng-template>
+
+<!-- Stand-in for a section whose data is fetched on first open (loadSection). -->
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #panelContent>
+  <div
+    class="panel-body panel-body--surface"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (loading()) {
+      <ng-container [ngTemplateOutlet]="panelSkeleton" />
+    } @else if (data()) {
+      <!-- O4 left column: the data cards. display:contents when collapsed, so
+           they flow inline; individual grid tiles when expanded. -->
+      <div class="o4-left-col">
+        <!-- 1. Mailing details -->
+        <div class="pd-card">
+          <button
+            type="button"
+            class="pd-card-head"
+            (click)="toggleCard('details')"
+          >
+            <span class="pd-card-title">Mailing details</span>
+            <lucide-icon
+              [name]="
+                isCardCollapsed('details') ? 'chevron-down' : 'chevron-up'
+              "
+              [size]="15"
+              class="text-v4-tertiary-text-color"
+            ></lucide-icon>
+          </button>
+
+          @if (!isCardCollapsed("details")) {
+            <div class="pd-row">
+              <span class="pd-row-label">Total group items</span>
+              <span class="pd-row-value">{{
+                data()?.count_group_items ?? 0
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Total attachments</span>
+              <span class="pd-row-value">{{
+                data()?.count_attachment ?? 0
+              }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Envelope type</span>
+              <span class="pd-row-value">{{ envelopeText() }}</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-row-label">Shipping type</span>
+              <span
+                class="pd-row-value truncate"
+                [matTooltip]="data()?.shipment_name"
+                >{{ data()?.shipment_name || "—" }}</span
+              >
+            </div>
+
+            @if (data()?.tracking_link) {
+              <div class="pd-row">
+                <span class="pd-row-label">Tracking</span>
+                <button
+                  type="button"
+                  class="shrink-0 whitespace-nowrap font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                  (click)="onOpenTracking()"
+                >
+                  Track shipment
+                </button>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- 2. Addresses -->
+        @if (hasAnyAddress()) {
+          <div class="pd-card">
+            <button
+              type="button"
+              class="pd-card-head"
+              (click)="toggleCard('addresses')"
+            >
+              <span class="pd-card-title">Addresses</span>
+              <lucide-icon
+                [name]="
+                  isCardCollapsed('addresses') ? 'chevron-down' : 'chevron-up'
+                "
+                [size]="15"
+                class="text-v4-tertiary-text-color"
+              ></lucide-icon>
+            </button>
+
+            @if (!isCardCollapsed("addresses")) {
+              @if (fromAddress().length) {
+                <div class="pd-row-block">
+                  <span class="pd-row-label">From</span>
+                  <p class="pd-row-value leading-relaxed">
+                    @for (line of fromAddress(); track line; let i = $index) {
+                      @if (i) {
+                        <br />
+                      }
+                      {{ line }}
+                    }
+                  </p>
+                </div>
+              }
+              @if (toAddress().length) {
+                <div class="pd-row-block">
+                  <span class="pd-row-label">To</span>
+                  <p class="pd-row-value leading-relaxed">
+                    @for (line of toAddress(); track line; let i = $index) {
+                      @if (i) {
+                        <br />
+                      }
+                      {{ line }}
+                    }
+                  </p>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+      <!-- /O4 left column -->
+
+      <!-- 3. Actions — tile row (acts as the card head) + the selected panel
+           rendered flush beneath it, as one card. These behave as tabs: one is
+           always open, so the divider is always drawn. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="grid grid-cols-3 gap-1.5 border-b border-v4-border-color px-3 py-2 pd-card-head-flush"
+        >
+          @for (btn of actionSectionButtons; track btn.section) {
+            <button
+              type="button"
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === btn.section
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="selectSection(btn.section)"
+            >
+              <lucide-icon
+                [name]="btn.icon"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >{{ btn.label }}</span
+              >
+            </button>
+          }
+        </div>
+
+        <!-- Inline: Group mailing items (rides along with the details request) -->
+        @if (openActionSection() === "items") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (totalItemCount() > 0) {
+              <div class="mb-2 flex items-center justify-end">
+                <button
+                  type="button"
+                  class="font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+                  (click)="onViewAllItems()"
+                >
+                  View all ({{ totalItemCount() }})
+                </button>
+              </div>
+            }
+
+            @if (itemsLoading()) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else if (previewItems().length) {
+              <div class="flex flex-col gap-2">
+                @for (item of previewItems(); track item.cheque_serial_number) {
+                  <div
+                    class="rounded-lg border border-v4-border-color bg-v4-main-background-color p-2.5"
+                  >
+                    <!-- Payee + amount -->
+                    <div class="mb-1.5 flex items-start justify-between gap-2">
+                      <p
+                        class="m-0 min-w-0 flex-1 truncate font-peridot text-xs font-semibold text-v4-main-text-color"
+                        [matTooltip]="item.payee_name"
+                      >
+                        {{ item.payee_name }}
+                      </p>
+                      <span
+                        class="shrink-0 font-peridot text-xs font-bold text-v4-main-text-color"
+                        >${{ formatAmount(item.cheque_amount) }}</span
+                      >
+                    </div>
+
+                    <!-- Status pill -->
+                    @if (getStatusText(item.cheque_status); as status) {
+                      <span
+                        class="mb-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-peridot text-[12px] font-semibold whitespace-nowrap"
+                        [style.background-color]="
+                          getStatusColors(item.cheque_status).bg
+                        "
+                        [style.color]="getStatusColors(item.cheque_status).text"
+                      >
+                        <span
+                          class="h-1.5 w-1.5 shrink-0 rounded-full"
+                          [style.background-color]="
+                            getStatusColors(item.cheque_status).text
+                          "
+                        ></span>
+                        {{ status }}
+                      </span>
+                    }
+
+                    <!-- Memo -->
+                    @if (item.cheque_memo) {
+                      <p
+                        class="m-0 mb-1.5 line-clamp-2 font-peridot text-[12px] text-v4-secondary-text-color"
+                        [matTooltip]="item.cheque_memo"
+                      >
+                        {{ item.cheque_memo }}
+                      </p>
+                    }
+
+                    <!-- Serial + bank account -->
+                    <div
+                      class="flex items-center justify-between gap-2 font-peridot text-[12px] text-v4-tertiary-text-color"
+                    >
+                      <span class="truncate"
+                        >#{{ item.cheque_serial_number }}</span
+                      >
+                      @if (item.bank_account_account_name) {
+                        <span
+                          class="max-w-[160px] truncate font-medium"
+                          [matTooltip]="item.bank_account_account_name"
+                          >{{ item.bank_account_account_name }}</span
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="pd-empty">
+                <p
+                  class="m-0 py-6 text-center text-[12px] text-v4-tertiary-text-color"
+                >
+                  No mailing items available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Inline: Activity log -->
+        @if (openActionSection() === "activity") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("activity")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else if (activityLogs().length) {
+              <div
+                class="overflow-x-auto rounded-xl border border-v4-border-color"
+              >
+                <div class="max-h-[420px] overflow-y-auto">
+                  <table class="v4-ocw-table">
+                    <thead>
+                      <tr>
+                        <th class="text-center">#</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Device</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (log of activityLogs(); track $index) {
+                        <tr>
+                          <td class="text-center">
+                            <span class="text-xs text-v4-tertiary-text-color">{{
+                              $index + 1
+                            }}</span>
+                          </td>
+                          <td>
+                            <app-pd-date-time [value]="log.created_at" />
+                          </td>
+                          <td>{{ log.description }}</td>
+                          <td class="whitespace-nowrap">{{ log.ip }}</td>
+                          <td class="max-w-[260px]">
+                            <span class="line-clamp-2">{{ log.note }}</span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="pd-empty">
+                <p
+                  class="m-0 py-6 text-center text-[12px] text-v4-tertiary-text-color"
+                >
+                  No activity log available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Inline: Attachments -->
+        @if (openActionSection() === "attachments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (isSectionLoading("attachments")) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else if (attachments().length) {
+              <div
+                class="overflow-x-auto rounded-xl border border-v4-border-color"
+              >
+                <div class="max-h-[420px] overflow-y-auto">
+                  <table class="v4-ocw-table">
+                    <thead>
+                      <tr>
+                        <th class="text-center">#</th>
+                        <th>File name</th>
+                        <th class="text-center">Pages</th>
+                        <th class="text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (
+                        attachment of attachments();
+                        track attachment.id;
+                        let i = $index
+                      ) {
+                        <tr>
+                          <td class="text-center">
+                            <span class="text-xs text-v4-tertiary-text-color">{{
+                              i + 1
+                            }}</span>
+                          </td>
+                          <td class="max-w-[220px]">
+                            <span
+                              class="block truncate"
+                              [matTooltip]="attachment.file_name"
+                              >{{ attachment.file_name }}</span
+                            >
+                          </td>
+                          <td class="text-center">
+                            {{ attachment.page_count }}
+                          </td>
+                          <td class="text-center">
+                            <button
+                              type="button"
+                              class="inline-flex items-center justify-center rounded p-1.5 text-v4-primary-brand-bold-color transition-colors hover:bg-v4-tertiary-background-color disabled:pointer-events-none disabled:opacity-50"
+                              [disabled]="
+                                viewingAttachmentId() === attachment.id
+                              "
+                              [matTooltip]="'View attachment'"
+                              aria-label="View attachment"
+                              (click)="viewAttachment(attachment)"
+                            >
+                              <lucide-icon
+                                [name]="
+                                  viewingAttachmentId() === attachment.id
+                                    ? 'loader-circle'
+                                    : 'external-link'
+                                "
+                                [size]="14"
+                                [class.animate-spin]="
+                                  viewingAttachmentId() === attachment.id
+                                "
+                              ></lucide-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="pd-empty">
+                <p
+                  class="m-0 py-6 text-center text-[12px] text-v4-tertiary-text-color"
+                >
+                  No attachments available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <!-- /actions card -->
+    } @else {
+      <div class="pd-card pd-full">
+        <p class="m-0 py-6 text-center text-[12px] text-v4-tertiary-text-color">
+          Couldn’t load the group mailing details.
+        </p>
+      </div>
+    }
+  </div>
+</ng-template>

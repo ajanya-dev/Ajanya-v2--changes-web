@@ -1,0 +1,322 @@
+<form [formGroup]="form" class="flex flex-col gap-3">
+  <!-- 1 · Amount -->
+  <section
+    class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-5 pt-4 pb-5 shadow-sm"
+  >
+    <div
+      data-field="amount"
+      class="sp-amount-hero relative flex flex-col items-center justify-center gap-2.5"
+    >
+      <label for="amount"
+        class="font-semibold text-v4-main-text-color text-[13px] tracking-[-0.01em]"
+      >
+        How much would you like to request?
+      </label>
+      <app-common-amount-input-v4
+        [customClass]="'hero-input'"
+        [isRequired]="true"
+        formControlName="amount"
+        [forPayment]="true"
+        [maxLength]="15"
+      />
+    </div>
+    <!-- The hero amount input is centred, so its message centres with it. -->
+    <div class="flex justify-center">
+      <app-control-message-v4
+        [control]="form.controls.amount"
+        label="Amount"
+        [customMessages]="{
+          required: 'Please enter an amount',
+          min: 'Please enter at least $0.01'
+        }"
+      />
+    </div>
+  </section>
+
+  <!-- 2 · Route + counterparty + wallet + memo -->
+  <section
+    class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 flex flex-col gap-3 shadow-sm"
+  >
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+      <div class="flex flex-col min-w-0">
+        <span
+          class="mb-[9px] flex items-center gap-[7px] font-semibold tracking-[-0.02em] text-v4-main-text-color text-[14px]"
+        >
+          Receive from
+        </span>
+        <div class="flex gap-2">
+          @for (tab of tabs; track tab.id) {
+            <button
+              type="button"
+              class="h-[44px] w-full rounded-[12px] border-[1.5px] text-[13px] transition-colors"
+              [ngClass]="
+                from() === tab.id
+                  ? 'bg-v4-brand-tint border-v4-primary-brand-bold-color text-v4-primary-brand-bold-color font-semibold'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color font-medium hover:border-v4-primary-brand-bold-color'"
+              (click)="setFrom(tab.id)"
+            >
+              {{ tab.name }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col min-w-0"
+        [ngClass]="{'hidden': !selectedBank()?.nickName && !selectedBank()?.name}"
+      >
+        <span
+          class="mb-[9px] flex items-center gap-[7px] font-semibold tracking-[-0.02em] text-v4-main-text-color text-[14px]"
+        >
+          Settle to
+        </span>
+        <div
+          class="inline-flex h-[44px] w-full items-center gap-2.5 rounded-[12px] border-[1.5px] border-v4-border-color bg-v4-brand-tint px-3 text-v4-primary-brand-bold-color"
+        >
+          <lucide-icon [img]="WalletIcon" [size]="16"></lucide-icon>
+          <span class="truncate text-[13px] font-bold">Wallet - {{
+            selectedBank()?.nickName ||
+              selectedBank()?.name
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+      @if (from() === 'payee') {
+        <div data-field="payee" class="flex flex-col min-w-0">
+          <app-sp-payee-dropdown
+            class="relative block"
+            label="Select your counterparty"
+            [required]="true"
+            formControlName="payee"
+            #payeeDropdown
+            (ready)="onPayeeReady($event)"
+            placeholder="Select or search a counterparty"
+            [isReceivePayment]="true"
+            tooltip="Select the person or business you are requesting payment from. They will receive the payment request."
+          />
+          <app-control-message-v4
+            [control]="form.controls.payee"
+            [isMarginTopEnabled]="false"
+            [customMessages]="{
+              required: 'Please select a counterparty'
+            }"
+          />
+        </div>
+      } @else if (from() === 'email') {
+        <div data-field="email" class="flex flex-col min-w-0">
+          <!-- Rendered here, not via [fieldLabel]: the shared input's own label
+               is 12px/medium, which reads as a caption next to these. -->
+          <span
+            class="mb-[9px] flex items-center gap-[7px] font-semibold tracking-[-0.02em] text-v4-main-text-color text-[14px]"
+          >
+            Payee email<span class="text-v4-common-red-color">*</span>
+          </span>
+          <app-common-input-v4
+            variant="compact"
+            [placeholder]="'Enter email address'"
+            [isFieldRequired]="true"
+            [type]="'email'"
+            [control]="form.controls.email"
+            formControlName="email"
+            [customMessages]="{
+              required: 'Please enter an email address',
+              email: 'Please enter a valid email address'
+            }"
+          />
+        </div>
+      } @else {
+        <div data-field="phone" class="flex flex-col min-w-0">
+          <span
+            class="mb-[9px] flex items-center gap-[7px] font-semibold tracking-[-0.02em] text-v4-main-text-color text-[14px]"
+          >
+            Mobile number<span class="text-v4-common-red-color">*</span>
+          </span>
+          <input
+            type="text"
+            class="v4-input-style h-[44px] px-3 py-0 border-[1.5px] border-v4-border-color rounded-[10px] text-[13px] focus:outline-none focus:border-v4-brand-border-color touch-manipulation font-peridot placeholder:font-peridot placeholder:text-v4-tertiary-text-color"
+            formControlName="phone"
+            placeholder="Enter Mobile No"
+            (change)="isNumberMasked = false"
+            ng2TelInput
+            id="phone"
+            mask="(000) 000-0000"
+            name="phone"
+          />
+          <app-control-message-v4
+            [control]="form.controls.phone"
+            [isMarginTopEnabled]="false"
+            [customMessages]="{
+              required: 'Please enter a mobile number',
+              pattern: 'Please enter a valid mobile number'
+            }"
+          />
+        </div>
+      }
+
+      <div data-field="bankAc" class="flex flex-col min-w-0">
+        <app-sp-bank-ac-dropdown
+          class="relative block"
+          label="Deposit to wallet"
+          [required]="true"
+          formControlName="bankAc"
+          [permissionContext]="'forPayment'"
+          placeholder="Select or search wallet"
+          [icon]="WalletIcon"
+          (ready)="onBankDropdownReady($event)"
+          [zIndex]="10"
+        />
+        <app-control-message-v4
+          [control]="form.controls.bankAc"
+          [isMarginTopEnabled]="false"
+          [customMessages]="{
+            required: 'Please select a wallet'
+          }"
+        />
+      </div>
+    </div>
+
+    <div data-field="memo">
+      <label
+        class="mb-[9px] flex items-center justify-between gap-[7px] font-semibold text-v4-main-text-color text-[14px] tracking-[-0.01em]"
+        for="wallet-memo"
+      >
+        <span class="flex items-center gap-[7px]">
+          Memo
+          @if (memoRequired()) {
+            <span class="text-v4-common-red-color">*</span>
+          }
+          <lucide-icon
+            [img]="InfoIcon"
+            [size]="13"
+            class="cursor-help text-v4-subtle-text-color"
+            matTooltip="A short private note saved with this request."
+          />
+        </span>
+        <span class="font-normal text-v4-subtle-text-color text-[12px]">
+          {{ memoLength() }}/{{ memoMaxLength }} characters
+        </span>
+      </label>
+      <textarea
+        id="wallet-memo"
+        formControlName="memo"
+        rows="2"
+        [attr.maxlength]="memoMaxLength"
+        placeholder="Brief note about this request. Example: 'Office rent' or 'Supplies'"
+        class="v4-input-style w-full resize-y min-h-[45px] max-h-24 rounded-[10px] px-3 py-2.5 text-[13px] font-peridot text-v4-main-text-color placeholder-v4-subtle-text-color placeholder:font-peridot transition-colors"
+      ></textarea>
+      <app-control-message-v4
+        [control]="form.controls.memo"
+        [isMarginTopEnabled]="false"
+        [customMessages]="{
+          required: 'Please enter a memo'
+        }"
+      />
+    </div>
+  </section>
+
+  <!-- 3 · Request details -->
+  <section
+    class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 shadow-sm"
+  >
+    <div
+      class="mb-3 text-sm font-semibold text-v4-main-text-color"
+    >
+      Request details
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+      <div data-field="invoice">
+        <app-common-input-v4
+          variant="compact"
+          [fieldLabel]="'Invoice Number'"
+          [placeholder]="'Invoice Number'"
+          [isFieldRequired]="true"
+          [control]="form.controls.invoice"
+          formControlName="invoice"
+          [showInfoIcon]="true"
+          [infoInLabel]="true"
+          [tooltip]="invoiceTooltip"
+          [customMessages]="{
+            required: 'Please enter an invoice number'
+          }"
+        />
+      </div>
+      <div data-field="chequeDate" class="sp-date-compact">
+        <app-v4-date-picker
+          placeholder="Select Date"
+          fieldLabel="Date of Issue"
+          formControlName="chequeDate"
+          [minDate]="minChequeDate"
+          [isFieldRequired]="true"
+          [showInfoIcon]="true"
+          [tooltip]="'• The selected date will be printed on the received check. By default, the check date is set to today\'s date when sending the request.'"
+        />
+        <app-control-message-v4
+          [control]="form.controls.chequeDate"
+          [isMarginTopEnabled]="false"
+          marginTopOverride="mt-1"
+        />
+      </div>
+    </div>
+
+    <!--
+      Shared footer. A request has no notify channel and no one-time send, so
+      both are off; Editable is projected in to sit on the row beside Schedule.
+    -->
+    <app-schedule-notify
+      [form]="form"
+      [showNotify]="false"
+      [allowScheduledDate]="false"
+      [allowRecurring]="true"
+      [frequencies]="recurringFrequencies"
+      [showIncludeThisPayment]="false"
+      [endOptions]="recurringEndOptions"
+    >
+      <div class="recurring compact">
+        <button
+          type="button"
+          class="rec-toggle compact"
+          (click)="toggleEditable()"
+        >
+          <span class="rt-ic">
+            <lucide-icon [img]="EditableIcon" [size]="18" />
+          </span>
+          <span class="rt-main">
+            <span class="rt-nm">Editable</span>
+            <span class="rt-sub">Payer can change amount, memo and date</span>
+          </span>
+          <span class="switch" [class.on]="editable()"><i></i></span>
+        </button>
+      </div>
+    </app-schedule-notify>
+  </section>
+
+  <!-- 4 · Actions -->
+  <section
+    class="sticky bottom-0 z-10 bg-v4-secondary-background-color backdrop-blur border border-v4-border-color rounded-xl p-4 shadow-sm"
+  >
+    <div class="grid grid-cols-1 gap-3">
+      <div class="flex items-center gap-2 text-xs text-v4-tertiary-text-color">
+        <lucide-icon
+          [img]="InfoIcon"
+          [size]="16"
+          class="mt-0.5 shrink-0 text-v4-badge-warning-text-color"
+        />
+        <p>
+          A nominal transaction fee may apply when funds are moved from your
+          received wallet, depending on the destination type.
+        </p>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Send Request'"
+        [width]="'100%'"
+        [loading]="loading()"
+        [disabled]="loading() || qrLoading()"
+        (clickEvent)="onSend()"
+      />
+      <app-payment-secured-badge />
+    </div>
+  </section>
+</form>

@@ -1,0 +1,413 @@
+<!-- ── Helper Cards: xl+ screens only, fixed to stay aligned with the dialog ── -->
+<div class="hidden xl:flex fixed flex-col gap-3 w-[260px] z-[1050] max-h-[calc(100vh-20px)] overflow-y-auto"
+     [style.top]="cardTop()"
+     [style.left]="cardLeft()">
+
+  <!-- Cash Expense Preview -->
+  @if (hasAmount && data.mode !== 'edit') {
+    <div class="bg-v4-secondary-background-color rounded-2xl shadow-2xl border border-v4-border-color overflow-hidden">
+      <div class="bg-v4-primary-brand-color p-4">
+        <div class="flex items-center justify-center mb-2">
+          <div class="w-11 h-11 bg-white/20 rounded-full flex items-center justify-center">
+            <lucide-icon name="receipt" [size]="22" class="text-v4-secondary-brand-color" />
+          </div>
+        </div>
+        <h3 class="text-center text-white font-bold text-sm mb-0.5">Cash Expense</h3>
+        @if (cashExpenseForm.controls.cashExpense_no.value) {
+          <p class="text-center text-white/70 text-xs">#{{ cashExpenseForm.controls.cashExpense_no.value }}</p>
+        }
+      </div>
+      <div class="p-4 flex flex-col gap-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-v4-secondary-text-color">Amount</span>
+          <span class="font-bold"
+            [ngClass]="cashExpenseForm.controls.cashExpenseType.value === '2' ? 'text-v4-common-green-color' : 'text-v4-common-red-color'">
+            {{ cashExpenseForm.controls.cashExpenseType.value === '2' ? '+' : '-' }}${{ cashExpenseForm.controls.cashExpenseAmount.value || '0.00' }}
+          </span>
+        </div>
+        @if (cashExpenseForm.controls.payee.value?.name) {
+          <div class="flex justify-between text-sm">
+            <span class="text-v4-secondary-text-color">Payee</span>
+            <span class="font-medium text-v4-main-text-color truncate max-w-[140px] text-right">{{ cashExpenseForm.controls.payee.value?.name }}</span>
+          </div>
+        }
+        @if (cashExpenseForm.controls.bankAccount.value?.bankName) {
+          <div class="flex justify-between text-sm">
+            <span class="text-v4-secondary-text-color">Account</span>
+            <span class="font-medium text-v4-main-text-color truncate max-w-[140px] text-right" [matTooltip]="cashExpenseForm.controls.bankAccount.value?.bankName">{{ cashExpenseForm.controls.bankAccount.value?.bankName }}</span>
+          </div>
+        }
+        @if (cashExpenseForm.controls.cashExpenseDate.value) {
+          <div class="flex justify-between text-sm">
+            <span class="text-v4-secondary-text-color">Date</span>
+            <span class="font-medium text-v4-main-text-color">{{ cashExpenseForm.controls.cashExpenseDate.value | date: 'MM/dd/yyyy' }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Payee Summary -->
+  @if (cashExpenseForm.controls.payee.value?.name) {
+    <div class="bg-v4-secondary-background-color rounded-2xl shadow-2xl border border-v4-border-color">
+      <div class="bg-v4-primary-brand-color px-3 py-2.5 rounded-t-2xl">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+            <lucide-icon name="bar-chart-2" [size]="15" class="text-white" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <h3 class="text-white font-bold text-sm leading-tight">Payee Summary</h3>
+              <button
+                type="button"
+                class="text-white/80 text-[12px] font-medium hover:text-white hover:underline cursor-pointer bg-transparent border-none p-0"
+                (click)="openTransactionHistoryModal()"
+              >View All</button>
+            </div>
+            <p class="text-white/80 text-[12px] truncate">{{ cashExpenseForm.controls.payee.value?.name }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="p-3">
+        @if (isPayeeSummaryLoading()) {
+          <div class="flex flex-col gap-2">
+            @for (i of [1,2,3]; track i) {
+              <div class="h-4 bg-v4-border-color rounded animate-pulse"></div>
+            }
+          </div>
+        } @else {
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-v4-secondary-text-color">Paid this month</span>
+              <span class="text-xs font-semibold text-v4-main-text-color">{{ payeeSummary()?.summary?.total_paid_in_month ?? '$0.00' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-v4-secondary-text-color">Paid this year</span>
+              <span class="text-xs font-semibold text-v4-main-text-color">{{ payeeSummary()?.summary?.total_paid_in_year ?? '$0.00' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-v4-secondary-text-color">Total paid (all time)</span>
+              <span class="text-xs font-semibold text-v4-main-text-color">{{ payeeSummary()?.summary?.total_paid_all ?? '$0.00' }}</span>
+            </div>
+          </div>
+
+          <!-- Transaction History -->
+          <div class="mt-3 border-t border-v4-border-color pt-2 max-h-[200px] overflow-y-auto">
+            @if (payeeSummary()?.rows && payeeSummary()!.rows.length > 0) {
+              <table class="w-full text-[12px]">
+                <thead>
+                  <tr class="text-v4-secondary-text-color">
+                    <th class="text-left font-medium pb-1">Date</th>
+                    <!-- <th class="text-left font-medium pb-1">Memo</th> -->
+                    <th class="text-right font-medium pb-1">Amount</th>
+                    <th class="text-right font-medium pb-1">A/C</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of payeeSummary()!.rows; track row.id) {
+                    <tr class="border-t border-v4-border-color">
+                      <td class="py-1 text-v4-main-text-color whitespace-nowrap">{{ row.date }}</td>
+                      <!-- <td class="py-1 text-v4-main-text-color truncate max-w-[50px]">{{ row.memo }}</td> -->
+                      <td class="py-1 text-v4-main-text-color text-right whitespace-nowrap">${{ row.amount }}</td>
+                      <td class="py-1 text-v4-main-text-color text-right truncate max-w-[50px]">{{ row.account }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="text-[12px] text-v4-secondary-text-color text-center py-2">No transactions yet</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ── Main Modal ── -->
+<div class="v4-modal-container">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-v4-border-color bg-v4-popup-header-footer-color">
+    <h2 class="m-0 text-lg font-bold text-v4-main-text-color">{{ title }}</h2>
+    <button
+      class="flex items-center justify-center w-8 h-8 rounded-lg border border-v4-border-color bg-v4-popup-header-footer-color cursor-pointer hover:bg-v4-secondary-background-color"
+      (click)="close()"
+    >
+      <lucide-icon name="x" [size]="18" class="text-v4-secondary-text-color" />
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="px-6 py-5 overflow-y-auto max-h-[calc(90vh-140px)] bg-v4-tertiary-background-color">
+    <form [formGroup]="cashExpenseForm" class="flex flex-col gap-4">
+
+      <!-- ── Amount Card ── -->
+      <div class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-6">
+        <app-common-amount-input-v4
+          [customClass]="'hero-input'"
+          [fieldLabel]="'How much is this expense?'"
+          formControlName="cashExpenseAmount"
+        />
+        <div class="flex justify-center mt-1">
+          <app-control-message-v4 [control]="cashExpenseForm.controls.cashExpenseAmount" />
+        </div>
+      </div>
+
+      <!-- ── Payee ── -->
+      @if (showPayeeSection) {
+        <div class="bg-v4-secondary-background-color rounded-2xl px-6 py-6">
+          <h3 class="text-v4-main-text-color text-sm font-medium mb-3">
+            Who are you paying <span class="text-v4-common-red-color">*</span>
+          </h3>
+          <app-payments-payee-list
+            [hidePayeeSummary]="true"
+            (payeeSelected)="onPayeeSelected($event)"
+          />
+          <app-control-message-v4 [control]="cashExpenseForm.controls.payee" />
+        </div>
+      }
+
+      <!-- ── Cash/Bank Account ── -->
+      @if (showBankSection) {
+        <div class="bg-v4-secondary-background-color rounded-2xl px-6 py-6">
+          <h3 class="text-v4-main-text-color text-sm font-medium mb-3">
+            Cash / Bank Account <span class="text-v4-common-red-color">*</span>
+          </h3>
+          <app-payments-bank-list
+            placeholder="Search bank accounts..."
+            addNewLabel="Add New Cash Account"
+            addNewSubLabel="Connect a new cash account for payments"
+            [requestContext]="'cashExpense'"
+            (bankSelected)="onBankSelected($event)"
+            [useExternalAddNew]="true"
+            (addNewClicked)="openNewCashAccountModal()"
+          />
+          <app-control-message-v4 [control]="cashExpenseForm.controls.bankAccount" />
+        </div>
+      }
+
+      <!-- ── Additional Details Card ── -->
+      @if (showDetailsSection) {
+        <div class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-v4-main-text-color">Additional Details</h3>
+            <!-- Action icon buttons: Attachment, Comment, Remittance -->
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="relative flex items-center justify-center w-9 h-9 rounded-lg border cursor-pointer transition-colors"
+                [ngClass]="existingAttachments().length > 0
+                  ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                  : 'border-v4-border-color bg-v4-popup-header-footer-color hover:bg-v4-tertiary-background-color'"
+                (click)="openAddAttachment()"
+                matTooltip="Attachments"
+              >
+                <lucide-icon name="paperclip" [size]="16"
+                  [ngClass]="existingAttachments().length > 0 ? 'text-v4-secondary-brand-color' : 'text-v4-secondary-text-color'" />
+                @if (existingAttachments().length > 0) {
+                  <span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-v4-secondary-brand-color text-v4-primary-brand-color text-[12px] font-bold rounded-full flex items-center justify-center">
+                    {{ existingAttachments().length }}
+                  </span>
+                }
+              </button>
+              <button
+                type="button"
+                class="relative flex items-center justify-center w-9 h-9 rounded-lg border cursor-pointer transition-colors"
+                [ngClass]="existingComments().length > 0
+                  ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                  : 'border-v4-border-color bg-v4-popup-header-footer-color hover:bg-v4-tertiary-background-color'"
+                (click)="openAddComment()"
+                matTooltip="Comments"
+              >
+                <lucide-icon name="message-square" [size]="16"
+                  [ngClass]="existingComments().length > 0 ? 'text-v4-secondary-brand-color' : 'text-v4-secondary-text-color'" />
+                @if (existingComments().length > 0) {
+                  <span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-v4-secondary-brand-color text-v4-primary-brand-color text-[12px] font-bold rounded-full flex items-center justify-center">
+                    {{ existingComments().length }}
+                  </span>
+                }
+              </button>
+              <button
+                type="button"
+                class="relative flex items-center justify-center w-9 h-9 rounded-lg border cursor-pointer transition-colors"
+                [ngClass]="remittanceRows().length > 0
+                  ? 'bg-v4-primary-brand-color border-v4-primary-brand-color'
+                  : 'border-v4-border-color bg-v4-popup-header-footer-color hover:bg-v4-tertiary-background-color'"
+                (click)="openRemittanceModal()"
+                matTooltip="Remittance"
+              >
+                <lucide-icon name="receipt" [size]="16"
+                  [ngClass]="remittanceRows().length > 0 ? 'text-v4-secondary-brand-color' : 'text-v4-secondary-text-color'" />
+                @if (remittanceRows().length > 0) {
+                  <span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-v4-secondary-brand-color text-v4-primary-brand-color text-[12px] font-bold rounded-full flex items-center justify-center">
+                    {{ remittanceRows().length }}
+                  </span>
+                }
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <!-- Date -->
+            <div class="v4-common-input-full-width">
+              <app-v4-date-picker
+                [placeholder]="'Select Date'"
+                [fieldLabel]="'Date'"
+                [isFieldRequired]="true"
+                [control]="cashExpenseForm.controls.cashExpenseDate"
+                formControlName="cashExpenseDate"
+              />
+            </div>
+
+            <!-- Category -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-v4-secondary-text-color">Category</label>
+              <app-category-dropdown-v4
+                [selectedId]="selectedCategory()?.id || ''"
+                [enableAddNew]="true"
+                (selectionEvent)="categoryDropDownChange($event)"
+              />
+            </div>
+
+            <!-- Serial No + Type -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="v4-common-input-full-width">
+                <app-common-input-v4
+                  [placeholder]="'Serial Number'"
+                  [fieldLabel]="'Cash Expense No'"
+                  [isFieldRequired]="true"
+                  [control]="cashExpenseForm.controls.cashExpense_no"
+                  formControlName="cashExpense_no"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-v4-secondary-text-color">
+                  Type <span class="text-v4-common-red-color">*</span>
+                </label>
+                <div class="flex h-10 rounded-lg border border-v4-border-color overflow-hidden">
+                  @for (type of cashTypeList; track type.value) {
+                    <button
+                      type="button"
+                      class="flex-1 h-full text-sm font-semibold cursor-pointer transition-all"
+                      [style.background-color]="cashExpenseForm.controls.cashExpenseType.value === type.value
+                        ? (type.value === '1' ? 'var(--v4-common-red-color)' : 'var(--v4-common-green-color)')
+                        : ''"
+                      [ngClass]="cashExpenseForm.controls.cashExpenseType.value === type.value
+                        ? 'text-white'
+                        : 'bg-v4-popup-background-color text-v4-secondary-text-color hover:bg-v4-tertiary-background-color'"
+                      (click)="cashExpenseForm.controls.cashExpenseType.setValue(type.value)"
+                    >
+                      {{ type.name }}
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Ac# + Invoice# -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="v4-common-input-full-width">
+                <app-common-input-v4
+                  [placeholder]="'Account Number'"
+                  [fieldLabel]="'Account#'"
+                  [isFieldRequired]="false"
+                  [maxLength]="25"
+                  [control]="cashExpenseForm.controls.acc_no"
+                  formControlName="acc_no"
+                />
+              </div>
+              <div class="v4-common-input-full-width">
+                <app-common-input-v4
+                  [placeholder]="'Invoice Number'"
+                  [fieldLabel]="'Invoice#'"
+                  [isFieldRequired]="false"
+                  [maxLength]="30"
+                  [control]="cashExpenseForm.controls.inv_no"
+                  formControlName="inv_no"
+                />
+              </div>
+            </div>
+
+            <!-- Memo -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-v4-secondary-text-color">Memo</label>
+              <textarea
+                formControlName="memo"
+                rows="2"
+                class="v4-input-style px-3 py-2 border border-input-border-color text-sm text-v4-main-text-color placeholder:text-v4-tertiary-text-color focus:outline-none focus:ring-2 focus:ring-v4-brand-border-color focus:border-v4-brand-border-color resize-none font-peridot placeholder:font-peridot"
+                placeholder="Add a note..."
+                maxlength="150"
+              ></textarea>
+            </div>
+
+          </div>
+        </div>
+      }
+
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="px-6 py-4 border-t border-v4-border-color bg-v4-popup-header-footer-color">
+    @if (showGetSignedReceipt) {
+      <div class="mb-3">
+        <app-common-button-v4
+          [type]="{ style: 'secondary', name: 'main' }"
+          text="Get Sign On Receipt"
+          lucideIcon="receipt"
+          [disabled]="isSaving()"
+          [loading]="savingAction() === 'signOnReceipt'"
+          (clickEvent)="onSubmit('signOnReceipt')"
+        />
+      </div>
+    }
+    <div class="flex gap-3">
+      @if (data.mode === 'create') {
+        <div class="flex-1">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Save & New"
+            lucideIcon="plus"
+            [width]="'100%'"
+            [disabled]="isSaving()"
+            [loading]="savingAction() === 'saveAndNew'"
+            (clickEvent)="onSubmit('saveAndNew')"
+          />
+        </div>
+      }
+      <div class="flex-1">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Print"
+          lucideIcon="printer"
+          [width]="'100%'"
+          [disabled]="isSaving()"
+          [loading]="savingAction() === 'print'"
+          (clickEvent)="onSubmit('print')"
+        />
+      </div>
+      <div class="flex-1">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Email"
+          lucideIcon="mail"
+          [width]="'100%'"
+          [disabled]="isSaving()"
+          [loading]="savingAction() === 'email'"
+          (clickEvent)="onSubmit('email')"
+        />
+      </div>
+      <div class="flex-1">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="{{ mode() === 'create' ? 'Save' : mode() === 'edit' ? 'Update' : 'Clone' }}"
+          lucideIcon="circle-check"
+          [width]="'100%'"
+          [disabled]="isSaving()"
+          [loading]="savingAction() === 'save'"
+          (clickEvent)="onSubmit('save')"
+        />
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,141 @@
+<div class="px-[6px] pb-[6px]" [ngClass]="{ '!px-12 pt-5': actAsChild() }">
+  <!-- modal header -->
+  <div
+    class="flex justify-between pb-6"
+    [ngClass]="{ '!hidden': actAsChild() }"
+  >
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >Add IP Address</span
+        >
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div [formGroup]="IpAddressForm" class="flex flex-col gap-3">
+    <div
+      class="flex flex-col gap-3"
+      [ngClass]="{ '!flex-row !gap-0': actAsChild() }"
+    >
+      <div [ngClass]="{ '!w-1/2 mr-4': actAsChild() }">
+        <app-common-input-field
+          placeholder="Enter IP Address"
+          formControlName="ipAddress"
+        />
+        <app-control-message-v35 [control]="IpAddressForm.controls.ipAddress" />
+        @if (IpAddressForm.controls.ipAddress?.errors?.pattern) {
+          <small class="flex mt-1 gap-1 pl-1">
+            <fa-icon
+              [icon]="faCircleExclamation"
+              class="text-common-red-color text-[12px]"
+              size="lg"
+              animation="shake"
+            />
+            <p class="text-common-red-color text-xs font-medium font-roboto">
+              Invalid IP address
+            </p>
+          </small>
+        }
+      </div>
+      
+      @if (source === 'profile') {
+        <div [ngClass]="{ '!w-1/2': actAsChild() }">
+          <app-common-input-field
+            placeholder="Enter Nickname"
+            formControlName="nickname"
+          />
+          <app-control-message-v35 [control]="IpAddressForm.controls.nickname" />
+        </div>
+      }@else{
+        <div [ngClass]="{ '!w-1/2': actAsChild() }">
+          <app-common-input-field
+            placeholder="Enter Device Name"
+            formControlName="name"
+          />
+          <app-control-message-v35 [control]="IpAddressForm.controls.name" />
+        </div>
+      }
+    </div>
+    <div [ngClass]="{ '!flex justify-end': actAsChild() }">
+      <app-common-button-v35
+        width="100%"
+        [ngClass]="{ '!w-[170px]': actAsChild() }"
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Add IP Address"
+        [disabled]="loading"
+        [loading]="loading"
+        (clickEvent)="onSubmit()"
+      ></app-common-button-v35>
+    </div>
+  </div>
+  <!-- modal body end -->
+  @if (ipList?.length) {
+    <div class="pt-3">
+      <h1 class="text-main-text-color text-sm font-inter font-medium">
+        Allowed IP Address
+      </h1>
+      <div class="pt-1 max-h-[480px] overflow-auto">
+        <table class="ocw-table ocw-table-base">
+          <thead>
+            <tr>
+              <td class="text-main-text-color text-sm font-inter font-normal">
+                IP Address
+              </td>
+              <td class="text-main-text-color text-sm font-inter font-normal">
+                Device Name
+              </td>
+              <td class="text-main-text-color text-sm font-inter font-normal">
+                Action
+              </td>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of ipList; track item; let i = $index) {
+              <tr>
+                <td>
+                  <p
+                    class="text-main-text-color text-sm font-inter font-normal overflow-hidden text-ellipsis max-w-36"
+                  >
+                    {{ item.ipAddress }}
+                  </p>
+                </td>
+                <td>
+                  <p
+                    class="text-main-text-color text-sm font-inter font-normal overflow-hidden text-ellipsis max-w-36"
+                  >
+                    {{ item.name }}
+                  </p>
+                </td>
+                <td>
+                  @if (isDeleteLoading[i]) {
+                    <fa-icon
+                      [icon]="faSpinner"
+                      class="text-common-red-color"
+                      animation="spin"
+                    />
+                  } @else {
+                    <fa-icon
+                      [icon]="faTrash"
+                      class="text-common-red-color cursor-pointer"
+                      (click)="onDeleteIP(item.id, i)"
+                    />
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

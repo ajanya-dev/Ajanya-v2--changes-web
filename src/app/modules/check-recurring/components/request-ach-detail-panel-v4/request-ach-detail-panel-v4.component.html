@@ -1,0 +1,415 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [title]="panelTitle()"
+  [subtitle]="panelSubtitle()"
+  [icon]="'repeat'"
+  [iconBgColor]="'var(--v4-common-blue-color)'"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="actionButtonClicked.emit($event)"
+/>
+
+<ng-template #bodyContent>
+  <div class="panel-body flex flex-col pb-6">
+    <!-- Loading skeleton -->
+    @if (isLoading()) {
+      <div class="animate-pulse">
+        <div
+          class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 mx-4 mt-4"
+        >
+          <div class="bg-v4-border-color rounded w-28 h-4 mb-3"></div>
+          @for (i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track i) {
+            <div
+              class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+            >
+              <div class="bg-v4-border-color rounded w-20 h-3"></div>
+              <div class="bg-v4-border-color rounded w-24 h-3"></div>
+            </div>
+          }
+        </div>
+        <div
+          class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4"
+        >
+          <div class="bg-v4-border-color rounded w-32 h-4 mb-3"></div>
+          @for (k of [1, 2, 3]; track k) {
+            <div
+              class="flex justify-between py-2.5 border-b border-v4-border-color"
+            >
+              <div class="bg-v4-border-color rounded w-24 h-3"></div>
+              <div class="bg-v4-border-color rounded w-16 h-5"></div>
+            </div>
+          }
+        </div>
+        <div
+          class="mt-3 mx-4 grid grid-cols-2 gap-2.5 rounded-xl border border-v4-border-color p-3"
+        >
+          @for (i of [1, 2]; track i) {
+            <div
+              class="flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-[10px] border border-v4-border-color bg-white px-2.5 py-4"
+            >
+              <div
+                class="w-[22px] h-[22px] bg-v4-border-color rounded shrink-0"
+              ></div>
+              <div class="bg-v4-border-color rounded w-14 h-3"></div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (!isLoading()) {
+      <!-- Payment Details Card -->
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 mx-4 mt-4"
+      >
+        <p class="text-sm font-bold text-v4-main-text-color mb-3">
+          Payment Details
+        </p>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color">Status</span>
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.status ?? panelStatusBadge()?.text ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color">Amount</span>
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{
+              viewData()?.amount ?? row()?.recurring_base_data?.amount ?? "—"
+            }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color"
+            >Frequency</span
+          >
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.frequency ?? row()?.rrule_freq ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color"
+            >Start date</span
+          >
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.startDate ?? row()?.start_date ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color">End date</span>
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.endDate ?? row()?.end_date ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color"># of pay</span>
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.ofPay ?? row()?.total ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color"
+            ># of paid</span
+          >
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.ofPaid ?? row()?.completed ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color"
+            ># of left</span
+          >
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.ofLeft ?? row()?.remaining ?? "—" }}
+          </span>
+        </div>
+
+        <div
+          class="flex justify-between items-center py-2.5 border-b border-v4-border-color"
+        >
+          <span class="text-[13px] text-v4-secondary-text-color"
+            >Paying from</span
+          >
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.payingFrom ?? row()?.from ?? "—" }}
+          </span>
+        </div>
+
+        <div class="flex justify-between items-center py-2.5">
+          <span class="text-[13px] text-v4-secondary-text-color">Memo</span>
+          <span class="text-[13px] font-medium text-v4-main-text-color">
+            {{ viewData()?.memo ?? row()?.recurring_base_data?.memo ?? "—" }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Recurring Events Card -->
+      <div
+        class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4 overflow-hidden"
+      >
+        <p class="text-sm font-bold text-v4-main-text-color m-0 mb-3">
+          Recurring Events
+        </p>
+
+        @if (recurringEventDetails().length > 0) {
+          <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+            <div class="max-h-[490px] overflow-y-auto">
+              <table class="v4-ocw-table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Recurring Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (
+                    event of recurringEventDetails();
+                    track event.recurringDate + $index
+                  ) {
+                    <tr>
+                      <td class="text-center">
+                        <span class="text-xs text-v4-tertiary-text-color">{{
+                          $index + 1
+                        }}</span>
+                      </td>
+                      <td>{{ event.recurringDate }}</td>
+                      <td>
+                        <span
+                          class="inline-block text-xs font-medium px-2.5 py-1 rounded-md"
+                          [style.background-color]="
+                            getEventStatusBadge(event.status).bg
+                          "
+                          [style.color]="
+                            getEventStatusBadge(event.status).color
+                          "
+                        >
+                          {{ event.status }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else {
+          <p class="text-sm text-v4-secondary-text-color text-center py-6 m-0">
+            No recurring events available.
+          </p>
+        }
+      </div>
+
+      <!-- Action Grid: Audit Trail + Comments -->
+      <div
+        class="mt-3 mx-4 grid grid-cols-2 gap-2.5 rounded-xl border border-v4-border-color p-3"
+      >
+        <button
+          class="flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-2.5 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'audit'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleSection('audit')"
+        >
+          <lucide-icon
+            name="activity"
+            [size]="22"
+            [ngClass]="
+              openActionSection() === 'audit'
+                ? 'shrink-0 text-white'
+                : 'shrink-0 text-v4-primary-brand-color'
+            "
+          ></lucide-icon>
+          <span
+            class="block w-full max-w-full text-center text-[12px] font-semibold leading-tight"
+            [ngClass]="
+              openActionSection() === 'audit'
+                ? 'text-white'
+                : 'text-v4-primary-brand-color'
+            "
+            >Audit Trail</span
+          >
+        </button>
+
+        <button
+          class="flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-2.5 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'comments'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleSection('comments')"
+        >
+          <lucide-icon
+            name="message-square"
+            [size]="22"
+            [ngClass]="
+              openActionSection() === 'comments'
+                ? 'shrink-0 text-white'
+                : 'shrink-0 text-v4-primary-brand-color'
+            "
+          ></lucide-icon>
+          <span
+            class="block w-full max-w-full text-center text-[12px] font-semibold leading-tight"
+            [ngClass]="
+              openActionSection() === 'comments'
+                ? 'text-white'
+                : 'text-v4-primary-brand-color'
+            "
+            >Comments</span
+          >
+        </button>
+      </div>
+
+      <!-- Inline Audit Trail Section -->
+      @if (openActionSection() === "audit") {
+        <div
+          class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4 overflow-hidden"
+        >
+          <p class="text-sm font-bold text-v4-main-text-color m-0 mb-3">
+            Audit Trail
+          </p>
+          @if (auditTrail().length > 0) {
+            <div
+              class="overflow-x-auto border border-v4-border-color rounded-xl"
+            >
+              <div class="max-h-[490px] overflow-y-auto">
+                <table class="v4-ocw-table">
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Device</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of auditTrail(); track item.date + $index) {
+                      <tr>
+                        <td class="text-center">
+                          <span class="text-xs text-v4-tertiary-text-color">{{
+                            $index + 1
+                          }}</span>
+                        </td>
+                        <td>{{ item.date }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>{{ item.ip }}</td>
+                        <td>{{ item.note }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          } @else {
+            <p
+              class="text-[13px] text-v4-secondary-text-color text-center py-6 m-0"
+            >
+              No audit trail available.
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Inline Comments Section -->
+      @if (openActionSection() === "comments") {
+        <div
+          class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4 overflow-hidden"
+        >
+          <p class="text-sm font-bold text-v4-main-text-color m-0 mb-3">
+            Comments
+          </p>
+
+          <!-- Add comment input -->
+          <div class="flex items-end gap-2 mb-4">
+            <app-common-input-v4
+              class="flex-1"
+              [placeholder]="'Add a comment...'"
+              [isFieldRequired]="false"
+              [control]="commentControl"
+              [formControl]="commentControl"
+              (keydown.enter)="addComment()"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              text="Send"
+              lucideIcon="send"
+              width="90px"
+              [disabled]="!commentControl.value?.trim() || isAddingComment()"
+              [loading]="isAddingComment()"
+              (clickEvent)="addComment()"
+            />
+          </div>
+
+          @if (commentList().length > 0) {
+            <div
+              class="overflow-x-auto border border-v4-border-color rounded-xl"
+            >
+              <div class="max-h-[490px] overflow-y-auto">
+                <table class="v4-ocw-table">
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Date</th>
+                      <th>Comment</th>
+                      <th>By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of commentList(); track $index) {
+                      <tr>
+                        <td class="text-center">
+                          <span class="text-xs text-v4-tertiary-text-color">{{
+                            $index + 1
+                          }}</span>
+                        </td>
+                        <td>{{ item.formated_date }}</td>
+                        <td>{{ item.comments }}</td>
+                        <td>{{ item.user_name }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          } @else {
+            <p
+              class="text-[13px] text-v4-secondary-text-color text-center py-4 m-0"
+            >
+              No comments yet
+            </p>
+          }
+        </div>
+      }
+    }
+  </div>
+</ng-template>

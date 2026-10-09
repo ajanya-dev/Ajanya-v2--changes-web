@@ -1,0 +1,233 @@
+@if (getFormControl().controls.length > 0) {
+  <div class="mb-4">
+    <!-- Section header -->
+    <div
+      role="presentation"
+      class="flex items-center justify-between px-4 py-3 bg-v4-secondary-background-color rounded-t-xl border border-v4-border-color cursor-pointer"
+      (click)="isCollapsed = !isCollapsed"
+    >
+      <div class="flex items-center gap-2">
+        <lucide-icon
+          [img]="SectionIcon"
+          [size]="18"
+          class="text-v4-common-blue-color"
+        />
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-funnel">
+          ACH Transfer
+        </h3>
+        <span class="text-xs text-v4-tertiary-text-color"
+          >({{ getFormControl().controls.length }})</span
+        >
+      </div>
+      <lucide-icon
+        [img]="ChevronDownIcon"
+        [size]="18"
+        class="text-v4-subtle-text-color transition-transform"
+        [class.rotate-180]="!isCollapsed"
+      />
+    </div>
+
+    <!-- Table -->
+    @if (!isCollapsed) {
+      <div
+        class="overflow-x-auto border border-t-0 border-v4-border-color rounded-b-xl"
+      >
+        <table class="v4-ocw-table" [formGroup]="dynamicForm">
+          <thead>
+            <tr>
+              <th class="!text-center w-8">#</th>
+              <th>From</th>
+              <th>Payee</th>
+              <th>Amount</th>
+              <th>Email</th>
+              @if (isSourceCard) {
+                <th>Invoice No</th>
+              }
+              <th class="min-w-[260px] w-[260px]">Payee Bank A/C</th>
+              @if (isShowMoreColumn) {
+                <th>More</th>
+              }
+            </tr>
+          </thead>
+          <tbody formArrayName="achFormArray">
+            @for (
+              data of getFormControl().controls;
+              track data;
+              let i = $index
+            ) {
+              <tr [formGroupName]="i">
+                <!-- # -->
+                <td class="!text-center w-8">
+                  <span class="text-xs text-v4-tertiary-text-color">{{
+                    i + 1
+                  }}</span>
+                </td>
+
+                <!-- From (icon) -->
+                <td>
+                  @if (data?.value?.from === "BANK") {
+                    <lucide-icon
+                      [img]="LandmarkIcon"
+                      [size]="16"
+                      class="text-v4-common-blue-color"
+                      [matTooltip]="
+                        data?.value?.source?.bankName ||
+                        data?.value?.source?.nickName ||
+                        ''
+                      "
+                    />
+                  }
+                  @if (data?.value?.from === "WALLET") {
+                    <lucide-icon
+                      [img]="WalletIcon"
+                      [size]="16"
+                      class="text-[#5b6be8]"
+                      [matTooltip]="data?.value?.source?.walletName || ''"
+                    />
+                  }
+                  @if (data?.value?.from === "CARD") {
+                    <lucide-icon
+                      [img]="CreditCardIcon"
+                      [size]="16"
+                      class="text-[#d4553b]"
+                      [matTooltip]="data?.value?.source?.nickName || ''"
+                    />
+                  }
+                </td>
+
+                <!-- Payee -->
+                <td>
+                  <span
+                    class="text-xs font-medium text-v4-main-text-color whitespace-nowrap truncate max-w-[180px] inline-block"
+                  >
+                    {{ data?.value?.payee?.name }}
+                  </span>
+                </td>
+
+                <!-- Amount -->
+                <td>
+                  <span
+                    class="text-xs font-medium text-v4-main-text-color whitespace-nowrap"
+                  >
+                    {{ data?.value?.amount | currency }}
+                  </span>
+                </td>
+
+                <!-- Email -->
+                <td>
+                  <div
+                    [ngClass]="{
+                      '!border-v4-common-red-color !border !rounded-xl':
+                        dynamicForm.get('achFormArray')?.at(i)?.get('email')
+                          ?.invalid &&
+                        dynamicForm.get('achFormArray')?.at(i)?.get('email')
+                          ?.touched
+                    }"
+                  >
+                    <app-common-input-v4
+                      [placeholder]="'Email Address'"
+                      [type]="'email'"
+                      [control]="data?.value?.email"
+                      formControlName="email"
+                      fieldHeight="32px"
+                    />
+                  </div>
+                </td>
+
+                <!-- Invoice No (CARD only) -->
+                @if (isSourceCard) {
+                  <td>
+                    @if (
+                      dynamicForm.get("achFormArray")?.at(i)?.get("referenceNo")
+                    ) {
+                      <div
+                        [ngClass]="{
+                          '!border-v4-common-red-color !border !rounded-xl':
+                            data?.get('referenceNo')?.invalid &&
+                            data?.get('referenceNo')?.touched
+                        }"
+                      >
+                        <app-common-input-v4
+                          [placeholder]="'Invoice No'"
+                          [type]="'text'"
+                          [control]="data?.value?.referenceNo"
+                          formControlName="referenceNo"
+                          fieldHeight="32px"
+                        />
+                      </div>
+                    } @else {
+                      <span class="text-xs text-v4-subtle-text-color">--</span>
+                    }
+                  </td>
+                }
+
+                <!-- Payee Bank A/C -->
+                <td class="min-w-[260px] w-[260px]">
+                  <div class="w-[260px]">
+                    @if (loadingBankRows.has(data)) {
+                      <div class="pd-skeleton-bar h-8 w-full rounded-lg"></div>
+                    } @else {
+                    <app-v4-common-dropdown
+                      class="block w-full"
+                      [listData]="data?.value?.payeeBanks || []"
+                      [config]="payeeBankDropdownConfig"
+                      formControlName="payeeAcc"
+                      [clearable]="true"
+                      [appendTo]="'body'"
+                      (buttonClick)="addPayeeBankAc(data?.value?.payee?.id, i)"
+                      [isInvalid]="
+                        data?.get('payeeAcc')?.invalid &&
+                        data?.get('payeeAcc')?.touched
+                      "
+                    />
+                    }
+                  </div>
+                </td>
+
+                <!-- More (CARD only) -->
+                @if (isShowMoreColumn) {
+                  <td>
+                    @if (
+                      dynamicForm.get("achFormArray")?.at(i)?.get("documents")
+                        ?.invalid
+                    ) {
+                      <div
+                        role="presentation"
+                        class="flex gap-1 items-center cursor-pointer text-v4-common-red-color"
+                        matTooltip="Click to verify payment"
+                        (click)="
+                          openVerifyCardInvoiceModal(
+                            dynamicForm.get('achFormArray')?.at(i)
+                          )
+                        "
+                      >
+                        <lucide-icon [img]="CircleAlertIcon" [size]="14" />
+                        <span
+                          class="text-xs font-medium text-v4-common-blue-color underline"
+                          >Verify</span
+                        >
+                      </div>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+
+            @if (getFormControl().controls.length === 0) {
+              <tr>
+                <td
+                  [attr.colspan]="isSourceCard ? 8 : 6"
+                  class="text-center !py-8"
+                >
+                  <span class="text-sm text-v4-subtle-text-color"
+                    >No ACH payments</span
+                  >
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

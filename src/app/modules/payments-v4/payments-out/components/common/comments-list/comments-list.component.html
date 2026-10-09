@@ -1,0 +1,185 @@
+<div
+  class="comments-list flex flex-col rounded-xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden"
+  [style.max-height]="maxHeight()"
+  [class.is-bare]="bare()"
+>
+  @if (!bare()) {
+    <div
+      class="flex shrink-0 items-center justify-between px-3.5 py-2.5 border-b border-v4-border-color bg-v4-secondary-background-color"
+    >
+      <h3
+        class="text-[13px] font-semibold text-v4-main-text-color font-funnel m-0"
+      >
+        Comments
+      </h3>
+      <button
+        type="button"
+        class="shrink-0 cursor-pointer border-none bg-transparent text-v4-tertiary-text-color"
+        (click)="toggleFold()"
+      >
+        <lucide-icon
+          [img]="collapsed() ? ChevronDownIcon : ChevronUpIcon"
+          [size]="15"
+        ></lucide-icon>
+      </button>
+    </div>
+  }
+
+  @if (!collapsed()) {
+    <!-- Inline composer (industry-standard: no modal) -->
+    <div class="shrink-0">
+      <div
+        class="flex items-center py-2.5"
+        [ngClass]="variant() === 'view-panel' ? 'gap-1.5 px-0' : 'gap-2 px-3.5'"
+      >
+        <textarea
+          #composer
+          [(ngModel)]="draft"
+          rows="1"
+          maxlength="190"
+          [disabled]="posting()"
+          [placeholder]="
+            variant() === 'view-panel' ? 'Add a comment' : 'Add a comment…'
+          "
+          [attr.aria-invalid]="!!emptyError()"
+          (input)="autoGrow(composer); emptyError.set(null)"
+          (keydown.enter)="$event.preventDefault(); post()"
+          class="v4-input-style px-3 py-2 border border-input-border-color text-[13px] text-v4-main-text-color placeholder:text-v4-tertiary-text-color focus:outline-none focus:ring-2 focus:ring-v4-brand-border-color focus:border-v4-brand-border-color resize-none font-peridot placeholder:font-peridot"
+          [class.!border-v4-badge-error-text-color]="!!emptyError()"
+          [ngClass]="
+            variant() === 'view-panel'
+              ? '!rounded-[8px] !px-2.5 !py-[7px] !text-[12px] !leading-4 focus:ring-inset'
+              : ''
+          "
+        ></textarea>
+        <app-common-button-v4
+          [type]="{
+            style: variant() === 'view-panel' ? 'navy' : 'primary',
+            name: 'v2-1',
+            size: 'sm'
+          }"
+          [text]="
+            posting()
+              ? 'Posting…'
+              : variant() === 'view-panel'
+                ? 'Add comment'
+                : 'Post'
+          "
+          [loading]="posting()"
+          [customClasses]="
+            variant() === 'view-panel' ? '!h-8 !text-[12px]' : ''
+          "
+          [disabled]="
+            posting() || (variant() !== 'view-panel' && !draft.trim())
+          "
+          (clickEvent)="post()"
+        ></app-common-button-v4>
+      </div>
+      @if (error() || emptyError(); as message) {
+        <div
+          class="flex items-center gap-1.5 pb-2.5 text-[12px] font-medium"
+          [ngClass]="
+            variant() === 'view-panel'
+              ? 'px-0 text-v4-badge-error-text-color'
+              : 'px-3.5 text-v4-common-red-color'
+          "
+        >
+          <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+          {{ message }}
+        </div>
+      }
+    </div>
+
+    <div
+      class="min-h-0 flex-1 overflow-y-auto bg-v4-secondary-background-color"
+    >
+      @if (comments()?.length) {
+        <div class="overflow-x-auto">
+          <div class="max-h-[490px] overflow-y-auto">
+            <table class="v4-ocw-table">
+              <thead>
+                <tr>
+                  <th [class.text-center]="variant() !== 'view-panel'">#</th>
+                  <th>Date</th>
+                  <th>Created By</th>
+                  <th>Comment</th>
+                  @if (allowDelete()) {
+                    <th [class.text-center]="variant() !== 'view-panel'">
+                      Action
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (entry of visibleComments(); track $index) {
+                  <tr>
+                    <td [class.text-center]="variant() !== 'view-panel'">
+                      <span class="text-xs text-v4-tertiary-text-color">{{
+                        $index + 1
+                      }}</span>
+                    </td>
+                    <td>
+                      <app-pd-date-time
+                        [value]="
+                          entry.date
+                            ? entry.date + ' ' + (entry.time ?? '')
+                            : entry.formated_date
+                        "
+                      />
+                    </td>
+                    <td>
+                      {{ entry.createdBy ?? entry.user_name }}
+                    </td>
+                    <td class="max-w-[280px]">
+                      <span
+                        class="line-clamp-2"
+                        [matTooltip]="entry.comment ?? entry.comments"
+                        >{{ entry.comment ?? entry.comments }}</span
+                      >
+                    </td>
+                    @if (allowDelete()) {
+                      <td [class.text-center]="variant() !== 'view-panel'">
+                        <button
+                          type="button"
+                          class="inline-flex items-center justify-center border-none bg-transparent cursor-pointer p-1.5 rounded text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors"
+                          (click)="
+                            deleteComment.emit(
+                              entry.encrypted_id || '' + entry.id
+                            )
+                          "
+                        >
+                          <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        @if (canShowMore()) {
+          <div class="px-3.5 pb-2">
+            <app-pd-show-more
+              [hiddenCount]="hiddenCount()"
+              [showingAll]="showAll()"
+              (toggled)="showAll.set(!showAll())"
+            />
+          </div>
+        }
+      } @else if (emptyHint()) {
+        <app-pd-empty-state
+          icon="message-square"
+          [title]="'No comments yet'"
+          [hint]="emptyHint()"
+        />
+      } @else {
+        <div class="pd-empty">
+          <p class="text-center py-8 text-v4-secondary-text-color text-sm m-0">
+            No comments yet.
+          </p>
+        </div>
+      }
+    </div>
+  }
+</div>

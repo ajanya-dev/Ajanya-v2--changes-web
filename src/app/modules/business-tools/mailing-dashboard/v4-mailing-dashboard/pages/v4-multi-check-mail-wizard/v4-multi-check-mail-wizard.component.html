@@ -1,0 +1,910 @@
+<div class="flex flex-col h-screen w-full overflow-hidden bg-v4-main-background-color">
+  <div class="w-full max-w-[1400px] mx-auto px-6 flex flex-col flex-1 min-h-0">
+    <!-- Page Header -->
+    <div class="flex items-center gap-2 py-4">
+      <button
+        type="button"
+        class="flex items-center justify-center cursor-pointer text-v4-subtle-text-color hover:text-v4-main-text-color"
+        (click)="back()"
+      >
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+      <h3 class="text-v4-main-text-color font-peridot font-semibold text-lg">
+        @if (showCheckSummary()) {
+          {{ getHeaderTitle() }}
+        } @else {
+          Import Mail Checks : Match Your Data
+        }
+      </h3>
+    </div>
+
+    <!-- Stepper -->
+    <div class="flex-shrink-0 pt-2">
+      <app-v4-multi-check-stepper [activeStep]="activeStep()" />
+    </div>
+
+    <!-- Scrollable Content Area -->
+    <div class="flex-1 overflow-auto py-4">
+    <!-- MAIN BODY START -->
+    @if (
+      showCheckSummary() &&
+      !showSelectionShippingType() &&
+      !showReviewandSubmit()
+    ) {
+      <!-- Check Summary View -->
+      <div class="w-full mt-4 bg-v4-secondary-background-color rounded-xl p-4 sm:p-6">
+        <!-- Scrollable Table Container -->
+        <div class="table-responsive">
+          <table class="w-full">
+            <thead class="sticky top-0 z-10 bg-v4-secondary-background-color">
+              <tr>
+                <th
+                  class="text-left whitespace-nowrap w-[5%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  #
+                </th>
+                <th
+                  class="text-left whitespace-nowrap w-[25%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  PAYEE NAME
+                </th>
+                <th
+                  class="text-left whitespace-nowrap w-[12%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  <div class="flex items-center">
+                    <span>AMOUNT</span>
+                  </div>
+                </th>
+                <th
+                  class="text-left whitespace-nowrap w-[15%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  <div class="flex items-center">
+                    <span>SHIPPING TYPE</span>
+                  </div>
+                </th>
+                <th
+                  class="text-left whitespace-nowrap w-[10%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  <div class="flex items-center">
+                    <lucide-icon
+                      name="credit-card"
+                      [size]="14"
+                      class="mr-2 text-v4-primary-brand-bold-color"
+                    ></lucide-icon>
+                    <span>CHECK NO</span>
+                  </div>
+                </th>
+                <th
+                  class="text-left whitespace-nowrap w-[10%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  <div class="flex items-center">
+                    <lucide-icon
+                      name="circle-dollar-sign"
+                      [size]="14"
+                      class="mr-2 text-v4-common-yellow-color"
+                    ></lucide-icon>
+                    <span>COST</span>
+                  </div>
+                </th>
+                <th
+                  class="text-center whitespace-nowrap w-[23%] px-4 py-3 text-xs font-semibold text-v4-secondary-text-color uppercase"
+                >
+                  <div class="flex items-center justify-center">
+                    <lucide-icon
+                      name="paperclip"
+                      [size]="14"
+                      class="mr-2 text-v4-accent-violet-color"
+                    ></lucide-icon>
+                    <span>ATTACHMENT</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (
+                check of checkSummaryData();
+                track check.enc_id;
+                let i = $index
+              ) {
+                <tr class="border-b border-v4-border-color">
+                  <td class="px-4 py-3 text-sm text-v4-main-text-color">
+                    {{ i + 1 }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="font-medium text-v4-main-text-color font-peridot text-sm"
+                      >
+                        {{ check.payee_name }}
+                      </span>
+                      <lucide-icon
+                        name="pencil"
+                        [size]="14"
+                        class="text-v4-secondary-text-color cursor-pointer hover:text-v4-primary-brand-bold-color"
+                        matTooltip="Edit payee address"
+                        (click)="
+                          openEditPayeeAdress(
+                            check.enc_payee_id,
+                            check.cheque_serial_number,
+                            check.enc_id
+                          )
+                        "
+                      ></lucide-icon>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="font-semibold text-v4-main-text-color text-sm">
+                      $ {{ check.cheque_amount }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-v4-main-text-color">
+                      {{ getShippingTypeDisplay(check.mail_type, "name") }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-v4-main-text-color">
+                    {{ check.cheque_serial_number }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-v4-main-text-color">
+                      $ {{ getCheckShippingCost(check.enc_id) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex justify-center items-center gap-2">
+                      @if (
+                        check.is_exisiting_attach === 1 &&
+                        (!attachments[check.enc_id] ||
+                          attachments[check.enc_id]?.length === 0)
+                      ) {
+                        <lucide-icon
+                          name="info"
+                          [size]="14"
+                          class="text-v4-primary-brand-bold-color cursor-pointer flex-shrink-0"
+                          matTooltip="You have attachments with this check. Click on 'Add' and select to mail them with the check."
+                        ></lucide-icon>
+                      }
+
+                      @if (
+                        attachments[check.enc_id] &&
+                        attachments[check.enc_id]?.length > 0
+                      ) {
+                        <span class="attachment-count flex-shrink-0">
+                          {{ attachments[check.enc_id]?.length }}
+                        </span>
+                      }
+
+                      <button
+                        type="button"
+                        (click)="openAttachmentModal(check.enc_id)"
+                        class="flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer text-v4-common-violet-color text-sm font-semibold font-peridot hover:opacity-80"
+                        matTooltip="Select to mail attached documents with the check."
+                      >
+                        <lucide-icon name="plus" [size]="14"></lucide-icon>
+                        <span>Add</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Subtotal Row -->
+        <div class="flex justify-between mt-4 pr-6">
+          <div>
+            <p class="text-base text-v4-main-text-color font-peridot">
+              TOTAL :
+              <span class="amount font-bold text-lg"
+                >$ {{ calculateGrandTotal().toFixed(2) }}</span
+              >
+            </p>
+          </div>
+          <div>
+            <p
+              class="whitespace-nowrap text-sm font-medium text-v4-main-text-color font-peridot"
+            >
+              SUB TOTAL :
+              <span class="text-base font-semibold"
+                >$ {{ subtotal() ? subtotal().toFixed(2) : "0.00" }}</span
+              >
+            </p>
+          </div>
+        </div>
+
+        <!-- Summary Footer -->
+        <div class="mt-5">
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            (clickEvent)="contnueTosShipping()"
+            text="Continue to Shipping"
+            width="100%"
+            class="w-full block"
+          />
+        </div>
+      </div>
+    } @else if (!showCheckSummary() && !showSelectionShippingType()) {
+      <!-- V4 Mapping Table View -->
+      <div class="bg-v4-secondary-background-color rounded-xl p-4 sm:p-6">
+        <!-- Card Header: Title + Reset Mappings -->
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-base font-semibold text-v4-main-text-color font-peridot">
+            Match Your Columns
+          </h4>
+          @if (showResettingMapping()) {
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              (clickEvent)="resetMappings()"
+              text="Reset Mappings"
+              lucideIcon="refresh-cw"
+            />
+          }
+        </div>
+
+        <!-- Instructions -->
+        <p class="text-sm text-v4-secondary-text-color font-peridot mb-4">
+          Match each column from your file to the corresponding field. Required fields are marked with <span class="text-v4-common-red-color">*</span>
+        </p>
+
+        <!-- Scrollable Table -->
+        <div class="overflow-x-auto border border-v4-border-color rounded-lg">
+          <table class="w-full border-collapse">
+            <!-- Header Row with Dropdowns -->
+            <thead>
+              <tr class="bg-v4-tertiary-background-color">
+                <th class="px-3 py-3 text-left min-w-[60px] border-b border-v4-border-color">
+                  <span class="text-[12px] font-semibold text-v4-secondary-text-color uppercase font-peridot">Sl.No</span>
+                </th>
+                @if (showErrorPage() || isStep3Completed()) {
+                  <th class="px-3 py-3 text-left min-w-[90px] border-b border-v4-border-color">
+                    <span class="text-[12px] font-semibold text-v4-secondary-text-color uppercase font-peridot">Actions</span>
+                  </th>
+                }
+                @for (item of headerColumns; track item; let i = $index) {
+                  <th class="px-3 py-2 text-left min-w-[200px] border-b border-v4-border-color">
+                    <div class="flex items-center gap-1.5">
+                      <app-v4-select-dropdown
+                        class="flex-1 min-w-0"
+                        [items]="getColumnDropdownOptions(i)"
+                        [selectedValue]="item.selectedIndex"
+                        [compact]="false"
+                        panelClass="bordered-items"
+                        placeholder="-- Match Field --"
+                        (selectionChange)="onColumnMappingChange(i, $event)"
+                      />
+                      @if (item.required) {
+                        <span class="text-v4-common-red-color font-bold flex-shrink-0">*</span>
+                      }
+                    </div>
+                  </th>
+                }
+              </tr>
+            </thead>
+
+            <!-- Data Rows -->
+            <tbody>
+              @for (row of checkData(); track row; let i = $index) {
+                <tr class="border-b border-v4-border-color hover:bg-v4-tertiary-background-color/50 transition-colors">
+                  <!-- Sl.No -->
+                  <td class="px-3 py-2.5 text-sm text-v4-main-text-color font-peridot">
+                    {{ data?.fileHeader?.length ? i + 2 : i + 1 }}
+                  </td>
+
+                  <!-- Actions (only in error/validation mode) -->
+                  @if (showErrorPage() || isStep3Completed()) {
+                    <td class="px-3 py-2.5 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        @if (row.isEditing) {
+                          <lucide-icon
+                            (click)="saveTransaction(row, i)"
+                            name="save"
+                            [size]="16"
+                            class="cursor-pointer text-v4-common-green-color hover:opacity-80"
+                            matTooltip="Save"
+                          ></lucide-icon>
+                        } @else {
+                          <lucide-icon
+                            (click)="editTransaction(row)"
+                            name="pencil"
+                            [size]="16"
+                            class="cursor-pointer text-v4-primary-brand-bold-color hover:opacity-80"
+                            matTooltip="Edit"
+                          ></lucide-icon>
+                        }
+                        <lucide-icon
+                          (click)="!row.isDeleting && deleteTransaction(row)"
+                          name="trash-2"
+                          [size]="16"
+                          class="text-v4-common-red-color hover:opacity-80"
+                          [class.cursor-pointer]="!row.isDeleting"
+                          [class.opacity-50]="row.isDeleting"
+                          [class.pointer-events-none]="row.isDeleting"
+                          matTooltip="Delete"
+                        ></lucide-icon>
+                      </div>
+                    </td>
+                  }
+
+                  <!-- Data cells - dynamically rendered per field -->
+                  @for (field of tableFields; track field; let fi = $index) {
+                    <td
+                      class="px-3 py-2.5 text-sm text-v4-main-text-color font-peridot"
+                      [class.error-cell]="hasError(row, field) && !isRowSaved(i)"
+                    >
+                      <div class="flex items-center gap-1">
+                        @if (hasError(row, field) && !isRowSaved(i)) {
+                          <lucide-icon
+                            class="text-v4-common-red-color flex-shrink-0"
+                            name="circle-alert"
+                            [size]="14"
+                            [matTooltip]="row.validation_error?.[field] || ''"
+                          ></lucide-icon>
+                        }
+                        @if (field === 'bank_account_number' && row.isEditing) {
+                          <lucide-icon
+                            class="text-v4-common-green-color cursor-pointer flex-shrink-0"
+                            name="plus"
+                            [size]="14"
+                            matTooltip="Update Bank Details"
+                            (click)="updateBankDetails(row)"
+                          ></lucide-icon>
+                        }
+                        @if (row.isEditing && field !== 'row_number') {
+                          <input
+                            type="text"
+                            [(ngModel)]="$any(row)[field]"
+                            class="flex-1 min-w-0 border border-v4-border-color rounded-md px-2 py-1 text-sm bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:ring-1 focus:ring-v4-primary-brand-bold-color"
+                            [readonly]="field === 'bank_account_number'"
+                          />
+                        } @else {
+                          <span
+                            class="truncate block max-w-[180px]"
+                            [matTooltip]="
+                              field === 'mail_type'
+                                ? getShippingTypeDisplay($any(row)[field])
+                                : ($any(row)[field] || '')
+                            "
+                            [matTooltipDisabled]="!$any(row)[field]"
+                          >
+                            @if (field === 'mail_type') {
+                              {{ getShippingTypeDisplay($any(row)[field]) }}
+                            } @else {
+                              {{ $any(row)[field] }}
+                            }
+                          </span>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mapping Summary -->
+        <div class="mt-4 flex items-center justify-between">
+          <div class="flex items-center gap-4 text-xs text-v4-subtle-text-color font-peridot">
+            <span>
+              <span class="font-semibold text-v4-main-text-color">{{ checkData().length }}</span> rows detected
+            </span>
+            <span class="text-v4-border-color">|</span>
+            <span>
+              <span class="font-semibold text-v4-main-text-color">{{ getMappedFieldCount() }}</span> of {{ fieldMappingOptions.length }} fields mapped
+            </span>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-6">
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            (clickEvent)="needsConfirmation() ? confirmAndProceed() : submit()"
+            [disabled]="submitting() || isProcessingStep4() || isConfirming()"
+            [loading]="submitting() || isProcessingStep4() || isConfirming()"
+            [text]="needsConfirmation() || isFirstTimeSuccess() ? 'Confirm' : 'Submit'"
+            width="100%"
+            class="w-full block"
+          />
+        </div>
+      </div>
+    } @else if (showSelectionShippingType() && !showReviewandSubmit()) {
+      <!-- Card-based selection for Ship To -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        @for (type of mailingTypes; track type.key) {
+          <div
+            class="relative rounded-xl p-6 border-2 cursor-pointer transition-all"
+            [ngClass]="{
+              'bg-v4-secondary-background-color border-v4-border-color mailing-card-hover-blue':
+                shipToAddress() !== type.key && type.accent === 'blue',
+              'bg-v4-secondary-background-color border-v4-border-color mailing-card-hover-orange':
+                shipToAddress() !== type.key && type.accent === 'orange',
+              'mailing-card-selected-blue':
+                type.accent === 'blue' && shipToAddress() === type.key,
+              'mailing-card-selected-orange':
+                type.accent === 'orange' && shipToAddress() === type.key
+            }"
+            (click)="toggleShipToAddress(type.key)"
+          >
+            <!-- Top row: Icon tile + help/check -->
+            <div class="flex items-start justify-between mb-4">
+              <!-- Icon tile -->
+              <div
+                class="w-12 h-12 rounded-lg flex items-center justify-center"
+                [ngClass]="{
+                  'bg-v4-badge-info-bg-color': type.accent === 'blue',
+                  'bg-v4-insight-card-background-orange': type.accent === 'orange'
+                }"
+              >
+                <lucide-icon
+                  [name]="type.icon"
+                  [size]="24"
+                  [ngClass]="{
+                    'text-v4-common-blue-color': type.accent === 'blue',
+                    'text-v4-insight-card-icon-orange': type.accent === 'orange'
+                  }"
+                ></lucide-icon>
+              </div>
+
+              <!-- Help + Check badge -->
+              <div class="flex items-center gap-2">
+                <lucide-icon
+                  name="circle-help"
+                  [size]="16"
+                  class="text-v4-subtle-text-color cursor-pointer"
+                  [matTooltip]="type.tooltip"
+                ></lucide-icon>
+                @if (shipToAddress() === type.key) {
+                  <div
+                    class="w-6 h-6 rounded-full flex items-center justify-center"
+                    [ngClass]="{
+                      'bg-v4-common-blue-color': type.accent === 'blue',
+                      'bg-v4-insight-card-icon-orange': type.accent === 'orange'
+                    }"
+                  >
+                    <lucide-icon
+                      name="check"
+                      [size]="14"
+                      class="text-white"
+                    ></lucide-icon>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Title -->
+            <h3
+              class="text-lg font-bold text-v4-main-text-color mb-2 font-peridot"
+            >
+              {{ type.value }}
+            </h3>
+
+            <!-- Description -->
+            <p class="text-sm text-v4-secondary-text-color mb-4">
+              {{ type.description }}
+            </p>
+
+            <!-- Features -->
+            <ul class="space-y-2">
+              @for (feature of type.features; track feature.key) {
+                <li
+                  class="flex items-center gap-2 text-sm text-v4-main-text-color"
+                >
+                  <lucide-icon
+                    name="check"
+                    [size]="14"
+                    [ngClass]="{
+                      'text-v4-common-blue-color': type.accent === 'blue',
+                      'text-v4-insight-card-icon-orange': type.accent === 'orange'
+                    }"
+                  ></lucide-icon>
+                  {{ feature.value }}
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      @if (shipToAddress() === "custom") {
+        <!-- Shipping Details — standalone card -->
+        <div
+          class="mt-4 bg-v4-secondary-background-color rounded-xl p-4 sm:p-6 border border-v4-border-color"
+        >
+          <div class="mb-4">
+            <label
+              for="mail-from"
+              class="text-base font-bold text-v4-main-text-color font-peridot"
+              >Shipping Details</label
+            >
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Mail From -->
+            <div class="flex flex-col">
+              <label
+                for="mail-from"
+                class="text-xs font-semibold text-v4-secondary-text-color uppercase mb-2"
+                >MAIL FROM</label
+              >
+              <div class="flex gap-2 items-center w-full">
+                <app-v4-select-dropdown
+                  class="flex-1 min-w-0"
+                  [items]="shippingAddressFromOptions"
+                  [selectedValue]="currentMailFrom"
+                  [compact]="false"
+                  placeholder="Select Sender Address"
+                  (selectionChange)="onMailFromChange($event)"
+                />
+                <button [attr.aria-label]="(currentMailFrom ? 'Edit Sender Address' : 'Add Sender Address') || null"
+                  type="button"
+                  class="flex-shrink-0 w-9 h-9 rounded-lg bg-v4-primary-brand-color flex items-center justify-center cursor-pointer hover:opacity-90"
+                  [matTooltip]="currentMailFrom ? 'Edit Sender Address' : 'Add Sender Address'"
+                  (click)="openAddMailAddressModal('mail-from')"
+                >
+                  <lucide-icon
+                    [name]="currentMailFrom ? 'pencil' : 'plus'"
+                    [size]="16"
+                    class="text-white"
+                  />
+                </button>
+              </div>
+              <app-control-message-v4
+                [control]="mailFromControl"
+                label="Mail From is required"
+              />
+            </div>
+
+            <!-- Mail To -->
+            <div class="flex flex-col">
+              <label
+                for="mail-to"
+                class="text-xs font-semibold text-v4-secondary-text-color uppercase mb-2"
+                >MAIL TO</label
+              >
+              <div class="flex gap-2 items-center w-full">
+                <app-v4-select-dropdown
+                  class="flex-1 min-w-0"
+                  [items]="shippingAddressToOptions"
+                  [selectedValue]="currentMailTo"
+                  [compact]="false"
+                  placeholder="Select Destination Address"
+                  (selectionChange)="onMailToChange($event)"
+                />
+                <button [attr.aria-label]="(currentMailTo ? 'Edit Destination Address' : 'Add Destination Address') || null"
+                  type="button"
+                  class="flex-shrink-0 w-9 h-9 rounded-lg bg-v4-primary-brand-color flex items-center justify-center cursor-pointer hover:opacity-90"
+                  [matTooltip]="currentMailTo ? 'Edit Destination Address' : 'Add Destination Address'"
+                  (click)="openAddMailAddressModal('mail-to')"
+                >
+                  <lucide-icon
+                    [name]="currentMailTo ? 'pencil' : 'plus'"
+                    [size]="16"
+                    class="text-white"
+                  />
+                </button>
+              </div>
+              <app-control-message-v4
+                [control]="mailToControl"
+                label="Mail To is required"
+              />
+            </div>
+
+            <!-- Shipping Type -->
+            <div class="flex flex-col">
+              <label
+                for="shipping-type"
+                class="text-xs font-semibold text-v4-secondary-text-color uppercase mb-2"
+                >SHIPPING TYPE</label
+              >
+              <app-v4-select-dropdown
+                class="w-full"
+                [items]="customShippingTypeOptions"
+                [selectedValue]="customShippingType"
+                [compact]="false"
+                placeholder="Select shipping Method"
+                (selectionChange)="onCustomShippingTypeChange($event)"
+              />
+              <app-control-message-v4
+                [control]="shippingTypeControl"
+                label="Shipping Type is required"
+              />
+            </div>
+          </div>
+
+          <!-- Shipping Fee Display -->
+          <div class="text-right mt-4 text-sm">
+            <span class="text-v4-secondary-text-color">Shipping Fee:</span>
+            <span class="ml-2 font-semibold text-v4-primary-brand-bold-color"
+              >${{ shippingFee.toFixed(2) }}</span
+            >
+          </div>
+        </div>
+      }
+      @if (shipToAddress() === "payee") {
+        <!-- Note — standalone info card -->
+        <div class="note-info-card mt-4 rounded-xl p-4">
+          <div class="flex items-center gap-3">
+            <lucide-icon
+              name="info"
+              [size]="18"
+              class="text-v4-primary-brand-bold-color flex-shrink-0"
+            ></lucide-icon>
+            <p class="text-sm text-v4-primary-brand-bold-color">
+              <strong>Note:</strong> Each check will be mailed separately in
+              individual envelopes. Best for urgent or individual payments.
+            </p>
+          </div>
+        </div>
+      }
+
+      <div class="flex justify-end items-center gap-3 mt-6">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          (clickEvent)="goBack()"
+          text="Back"
+          width="100px"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          (clickEvent)="proceedToMailing()"
+          text="Continue to Shipping"
+          width="200px"
+          [disabled]="isSendingMail()"
+          [loading]="isSendingMail()"
+        />
+      </div>
+    } @else if (showReviewandSubmit()) {
+      <div class="w-full mt-4 bg-v4-secondary-background-color rounded-xl p-4 sm:p-6">
+          <!-- Header -->
+      <h3 class="text-2xl font-bold text-v4-main-text-color mb-6 font-peridot">
+        Review & Submit
+      </h3>
+
+      <!-- MAILING TYPE Section -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <h4
+              class="text-sm font-bold text-v4-secondary-text-color uppercase"
+            >
+              MAILING TYPE
+            </h4>
+            <lucide-icon
+              name="info"
+              [size]="14"
+              class="text-v4-secondary-text-color cursor-pointer"
+              matTooltip="The type of mailing you selected"
+            ></lucide-icon>
+          </div>
+          <button
+            (click)="editShippingDetails()"
+            class="text-sm text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+          >
+            Edit
+          </button>
+        </div>
+        <div
+          class="bg-v4-secondary-background-color rounded-lg p-4 border border-v4-border-color"
+        >
+          <h5
+            class="font-semibold text-v4-main-text-color mb-2 font-peridot"
+          >
+            {{ shipToAddress() === "payee" ? "Single Mail" : "Bundle Mail" }}
+          </h5>
+          <p class="text-sm text-v4-secondary-text-color mb-3">
+            {{
+              shipToAddress() === "payee"
+                ? "Mail one individual check to either the payee's address or a custom address. Use for urgent or one-off payments."
+                : "All checks are bundled together and mailed to one single custom address. Most cost-effective for bulk delivery."
+            }}
+          </p>
+          <ul class="space-y-1">
+            @if (shipToAddress() === "payee") {
+              <li
+                class="flex items-center text-xs text-v4-secondary-text-color"
+              >
+                <span
+                  class="w-1.5 h-1.5 bg-v4-primary-brand-bold-color rounded-full mr-2"
+                ></span>
+                Individual tracking
+              </li>
+              <li
+                class="flex items-center text-xs text-v4-secondary-text-color"
+              >
+                <span
+                  class="w-1.5 h-1.5 bg-v4-primary-brand-bold-color rounded-full mr-2"
+                ></span>
+                Priority handling
+              </li>
+              <li
+                class="flex items-center text-xs text-v4-secondary-text-color"
+              >
+                <span
+                  class="w-1.5 h-1.5 bg-v4-primary-brand-bold-color rounded-full mr-2"
+                ></span>
+                Ideal for one-time payments
+              </li>
+            } @else {
+              <li
+                class="flex items-center text-xs text-v4-secondary-text-color"
+              >
+                <span
+                  class="w-1.5 h-1.5 bg-v4-primary-brand-bold-color rounded-full mr-2"
+                ></span>
+                Single tracking number
+              </li>
+              <li
+                class="flex items-center text-xs text-v4-secondary-text-color"
+              >
+                <span
+                  class="w-1.5 h-1.5 bg-v4-primary-brand-bold-color rounded-full mr-2"
+                ></span>
+                Lower cost for bulk
+              </li>
+              <li
+                class="flex items-center text-xs text-v4-secondary-text-color"
+              >
+                <span
+                  class="w-1.5 h-1.5 bg-v4-primary-brand-bold-color rounded-full mr-2"
+                ></span>
+                Ideal for office mailings
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- SHIPPING DETAILS Section (only for custom) -->
+      @if (shipToAddress() === "custom") {
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h4
+              class="text-sm font-bold text-v4-secondary-text-color uppercase"
+            >
+              SHIPPING DETAILS
+            </h4>
+            <button
+              (click)="editShippingDetails()"
+              class="text-sm text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+            >
+              Edit
+            </button>
+          </div>
+          <div
+            class="bg-v4-secondary-background-color rounded-lg p-4 border border-v4-border-color"
+          >
+            <div class="grid grid-cols-2 gap-6 mb-4">
+              <!-- FROM Address -->
+              <div>
+                <p
+                  class="text-xs font-bold text-v4-secondary-text-color uppercase mb-1"
+                >
+                  FROM
+                </p>
+                <p class="text-sm text-v4-main-text-color">
+                  {{ getMailFromAddress() }}
+                </p>
+              </div>
+              <!-- TO Address -->
+              <div>
+                <p
+                  class="text-xs font-bold text-v4-secondary-text-color uppercase mb-1"
+                >
+                  TO
+                </p>
+                <p class="text-sm text-v4-main-text-color">
+                  {{ getMailToAddress() }}
+                </p>
+              </div>
+            </div>
+            <!-- Shipping Method -->
+            <div
+              class="flex items-center justify-between pt-4 border-t border-v4-border-color"
+            >
+              <div>
+                <p
+                  class="font-semibold text-v4-main-text-color mb-1 font-peridot"
+                >
+                  {{ getCustomShippingTypeName() }}
+                </p>
+                <p class="text-sm text-v4-secondary-text-color">
+                  Delivery: {{ getEstimatedDeliveryDays() }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-v4-main-text-color font-peridot">
+                  ${{ shippingFee.toFixed(2) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TOTALS Section -->
+      <div class="mb-6">
+        <h4
+          class="text-sm font-bold text-v4-secondary-text-color uppercase mb-3"
+        >
+          TOTALS
+        </h4>
+        <div
+          class="bg-v4-secondary-background-color rounded-lg p-4 border border-v4-border-color"
+        >
+          <div class="flex justify-between items-center mb-2">
+            <span
+              class="text-sm font-semibold text-v4-secondary-text-color"
+              >Total Checks</span
+            >
+            <span class="text-sm text-v4-main-text-color">
+              {{ getTotalChecksCount() }} checks
+            </span>
+          </div>
+          <div
+            class="flex justify-between items-center pt-2 border-t border-v4-border-color"
+          >
+            <span class="font-semibold text-v4-main-text-color font-peridot"
+              >Total Amount</span
+            >
+            <span class="font-semibold text-v4-main-text-color font-peridot">
+              ${{ calculateGrandTotal().toFixed(2) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTIMATED DELIVERY Section -->
+      <div class="mb-6">
+        <div class="flex items-center gap-2 mb-3">
+          <h4
+            class="text-sm font-bold text-v4-secondary-text-color uppercase"
+          >
+            ESTIMATED DELIVERY
+          </h4>
+          <lucide-icon
+            name="info"
+            [size]="14"
+            class="text-v4-secondary-text-color cursor-pointer"
+            matTooltip="Estimated delivery time based on shipping method"
+          ></lucide-icon>
+        </div>
+        <div
+          class="bg-v4-secondary-background-color rounded-lg p-4 border border-v4-border-color"
+        >
+          <p
+            class="font-semibold text-lg text-v4-main-text-color mb-2 font-peridot"
+          >
+            {{ getEstimatedDeliveryDays() }}
+          </p>
+          <p class="text-xs text-v4-secondary-text-color">
+            Delivery time may vary based on location and carrier.
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-between items-center pt-4">
+        <app-common-button-v4
+          width="80px"
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Back"
+          (clickEvent)="backToMatchDataFromReview()"
+        ></app-common-button-v4>
+
+        <app-common-button-v4
+          [type]="{ style: 'neon', name: 'main' }"
+          (clickEvent)="sendMailNow()"
+          text="Send Now"
+          width="120px"
+          class="!h-[44px]"
+          [disabled]="isSendingMail()"
+          [loading]="isSendingMail()"
+        />
+      </div>
+      </div>
+    }
+    </div>
+  </div>
+</div>

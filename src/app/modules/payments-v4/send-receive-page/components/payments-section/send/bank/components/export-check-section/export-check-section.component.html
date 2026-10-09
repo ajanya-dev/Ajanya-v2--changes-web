@@ -1,0 +1,652 @@
+<!--
+  The panel exists only once the payment does — it prefills its first line item from
+  the amount, the category and the account. `applyInputChanges` / `initPanel` gate the same.
+-->
+@if (paymentFormValue()) {
+  <div class="exc-card">
+    <div class="exc-head">
+      <div class="exc-head-l">
+        <button
+          type="button"
+          class="exc-switch"
+          [class.on]="isEnableExport"
+          [disabled]="(isEnableExport && isWiygulEnterPrise) || disableExportCheck()"
+          (click)="toggleExport()"
+          aria-label="Export check to accounting platform"
+        ><i></i></button>
+        <span class="exc-title">Export to accounting</span>
+        <i-lucide
+          [img]="InfoIcon"
+          [size]="14"
+          class="exc-info"
+          matTooltip="Post this payment to your accounting platform. Line details sync automatically when it posts."
+          matTooltipPosition="above"
+        ></i-lucide>
+      </div>
+
+      @if (isEnableExport) {
+        <div class="exc-head-r">
+          <div class="exc-pills">
+            @for (app of exportApps; track app.id) {
+              <button
+                type="button"
+                class="exc-pill"
+                [class.on]="activeTab === app.id"
+                (click)="toggleTab(app.id)"
+              >{{ app.name }}</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (isEnableExport) {
+      <!-- The panel's own refusals — bank, company, total — and only the tab's
+           own: one message for four of them put a FreshBooks complaint on the
+           QuickBooks and NetSuite tabs as well. -->
+      @if (panelMessage(); as message) {
+        <p class="exc-err">{{ message }}</p>
+      }
+
+      <!-- ==================== QBO TAB ==================== -->
+      @if (activeTab === 'qbo') {
+        @if (exportOptions?.isQBOPushBack) {
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="flex-1">
+                <app-common-input-v4 variant="compact"
+                  [fieldLabel]="'QuickBooks Company'"
+                  [placeholder]="'QuickBooks Company'"
+                  [readOnly]="true"
+                  [isFieldRequired]="true"
+                  [fieldHeight]="'36px'"
+                  [(ngModel)]="QBCompanyName"
+                />
+              </div>
+              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-v4-common-green-color mt-5">
+                <i-lucide [img]="ArrowLeftRightIcon" [size]="13" class="text-white"></i-lucide>
+              </div>
+              <div class="flex-1" data-field="exportBank">
+                <app-common-input-v4 variant="compact"
+                  [fieldLabel]="'QuickBooks Bank Accounts'"
+                  [placeholder]="'QuickBooks Bank Accounts'"
+                  [readOnly]="true"
+                  [isFieldRequired]="true"
+                  [fieldHeight]="'36px'"
+                  [(ngModel)]="QBBankAccountName"
+                />
+              </div>
+            </div>
+
+            @if (isLocation) {
+              <div class="w-1/2"
+                [class.pointer-events-none]="!exportOptions?.isQBOPushBack"
+              >
+                <app-sp-select-dropdown
+                  class="relative block"
+                  label="Location"
+                  [placeholder]="'Select Location'"
+                  [searchPlaceholder]="'Search locations'"
+                  [items]="qbLocations"
+                  displayField="name"
+                  outputField="id"
+                  [(ngModel)]="selectedLocationId"
+                />
+              </div>
+            }
+
+            <div
+              [class.pointer-events-none]="!exportOptions?.isQBOPushBack"
+            >
+              <div class="exc-table overflow-x-auto">
+                <div class="grid min-w-[560px] grid-cols-[3fr_3fr_3fr_3fr_2fr_auto] gap-2 border-b border-v4-border-color pb-2 mb-2">
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Category</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Description</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Customer</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Class</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Amount</div>
+                  <div class="w-6"></div>
+                </div>
+                @for (formgroup of qboExportsForm.controls; track formgroup; let i = $index) {
+                  <div class="grid min-w-[560px] grid-cols-[3fr_3fr_3fr_3fr_2fr_auto] gap-2 mb-2" [formGroup]="formgroup" [attr.data-field]="'exportRow-' + i">
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="qboCategory"
+                      [matTooltip]="formgroup.get('qboCategory')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onScrollCompanyDetails('category-items')"
+                      (keyup)="onSearchItemsCompanyDetails($any($event)?.target?.value, 'category-items')"
+                    >
+                      @for (item of QBCategoryItem; track item.id) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <app-common-input-v4 variant="table" [fieldHeight]="'34px'"
+                      formControlName="gboDescription"
+                      type="text"
+                      placeholder=""
+                      fieldHeight="36px"
+                    />
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="gboCustomer"
+                      [matTooltip]="formgroup.get('gboCustomer')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onScrollCompanyDetails('customers')"
+                      (keyup)="onSearchItemsCompanyDetails($any($event)?.target?.value, 'customers')"
+                    >
+                      @for (item of QBCustomerItem; track item.id) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="qboClass"
+                      [matTooltip]="formgroup.get('qboClass')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onScrollCompanyDetails('classes')"
+                      (keyup)="onSearchItemsCompanyDetails($any($event)?.target?.value, 'classes')"
+                    >
+                      @for (item of QBClassItem; track item.id) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <input
+                      type="text"
+                      class="v4-input-style w-full h-[34px] min-h-[34px] border-[1.5px] border-v4-border-color rounded-[8px] bg-v4-secondary-background-color text-[12px] text-v4-main-text-color px-2.5 shadow-none focus:border-v4-primary-brand-color focus:outline-none focus:shadow-none"
+                      formControlName="qboAmount"
+                      placeholder="Amount"
+                      maxlength="10"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      separatorLimit="10000000"
+                      [allowNegativeNumbers]="true"
+                      (change)="updateCategoryTotal()"
+                      (input)="validateInput($event)"
+                    />
+                    <button type="button" class="flex h-9 w-6 items-center justify-center text-v4-tertiary-text-color hover:text-v4-common-red-color" (click)="removeSelectedRowQBO(i)">
+                      <i-lucide [img]="Trash2Icon" [size]="14"></i-lucide>
+                    </button>
+                    @if (fieldError('qbo', i, 'category'); as message) {
+                      <p class="exc-cell-err col-start-1">{{ message }}</p>
+                    }
+                    @if (fieldError('qbo', i, 'amount'); as message) {
+                      <p class="exc-cell-err col-start-5">{{ message }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="exc-foot min-w-[560px]">
+                <button type="button" class="exc-addline" (click)="addNewRowQBO()">
+                  <i-lucide [img]="PlusIcon" [size]="14"></i-lucide> Add line
+                </button>
+                  <span class="exc-total" data-field="exportTotal">Lines total <b>{{ fmt(QBOTotal) }}</b></span>
+              </div>
+            </div>
+          </div>
+        } @else {
+          @if (!exportOptions?.isQBOPushBackPermitted) {
+            <div class="flex h-48 items-center justify-center">
+              <span class="text-xs text-v4-tertiary-text-color">
+                To enable this feature, please
+                <a role="presentation" (click)="openExportCheckEnableInfo()"
+                  class="cursor-pointer font-medium text-v4-primary-brand-bold-color hover:underline">contact</a>
+                our support team.
+              </span>
+            </div>
+          } @else {
+            <div class="flex h-48 items-center justify-center gap-3">
+              <span class="text-xs text-v4-main-text-color">Please connect QuickBooks</span>
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                text="Integrate QuickBooks"
+                (click)="navigateToIntegration('qb-online')"
+              />
+            </div>
+          }
+        }
+      }
+
+      <!-- ==================== QBD TAB ==================== -->
+      @if (activeTab === 'qbd') {
+        @if (exportOptions?.isQBDPushBack) {
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="flex-1">
+                <app-common-input-v4 variant="compact"
+                  [fieldLabel]="'QuickBooks Company'"
+                  [placeholder]="'QuickBooks Company'"
+                  [readOnly]="true"
+                  [isFieldRequired]="true"
+                  [fieldHeight]="'36px'"
+                  [(ngModel)]="QBDCompanyName"
+                />
+              </div>
+              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-v4-common-green-color mt-5">
+                <i-lucide [img]="ArrowLeftRightIcon" [size]="13" class="text-white"></i-lucide>
+              </div>
+              <div class="flex-1" data-field="exportBank">
+                <app-common-input-v4 variant="compact"
+                  [fieldLabel]="'QuickBooks Bank Accounts'"
+                  [placeholder]="'QuickBooks Bank Accounts'"
+                  [readOnly]="true"
+                  [isFieldRequired]="true"
+                  [fieldHeight]="'36px'"
+                  [(ngModel)]="QBDBankAccountName"
+                />
+              </div>
+            </div>
+
+            <div
+              [class.pointer-events-none]="!exportOptions?.isQBDPushBack"
+            >
+              <div class="exc-table overflow-x-auto">
+                <div class="grid min-w-[560px] grid-cols-[3fr_3fr_3fr_3fr_2fr_auto] gap-2 border-b border-v4-border-color pb-2 mb-2">
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Expense</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Description</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Customer</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Class</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Amount</div>
+                  <div class="w-6"></div>
+                </div>
+                @for (formgroup of qbdExportsForm.controls; track formgroup; let i = $index) {
+                  <div class="grid min-w-[560px] grid-cols-[3fr_3fr_3fr_3fr_2fr_auto] gap-2 mb-2" [formGroup]="formgroup" [attr.data-field]="'exportRow-' + i">
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="expense"
+                      [matTooltip]="formgroup.get('expense')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onQBDScrollCompanyDetails('expense-items')"
+                      (keyup)="onQBDSearchItemsCompanyDetails($any($event)?.target?.value, 'expense-items')"
+                    >
+                      @for (item of QBDExpenseItem; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <app-common-input-v4 variant="table" [fieldHeight]="'34px'"
+                      formControlName="description"
+                      type="text"
+                      placeholder=""
+                      fieldHeight="36px"
+                    />
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="customer"
+                      [matTooltip]="formgroup.get('customer')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onQBDScrollCompanyDetails('customers')"
+                      (keyup)="onQBDSearchItemsCompanyDetails($any($event)?.target?.value, 'customers')"
+                    >
+                      @for (item of QBDCustomersItem; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="class"
+                      [matTooltip]="formgroup.get('class')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onQBDScrollCompanyDetails('classes')"
+                      (keyup)="onQBDSearchItemsCompanyDetails($any($event)?.target?.value, 'classes')"
+                    >
+                      @for (item of QBDClassItem; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <input
+                      type="text"
+                      class="v4-input-style w-full h-[34px] min-h-[34px] border-[1.5px] border-v4-border-color rounded-[8px] bg-v4-secondary-background-color text-[12px] text-v4-main-text-color px-2.5 shadow-none focus:border-v4-primary-brand-color focus:outline-none focus:shadow-none"
+                      formControlName="amount"
+                      placeholder="Amount"
+                      maxlength="10"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      (keypress)="utils.numberOnly($event, 'decimal')"
+                      (change)="updateExpenseTotal()"
+                    />
+                    <button type="button" class="flex h-9 w-6 items-center justify-center text-v4-tertiary-text-color hover:text-v4-common-red-color" (click)="removeSelectedRowQBD(i)">
+                      <i-lucide [img]="Trash2Icon" [size]="14"></i-lucide>
+                    </button>
+                    @if (fieldError('qbd', i, 'category'); as message) {
+                      <p class="exc-cell-err col-start-1">{{ message }}</p>
+                    }
+                    @if (fieldError('qbd', i, 'amount'); as message) {
+                      <p class="exc-cell-err col-start-5">{{ message }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="exc-foot min-w-[560px]">
+                <button type="button" class="exc-addline" (click)="addNewRowQBD()">
+                  <i-lucide [img]="PlusIcon" [size]="14"></i-lucide> Add line
+                </button>
+                  <span class="exc-total" data-field="exportTotal">Lines total <b>{{ fmt(QBDTotal) }}</b></span>
+              </div>
+            </div>
+          </div>
+        } @else {
+          @if (!exportOptions?.isQBDPushBackPermitted) {
+            <div class="flex h-48 items-center justify-center">
+              <span class="text-xs text-v4-tertiary-text-color">
+                To enable this feature, please
+                <a role="presentation" (click)="openExportCheckEnableInfo()"
+                  class="cursor-pointer font-medium text-v4-primary-brand-bold-color hover:underline">contact</a>
+                our support team.
+              </span>
+            </div>
+          } @else {
+            <div class="flex h-48 items-center justify-center gap-3">
+              <span class="text-xs text-v4-main-text-color">Please connect QuickBooks Desktop</span>
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                text="Integrate QuickBooks"
+                (click)="navigateToIntegration('qb-desktop')"
+              />
+            </div>
+          }
+        }
+      }
+
+      <!-- ==================== NETSUITE TAB ==================== -->
+      @if (activeTab === 'netsuite') {
+        @if (exportOptions?.isNetsuitePushBack) {
+          <div class="space-y-4">
+            <!--
+              One field, not two: v3's second input was bound to the same
+              `netSuiteBankName` and just repeated it (quickbooks-export-check html L529-542).
+            -->
+            <div>
+              <app-common-input-v4 variant="compact"
+                data-field="exportBank"
+                [fieldLabel]="'NetSuite Bank Account'"
+                [placeholder]="'NetSuite Bank Account'"
+                [disabled]="true"
+                [isFieldRequired]="true"
+                [maxLength]="155"
+                [fieldHeight]="'36px'"
+                [(ngModel)]="netSuiteBankName"
+              />
+            </div>
+
+            <div
+              [class.pointer-events-none]="!exportOptions?.isNetsuitePushBack"
+            >
+              <div class="exc-table overflow-x-auto">
+                <div class="grid min-w-[640px] grid-cols-[2.5fr_2.5fr_2.5fr_2.5fr_2.5fr_2fr_auto] gap-2 border-b border-v4-border-color pb-2 mb-2">
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Expense</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Description</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Customer</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Class</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Location</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Amount</div>
+                  <div class="w-6"></div>
+                </div>
+                @for (formgroup of netsuiteExportsForm.controls; track formgroup; let i = $index) {
+                  <div class="grid min-w-[640px] grid-cols-[2.5fr_2.5fr_2.5fr_2.5fr_2.5fr_2fr_auto] gap-2 mb-2" [formGroup]="formgroup" [attr.data-field]="'exportRow-' + i">
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="expense"
+                      [matTooltip]="formgroup.get('expense')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onScrollNetSuiteDetails('expense-accounts')"
+                      (keyup)="onNetSuiteDetails('expense-accounts', $any($event)?.target?.value)"
+                    >
+                      @for (item of netSuiteExpense(); track item.id) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <app-common-input-v4 variant="table" [fieldHeight]="'34px'"
+                      formControlName="description"
+                      type="text"
+                      placeholder=""
+                      fieldHeight="36px"
+                    />
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="customer"
+                      [matTooltip]="formgroup.get('customer')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onScrollNetSuiteDetails('payees')"
+                      (keyup)="onNetSuiteDetails('payees', $any($event)?.target?.value)"
+                    >
+                      @for (item of netSuitePayee; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="class"
+                      [matTooltip]="formgroup.get('class')?.value?.name || ''"
+                      matTooltipPosition="above"
+                      (scrollToEnd)="onScrollNetSuiteDetails('classes')"
+                      (keyup)="onNetSuiteDetails('classes', $any($event)?.target?.value)"
+                    >
+                      @for (item of netSuiteClass; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select Location"
+                      formControlName="location"
+                      [matTooltip]="formgroup.get('location')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of netSuiteLocations; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <input
+                      type="text"
+                      class="v4-input-style w-full h-[34px] min-h-[34px] border-[1.5px] border-v4-border-color rounded-[8px] bg-v4-secondary-background-color text-[12px] text-v4-main-text-color px-2.5 shadow-none focus:border-v4-primary-brand-color focus:outline-none focus:shadow-none"
+                      formControlName="amount"
+                      placeholder="Amount"
+                      maxlength="10"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      (keypress)="utils.numberOnly($event, 'decimal')"
+                      (change)="updateNetSuiteExpenseTotal()"
+                    />
+                    <button type="button" class="flex h-9 w-6 items-center justify-center text-v4-tertiary-text-color hover:text-v4-common-red-color" (click)="removeSelectedRowNetSuite(i)">
+                      <i-lucide [img]="Trash2Icon" [size]="14"></i-lucide>
+                    </button>
+                    @if (fieldError('netsuite', i, 'category'); as message) {
+                      <p class="exc-cell-err col-start-1">{{ message }}</p>
+                    }
+                    @if (fieldError('netsuite', i, 'amount'); as message) {
+                      <p class="exc-cell-err col-start-6">{{ message }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="exc-foot min-w-[640px]">
+                <button type="button" class="exc-addline" (click)="addNewRowNetSuite()">
+                  <i-lucide [img]="PlusIcon" [size]="14"></i-lucide> Add line
+                </button>
+                  <span class="exc-total" data-field="exportTotal">Lines total <b>{{ fmt(netSuiteTotal) }}</b></span>
+              </div>
+            </div>
+          </div>
+        } @else {
+          @if (exportOptions?.isNetSuitePushBackPermitted) {
+            <div class="flex h-48 items-center justify-center">
+              <span class="text-xs text-v4-tertiary-text-color">
+                To enable this feature, please
+                <a role="presentation" (click)="openExportCheckEnableInfo()"
+                  class="cursor-pointer font-medium text-v4-primary-brand-bold-color hover:underline">contact</a>
+                our support team.
+              </span>
+            </div>
+          } @else {
+            <div class="flex h-48 items-center justify-center gap-3">
+              <span class="text-xs text-v4-main-text-color">Please connect NetSuite</span>
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                text="Connect"
+                (click)="navigateToIntegration('netsuite')"
+              />
+            </div>
+          }
+        }
+      }
+
+      <!-- ==================== FRESHBOOKS TAB ==================== -->
+      @if (activeTab === 'freshbooks') {
+        @if (exportOptions?.isFreshBooksPushBack) {
+          <div class="space-y-4">
+            <div class="w-1/2" data-field="exportCompany">
+              <app-sp-select-dropdown
+                class="relative block"
+                label="FreshBooks Company"
+                [placeholder]="'FreshBooks Company'"
+                [searchPlaceholder]="'Search companies'"
+                [items]="FBCompanies"
+                displayField="companyLabel"
+                outputField="companyId"
+                [(ngModel)]="FreshBooksCompanyName"
+                (ngModelChange)="onFreshBooksCompanyChange($event)"
+              />
+            </div>
+
+            <div>
+              <div class="exc-table overflow-x-auto">
+                <div class="grid min-w-[400px] grid-cols-[5fr_5fr_4fr] gap-2 border-b border-v4-border-color pb-2 mb-2">
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Category</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Description</div>
+                  <div class="text-[12px] font-semibold uppercase text-v4-tertiary-text-color">Amount</div>
+                </div>
+                @for (formgroup of freshbooksExportsForm.controls; track formgroup; let i = $index) {
+                  <div class="grid min-w-[400px] grid-cols-[5fr_5fr_4fr] gap-2 mb-2" [formGroup]="formgroup" [attr.data-field]="'exportRow-' + i">
+                    <ng-select
+                      class="ng-dropdown-panel-v4 angular-ocw-v4-ng-select-dropdown export-check-dropdown-panel text-xs min-w-0"
+                      appendTo="body"
+                      bindLabel="name"
+                      placeholder="Select"
+                      formControlName="fbCategory"
+                      [matTooltip]="formgroup.get('fbCategory')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of FBCategoryItem; track item) {
+                        <ng-option [value]="item">{{ item.name }}</ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                    <app-common-input-v4 variant="table" [fieldHeight]="'34px'"
+                      formControlName="description"
+                      type="text"
+                      placeholder="Description"
+                      [maxLength]="100"
+                      fieldHeight="36px"
+                    />
+                    <input
+                      type="text"
+                      class="v4-input-style w-full h-[34px] min-h-[34px] border-[1.5px] border-v4-border-color rounded-[8px] bg-v4-secondary-background-color text-[12px] text-v4-main-text-color px-2.5 shadow-none focus:border-v4-primary-brand-color focus:outline-none focus:shadow-none"
+                      formControlName="amount"
+                      placeholder="Amount"
+                      maxlength="10"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      (keypress)="utils.numberOnly($event, 'decimal')"
+                      (change)="updateFreshBooksTotal()"
+                    />
+                    @if (fieldError('freshbooks', i, 'category'); as message) {
+                      <p class="exc-cell-err col-start-1">{{ message }}</p>
+                    }
+                    @if (fieldError('freshbooks', i, 'amount'); as message) {
+                      <p class="exc-cell-err col-start-3">{{ message }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="exc-foot min-w-[400px]">
+                <span></span>
+                  <span class="exc-total" data-field="exportTotal">Lines total <b>{{ fmt(FreshBooksTotal) }}</b></span>
+              </div>
+            </div>
+          </div>
+        } @else {
+          @if (!exportOptions?.isFreshBooksPushBackPermitted) {
+            <div class="flex h-48 items-center justify-center">
+              <span class="text-xs text-v4-tertiary-text-color">
+                To enable this feature, please
+                <a role="presentation" (click)="openExportCheckEnableInfo()"
+                  class="cursor-pointer font-medium text-v4-primary-brand-bold-color hover:underline">contact</a>
+                our support team.
+              </span>
+            </div>
+          } @else {
+            <div class="flex h-48 items-center justify-center gap-3">
+              <span class="text-xs text-v4-main-text-color">Please connect FreshBooks</span>
+              <app-common-button-v4
+                [type]="{ style: 'primary', name: 'main' }"
+                text="Connect"
+                (click)="navigateToIntegration('freshbook')"
+              />
+            </div>
+          }
+        }
+      }
+    }
+  </div>
+}

@@ -1,0 +1,170 @@
+<div class="flex flex-col max-h-[90vh] min-w-[700px]">
+  <!-- modal header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      Odoo Bank Account Mapping
+    </h1>
+    <div class="flex items-center gap-3">
+      <app-common-button-v4
+        class="v4-odoo-import-btn"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Import Bank Accounts'"
+        [toolTip]="'Import all bank accounts from Odoo account'"
+        [isAddIcon]="true"
+        [icon]="['fas', 'down-to-line']"
+        [customPadding]="'0 20px'"
+        [disabled]="isImportBank()"
+        [loading]="isImportBank()"
+        (clickEvent)="importBank()"
+      />
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+      >
+        <lucide-icon name="x" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="flex-1 overflow-auto p-6 bg-v4-tertiary-background-color min-h-0">
+    @if (loading()) {
+      <div class="flex justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="32"
+          class="text-v4-primary-brand-color animate-spin"
+        />
+      </div>
+    }
+
+    @if (!loading() && odooMappedBank().length === 0 && !isImportBank()) {
+      <div class="text-center py-12 text-v4-tertiary-text-color">
+        Sorry! No result found.
+      </div>
+    }
+
+    @if (!loading() && odooMappedBank().length) {
+      <div
+        class="border border-v4-input-border-color rounded-xl overflow-hidden bg-v4-secondary-background-color"
+      >
+        <div class="overflow-x-auto max-h-[60vh]">
+          <table class="w-full text-sm text-v4-main-text-color">
+            <thead class="v4-odoo-mapping-sticky-header">
+              <tr>
+                <th class="text-left font-semibold px-4 py-3 whitespace-nowrap">
+                  Odoo Bank Ac
+                </th>
+                <th class="text-left font-semibold px-4 py-3 whitespace-nowrap">
+                  OCW Bank Ac
+                </th>
+                <th class="text-left font-semibold px-4 py-3 whitespace-nowrap">
+                  OCW Bank Nick Name
+                </th>
+                <th class="text-left font-semibold px-4 py-3 whitespace-nowrap">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (
+                bank of odooMappedBank();
+                track bank.id;
+                let i = $index
+              ) {
+                <tr
+                  class="border-b border-v4-input-border-color last:border-b-0 hover:bg-v4-tertiary-background-color/50"
+                >
+                  <td class="px-4 py-3">{{ bank.name }}</td>
+                  <td class="px-4 py-3">
+                    @if (bank.connected) {
+                      <span>{{ bank.ocwBankAccount }}</span>
+                    } @else {
+                      <app-common-button-v4
+                        [type]="{ style: 'primary', name: 'main' }"
+                        [text]="'Map Now'"
+                        [toolTip]="'Map your bank account.'"
+                        (clickEvent)="
+                          openBankAccountMappingModal(bank.id, bank, 1)
+                        "
+                      />
+                    }
+                  </td>
+                  <td class="px-4 py-3">{{ bank.ocwBankAccountNickName }}</td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      @if (bank.connected) {
+                        <button
+                          type="button"
+                          class="text-sm text-v4-badge-warning-text-color hover:underline transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                          [disabled]="isClear()[i]"
+                          matTooltip="This will remove your current bank account mapping."
+                          (click)="removeMapping(bank.id, i)"
+                        >
+                          @if (isClear()[i]) {
+                            <lucide-icon
+                              name="loader-circle"
+                              [size]="14"
+                              class="animate-spin"
+                            />
+                          } @else {
+                            Clear
+                          }
+                        </button>
+                      } @else {
+                        <span class="w-14"></span>
+                      }
+                      <button aria-label="Edit"
+                        type="button"
+                        class="p-2 rounded-lg transition-colors cursor-pointer"
+                        style="color: var(--v4-primary-brand-bold-color)"
+                        matTooltip="Edit"
+                        (click)="onEditRow(bank.id, bank, 1)"
+                      >
+                        <lucide-icon name="pencil" [size]="18" />
+                      </button>
+                      @if (!deleteBank()[i]) {
+                        <button aria-label="Delete"
+                          type="button"
+                          class="p-2 rounded-lg transition-colors cursor-pointer"
+                          style="color: var(--v4-badge-error-text-color)"
+                          matTooltip="Delete"
+                          (click)="onDeleteRow(bank.id, i)"
+                        >
+                          <lucide-icon name="trash-2" [size]="18" />
+                        </button>
+                      } @else {
+                        <span class="inline-block w-8 h-8">
+                          <lucide-icon
+                            name="loader-circle"
+                            [size]="18"
+                            class="animate-spin"
+                            style="color: var(--v4-badge-error-text-color)"
+                          />
+                        </span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color flex-shrink-0"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      [text]="'Close'"
+    />
+  </div>
+</div>

@@ -1,0 +1,1230 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'payee-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="payeeName()"
+  [subtitleTemplate]="payeeMeta"
+  [iconTemplate]="avatarIcon"
+  [actionButtons]="panelActionButtons"
+  [contentTemplate]="detailContent"
+  (closed)="onClose()"
+  (actionButtonClicked)="onAction($event)"
+/>
+
+<!-- Letter avatar -->
+<ng-template #avatarIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color font-funnel text-base font-bold text-white"
+  >
+    {{ avatarLetter() }}
+  </div>
+</ng-template>
+
+<!-- Added / Location — labels muted, values bold main colour. -->
+<ng-template #payeeMeta>
+  <div
+    class="min-w-0"
+    [ngClass]="isPanelExpanded() ? 'flex items-center gap-3' : 'flex flex-col'"
+  >
+    @if (payeeAdded()) {
+      <p class="m-0 shrink-0">
+        Added:
+        <span class="font-semibold text-v4-main-text-color">{{ payeeAdded() }}</span>
+      </p>
+    }
+    @if (isPanelExpanded() && payeeAdded()) {
+      <span class="shrink-0 text-v4-tertiary-text-color">&bull;</span>
+    }
+    <p class="m-0 min-w-0 truncate" [matTooltip]="payeePlace()">
+      Location:
+      <span class="font-semibold text-v4-main-text-color">{{ payeePlace() }}</span>
+    </p>
+  </div>
+</ng-template>
+
+<!-- Empty state: icon, title, one help line -->
+<ng-template #emptyState let-icon="icon" let-title="title" let-help="help" let-action="action">
+  <div class="pd-empty px-4 py-5">
+    <span
+      class="flex h-8 w-8 items-center justify-center rounded-full bg-v4-badge-neutral-bg-color text-v4-tertiary-text-color"
+    >
+      <lucide-icon [name]="icon" [size]="15"></lucide-icon>
+    </span>
+    <p class="m-0 mt-2 text-[12px] font-bold text-v4-main-text-color">
+      {{ title }}
+    </p>
+    <p class="m-0 mt-0.5 text-[12px] text-v4-tertiary-text-color">
+      {{ help }}
+    </p>
+    @if (action) {
+      <div class="mt-3">
+        <ng-container [ngTemplateOutlet]="action" />
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #addContactEmptyBtn>
+  <app-common-button-v4
+    [type]="{ style: 'navy', name: 'v2-1', size: 'sm' }"
+    [text]="'Add contact'"
+    [lucideIcon]="'plus'"
+    [lucideIconSize]="14"
+    (clickEvent)="onAddContact()"
+  />
+</ng-template>
+
+<ng-template #addTodoEmptyBtn>
+  <app-common-button-v4
+    [type]="{ style: 'navy', name: 'v2-1', size: 'sm' }"
+    [text]="'Add to-do'"
+    [lucideIcon]="'plus'"
+    [lucideIconSize]="14"
+    (clickEvent)="onAddTodo()"
+  />
+</ng-template>
+
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #detailContent>
+  <div
+    class="panel-body panel-body--surface"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    <!-- Information -->
+    <div class="pd-card">
+      <div class="pd-card-head gap-1">
+        <button
+          type="button"
+          class="min-w-0 flex-1 text-left"
+          (click)="toggleCard('info')"
+        >
+          <span class="pd-card-title">{{ payeeTypeLabel() }} information</span>
+        </button>
+        <button attr.aria-label="Edit {{ payeeTypeLabel() }} Information"
+          type="button"
+          class="pd-icon-btn text-v4-primary-brand-bold-color"
+          matTooltip="Edit {{ payeeTypeLabel() }} Information"
+          (click)="toggleEditInfo()"
+        >
+          <lucide-icon name="edit" [size]="14"></lucide-icon>
+        </button>
+       
+        <button
+          type="button"
+          class="pd-icon-btn text-v4-tertiary-text-color"
+          aria-label="Toggle section"
+          (click)="toggleCard('info')"
+        >
+          <lucide-icon
+            [name]="isCardCollapsed('info') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+          ></lucide-icon>
+        </button>
+      </div>
+
+      @if (!isCardCollapsed("info")) {
+        @if (!isEditingInfo()) {
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-0.5">
+            <div class="pd-field">
+              <span class="pd-row-label">Name</span>
+              <span class="pd-row-value">{{ payeeName() || "—" }}</span>
+            </div>
+            <div class="pd-field">
+              <span class="pd-row-label">Phone no</span>
+              <span class="pd-row-value tabular-nums">{{ payeePhone() }}</span>
+            </div>
+            <div class="pd-field">
+              <span class="pd-row-label">Email</span>
+              <span class="pd-row-value">{{ payeeEmail() }}</span>
+            </div>
+            <div class="pd-field">
+              <span class="pd-row-label">Address</span>
+              <span class="pd-row-value">{{ payeeAddress() }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="info-grid" [formGroup]="editForm">
+            <app-common-input-v4
+              [placeholder]="'Name'"
+              [fieldLabel]="'Name'"
+              [isFieldRequired]="false"
+              [fieldHeight]="'44px'"
+              formControlName="name"
+              [control]="editForm.controls.name"
+            />
+            <div class="flex flex-col">
+              <span
+                class="mb-1.5 block font-peridot text-xs font-medium tracking-wide text-v4-secondary-text-color"
+                >Phone no</span
+              >
+              <app-phone-input-v4
+                formControlName="phone"
+                [control]="editForm.controls.phone"
+                [isFieldRequired]="false"
+                [fieldHeight]="'44px'"
+              ></app-phone-input-v4>
+            </div>
+            <div class="span-2">
+              <app-common-input-v4
+                [placeholder]="'Email'"
+                [fieldLabel]="'Email'"
+                [type]="'email'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'44px'"
+                formControlName="email"
+                [control]="editForm.controls.email"
+              />
+            </div>
+            <div class="span-2">
+              <app-address-autocomplete-v4
+                [placeholder]="'Street address'"
+                [label]="'Address'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'44px'"
+                [control]="editForm.controls.addressLine1"
+                (addressSelected)="onAddressSelected($event)"
+              />
+            </div>
+            <div class="span-2">
+              <app-common-input-v4
+                [placeholder]="'Apartment, suite, unit'"
+                [fieldLabel]="'Address line 2'"
+                [isFieldRequired]="false"
+                [fieldHeight]="'44px'"
+                formControlName="addressLine2"
+                [control]="editForm.controls.addressLine2"
+              />
+            </div>
+            <app-common-input-v4
+              [placeholder]="'City'"
+              [fieldLabel]="'City'"
+              [isFieldRequired]="false"
+              [fieldHeight]="'44px'"
+              formControlName="city"
+              [control]="editForm.controls.city"
+            />
+            <div class="flex flex-col">
+              <span
+                class="mb-1.5 block font-peridot text-xs font-medium tracking-wide text-v4-secondary-text-color"
+                >State</span
+              >
+              <app-common-state-select-v4
+                formControlName="state"
+                [country]="editForm.controls.country.value"
+                [isRequired]="false"
+                placeholder="State"
+              ></app-common-state-select-v4>
+            </div>
+            <app-common-input-v4
+              [placeholder]="'Zip code'"
+              [fieldLabel]="'Zip'"
+              [isFieldRequired]="false"
+              [fieldHeight]="'44px'"
+              formControlName="zip"
+              [control]="editForm.controls.zip"
+            />
+            <div class="flex flex-col">
+              <span
+                class="mb-1.5 block font-peridot text-xs font-medium tracking-wide text-v4-secondary-text-color"
+                >Country</span
+              >
+              <app-common-country-select-v4
+                formControlName="country"
+                [isRequired]="false"
+                placeholder="Country"
+              ></app-common-country-select-v4>
+            </div>
+          </div>
+          <div
+            class="-mx-3 -mb-3 mt-3 flex items-center justify-end gap-1.5 border-t border-v4-border-subtle-color px-3 py-2.5"
+          >
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'Cancel'"
+              [disabled]="isSavingInfo()"
+              [customHeight]="'32px'"
+              [minWidth]="'70px'"
+              [textClasses]="'text-[12px]'"
+              (clickEvent)="cancelEditInfo()"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="isSavingInfo() ? 'Saving...' : 'Save'"
+              [disabled]="isSavingInfo()"
+              [loading]="isSavingInfo()"
+              [customHeight]="'32px'"
+              [minWidth]="'70px'"
+              [textClasses]="'text-[12px]'"
+              (clickEvent)="saveInfo()"
+            />
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Summary -->
+    <div class="pd-card">
+      <div class="pd-card-head gap-1.5">
+        <button
+          type="button"
+          class="min-w-0 flex-1 text-left"
+          (click)="toggleCard('summary')"
+        >
+          <span class="pd-card-title">{{ payeeTypeLabel() }} summary</span>
+        </button>
+        <div class="pd-pills" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            class="pd-pill"
+            [class.active]="activeSummaryTab() === 'bank'"
+            (click)="setSummaryTab('bank')"
+          >
+            Bank
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="pd-pill"
+            [class.active]="activeSummaryTab() === 'cash'"
+            (click)="setSummaryTab('cash')"
+          >
+            Cash expense
+          </button>
+        </div>
+        <button
+          type="button"
+          class="pd-icon-btn text-v4-tertiary-text-color"
+          aria-label="Toggle section"
+          (click)="toggleCard('summary')"
+        >
+          <lucide-icon
+            [name]="isCardCollapsed('summary') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+          ></lucide-icon>
+        </button>
+      </div>
+
+      @if (!isCardCollapsed("summary")) {
+        @if (detailsService.summaryLoading()) {
+          <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+        } @else {
+          <div class="flex flex-col">
+            @for (label of summaryLabels; track label; let last = $last) {
+              @if (!last) {
+                <div class="pd-row border-b border-v4-border-subtle-color !py-[5px]">
+                  <span class="pd-row-label">{{ label }}</span>
+                  <span class="pd-row-value tabular-nums">{{
+                    summaryTotals()[$index] | currency: "USD" : "symbol" : "1.2-2"
+                  }}</span>
+                </div>
+              } @else {
+                <div class="pd-row !pb-0.5 !pt-[7px]">
+                  <span class="text-[12px] font-bold text-v4-main-text-color">{{
+                    label
+                  }}</span>
+                  <span
+                    class="font-funnel text-[15px] font-bold tabular-nums text-v4-common-green-color"
+                    >{{
+                      summaryTotals()[$index]
+                        | currency: "USD" : "symbol" : "1.2-2"
+                    }}</span
+                  >
+                </div>
+              }
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Bank accounts -->
+    <div class="pd-card">
+      <div class="pd-card-head gap-1.5">
+        <button
+          type="button"
+          class="min-w-0 flex-1 text-left"
+          (click)="toggleCard('bank')"
+        >
+          <span class="pd-card-title">Bank accounts</span>
+        </button>
+        <button type="button" class="pd-new-btn" (click)="onAddBankAccount()">
+          <lucide-icon name="plus" [size]="12"></lucide-icon>New
+        </button>
+        <button
+          type="button"
+          class="pd-icon-btn text-v4-tertiary-text-color"
+          aria-label="Toggle section"
+          (click)="toggleCard('bank')"
+        >
+          <lucide-icon
+            [name]="isCardCollapsed('bank') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+          ></lucide-icon>
+        </button>
+      </div>
+
+      @if (!isCardCollapsed("bank")) {
+        <div class="-mx-3 -mt-2 flex flex-1 flex-col">
+          <div class="pd-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              class="pd-tab"
+              [class.active]="activeBankTab() === 'domestic'"
+              (click)="setBankTab('domestic')"
+            >
+              Bank accounts
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="pd-tab"
+              [class.active]="activeBankTab() === 'international'"
+              (click)="setBankTab('international')"
+            >
+              International accounts
+            </button>
+          </div>
+
+          <div class="flex flex-1 flex-col px-3 pb-1 pt-1.5">
+            @if (activeBankTab() === "domestic") {
+              @if (detailsService.bankLoading()) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else if (detailsService.bankAccounts().length > 0) {
+                @for (account of previewBankAccounts(); track account.id) {
+                  <div class="bank-row">
+                    <span class="bank-avatar">
+                      <lucide-icon name="landmark" [size]="14"></lucide-icon>
+                    </span>
+                    <div class="flex min-w-0 flex-1 flex-col leading-[1.3]">
+                      <span
+                        class="truncate text-[12px] font-semibold text-v4-main-text-color"
+                        >{{ account.bank_name }}</span
+                      >
+                      <span
+                        class="truncate text-[12px] tabular-nums text-v4-tertiary-text-color"
+                        [title]="'Routing number: ' + (account.routing_number || '—')"
+                        >{{ formatAccountType(account.account_type) }} ·
+                        {{ maskNumber(account.account_number) }}</span
+                      >
+                    </div>
+                    @if (account.is_default_for_direct_deposit) {
+                      <span
+                        class="pd-default-badge"
+                        matTooltip="This will be used as default Bank Account for Direct Deposit/ACH to this Payee"
+                        >Default</span
+                      >
+                    }
+                    <div class="relative">
+                      <button
+                        type="button"
+                        class="pd-icon-btn text-v4-tertiary-text-color"
+                        aria-label="Account actions"
+                        (click)="toggleAccountMenu(account.id, $event)"
+                      >
+                        <lucide-icon
+                          name="ellipsis-vertical"
+                          [size]="15"
+                        ></lucide-icon>
+                      </button>
+                      @if (openMenuAccountId() === account.id) {
+                        <div
+                          class="bank-menu-backdrop"
+                          tabindex="-1"
+                          role="presentation"
+                          (click)="closeAccountMenu()"
+                          (keydown.escape)="closeAccountMenu()"
+                        ></div>
+                        <div
+                          class="bank-action-menu"
+                          role="menu"
+                          [ngClass]="{ 'menu-up': isLastBankAccount(account.id) }"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            class="bank-menu-item"
+                            (click)="onEditDomesticAccount(account)"
+                          >
+                            <lucide-icon name="edit" [size]="14"></lucide-icon>
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            class="bank-menu-item"
+                            (click)="onDeleteAccount(account)"
+                          >
+                            <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                            Delete
+                          </button>
+                          @if (!account.is_default_for_direct_deposit) {
+                            <button
+                              type="button"
+                              role="menuitem"
+                              class="bank-menu-item"
+                              (click)="onToggleDefault(account)"
+                            >
+                              <lucide-icon name="star" [size]="14"></lucide-icon>
+                              Make default for DD
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (hasMoreBankAccounts()) {
+                  <button
+                    type="button"
+                    class="pd-link mx-auto mt-2"
+                    (click)="onViewAllBankAccounts()"
+                  >
+                    View all ({{ detailsService.bankAccounts().length }})
+                  </button>
+                }
+              } @else {
+                <ng-container
+                  [ngTemplateOutlet]="emptyState"
+                  [ngTemplateOutletContext]="{
+                    icon: 'landmark',
+                    title: 'No bank accounts found',
+                    help:
+                      'Accounts you add for this ' +
+                      payeeTypeLabel().toLowerCase() +
+                      ' will show up here.'
+                  }"
+                />
+              }
+            }
+
+            @if (activeBankTab() === "international") {
+              @if (detailsService.intlBankLoading()) {
+                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+              } @else if (detailsService.internationalAccounts().length > 0) {
+                @for (account of previewIntlAccounts(); track account.id) {
+                  <div class="bank-row">
+                    <span class="bank-avatar">
+                      <lucide-icon name="globe" [size]="14"></lucide-icon>
+                    </span>
+                    <div class="flex min-w-0 flex-1 flex-col leading-[1.3]">
+                      <span
+                        class="truncate text-[12px] font-semibold text-v4-main-text-color"
+                        >{{
+                          account.bank_name ||
+                            account.account_name ||
+                            account.payee_name
+                        }}</span
+                      >
+                      <span
+                        class="truncate text-[12px] tabular-nums text-v4-tertiary-text-color"
+                        >{{ account.currency }}
+                        @if (account.bank_account_details?.beneficiary_country) {
+                          ·
+                          {{
+                            getCountryName(
+                              account.bank_account_details.beneficiary_country
+                            )
+                          }}
+                        }
+                        · {{ maskNumber(account.account_number) }}</span
+                      >
+                    </div>
+                    @if (
+                      account.is_default_for_business ||
+                      account.is_default_for_personal
+                    ) {
+                      <span
+                        class="pd-default-badge"
+                        [matTooltip]="
+                          'This will be used as default ' +
+                          (account.is_default_for_personal
+                            ? 'personal'
+                            : 'business') +
+                          ' bank account for international payments to this Payee'
+                        "
+                        >Default</span
+                      >
+                    }
+                    <div class="relative">
+                      <button
+                        type="button"
+                        class="pd-icon-btn text-v4-tertiary-text-color"
+                        aria-label="Account actions"
+                        (click)="toggleAccountMenu(account.id, $event)"
+                      >
+                        <lucide-icon
+                          name="ellipsis-vertical"
+                          [size]="15"
+                        ></lucide-icon>
+                      </button>
+                      @if (openMenuAccountId() === account.id) {
+                        <div
+                          class="bank-menu-backdrop"
+                          tabindex="-1"
+                          role="presentation"
+                          (click)="closeAccountMenu()"
+                          (keydown.escape)="closeAccountMenu()"
+                        ></div>
+                        <div
+                          class="bank-action-menu"
+                          role="menu"
+                          [ngClass]="{ 'menu-up': isLastIntlAccount(account.id) }"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            class="bank-menu-item"
+                            (click)="onEditInternationalAccount(account)"
+                          >
+                            <lucide-icon name="edit" [size]="14"></lucide-icon>
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            class="bank-menu-item"
+                            (click)="onDeleteInternationalAccount(account)"
+                          >
+                            <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                            Delete
+                          </button>
+                          @if (
+                            !account.is_default_for_business &&
+                            !account.is_default_for_personal
+                          ) {
+                            <button
+                              type="button"
+                              role="menuitem"
+                              class="bank-menu-item"
+                              (click)="onToggleInternationalDefault(account)"
+                            >
+                              <lucide-icon name="star" [size]="14"></lucide-icon>
+                              Make default
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (hasMoreIntlAccounts()) {
+                  <button
+                    type="button"
+                    class="pd-link mx-auto mt-2"
+                    (click)="onViewAllBankAccounts()"
+                  >
+                    View all ({{ detailsService.internationalAccounts().length }})
+                  </button>
+                }
+              } @else {
+                <ng-container
+                  [ngTemplateOutlet]="emptyState"
+                  [ngTemplateOutletContext]="{
+                    icon: 'globe',
+                    title: 'No international accounts found',
+                    help:
+                      'Accounts you add for this ' +
+                      payeeTypeLabel().toLowerCase() +
+                      ' will show up here.'
+                  }"
+                />
+              }
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Transactions -->
+    <div
+      class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+    >
+      <div
+        class="flex items-center gap-3 border-b border-v4-border-subtle-color px-3"
+      >
+        <div class="flex gap-4" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            class="pd-tab !h-[34px]"
+            [class.active]="activeTransactionTab() === 'send'"
+            (click)="setTransactionTab('send')"
+          >
+            <lucide-icon name="send" [size]="13"></lucide-icon>
+            Send
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="pd-tab !h-[34px]"
+            [class.active]="activeTransactionTab() === 'received'"
+            (click)="setTransactionTab('received')"
+          >
+            <lucide-icon name="download" [size]="13"></lucide-icon>
+            Received
+          </button>
+        </div>
+        <button
+          type="button"
+          class="pd-link ml-auto"
+          (click)="onViewAllTransactions()"
+        >
+          <lucide-icon name="eye" [size]="12"></lucide-icon>
+          View all
+        </button>
+        <button
+          type="button"
+          class="pd-icon-btn text-v4-tertiary-text-color"
+          aria-label="Toggle section"
+          (click)="toggleCard('tx')"
+        >
+          <lucide-icon
+            [name]="isCardCollapsed('tx') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+          ></lucide-icon>
+        </button>
+      </div>
+
+      @if (!isCardCollapsed("tx")) {
+      <div class="flex min-h-0 flex-1 flex-col">
+        @if (detailsService.txnLoading()) {
+          <div class="p-3">
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          </div>
+        } @else if (activeTransactionTab() === "send") {
+          @if (detailsService.sendTransactions().length > 0) {
+            <div class="overflow-x-auto">
+              <table class="v4-ocw-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Reference</th>
+                    <th>Status</th>
+                    <th class="!text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (txn of previewSendTxns(); track txn.uu_id) {
+                    <tr>
+                      <td class="text-v4-tertiary-text-color">{{ $index + 1 }}</td>
+                      <td><app-pd-date-time [value]="txn.created_at" /></td>
+                      <td class="whitespace-nowrap font-semibold">
+                        {{ txn.source_name || "—" }}
+                      </td>
+                      <td class="whitespace-nowrap text-v4-secondary-text-color">
+                        {{ txn.reference_no || "—" }}
+                      </td>
+                      <td>
+                        <span
+                          class="txn-badge-status"
+                          [style.background-color]="getTxnStatusBg(txn)"
+                          [style.color]="getTxnStatusColor(txn)"
+                          >{{ getTxnStatusLabel(txn) }}</span
+                        >
+                      </td>
+                      <td
+                        class="whitespace-nowrap text-right font-bold tabular-nums"
+                      >
+                        {{ txn.amount | currency: "USD" : "symbol" : "1.2-2" }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <ng-container
+              [ngTemplateOutlet]="emptyState"
+              [ngTemplateOutletContext]="{
+                icon: 'arrow-up-right',
+                title: 'No payments sent',
+                help:
+                  'Payments you send to this ' +
+                  payeeTypeLabel().toLowerCase() +
+                  ' will show up here.'
+              }"
+            />
+          }
+        } @else {
+          @if (detailsService.receivedTransactions().length > 0) {
+            <div class="overflow-x-auto">
+              <table class="v4-ocw-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Reference</th>
+                    <th>Status</th>
+                    <th class="!text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (
+                    txn of previewReceivedTxns();
+                    track txn.uu_id || $index
+                  ) {
+                    <tr>
+                      <td class="text-v4-tertiary-text-color">{{ $index + 1 }}</td>
+                      <td><app-pd-date-time [value]="txn.created_at" /></td>
+                      <td class="whitespace-nowrap font-semibold">
+                        {{ getReceivedTxnName(txn) }}
+                      </td>
+                      <td class="whitespace-nowrap text-v4-secondary-text-color">
+                        {{ txn.reference_no || "—" }}
+                      </td>
+                      <td>
+                        <span
+                          class="txn-badge-status"
+                          [style.background-color]="getReceivedTxnStatusBg(txn)"
+                          [style.color]="getReceivedTxnStatusColor(txn)"
+                          >{{ getReceivedTxnStatusLabel(txn) }}</span
+                        >
+                      </td>
+                      <td
+                        class="whitespace-nowrap text-right font-bold tabular-nums"
+                      >
+                        {{ txn.amount | currency: "USD" : "symbol" : "1.2-2" }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <ng-container
+              [ngTemplateOutlet]="emptyState"
+              [ngTemplateOutletContext]="{
+                icon: 'arrow-down-left',
+                title: 'No payments received',
+                help:
+                  'Payments this ' +
+                  payeeTypeLabel().toLowerCase() +
+                  ' sends you will show up here.'
+              }"
+            />
+          }
+        }
+      </div>
+      }
+    </div>
+
+    <!-- Activity — the tile row is the card head; the open section renders below. -->
+    <div
+      class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+    >
+      <div
+        class="grid grid-cols-6 gap-1.5 border-b border-v4-border-subtle-color p-2"
+      >
+        @for (tab of activityTabs; track tab.key) {
+          <button
+            type="button"
+            class="flex min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2.5 transition-[border-color,background-color] duration-150"
+            [ngClass]="
+              activeActivityTab() === tab.key
+                ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+            "
+            (click)="setActivityTab(tab.key)"
+          >
+            <lucide-icon [name]="tab.icon" [size]="16" class="shrink-0"></lucide-icon>
+            <span
+              class="block w-full truncate text-center text-[12px] font-medium leading-tight"
+              >{{ tab.label }}</span
+            >
+          </button>
+        }
+      </div>
+
+      <div class="pd-action-panel flex flex-col gap-2 !p-3">
+        <!-- Contacts -->
+        @if (activeActivityTab() === "contacts") {
+          @if (detailsService.contactsLoading() || detailsService.contacts().length > 0) {
+          <div class="flex justify-end">
+            <app-common-button-v4
+              [type]="{ style: 'navy', name: 'v2-1', size: 'sm' }"
+              [text]="'Add contact'"
+              [lucideIcon]="'plus'"
+              [lucideIconSize]="14"
+              (clickEvent)="onAddContact()"
+            />
+          </div>
+          }
+          @if (detailsService.contactsLoading()) {
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          } @else if (detailsService.contacts().length > 0) {
+            <div class="pd-table-wrap">
+              <table class="v4-ocw-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Full name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Type</th>
+                    <th class="!text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (
+                    contact of detailsService.contacts();
+                    track contact.encrypted_id
+                  ) {
+                    <tr>
+                      <td class="text-v4-tertiary-text-color">{{ $index + 1 }}</td>
+                      <td class="whitespace-nowrap font-semibold">
+                        {{ contact.name }}
+                      </td>
+                      <td class="whitespace-nowrap text-v4-secondary-text-color">
+                        {{ contact.email }}
+                      </td>
+                      <td
+                        class="whitespace-nowrap tabular-nums text-v4-secondary-text-color"
+                      >
+                        {{ contact.phone_number }}
+                      </td>
+                      <td class="whitespace-nowrap text-v4-secondary-text-color">
+                        {{
+                          contact.contact_type === "2"
+                            ? "Primary"
+                            : contact.contact_type === "3"
+                              ? "Secondary"
+                              : "Additional"
+                        }}
+                      </td>
+                      <td class="whitespace-nowrap text-right">
+                        <span class="inline-flex gap-0.5">
+                          <button
+                            type="button"
+                            class="pd-icon-btn text-v4-tertiary-text-color"
+                            aria-label="Edit contact"
+                            (click)="onEditContact(contact)"
+                          >
+                            <lucide-icon name="edit" [size]="13"></lucide-icon>
+                          </button>
+                          <button
+                            type="button"
+                            class="pd-icon-btn pd-icon-btn--danger text-v4-tertiary-text-color"
+                            aria-label="Delete contact"
+                            (click)="onDeleteContact(contact)"
+                          >
+                            <lucide-icon name="trash-2" [size]="13"></lucide-icon>
+                          </button>
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <ng-container
+              [ngTemplateOutlet]="emptyState"
+              [ngTemplateOutletContext]="{
+                icon: 'users',
+                title: 'No contacts yet',
+                action: addContactEmptyBtn,
+                help:
+                  'People you add for this ' +
+                  payeeTypeLabel().toLowerCase() +
+                  ' will show up here.'
+              }"
+            />
+          }
+        }
+
+        <!-- To-dos -->
+        @if (activeActivityTab() === "todos") {
+          @if (detailsService.todosLoading() || detailsService.todos().length > 0) {
+          <div class="flex justify-end">
+            <app-common-button-v4
+              [type]="{ style: 'navy', name: 'v2-1', size: 'sm' }"
+              [text]="'Add to-do'"
+              [lucideIcon]="'plus'"
+              [lucideIconSize]="14"
+              (clickEvent)="onAddTodo()"
+            />
+          </div>
+          }
+          @if (detailsService.todosLoading()) {
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          } @else if (detailsService.todos().length > 0) {
+            <div class="pd-table-wrap">
+              <table class="v4-ocw-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Details</th>
+                    <th class="!text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (todo of detailsService.todos(); track todo.encrypted_id) {
+                    <tr>
+                      <td>
+                        <div class="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            class="cursor-pointer accent-v4-primary-brand-color"
+                            [checked]="todo.todo_status === 'done'"
+                            [disabled]="todo.todo_status === 'due'"
+                            (change)="onToggleTodoStatus(todo)"
+                          />
+                          @if (todo.todo_status === "active") {
+                            <span class="todo-active-badge">Active</span>
+                          } @else if (todo.todo_status === "due") {
+                            <span class="todo-due-badge">Due</span>
+                          } @else if (todo.todo_status === "done") {
+                            <span class="todo-done-badge">Done</span>
+                          }
+                        </div>
+                      </td>
+                      <td
+                        class="whitespace-nowrap"
+                        [class.todo-closed]="
+                          todo.todo_status === 'due' || todo.todo_status === 'done'
+                        "
+                      >
+                        <app-pd-date-time [value]="todo.formated_date" />
+                      </td>
+                      <td
+                        [class.todo-closed]="
+                          todo.todo_status === 'due' || todo.todo_status === 'done'
+                        "
+                      >
+                        {{ todo.todo_details }}
+                      </td>
+                      <td class="whitespace-nowrap text-right">
+                        <span class="inline-flex gap-0.5">
+                          <button
+                            type="button"
+                            class="pd-icon-btn text-v4-tertiary-text-color disabled:cursor-not-allowed disabled:opacity-30"
+                            aria-label="Edit to-do"
+                            [disabled]="todo.todo_status === 'due'"
+                            (click)="onEditTodo(todo)"
+                          >
+                            <lucide-icon name="edit" [size]="13"></lucide-icon>
+                          </button>
+                          <button
+                            type="button"
+                            class="pd-icon-btn pd-icon-btn--danger text-v4-common-red-color"
+                            aria-label="Delete to-do"
+                            (click)="onDeleteTodo(todo)"
+                          >
+                            <lucide-icon name="trash-2" [size]="13"></lucide-icon>
+                          </button>
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <ng-container
+              [ngTemplateOutlet]="emptyState"
+              [ngTemplateOutletContext]="{
+                icon: 'check-square',
+                title: 'No to-dos yet',
+                action: addTodoEmptyBtn,
+                help:
+                  'Tasks you create for this ' +
+                  payeeTypeLabel().toLowerCase() +
+                  ' will show up here.'
+              }"
+            />
+          }
+        }
+
+        <!-- Comments -->
+        @if (activeActivityTab() === "comments") {
+          @if (detailsService.commentsLoading()) {
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          } @else {
+            <app-po-comments-list
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [bare]="true"
+              variant="view-panel"
+              [emptyHint]="
+                'Notes you add here stay with the ' +
+                payeeTypeLabel().toLowerCase() +
+                '.'
+              "
+              [comments]="commentsForList()"
+              [maxHeight]="'none'"
+              [posting]="commentPosting()"
+              [error]="commentError()"
+              (submitComment)="onSubmitComment($event)"
+              (deleteComment)="onDeleteComment($event)"
+            />
+          }
+        }
+
+        <!-- Attachments -->
+        @if (activeActivityTab() === "attachments") {
+          @if (detailsService.attachmentsLoading()) {
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          } @else {
+            <app-po-attachments-list
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [bare]="true"
+              variant="view-panel"
+              accept="*"
+              [maxSizeMb]="5"
+              [maxFiles]="5"
+              [emptyHint]="
+                'Files attached to this ' +
+                payeeTypeLabel().toLowerCase() +
+                ' will show up here.'
+              "
+              [attachments]="attachmentsForList()"
+              [maxHeight]="'none'"
+              [deletingId]="null"
+              [uploading]="attachmentUploading()"
+              [error]="attachmentError()"
+              (fileSelected)="onAttachmentSelected($event)"
+              (deleteAttachment)="onDeleteAttachment($event)"
+              (openAttachment)="onOpenAttachment($event)"
+            />
+          }
+        }
+
+        <!-- Audit trail -->
+        @if (activeActivityTab() === "audit") {
+          @if (detailsService.auditLoading()) {
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          } @else if (detailsService.auditTrailItems().length > 0) {
+            <div class="flex flex-col gap-2">
+            <div class="pd-table-wrap">
+              <table class="v4-ocw-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                    <th>User</th>
+                    <th>Device</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of auditPagedItems(); track $index) {
+                    <tr>
+                      <td class="align-top text-v4-tertiary-text-color">
+                        {{ (auditPage() - 1) * auditPageSize + $index + 1 }}
+                      </td>
+                      <td class="align-top">
+                        <app-pd-date-time [value]="item.formattedCreatedAt" />
+                      </td>
+                      <td class="whitespace-nowrap align-top font-semibold">
+                        {{ item.status }}
+                      </td>
+                      <td
+                        class="whitespace-nowrap align-top text-v4-secondary-text-color"
+                      >
+                        {{ item.userName }}
+                      </td>
+                      <td class="whitespace-nowrap align-top">
+                        <span
+                          class="align-top text-v4-secondary-text-color"
+                        >
+                          {{ item.ipAddress }}
+                        </span>
+                      </td>
+                      <td class="align-top text-v4-secondary-text-color">
+                        {{ item.note }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (detailsService.auditTrailItems().length > auditPageSize) {
+              <div
+                class="flex items-center gap-2 text-[12px] text-v4-tertiary-text-color"
+              >
+                <span>Showing {{ auditRangeLabel() }}</span>
+                <span class="flex-1"></span>
+                <button
+                  type="button"
+                  class="audit-page-btn"
+                  aria-label="Previous page"
+                  [disabled]="auditPage() <= 1"
+                  (click)="auditPrevPage()"
+                >
+                  ‹
+                </button>
+                <span class="font-semibold text-v4-main-text-color"
+                  >{{ auditPage() }} / {{ auditTotalPages() }}</span
+                >
+                <button
+                  type="button"
+                  class="audit-page-btn"
+                  aria-label="Next page"
+                  [disabled]="auditPage() >= auditTotalPages()"
+                  (click)="auditNextPage()"
+                >
+                  ›
+                </button>
+              </div>
+            }
+            </div>
+          } @else {
+            <ng-container
+              [ngTemplateOutlet]="emptyState"
+              [ngTemplateOutletContext]="{
+                icon: 'rotate-ccw-clock',
+                title: 'No audit trail yet',
+                help: 'Changes made to this ' +
+                  payeeTypeLabel().toLowerCase() +
+                  ' will show up here.'
+              }"
+            />
+          }
+        }
+
+        <!-- More -->
+        @if (activeActivityTab() === "more") {
+          @if (detailsService.profileLoading()) {
+            <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+          } @else if (moreFields().length) {
+            <div class="grid grid-cols-2 gap-x-4 gap-y-2.5">
+              @for (field of moreFields(); track field.key) {
+                <div class="pd-field">
+                  <span class="pd-row-label">{{ field.key }}</span>
+                  <span class="pd-row-value">{{ field.value }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <ng-container
+              [ngTemplateOutlet]="emptyState"
+              [ngTemplateOutletContext]="{
+                icon: 'more-horizontal',
+                title: 'No additional information',
+                help:
+                  'Extra details saved for this ' +
+                  payeeTypeLabel().toLowerCase() +
+                  ' will show up here.'
+              }"
+            />
+          }
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>

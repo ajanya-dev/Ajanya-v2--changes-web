@@ -1,0 +1,116 @@
+<div
+  [formGroup]="form"
+  class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-[18px]"
+>
+  <div class="flex flex-col gap-[7px]" data-field="interBankAc">
+    <app-sp-select-dropdown
+      class="relative block"
+      label="Payee's Bank Account"
+      icon="bank"
+      [required]="true"
+      [disabled]="!intl.canAddBank() || intl.isPrefilling()"
+      [disabledHint]="
+        intl.isPrefilling()
+          ? 'Loading the payment details…'
+          : 'Select a payee first — their bank accounts will appear here.'
+      "
+      [placeholder]="
+        intl.isPrefilling()
+          ? 'Loading…'
+          : 'Select or search international bank account'
+      "
+      [searchPlaceholder]="'Search or add bank account'"
+      [emptyText]="'No bank accounts found'"
+      [items]="intl.banksForDropdown()"
+      [loading]="intl.bankLoading()"
+      displayField="_label"
+      subtitleField="_sub"
+      outputField="encrypted_id"
+      [enableAddNew]="intl.canAddBank()"
+      [addNewLabel]="'Add New Bank Account'"
+      [addNewHint]="'Add an international account for this payee'"
+      [ngModel]="intl.selectedBankId()"
+      [ngModelOptions]="{ standalone: true }"
+      (ngModelChange)="intl.onBankDropdownChange($event)"
+      (addNew)="intl.openAddBank()"
+    />
+    <!-- Both lines are about a payee's accounts: with no payee there is neither a
+         list to be empty nor a record to add one against, so neither renders. -->
+    @if (intl.canAddBank()) {
+      @if (intl.bankNote; as note) {
+        <p
+          class="flex items-center gap-1 text-[12px] font-semibold leading-tight"
+          [class.text-v4-common-red-color]="intl.bankErrorShown"
+          [class.text-v4-common-yellow-color]="!intl.bankErrorShown"
+        >
+          <lucide-icon [img]="AlertIcon" [size]="12" class="shrink-0" />
+          {{ note }}
+        </p>
+      }
+      @if (intl.noBankOnFile) {
+        <button
+          type="button"
+          class="flex w-fit cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-[12px] font-semibold text-v4-primary-brand-color hover:underline"
+          (click)="intl.openAddBank()"
+        >
+          <lucide-icon [img]="PlusIcon" [size]="12" class="shrink-0" />
+          Add international bank account
+        </button>
+      }
+    }
+  </div>
+
+  <div class="flex flex-col gap-[7px]" data-field="purpose">
+    <app-sp-select-dropdown
+      class="relative block"
+      label="Purpose of Payment"
+      [required]="true"
+      [disabled]="intl.isPrefilling()"
+      disabledHint="Loading the payment details…"
+      [placeholder]="intl.isPrefilling() ? 'Loading…' : 'Select Purpose'"
+      [searchPlaceholder]="'Search purpose'"
+      [items]="intl.purposeOptions()"
+      [loading]="intl.purposeLoading()"
+      displayField="description"
+      outputField="code"
+      formControlName="purpose"
+    />
+    <app-control-message-v4
+      [control]="form.controls.purpose"
+      [isMarginTopEnabled]="false"
+      [customMessages]="{
+        required: 'Please choose a purpose of payment'
+      }"
+    />
+  </div>
+
+  @if (intl.isSourceOfFundsRequired()) {
+    <div class="flex flex-col gap-[7px]" data-field="sourceOfCash">
+      <app-sp-select-dropdown
+        class="relative block"
+        label="Source of Cash"
+        [required]="true"
+        [disabled]="intl.isPrefilling()"
+        disabledHint="Loading the payment details…"
+        [placeholder]="
+          intl.isPrefilling() ? 'Loading…' : 'Select Source of Cash'
+        "
+        [searchPlaceholder]="'Search source of cash'"
+        [items]="intl.sourceOptions()"
+        [loading]="intl.sourceLoading()"
+        displayField="description"
+        outputField="code"
+        formControlName="sourceOfCash"
+      />
+      <app-control-message-v4
+        [control]="form.controls.sourceOfCash"
+        [isMarginTopEnabled]="false"
+        [customMessages]="{
+          required: 'Please choose a source of cash'
+        }"
+      />
+    </div>
+  }
+
+  <app-schedule-notify [form]="form" />
+</div>

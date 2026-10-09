@@ -1,0 +1,203 @@
+<div
+  class="business-table-wrapper border border-input-border-color p-5 mt-5 rounded-xl"
+>
+  <div class="heading-wrapper flex justify-between">
+    <div class="left-section-wrapper flex gap-2">
+      <div class="icon-container">
+        <fa-icon [icon]="faBank" class="text-common-blue-color"></fa-icon>
+      </div>
+      <div class="heading-content font-semibold">
+        Bank Accounts
+        @if(bankAccounts.length>0){
+          <span class="text-secondary-text-color text-sm ml-2"
+            >{{ bankAccounts.length }} connected</span
+          >
+        }
+      </div>
+    </div>
+    <div
+      (click)="addNewBank()"
+      role="presentation"
+      class="border rounded-full cursor-pointer mt-[-3px] ml-2.5 mb-[3px] px-2 py-px border-input-border-color text-common-blue-color"
+    >
+      +
+    </div>
+  </div>
+
+  <div class="relative flex flex-col w-full">
+    <div
+      class="flex font-medium text-start items-center px-5 text-[14px] justify-between h-[50px] bg-secondary-background-color my-3 rounded-lg"
+    >
+      <div class="w-1/5">Bank Account</div>
+      <div class="w-1/5">Check</div>
+      <div class="w-1/5">Digital Payment</div>
+      <div class="w-1/5">Manual ACH</div>
+      <div class="w-1/5">Positive Pay</div>
+    </div>
+    <!-- datas -->
+
+    @if (isLoadingContent) {
+      <div class="absolute left-[50%] top-[50%] loader"></div>
+    }
+    @for (item of bankAccounts; track $index) {
+      <div
+        class="text-sm flex text-start items-center px-5 py-2 justify-between"
+        [ngClass]="{
+          'border-b-[#e1e1e1] border-b': $index < bankAccounts.length - 1,
+          'blur-[2px]': isLoadingContent
+        }"
+      >
+        <!-- Name Column -->
+        <div class="w-1/5 flex gap-2 items-center">
+          <div
+            class="icon-container bg-common-secondary-blue-color rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0"
+          >
+            <fa-icon [icon]="faBank" class="text-common-blue-color"></fa-icon>
+          </div>
+          <div class="min-w-0">
+            <span class="font-medium whitespace-normal">{{ item.nickName }}</span
+            ><br />
+            <span class="text-[12px] whitespace-normal">{{ item.bankName }}</span
+            ><br />
+            <span class="text-[12px]">{{ item.accountNumber }}</span>
+          </div>
+        </div>
+
+        <!-- Check Column -->
+        <div class="w-1/5">
+          @if (isUserVerified) {
+            <span
+              class="text-sm !text-[12px] font-semibold  py-[4px] rounded-[3px] text-common-green-color"
+            >
+              <fa-icon [icon]="faCheck" />
+              Activated </span
+            ><br />
+            <span class="!text-[12px] pt-5">Limit : Unlimited</span>
+          } @else {
+            <span
+              class="text-xs font-semibold text-common-blue-color cursor-pointer"
+              (click)="enableCheck()"
+              role="presentation"
+              >Activate Now</span
+            >
+          }
+        </div>
+
+        <!-- Digital Payment Column -->
+        <div class="w-1/5">
+          @if (item.achApplicationStatus === null) {
+            <span
+              class="text-xs font-semibold text-common-blue-color cursor-pointer"
+              [ngClass]="{
+                '!cursor-no-drop': item.verified !== 1 || item.loading
+              }"
+              [matTooltip]="
+                item.verified !== 1
+                  ? 'Verify the bank account to unlock the ACH Payment'
+                  : ''
+              "
+            >
+              <span
+                [ngClass]="{
+                  'pointer-events-none': item.verified !== 1 || item.loading
+                }"
+                (click)="enableAch(item)"
+                role="presentation"
+              >
+                {{ item.loading ? "Loading..." : "Activate Now" }}
+              </span>
+            </span>
+          } @else if (item.achApplicationStatus === 1) {
+            <span
+              class="text-sm !text-[12px] font-semibold  py-[4px] rounded-[3px] text-common-green-color"
+            >
+              <fa-icon [icon]="faCheck" />
+              Activated </span
+            ><br />
+            <span class="!text-[12px] pt-5"
+              >Limit :
+              {{
+                item.achSettings?.dailyAmountLimits === 0
+                  ? "Unlimited"
+                  : (item.achSettings?.dailyAmountLimits ?? 0 | currency)
+              }}/Day</span
+            ><br />
+            <span
+              class="cursor-pointer font-medium pt-5 text-common-blue-color text-[12px]"
+              (click)="contactSupport()"
+              role="presentation"
+              >Raise My Limit</span
+            >
+          } @else if (item.achApplicationStatus === 0) {
+            <span class="text-xs font-semibold text-common-yellow-color"
+              >Evaluating Account</span
+            >
+          } @else if (item.achApplicationStatus === 2) {
+            <span class="text-xs font-semibold text-common-blue-color"
+              >ACH Document Required</span
+            >
+          } @else if (item.achApplicationStatus === 3) {
+            <span class="text-xs font-semibold text-common-red-color"
+              >Rejected</span
+            >
+          }
+        </div>
+
+        <!-- Manual ACH Column -->
+        <div class="w-1/5">
+          @if (item.mAch) {
+            <span
+              class="text-sm !text-[12px] font-semibold py-[4px] rounded-[3px] text-common-green-color"
+            >
+              <fa-icon [icon]="faCheck" />
+              Activated </span
+            ><br />
+          } @else {
+            <span
+              class="text-xs font-semibold text-common-blue-color cursor-pointer"
+              (click)="contactSupport()"
+              role="presentation"
+              >Activate Now</span
+            >
+          }
+        </div>
+
+        <!-- Positive Pay Column -->
+        <div class="w-1/5">
+          @if (item.isPositivePayEnabled) {
+            <span
+              class="text-sm !text-[12px] font-semibold  py-[4px] rounded-[3px] text-common-green-color"
+            >
+              <fa-icon [icon]="faCheck" />
+              Activated </span
+            ><br />
+          } @else {
+            <span
+              class="text-xs font-semibold text-common-blue-color cursor-pointer"
+              (click)="contactSupport()"
+              role="presentation"
+              >Activate Now</span
+            >
+          }
+        </div>
+      </div>
+    } @empty {
+      <div
+        class="w-full flex justify-center text-sm font-medium text-center items-center h-[100px]"
+        [ngClass]="{ 'blur-[2px]': isLoadingContent }"
+      >
+      You have no linked bank accounts.
+      </div>
+    }
+
+    @if (bankAccounts.length >= perPage || showPagination) {
+      <app-common-table-pagination
+        [rowCount]="bankAccounts.length"
+        [page]="page"
+        [pageLimit]="5"
+        (viewAllEvent)="viewAll()"
+        (clcikedItem)="onClickEvent($event)"
+      ></app-common-table-pagination>
+    }
+  </div>
+</div>

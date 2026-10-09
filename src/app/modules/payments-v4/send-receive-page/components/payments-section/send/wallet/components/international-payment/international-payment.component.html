@@ -1,0 +1,256 @@
+<div class="section-animate mt-4 flex flex-col gap-3">
+  <div class="intl-card">
+    <div class="mb-4 flex items-center gap-1.5">
+      <i-lucide
+        [img]="GlobeIcon"
+        [size]="15"
+        class="text-v4-primary-brand-bold-color"
+      ></i-lucide>
+      <span
+        class="text-[14px] font-semibold tracking-[-0.01em] text-v4-main-text-color"
+      >
+        International recipient
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+      <div data-field="recipientType">
+        <label for=""
+          class="mb-1.5 block text-[13px] font-semibold uppercase tracking-wide text-v4-main-text-color"
+        >
+          Recipient Type <span class="text-v4-common-red-color">*</span>
+        </label>
+        <div class="intl-seg" role="tablist" aria-label="Recipient type">
+          <button
+            type="button"
+            role="tab"
+            class="intl-seg-btn"
+            [class.on]="intl.recipientType() === 'business'"
+            [attr.aria-selected]="intl.recipientType() === 'business'"
+            [disabled]="intl.isPrefilling()"
+            (click)="setRecipientType('business')"
+          >
+            <i-lucide [img]="Building2Icon" [size]="16"></i-lucide>
+            <span>Business</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="intl-seg-btn"
+            [class.on]="intl.recipientType() === 'personal'"
+            [attr.aria-selected]="intl.recipientType() === 'personal'"
+            [disabled]="intl.isPrefilling()"
+            (click)="setRecipientType('personal')"
+          >
+            <i-lucide [img]="UserIcon" [size]="16"></i-lucide>
+            <span>Personal</span>
+          </button>
+        </div>
+        @if (intl.recipientTypeErrorShown) {
+          <p
+            class="mt-1 flex items-center gap-1 text-[12px] font-semibold leading-tight text-v4-common-red-color"
+          >
+            <i-lucide
+              [img]="CircleAlertIcon"
+              [size]="12"
+              class="shrink-0"
+            ></i-lucide>
+            Please select a recipient type
+          </p>
+        }
+      </div>
+
+      <div class="relative">
+        <div class="mb-1.5 flex items-center justify-between">
+          <label
+            class="block text-[13px] font-semibold uppercase tracking-wide text-v4-main-text-color"
+            for="destinationCurrency"
+          >
+            Destination Currency <span class="text-v4-common-red-color">*</span>
+          </label>
+          @if (intl.recipientType() === "personal") {
+            <span
+              class="flex cursor-help items-center gap-1 text-[12px] font-semibold text-v4-primary-brand-bold-color"
+              [matTooltip]="intl.limitsTooltip()"
+              matTooltipClass="whitespace-pre-line"
+            >
+              <i-lucide [img]="CircleAlertIcon" [size]="12"></i-lucide>
+              Recipient limits
+            </span>
+          }
+        </div>
+        <div
+          role="presentation"
+          class="flex h-11 items-center justify-between rounded-xl border-[1.5px] border-v4-border-color bg-v4-secondary-background-color px-3 transition-colors"
+          [ngClass]="
+            intl.isPrefilling()
+              ? 'cursor-wait'
+              : intl.recipientType()
+                ? 'cursor-pointer hover:border-v4-primary-brand-color'
+                : 'cursor-not-allowed opacity-60'
+          "
+          [attr.aria-disabled]="!intl.recipientType() || intl.isPrefilling()"
+          [attr.aria-busy]="intl.isPrefilling()"
+          [matTooltip]="
+            intl.recipientType()
+              ? ''
+              : 'Select a recipient type first — available currencies differ for business and personal recipients.'
+          "
+          matTooltipClass="whitespace-pre-line"
+          (click)="intl.toggleCountrySearch()"
+        >
+          @if (intl.isPrefilling()) {
+            <div class="flex min-w-0 animate-pulse items-center gap-2.5">
+              <span class="h-6 w-6 shrink-0 rounded-full bg-v4-brand-tint"></span>
+              <span class="flex flex-col gap-1">
+                <span class="block h-3 w-12 rounded bg-v4-brand-tint"></span>
+                <span class="block h-2.5 w-20 rounded bg-v4-brand-tint"></span>
+              </span>
+            </div>
+          } @else {
+          @if (intl.selectedCountry(); as country) {
+            <div class="flex min-w-0 items-center gap-2.5">
+              @if (country.flag) {
+                <img
+                  [src]="country.flag"
+                  class="h-6 w-6 shrink-0 rounded-full object-cover"
+                  alt=""
+                />
+              } @else {
+                <div
+                  class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-v4-tertiary-background-color"
+                >
+                  <i-lucide
+                    [img]="GlobeIcon"
+                    [size]="13"
+                    class="text-v4-tertiary-text-color"
+                  ></i-lucide>
+                </div>
+              }
+              <div class="min-w-0 leading-tight">
+                <p class="text-[13px] font-semibold text-v4-main-text-color">
+                  {{ country.currency }}
+                </p>
+                <p class="truncate text-[12px] text-v4-tertiary-text-color">
+                  {{ country.key }}
+                </p>
+              </div>
+            </div>
+          } @else {
+            <span class="text-[13px] text-v4-subtle-text-color">
+              {{
+                intl.recipientType()
+                  ? "Select destination currency"
+                  : "Select recipient type first"
+              }}
+            </span>
+          }
+          }
+          <i-lucide
+            [img]="SearchIcon"
+            [size]="16"
+            class="shrink-0 text-v4-tertiary-text-color"
+          ></i-lucide>
+        </div>
+
+        @if (intl.showCountrySearch()) {
+          <div
+            class="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-v4-border-color bg-v4-secondary-background-color shadow-lg"
+          >
+            <div
+              class="sticky top-0 border-b border-v4-border-color bg-v4-secondary-background-color p-2"
+            >
+              <input
+                type="text"
+                class="w-full rounded-lg border border-v4-border-color bg-v4-secondary-background-color px-3 py-2 text-[13px] text-v4-main-text-color placeholder-v4-subtle-text-color outline-none focus:border-v4-primary-brand-color"
+                placeholder="Search country or currency..."
+                [ngModel]="intl.countrySearchTerm()"
+                (ngModelChange)="intl.countrySearchTerm.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+              />
+            </div>
+            @for (country of intl.filteredCountries(); track country.countryCode) {
+              <div
+                role="presentation"
+                class="flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-v4-tertiary-background-color"
+                [class.bg-v4-tertiary-background-color]="
+                  intl.selectedCountry()?.countryCode === country.countryCode
+                "
+                (click)="selectCountry(country)"
+              >
+                @if (country.flag) {
+                  <img
+                    [src]="country.flag"
+                    class="h-6 w-6 rounded-full object-cover"
+                    alt=""
+                  />
+                } @else {
+                  <div
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-v4-tertiary-background-color"
+                  >
+                    <i-lucide
+                      [img]="GlobeIcon"
+                      [size]="12"
+                      class="text-v4-tertiary-text-color"
+                    ></i-lucide>
+                  </div>
+                }
+                <span class="flex-1 text-[13px] text-v4-main-text-color">
+                  {{ country.key }}
+                </span>
+                <span
+                  class="text-[13px] font-semibold text-v4-insight-card-main-number-green"
+                >
+                  {{ country.currency }}
+                </span>
+              </div>
+            }
+            @if (intl.filteredCountries().length === 0) {
+              <div
+                class="px-3 py-2.5 text-center text-[13px] text-v4-tertiary-text-color"
+              >
+                No countries found
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (intl.quoteError()) {
+      <div
+        class="mt-3 flex items-start gap-2 rounded-lg border border-v4-common-red-color bg-v4-badge-error-bg-color px-3 py-2"
+      >
+        <i-lucide
+          [img]="InfoIcon"
+          [size]="14"
+          class="mt-0.5 shrink-0 text-v4-common-red-color"
+        ></i-lucide>
+        <p class="text-[12px] text-v4-common-red-color">
+          {{ intl.quoteError() }}
+        </p>
+      </div>
+    }
+  </div>
+
+  <app-v4-transaction-limit-card
+    #limitCard
+    [editAmountOnLimitCancel]="true"
+    [handlesMemoError]="true"
+    [quoteId]="walletPaymentService.quote()?.quote_id ?? null"
+    [payeeId]="sendStateService.payeeId()"
+    [countryCode]="intl.selectedCountry()?.countryCode ?? null"
+    [payoutCurrencyCode]="intl.selectedCountry()?.currency ?? null"
+    [type]="intl.recipientType()"
+    [paymentMemo]="form.controls.memo.value ?? ''"
+    [receivingCurrency]="intl.selectedCountry()?.currency ?? ''"
+    [purposeDescription]="intl.selectedPurposeDescription()"
+    [currentSendAmount]="walletPaymentService.quote()?.sending_amount ?? null"
+    [currentReceivingAmount]="
+      walletPaymentService.quote()?.receiving_amount ?? null
+    "
+    (amountUpdated)="intl.onLimitCardAmountUpdated($event)"
+    (limitCheckFailed)="intl.onPurposeLimitError()"
+    (memoRequired)="intl.onPurposeMemoRequired()"
+  />
+</div>

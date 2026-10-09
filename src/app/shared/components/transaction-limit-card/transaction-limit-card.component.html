@@ -1,0 +1,110 @@
+@if (transactionLimitMessage()) {
+  <div class="py-3 px-3 rounded-lg bg-common-secondary-blue-color mt-2">
+    <div class="flex gap-3 items-center">
+      <p
+        class="flex-1 min-w-0 text-[12px] leading-snug text-main-text-color font-inter whitespace-normal break-words"
+        [innerHTML]="transactionLimitMessage()"
+      ></p>
+      <button
+        type="button"
+        class="shrink-0 self-center inline-flex items-center gap-1.5 px-3 h-8 text-xs font-medium text-common-blue-color bg-main-background-color border border-common-blue-color rounded whitespace-nowrap"
+        (click)="editAmount()"
+      >
+        <fa-icon [icon]="faPenToSquare" class="text-[12px]" />
+        Edit amount
+      </button>
+    </div>
+  </div>
+}
+@if (showEditAmount()) {
+  <div
+    class="bg-common-secondary-blue-color rounded-lg p-4 mt-2 flex flex-col gap-3"
+  >
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div
+        class="flex flex-col gap-2 flex-1 min-w-0"
+        [ngClass]="{ 'skelton h-12 mt-[28px]': isCalculatingSend() }"
+      >
+        <p class="text-sm text-main-text-color font-inter">Send Amount</p>
+        <div class="relative">
+          <input
+            type="text"
+            class="w-full px-3 py-2 border border-input-border-color text-main-text-color rounded-lg text-lg font-medium focus:outline-none font-inter disabled:opacity-50 disabled:cursor-not-allowed"
+            placeholder="0.00"
+            maxlength="15"
+            mask="separator.2"
+            thousandSeparator=","
+            name="editSendAmount"
+            [ngModel]="editSendAmount"
+            (ngModelChange)="onEditSendAmountChange($event)"
+            (blur)="formatSendAmountOnBlur()"
+            [ngModelOptions]="{ standalone: true }"
+            (keypress)="utils.numberOnly($event, 'decimal')"
+            [disabled]="isCalculatingSend()"
+          />
+          <span
+            class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-secondary-text-color font-inter"
+            >USD</span
+          >
+        </div>
+      </div>
+      <div
+        class="flex flex-col gap-2 flex-1 min-w-0"
+        [ngClass]="{ 'skelton h-12 mt-[28px]': isCalculatingReceived() }"
+      >
+        <p class="text-sm text-main-text-color font-inter">Receiving Amount</p>
+        <div class="relative">
+          <input
+            type="text"
+            class="w-full px-3 py-2 border border-input-border-color text-main-text-color rounded-lg text-lg font-medium focus:outline-none font-inter disabled:opacity-50 disabled:cursor-not-allowed"
+            placeholder="0.00"
+            maxlength="15"
+            mask="separator.2"
+            thousandSeparator=","
+            name="editReceivingAmount"
+            [ngModel]="editReceivingAmount"
+            (ngModelChange)="onEditReceivingAmountChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+            (keypress)="utils.numberOnly($event, 'decimal')"
+            [disabled]="isCalculatingReceived()"
+          />
+          <span
+            class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-secondary-text-color font-inter"
+            >{{ receivingCurrency() }}</span
+          >
+        </div>
+      </div>
+    </div>
+    @if (sendAmountError()) {
+      <!-- Limit error shown full-width below both fields, not tied to the Send column. -->
+      <small
+        class="block w-full text-common-red-color text-xs font-roboto whitespace-normal break-words"
+      >
+        {{ sendAmountError() }}
+      </small>
+    }
+    <div class="flex justify-end gap-2 mt-1">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center px-5 h-9 text-sm font-medium text-common-blue-color bg-main-background-color border border-common-blue-color rounded disabled:opacity-50"
+        (click)="cancelEditAmount()"
+        [disabled]="isUpdatingAmount()"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-1.5 px-5 h-9 text-sm font-medium text-white bg-common-blue-color border border-common-blue-color rounded disabled:opacity-50"
+        (click)="updateAmount()"
+        [disabled]="
+          isUpdatingAmount() || isCalculatingReceived() || isCalculatingSend()
+        "
+      >
+        @if (isUpdatingAmount()) {
+          <span class="loadingSpinner after:border-x-transparent"></span>
+        }
+        Update Amount
+      </button>
+    </div>
+  </div>
+}

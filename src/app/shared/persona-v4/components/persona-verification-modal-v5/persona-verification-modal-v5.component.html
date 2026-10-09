@@ -1,0 +1,131 @@
+<div
+  class="flex h-full w-full overflow-hidden bg-main-background-color font-inter pt-2"
+>
+  <!-- LEFT column: toggle bar + existing form panel (fixed width).
+       Hidden in the compact layout while the preview is shown (single-panel swap). -->
+  <div
+    class="flex h-full w-[400px] flex-shrink-0 flex-col"
+    [class.hidden]="!showLeftPanel"
+  >
+    @if (!isPriorKycStep) {
+      <div class="shrink-0 border-b border-input-border-color">
+        <!-- Row 1: header + step count (left) · Show/Hide Preview + close (right) -->
+        <div
+          class="flex min-h-[52px] items-center justify-between gap-3 pl-4 py-2.5"
+        >
+          <div class="flex min-w-0 items-center">
+            <span
+              class="truncate text-[12px] font-semibold uppercase leading-tight tracking-wide text-secondary-text-color"
+              >Verification@if (sdkEmbedded()) {<span class="text-main-text-color">
+                  · Step {{ currentStepNumber() }} of
+                  {{ previewSteps().length }}</span
+                >}</span
+            >
+          </div>
+
+          <div class="flex flex-shrink-0 items-center gap-2">
+            <button
+              type="button"
+              class="persona-accent-pill inline-flex items-center gap-1.5 rounded-full bg-common-secondary-green-color px-3.5 py-1.5 text-[12px] font-medium text-common-green-color transition hover:bg-common-green-color hover:text-white"
+              (click)="togglePreview()"
+            >
+              {{ showPreview() ? "Hide Preview" : "Show Preview" }}
+              <fa-icon
+                [icon]="showPreview() ? faChevronLeft : faChevronRight"
+                class="text-[12px]"
+                aria-hidden="true"
+              />
+            </button>
+            <button aria-label="Close"
+              type="button"
+              class="flex h-[28px] w-[28px] items-center justify-center rounded-md text-main-text-color transition hover:bg-tertiary-background-color"
+              matTooltip="Close"
+              (click)="closePage()"
+            >
+              <fa-icon [icon]="faXmark" class="text-[14px]" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 2: step progress — label on top, segmented progress bar below.
+             Shown only while the Persona form is active. -->
+        @if (sdkEmbedded()) {
+          <div class="flex items-stretch gap-1.5 px-4 pb-3 pt-0.5">
+            @for (step of previewSteps(); track step.id) {
+              <div class="flex flex-1 flex-col items-center justify-end gap-1.5">
+                <!-- label above the segment -->
+                <span
+                  class="w-full text-center text-[12px] leading-tight"
+                  [ngClass]="
+                    step.status === 'current'
+                      ? 'font-semibold text-main-text-color'
+                      : 'font-medium text-secondary-text-color'
+                  "
+                  >{{ step.stepperLabel }}</span
+                >
+                <!-- segmented bar -->
+                <span
+                  class="h-[3px] w-full rounded-full transition-colors"
+                  [ngClass]="{
+                    'bg-common-green-color':
+                      step.status === 'done' || step.status === 'current',
+                    'bg-input-border-color': step.status === 'upcoming'
+                  }"
+                ></span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+
+    <app-persona-page-left-panel
+      class="flex min-h-0 flex-1 flex-col overflow-hidden"
+      [currentStep]="currentStep"
+      [userName]="userName"
+      [priorKycName]="priorKycName"
+      [missingFields]="missingFieldsView()"
+      [buttonText]="buttonText"
+      [fetchingInquiryId]="fetchingInquiryId || detailsLoading()"
+      [personaLoading]="personaLoading"
+      [waitingForPusherResponse]="waitingForPusherResponse"
+      [maximumAllowedAttempt]="maximumAllowedAttempt"
+      [errorMssage]="errorMssage"
+      [isCompletedRetryCount]="isCompletedRetryCount"
+      [isEddFlowInProgress]="isEddFlowInProgress"
+      [isShowEddModal]="isShowEddModal"
+      [sdkEmbedded]="sdkEmbedded()"
+      (btnClick)="onBtnClick($event)"
+      (closeClick)="closePage()"
+      (openSupportClick)="openSupport()"
+    />
+  </div>
+
+  <!-- RIGHT column: collapsible preview. Kept mounted; collapsed via CSS width.
+       In the compact layout it expands to fill the dialog (single-panel swap). -->
+  <div
+    class="persona-preview-col h-full"
+    [class.persona-preview-col--hidden]="!showPreviewPanel"
+    [class.persona-preview-col--full]="isCompact()"
+    [attr.aria-hidden]="!showPreviewPanel"
+  >
+    <app-persona-page-right-panel
+      class="flex h-full w-full flex-col overflow-hidden rounded-[12px] border border-input-border-color"
+      [inquiryId]="inquiryId"
+      [activeCategory]="activeCategory()"
+      [inquiryDetails]="inquiryDetails()"
+      [detailsLoading]="detailsLoading()"
+      [missingFields]="missingFieldsView()"
+      [attemptNumber]="attemptNumber()"
+      [maximumAllowedAttempt]="maximumAllowedAttempt"
+      [currentStep]="currentStep"
+      [pusherResponse]="pusherResponse"
+      [pollStatus]="pollStatus()"
+      [sampleFormationDocument]="sampleFormationDocument()"
+      [formationDocumentExample]="formationDocumentExample()"
+      [showBackButton]="isCompact()"
+      (back)="showForm()"
+    />
+  </div>
+</div>

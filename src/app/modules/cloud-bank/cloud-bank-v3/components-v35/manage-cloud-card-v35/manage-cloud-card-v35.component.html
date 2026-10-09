@@ -1,0 +1,403 @@
+<div class="w-full h-full gap-4 flex pt-2 text-main-text-color">
+  <div
+    class="cards-list flex flex-col bg-secondary-background-color rounded-t-[3px] h-full w-56 shrink-0"
+  >
+    <app-list-header-v35
+      header="Card"
+      [disabled]="
+        cloudListV35Service.selectedAccountSignal()?.accountStatus !== 'ACTIVE'
+      "
+      [isSwitchOption]="false"
+      (addButtonClickEvent)="
+        createCard(cloudListV35Service.selectedAccountSignal()?.id ?? '')
+      "
+      (searchEvent)="onCardSearch($event)"
+      [isAddButton]="false"
+    ></app-list-header-v35>
+    <div
+      class="card-list flex flex-col gap-2 overflow-auto h-[calc(100%-340px)] laptop:h-[calc(100%-138px)] px-5 pb-2"
+    >
+      @for (
+        card of cloudBankDataService.accountCardsSignal()[
+          cloudListV35Service.selectedAccountSignal()?.id ?? 0
+        ] | searchFilter: searchString : "label";
+        track $index
+      ) {
+        <div
+          role="presentation"
+          (click)="selectCard(card)"
+          class="rounded-[3px] flex flex-col px-2 py-1.5 gap-0.5 cursor-pointer"
+          [ngClass]="
+            card.id === cloudBankDataService.selectedCardSignal()?.id
+              ? 'bg-common-dark-blue-color text-white'
+              : 'bg-main-background-color'
+          "
+        >
+          <span class="font-roboto text-xs font-medium truncate">{{
+            card.label
+          }}</span>
+          <div class="flex justify-between">
+            <span class="font-normal text-xs font-roboto"
+              >****{{ card.last4 }}</span
+            >
+            <div class="flex gap-1 items-center text-xs">
+              <span>{{ card.cardStatus | titlecase }}</span
+              ><fa-icon
+                class="text-[12px]"
+                [icon]="['fas', 'circle']"
+                [ngClass]="
+                  card.cardStatus === 'active'
+                    ? 'text-common-green-color'
+                    : 'text-common-red-color'
+                "
+              ></fa-icon>
+            </div>
+          </div>
+        </div>
+      }
+      @if (cloudBankDataService.cardLoadingSignal()) {
+        <app-common-list-skelton
+          class="border-t border-input-border-color max-h-full"
+          [items]="14"
+        ></app-common-list-skelton>
+      }
+      @if (
+        !cloudBankDataService.selectedCardSignal() &&
+        !cloudBankDataService.cardLoadingSignal()
+      ) {
+        <div class="h-full w-full flex justify-center items-center">
+          <div>Sorry! No cards found.</div>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="w-full h-full relative overflow-auto">
+    <div class="w-full h-full flex flex-col gap-6">
+      @if (cloudBankDataService.selectedCardSignal(); as selectedCard) {
+        <div class="flex flex-col h-full w-full 2xl:h-auto 2xl:flex-row gap-4">
+          <div class="flex flex-col">
+            <span
+              class="font-inter font-medium text-sm text-main-text-color pt-1.5 pb-3.5"
+              >Card Details
+              <span class="font-normal text-sm text-secondary-text-color"
+                >({{
+                  cloudListV35Service.selectedAccountSignal()?.accountName
+                }})</span
+              ></span
+            >
+            <div
+              [ngStyle]="{ fontSize: cardSize }"
+              class="aspect-[119/75] bg-[url('/assets/images/cloud-bank/visa-card.png')] relative p-3 w-72 flex flex-col justify-between bg-contain bg-no-repeat shrink-0"
+              [ngClass]="{ skelton: cloudBankDataService.cardLoadingSignal() }"
+            >
+              <div class="p-2 flex justify-between">
+                <img
+                  class="w-8"
+                  src="assets/images/card-chip.svg"
+                  alt="card-chip"
+                />
+                <img
+                  class="w-16"
+                  [src]="
+                    '/assets/images/zil-with-logo.svg'
+                      | whiteLabel: 'cloudAppLogo'
+                  "
+                  alt="brand-logo"
+                />
+              </div>
+              @if (
+                !cloudBankDataService.cardNumberLoadingSignal() &&
+                  cloudBankDataService.cardNumberURLSignal();
+                as cardNumber
+              ) {
+                <div class="absolute top-10 left-0">
+                  <div class="-ml-5">
+                    <iframe [src]="cardNumber" title="cardNumber"></iframe>
+                  </div>
+                </div>
+              } @else if (cloudBankDataService.cardNumberLoadingSignal()) {
+                <div
+                  class="!absolute top-14 left-5 card-skeleton h-6 w-40"
+                ></div>
+              } @else {
+                <div class="absolute top-14 left-5 text-white">
+                  **** **** **** ****
+                </div>
+              }
+              <div class="absolute top-20 left-5 flex w-32 text-white text-xs">
+                <div class="pt-4 whitespace-nowrap">CVV :</div>
+                @if (!cloudBankDataService.cardNumberLoadingSignal()) {
+                  <div class="-ml-5">
+                    @if (
+                      cloudBankDataService.cardSecurityURLSignal();
+                      as cardSecurity
+                    ) {
+                      <iframe
+                        [src]="cardSecurity"
+                        title="cardSecurity"
+                      ></iframe>
+                    }
+                  </div>
+                } @else {
+                  <div
+                    class="card-skeleton h-5 w-9 !absolute top-[13px] left-10"
+                  ></div>
+                }
+              </div>
+              <div class="absolute top-20 right-0 flex w-36 text-white text-xs">
+                <div class="flex flex-col items-start">
+                  <div>Exp.</div>
+                  <div>Date</div>
+                </div>
+                @if (!cloudBankDataService.cardNumberLoadingSignal()) {
+                  <div class="-ml-5">
+                    @if (
+                      cloudBankDataService.cardExpiryURLSignal();
+                      as cardExpiry
+                    ) {
+                      <iframe [src]="cardExpiry" title="cardExpiry"></iframe>
+                    }
+                  </div>
+                } @else {
+                  <div
+                    class="card-skeleton h-5 w-9 !absolute top-3 left-10"
+                  ></div>
+                }
+              </div>
+              @if (cloudBankDataService.cardPinURLSignal(); as cardPin) {
+                <div class="absolute top-28 left-5 flex w-32 text-xs pt-1">
+                  <div class="whitespace-nowrap pt-1 pr-4 text-white">
+                    PIN :
+                  </div>
+                  <div>
+                    <div
+                      class="rounded bg-white h-5 w-9 pl-1 relative overflow-hidden z-0"
+                    >
+                      <!-- <div
+                        class="absolute top-0 left-0 h-5 w-9 z-10 cursor-pointer"
+                        role="presentation"
+                        (click)="showPinInput()"
+                      ></div> -->
+                      <iframe [src]="cardPin" title="cardPin"></iframe>
+                    </div>
+                    <!-- @if (cloudBankDataService.showPinInputSignal()) {
+                      <div
+                        class="rounded bg-white h-5 w-9 pl-1 overflow-hidden flex justify-start"
+                      >
+                        <input
+                          class="w-9"
+                          type="text"
+                          (keypress)="utils.numberOnly($event, 'numeric')"
+                          [(ngModel)]="newPin"
+                          maxlength="4"
+                        />
+                      </div>
+                    } -->
+                  </div>
+                </div>
+              }
+              <div class="absolute top-28 right-16 pt-1">
+                <div
+                  role="presentation"
+                  (click)="changeStatus(selectedCard)"
+                  class="flex rounded-xl h-5 w-10 p-0.5 transition-all duration-1000"
+                  [ngClass]="[
+                    selectedCard?.cardStatus === 'active'
+                      ? 'justify-end bg-common-secondary-green-color '
+                      : 'justify-start bg-common-secondary-red-color ',
+                    cloudBankDataService.cardStatusLoadingSignal() ||
+                    selectedCard?.cardStatus === 'pending'
+                      ? 'pointer-events-none'
+                      : 'cursor-pointer',
+                    cloudListV35Service.selectedAccountSignal()
+                      ?.accountStatus !== 'ACTIVE'
+                      ? 'pointer-events-none opacity-20'
+                      : ''
+                  ]"
+                >
+                  <div
+                    class="rounded-full h-4 w-4 transition-all duration-1000"
+                    [ngClass]="
+                      selectedCard?.cardStatus === 'active'
+                        ? 'bg-common-green-color'
+                        : 'bg-common-red-color'
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div class="flex justify-between px-2">
+                <div class="w-48">
+                  <div class="text-white font-medium truncate">
+                    {{ selectedCard?.nameOnCard ?? selectedCard?.label }}
+                  </div>
+                </div>
+                <div class="flex flex-col justify-end items-end">
+                  <div class="text-white text-xs">Debit</div>
+                  <img
+                    src="assets/images/cloud-bank/only-visa.svg"
+                    alt="visa-logo"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col min-h-full w-full gap-2">
+            <div class="flex gap-2 relative">
+              <app-common-button-v35
+                [ngClass]="{
+                  skelton: cloudBankDataService.cardLoadingSignal(),
+                  'pointer-events-none opacity-20':
+                    cloudListV35Service.selectedAccountSignal()
+                      ?.accountStatus !== 'ACTIVE'
+                }"
+                (clickEvent)="revealCard(selectedCard)"
+                [type]="{ name: 'action', style: 'blue' }"
+                text="Reveal Details"
+                [loading]="
+                  cloudBankDataService.cardNumberLoadingSignal() ||
+                  cloudBankDataService.cardExpiryLoadingSignal() ||
+                  cloudBankDataService.cardSecurityLoadingSignal()
+                "
+              ></app-common-button-v35>
+              <app-common-button-v35
+                [ngClass]="{
+                  skelton: cloudBankDataService.cardLoadingSignal(),
+                  'pointer-events-none opacity-20':
+                    cloudListV35Service.selectedAccountSignal()
+                      ?.accountStatus !== 'ACTIVE'
+                }"
+                (clickEvent)="revealCardPin(selectedCard)"
+                [type]="{ name: 'action', style: 'general' }"
+                textColorInput="var(--common-red-color)"
+                backGroundInput="var(--common-secondary-red-color)"
+                text="Show PIN"
+                [loading]="cloudBankDataService.cardPinLoadingSignal()"
+              ></app-common-button-v35>
+              <!-- @if (cloudBankDataService.showPinInputSignal()) {
+                <app-common-button-v35
+                  [type]="{ name: 'action', style: 'general' }"
+                  textColorInput="var(--common-green-color)"
+                  backGroundInput="var(--common-secondary-green-color)"
+                  text="Set PIN"
+                  [loading]="cloudBankDataService.setCardPinLoadingSignal()"
+                  (clickEvent)="setPin()"
+                ></app-common-button-v35>
+              } -->
+            </div>
+            <div
+              [ngClass]="{ skelton: cloudBankDataService.cardLoadingSignal() }"
+              class="flex gap-x-7 gap-y-5 items-start justify-start bg-secondary-background-color rounded p-5 w-full h-full"
+            >
+              <div class="flex flex-col gap-5">
+                <div class="flex flex-col gap-1 w-fit">
+                  <span
+                    class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                    >Card Label</span
+                  >
+                  <div class="flex gap-2 w-32">
+                    <span
+                      class="font-inter font-medium text-sm text-main-text-color truncate"
+                      >{{ selectedCard?.label }}</span
+                    >
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1 w-fit">
+                  <span
+                    class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                    >Last 4 digit</span
+                  >
+                  <span
+                    class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                    >****{{ selectedCard?.last4 }}</span
+                  >
+                </div>
+              </div>
+              <div class="flex flex-col gap-5">
+                <div class="flex flex-col gap-1 w-fit">
+                  <span
+                    class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                    >Type</span
+                  >
+                  <span
+                    class="font-inter font-medium text-sm text-main-text-color w-fit whitespace-nowrap"
+                    >{{ selectedCard?.cardType | titlecase }}</span
+                  >
+                </div>
+                <div class="flex flex-col gap-1 w-fit">
+                  <div class="flex gap-1">
+                    <span
+                      class="font-inter font-normal text-xs text-secondary-text-color whitespace-nowrap"
+                      >Spending Limit</span
+                    >
+                    <span
+                      class="font-inter font-semibold text-xs text-common-blue-color bg-common-secondary-blue-color whitespace-nowrap rounded-sm px-1"
+                    >
+                      {{ selectedCard?.limitInterval ?? "" | camelToTitle }}
+                    </span>
+                  </div>
+                  <div class="flex gap-2 h-6">
+                    <div
+                      class="border-none rounded text-sm font-roboto font-medium w-28 bg-main-background-color flex justify-end items-center p-1"
+                    >
+                      {{ selectedCard?.limitAmount }}
+                    </div>
+                    <app-common-button-v35
+                      [ngClass]="{
+                        'pointer-events-none opacity-20':
+                          cloudListV35Service.selectedAccountSignal()
+                            ?.accountStatus !== 'ACTIVE'
+                      }"
+                      type="small"
+                      text="Edit"
+                      (clickEvent)="editCard(selectedCard)"
+                    ></app-common-button-v35>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+      @if (cloudBankDataService.selectedCardSignal(); as selectedCard) {
+        <div class="relative">
+          <!-- <div
+            class="flex gap-3 items-center select-none absolute top-0 left-0 h-[30px]"
+          >
+            <span
+              role="presentation"
+              class="font-inter font-medium text-sm text-main-text-color"
+              >Card Statement</span
+            >
+          </div> -->
+        </div>
+      } @else {
+        <div class="w-full h-full flex justify-center items-center">
+          <div class="flex flex-col items-center justify-center">
+            <img src="assets/images/empty-box-v3.svg" alt="" />
+            <div>Sorry. There are no cards in your account.</div>
+            <div class="text-common-blue-color text-sm pb-5">
+              Add your first card now.
+            </div>
+            <app-common-button-v35
+              [ngClass]="{
+                'pointer-events-none opacity-20':
+                  cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+                  'ACTIVE'
+              }"
+              type="list"
+              text="Add"
+              [isAddIcon]="true"
+              (clickEvent)="
+                createCard(
+                  cloudListV35Service.selectedAccountSignal()?.id ?? ''
+                )
+              "
+              toolTip="Currtly not available"
+              class="!opacity-50 !cursor-default"
+            ></app-common-button-v35>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

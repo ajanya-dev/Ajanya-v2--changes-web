@@ -1,0 +1,339 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [title]="
+    viewData()?.document_title ?? 'Document Mail Details'
+  "
+  [subtitleTemplate]="panelMeta"
+  [actionButtons]="panelActionButtons()"
+  (actionButtonClicked)="onActionButtonClicked($event)"
+  icon="file-text"
+  iconBgColor="var(--v4-common-blue-color)"
+  [statusBadge]="statusBadge()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'document-mail-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  (closed)="closed.emit()"
+  [contentTemplate]="panelContent"
+/>
+
+<!-- Added date — label muted, value bold main colour. -->
+<ng-template #panelMeta>
+  @if (viewData()?.created_at) {
+    <p class="m-0">
+      Added:
+      <span class="font-semibold text-v4-main-text-color">{{
+        viewData()?.created_at | date: "MM/dd/yyyy"
+      }}</span>
+    </p>
+  }
+</ng-template>
+
+<ng-template #sectionSkeleton>
+  <app-pd-skeleton variant="section" />
+</ng-template>
+
+<ng-template #panelContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+  >
+    @if (loading()) {
+      <app-pd-skeleton [rows]="6" [tiles]="3" [timeline]="0" [party]="false" />
+    } @else if (viewData()) {
+      <!-- Document Details -->
+      <div class="pd-card pd-full">
+        <button type="button" class="pd-card-head" (click)="toggleCard('document')">
+          <span class="pd-card-title">Document details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('document') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("document")) {
+          <div class="pd-card-body">
+            <div class="pd-row !items-start border-b border-v4-border-subtle-color !py-[5px]">
+              <span class="pd-row-label shrink-0">Document title</span>
+              <span class="pd-row-value min-w-0 break-words text-right">{{
+                viewData()?.document_title
+              }}</span>
+            </div>
+            <div class="pd-row !items-start border-b border-v4-border-subtle-color !py-[5px]">
+              <span class="pd-row-label shrink-0">Document name</span>
+              <span class="pd-row-value min-w-0 break-all text-right">{{
+                viewData()?.document_name
+              }}</span>
+            </div>
+            <div class="pd-row border-b border-v4-border-subtle-color !py-[5px]">
+              <span class="pd-row-label shrink-0">Document URL</span>
+              <a
+                [href]="viewData()?.document_url"
+                target="_blank"
+                class="inline-flex items-center gap-1 text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+              >
+                View document
+                <lucide-icon name="external-link" [size]="12" />
+              </a>
+            </div>
+            <div class="pd-row border-b border-v4-border-subtle-color !py-[5px]">
+              <span class="pd-row-label shrink-0">Status</span>
+              <span class="pd-row-value capitalize">{{ statusText() }}</span>
+            </div>
+            <div class="pd-row border-b border-v4-border-subtle-color !py-[5px]">
+              <span class="pd-row-label shrink-0">Page count</span>
+              <span class="pd-row-value">{{ viewData()?.count_page }}</span>
+            </div>
+            <div class="pd-row !py-[5px]">
+              <span class="pd-row-label shrink-0">Created date</span>
+              <span class="pd-row-value">{{
+                viewData()?.created_at | date: "MM/dd/yyyy hh:mm a"
+              }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Sections — the tile row is the card head; the open section renders below. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="pd-card-head-flush grid grid-cols-3 gap-1.5 border-b border-v4-border-color px-3 py-2"
+        >
+          @for (
+            tile of [
+              { key: "tracking", label: "Tracking details", icon: "truck" },
+              { key: "activity", label: "Mail activity log", icon: "activity" },
+              { key: "comments", label: "Comments", icon: "message-square" }
+            ];
+            track tile.key
+          ) {
+            <button
+              type="button"
+              class="flex min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2.5 transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                activeSection() === tile.key
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="setActiveSection($any(tile.key))"
+            >
+              <lucide-icon [name]="tile.icon" [size]="16" class="shrink-0" />
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >{{ tile.label }}</span
+              >
+            </button>
+          }
+        </div>
+
+        <!-- Tracking Details -->
+        @if (activeSection() === "tracking") {
+          <div class="pd-action-panel flex flex-col gap-3 bg-v4-secondary-background-color p-3">
+            @if (viewData()?.tracking) {
+              <div>
+                <p class="pd-card-title mb-1">Tracking information</p>
+                <div class="pd-row">
+                  <span class="pd-row-label">Tracking code</span>
+                  <span class="pd-row-value">{{
+                    viewData()?.tracking?.tracking_code || "N/A"
+                  }}</span>
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Status</span>
+                  <span class="pd-row-value capitalize">{{
+                    viewData()?.tracking?.status_name || "N/A"
+                  }}</span>
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Shipping cost</span>
+                  <span class="pd-row-value">{{
+                    viewData()?.tracking?.shipping_cost | currency
+                  }}</span>
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Mail type</span>
+                  <span class="pd-row-value max-w-[200px] text-right">{{
+                    viewData()?.tracking?.mail_type_name || "N/A"
+                  }}</span>
+                </div>
+                <div class="pd-row">
+                  <span class="pd-row-label">Total fee</span>
+                  <span class="pd-row-value">{{
+                    viewData()?.tracking?.total_fee | currency
+                  }}</span>
+                </div>
+                <div class="pd-row !items-start">
+                  <span class="pd-row-label">Address</span>
+                  <div class="pd-row-value flex flex-col text-right">
+                    <span>{{ viewData()?.tracking?.payee_address_line_1 }}</span>
+                    @if (viewData()?.tracking?.payee_address_line_2) {
+                      <span>{{ viewData()?.tracking?.payee_address_line_2 }}</span>
+                    }
+                    <span>
+                      {{ viewData()?.tracking?.payee_city }},
+                      {{ viewData()?.tracking?.payee_state }}
+                      {{ viewData()?.tracking?.payee_zip }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payee Information -->
+              @if (viewData()?.tracking?.payee_name) {
+                <div class="border-t border-v4-border-color pt-3">
+                  <p class="pd-card-title mb-2">Payee information</p>
+                  <div class="flex flex-col gap-2.5">
+                    <div class="flex items-start gap-2.5">
+                      <lucide-icon
+                        name="building"
+                        [size]="14"
+                        class="mt-0.5 text-v4-tertiary-text-color"
+                      />
+                      <div class="min-w-0 flex-1 leading-tight">
+                        <p class="pd-row-label m-0">Name</p>
+                        <p class="pd-row-value m-0">
+                          {{ viewData()?.tracking?.payee_name }}
+                        </p>
+                      </div>
+                    </div>
+                    @if (viewData()?.tracking?.payee_phone) {
+                      <div class="flex items-start gap-2.5">
+                        <lucide-icon
+                          name="phone"
+                          [size]="14"
+                          class="mt-0.5 text-v4-tertiary-text-color"
+                        />
+                        <div class="min-w-0 flex-1 leading-tight">
+                          <p class="pd-row-label m-0">Phone</p>
+                          <p class="pd-row-value m-0">
+                            {{ viewData()?.tracking?.payee_phone }}
+                          </p>
+                        </div>
+                      </div>
+                    }
+                    @if (viewData()?.tracking?.payee_email) {
+                      <div class="flex items-start gap-2.5">
+                        <lucide-icon
+                          name="mail"
+                          [size]="14"
+                          class="mt-0.5 text-v4-tertiary-text-color"
+                        />
+                        <div class="min-w-0 flex-1 leading-tight">
+                          <p class="pd-row-label m-0">Email</p>
+                          <p class="pd-row-value m-0 break-all">
+                            {{ viewData()?.tracking?.payee_email }}
+                          </p>
+                        </div>
+                      </div>
+                    }
+                    <div class="flex items-start gap-2.5">
+                      <lucide-icon
+                        name="globe"
+                        [size]="14"
+                        class="mt-0.5 text-v4-tertiary-text-color"
+                      />
+                      <div class="min-w-0 flex-1 leading-tight">
+                        <p class="pd-row-label m-0">Country</p>
+                        <p class="pd-row-value m-0">
+                          {{ viewData()?.tracking?.payee_country || "N/A" }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="pd-empty gap-2 py-6">
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-2xl bg-v4-badge-sky-bg-color"
+                >
+                  <lucide-icon
+                    name="package-x"
+                    [size]="22"
+                    class="text-v4-primary-brand-color"
+                  />
+                </div>
+                <p class="m-0 text-xs font-semibold text-v4-main-text-color">
+                  No tracking details found
+                </p>
+                <p class="m-0 text-[12px] text-v4-tertiary-text-color">
+                  This document has not been mailed yet
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Mail Activity Log -->
+        @if (activeSection() === "activity") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <p class="pd-card-title mb-2">Mail activity log</p>
+            @if (activityLoading()) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else if (activityLogs().length) {
+              <div class="overflow-x-auto rounded-xl border border-v4-border-color">
+                <div class="overflow-y-auto">
+                  <table class="v4-ocw-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>By</th>
+                        <th>Device</th>
+                        <th>Note</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (log of activityLogs(); track log.id) {
+                        <tr>
+                          <td class="whitespace-nowrap">
+                            <app-pd-date-time [value]="log.formattedCreatedAt" />
+                          </td>
+                          <td>{{ log.status }}</td>
+                          <td class="whitespace-nowrap">{{ log.userName }}</td>
+                          <td class="whitespace-nowrap text-v4-tertiary-text-color">
+                            {{ log.ipAddress }}
+                          </td>
+                          <td class="break-words">{{ log.note }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="pd-empty">
+                <p class="m-0 py-6 text-center text-sm text-v4-tertiary-text-color">
+                  No activity logs found
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Comments -->
+        @if (activeSection() === "comments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-po-comments-list
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [bare]="true"
+              variant="view-panel"
+              [comments]="commentsForList()"
+              [maxHeight]="'none'"
+              [posting]="commentPosting()"
+              [error]="commentError()"
+              (submitComment)="onSubmitComment($event)"
+              (deleteComment)="onDeleteComment($event)"
+              emptyHint="Notes you add here stay with the document."
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

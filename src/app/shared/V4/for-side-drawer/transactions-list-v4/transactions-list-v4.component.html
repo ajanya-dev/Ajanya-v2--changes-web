@@ -1,0 +1,87 @@
+<div
+  [class]="
+    bare()
+      ? ''
+      : 'bg-v4-secondary-background-color border border-v4-border-color rounded-[10px] shadow-sm p-4 overflow-hidden'
+  "
+>
+  <!-- bare: a plain section title (NOT a card header) so the table reads as part
+       of the parent card, not a nested card-in-card. -->
+  <p
+    [class]="
+      bare()
+        ? 'text-[12px] font-semibold text-v4-main-text-color m-0 mb-2'
+        : 'text-sm font-bold text-v4-main-text-color m-0 mb-3'
+    "
+  >
+    {{ title() }}
+  </p>
+  <div class="overflow-x-auto">
+    <div class="overflow-y-auto" [style.max-height]="maxHeight()">
+      <table class="v4-ocw-table w-full">
+        <thead>
+          <tr>
+            <th class="text-center">#</th>
+            <th>{{ dateHeading() }}</th>
+            <th>{{ descriptionHeading() }}</th>
+            <th>{{ amountHeading() }}</th>
+            @if (showStatus()) {
+              <th>{{ statusHeading() }}</th>
+            }
+            <th>{{ methodHeading() }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (
+            t of visibleTransactions();
+            track t.date + t.description + t.amount
+          ) {
+            <tr>
+              <td class="text-center">
+                <span class="text-xs text-v4-tertiary-text-color">{{
+                  $index + 1
+                }}</span>
+              </td>
+              <td><app-pd-date-time [value]="t.date" /></td>
+              <td>{{ t.description }}</td>
+              <td>{{ t.amount }}</td>
+              @if (showStatus()) {
+                <td>
+                  <span
+                    class="inline-block text-xs font-medium text-v4-text-success bg-v4-surface-success-bold px-2.5 py-1 rounded-md"
+                    >{{ t.status }}</span
+                  >
+                </td>
+              }
+              <td>{{ t.method }}</td>
+            </tr>
+          }
+        </tbody>
+        @if (showTotal()) {
+          <tfoot>
+            <tr class="border-t border-v4-border-color font-bold">
+              <td
+                [attr.colspan]="showStatus() ? 6 : 5"
+                class="py-3 px-2 text-v4-main-text-color text-xs"
+              >
+                <div class="flex justify-between">
+                  <span>Total:</span>
+                  <span>{{ total() }}</span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+  </div>
+  @if (canShowMore()) {
+    <button
+      type="button"
+      class="mt-2 w-full cursor-pointer border-none bg-transparent py-1 font-peridot text-[12px] font-semibold text-v4-primary-brand-bold-color hover:underline"
+      (click)="showAll.set(!showAll())"
+    >
+      {{ showAll() ? "Show Less" : "Show More" }}
+    </button>
+  }
+</div>

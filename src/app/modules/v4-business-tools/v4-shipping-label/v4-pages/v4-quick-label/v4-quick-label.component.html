@@ -1,0 +1,522 @@
+<div class="min-h-screen w-full bg-v4-main-background-color px-4 lg:px-6 py-5">
+  <div class="flex flex-col xl:flex-row gap-5 items-start">
+    <!-- ==================== MAIN CARD ==================== -->
+    <div
+      class="flex-1 w-full bg-v4-secondary-background-color border border-v4-border-color rounded-2xl"
+    >
+      <!-- Header -->
+      <div class="flex items-center gap-3 px-6 py-5">
+        <button
+          type="button"
+          class="w-9 h-9 rounded-full border border-v4-border-color flex items-center justify-center text-v4-secondary-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color transition-colors"
+          (click)="goToList()"
+        >
+          <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
+        </button>
+        <h1
+          class="m-0 text-xl font-semibold text-v4-main-text-color font-funnel"
+        >
+          Quick Label
+        </h1>
+      </div>
+      <div class="border-t border-v4-border-color"></div>
+
+      <form [formGroup]="quickLabelForm" class="px-6 py-5 flex flex-col gap-5">
+        <!-- Package options -->
+        <p class="m-0 text-sm text-v4-secondary-text-color font-peridot">
+          Choose the option that you would like to have shipped.
+        </p>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          @for (item of shipOptions; track item.code) {
+            <button
+              type="button"
+              class="relative flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors text-left"
+              [class]="
+                packageCode() === item.code
+                  ? 'border-v4-brand-border-color bg-v4-mailing-card-selected-bg-blue'
+                  : 'border-v4-border-color bg-v4-secondary-background-color hover:border-v4-brand-border-color'
+              "
+              (click)="selectPackage(item.code)"
+            >
+              @if (packageCode() === item.code) {
+                <span
+                  class="absolute top-1.5 right-1.5 w-4 h-4 grid place-items-center rounded-full bg-v4-primary-brand-color"
+                >
+                  <lucide-icon
+                    name="check"
+                    [size]="12"
+                    class="text-white"
+                  ></lucide-icon>
+                </span>
+              }
+              <span
+                class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                [class]="
+                  packageCode() === item.code
+                    ? 'bg-v4-primary-brand-color'
+                    : 'bg-v4-input-background-color'
+                "
+              >
+                <lucide-icon
+                  [name]="item.icon"
+                  [size]="18"
+                  [class]="
+                    packageCode() === item.code
+                      ? 'text-white'
+                      : 'text-v4-primary-brand-bold-color'
+                  "
+                ></lucide-icon>
+              </span>
+              <span
+                class="text-sm font-medium text-v4-main-text-color font-peridot"
+              >
+                {{ item.name }}
+              </span>
+            </button>
+          }
+        </div>
+
+        <!-- Dimensions (Soft Package / Box only) -->
+        @if (isDimensionVisible()) {
+          <div class="flex flex-col gap-3">
+            <h3
+              class="m-0 text-sm font-semibold text-v4-main-text-color font-peridot"
+            >
+              Dimensions
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <app-common-input-v4
+                placeholder="Length(in)"
+                formControlName="length"
+                [control]="quickLabelForm.controls.length"
+                [isNumberOnly]="true"
+                [numberType]="'decimal'"
+                [customMask]="'separator.2'"
+                [maxLength]="5"
+                (inputEvent)="onDimensionChange($event.value, 'length')"
+              />
+              <app-common-input-v4
+                placeholder="Width(in)"
+                formControlName="width"
+                [control]="quickLabelForm.controls.width"
+                [isNumberOnly]="true"
+                [numberType]="'decimal'"
+                [customMask]="'separator.2'"
+                [maxLength]="5"
+                (inputEvent)="onDimensionChange($event.value, 'width')"
+              />
+              <app-common-input-v4
+                placeholder="Height(in)"
+                formControlName="height"
+                [control]="quickLabelForm.controls.height"
+                [isNumberOnly]="true"
+                [numberType]="'decimal'"
+                [customMask]="'separator.2'"
+                [maxLength]="5"
+                (inputEvent)="onDimensionChange($event.value, 'height')"
+              />
+              <div class="flex flex-col">
+                <div class="flex items-start gap-2">
+                  <div class="flex-1 min-w-0">
+                    <app-common-input-v4
+                      placeholder="Weight"
+                      formControlName="weight"
+                      [isNumberOnly]="true"
+                      [numberType]="'decimal'"
+                      [customMask]="'separator.2'"
+                      [maxLength]="5"
+                      (inputEvent)="onDimensionChange($event.value, 'weight')"
+                    />
+                  </div>
+                  <div class="w-[86px] shrink-0">
+                    <app-v4-select-dropdown
+                      [items]="weightUnitOptions"
+                      [compact]="false"
+                      [selectedValue]="quickLabelForm.controls.unit.value"
+                      (selectionChange)="onChangeUnit($event)"
+                    />
+                  </div>
+                </div>
+                <app-control-message-v4
+                  [control]="quickLabelForm.controls.weight"
+                  [isMarginTopEnabled]="false"
+                  [marginTopOverride]="'mt-1'"
+                />
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Addresses -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="flex flex-col gap-2">
+            <span
+              class="text-sm font-medium text-v4-main-text-color font-peridot"
+            >
+              From Address
+            </span>
+            <div class="flex items-start gap-2">
+              <div class="flex-1 min-w-0">
+                <app-v4-select-dropdown
+                  placeholder="Select From Address"
+                  [items]="fromAddressOptions()"
+                  [compact]="false"
+                  [clearable]="true"
+                  [selectedValue]="quickLabelForm.controls.fromAddress.value"
+                  (selectionChange)="onSelectFrom($event)"
+                />
+                @if (
+                  quickLabelForm.controls.fromAddress.touched &&
+                  quickLabelForm.controls.fromAddress.invalid
+                ) {
+                  <span class="text-xs text-v4-common-red-color font-peridot">
+                    From Address is required
+                  </span>
+                }
+              </div>
+              <button aria-label="Add From Address"
+                type="button"
+                class="w-11 h-11 rounded-lg bg-v4-primary-brand-color text-white flex items-center justify-center hover:opacity-90 transition-opacity shrink-0"
+                matTooltip="Add From Address"
+                (click)="openAddressModal('Add', 'addfrom')"
+              >
+                <lucide-icon name="plus" [size]="18"></lucide-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <span
+              class="text-sm font-medium text-v4-main-text-color font-peridot"
+            >
+              Delivery Address
+            </span>
+            <div class="flex items-start gap-2">
+              <div class="flex-1 min-w-0">
+                <app-payee-dropdown-v4
+                  placeholder="Select Payee"
+                  [enableAddNew]="false"
+                  [isInvalid]="
+                    quickLabelForm.controls.payeeId.touched &&
+                    quickLabelForm.controls.payeeId.invalid
+                  "
+                  (changeEvent)="onPayeeChange($event)"
+                  (clearEvent)="clearPayee()"
+                />
+                @if (
+                  quickLabelForm.controls.payeeId.touched &&
+                  quickLabelForm.controls.payeeId.invalid
+                ) {
+                  <span class="text-xs text-v4-common-red-color font-peridot">
+                    Delivery Address is required
+                  </span>
+                }
+              </div>
+              <button aria-label="Add Payee"
+                type="button"
+                class="w-11 h-11 rounded-lg bg-v4-primary-brand-color text-white flex items-center justify-center hover:opacity-90 transition-opacity shrink-0"
+                matTooltip="Add Payee"
+                (click)="openPayeeModal()"
+              >
+                <lucide-icon name="plus" [size]="18"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Return address -->
+        <div class="flex items-center gap-3">
+          <app-v4-radio-group
+            [options]="returnAddressOptions"
+            [layout]="'vertical'"
+            [value]="selectedReturnOption()"
+            (selectionChange)="setReturnAddress($event)"
+          />
+          @if (isViewReturn()) {
+            <button aria-label="Edit return address"
+              type="button"
+              class="text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity"
+              matTooltip="Edit return address"
+              (click)="editAddress(returnAddressData, 'Edit', 'viewreturn')"
+            >
+              <lucide-icon name="square-pen" [size]="16"></lucide-icon>
+            </button>
+          }
+        </div>
+
+        <!-- Carrier + print size -->
+        @if (packageCode() !== "card" || isDimensionVisible()) {
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            @if (packageCode() !== "card") {
+              <div class="flex flex-col gap-2">
+                <span
+                  class="text-sm font-medium text-v4-main-text-color font-peridot"
+                >
+                  Choose a Carrier Partner
+                </span>
+                <app-v4-select-dropdown
+                  placeholder="Select Shipping Type"
+                  [items]="shippingTypeOptions()"
+                  [compact]="false"
+                  [clearable]="true"
+                  [disabled]="isDisable"
+                  [selectedValue]="selectedShippingTypeValue()"
+                  (selectionChange)="onSelectShippingType($event)"
+                />
+                @if (
+                  quickLabelForm.controls.shippingType.touched &&
+                  quickLabelForm.controls.shippingType.invalid
+                ) {
+                  <span class="text-xs text-v4-common-red-color font-peridot">
+                    Carrier Partner is required
+                  </span>
+                }
+              </div>
+            }
+            @if (isDimensionVisible()) {
+              <div class="flex flex-col gap-2">
+                <span
+                  class="text-sm font-medium text-v4-main-text-color font-peridot"
+                >
+                  Print Size
+                </span>
+                <app-v4-select-dropdown
+                  placeholder="Select Print Size"
+                  [items]="printSizeOptions()"
+                  [compact]="false"
+                  [clearable]="true"
+                  [disabled]="isDisablePrint"
+                  [selectedValue]="selectedPrintSize()"
+                  (selectionChange)="onSelectPrintSize($event)"
+                />
+                @if (
+                  quickLabelForm.controls.printSize.touched &&
+                  quickLabelForm.controls.printSize.invalid
+                ) {
+                  <span class="text-xs text-v4-common-red-color font-peridot">
+                    Print Size is required
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Comment -->
+        <div class="lg:w-1/2">
+          <app-common-input-v4
+            placeholder="Comment"
+            formControlName="comment"
+            [control]="quickLabelForm.controls.comment"
+            [isFieldRequired]="false"
+            [maxLength]="50"
+          />
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-1">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Cancel"
+            [minWidth]="'110px'"
+            (clickEvent)="goToList()"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Print Label"
+            [lucideIcon]="'circle-check'"
+            [minWidth]="'150px'"
+            [loading]="loading()"
+            [disabled]="loading()"
+            (clickEvent)="printLabel()"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- ==================== RIGHT PANEL ==================== -->
+    <div
+      class="w-full xl:w-[330px] shrink-0 bg-v4-secondary-background-color border border-v4-border-color rounded-2xl p-5 flex flex-col gap-5"
+    >
+      <!-- Instructions -->
+      <div class="flex flex-col gap-2">
+        <h3
+          class="m-0 text-sm font-semibold text-v4-main-text-color font-peridot"
+        >
+          Instructions
+        </h3>
+        <div class="flex items-start gap-2">
+          <lucide-icon
+            name="chevron-right"
+            [size]="14"
+            class="text-v4-secondary-text-color mt-0.5 shrink-0"
+          ></lucide-icon>
+          <p class="m-0 text-xs text-v4-secondary-text-color font-peridot">
+            Card and Letter dimensions are predefined. Soft Package and Boxes
+            can be customized.
+          </p>
+        </div>
+        @if (isDimensionVisible()) {
+          <div class="flex justify-center pt-1">
+            <img
+              class="max-w-[180px]"
+              src="./assets/images/quick-label/box-dimension.svg"
+              alt="Box dimensions"
+              [style.filter]="'var(--quick-label-box-filter)'"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- Shipping details -->
+      <div class="flex flex-col gap-2">
+        <h3
+          class="m-0 text-sm font-semibold text-v4-main-text-color font-peridot"
+        >
+          Shipping Details
+        </h3>
+        @if (quickLabelShippingType(); as shipping) {
+          <div
+            class="rounded-xl border border-v4-border-color bg-v4-tertiary-background-color px-4 py-3 flex flex-col gap-1.5"
+          >
+            <div class="flex justify-between gap-3 text-xs">
+              <span class="text-v4-secondary-text-color">Service</span>
+              <span class="text-v4-main-text-color font-medium text-right">
+                {{ shipping.service }}
+              </span>
+            </div>
+            <div class="flex justify-between gap-3 text-xs">
+              <span class="text-v4-secondary-text-color">Carrier</span>
+              <span class="text-v4-main-text-color font-medium text-right">
+                {{ shipping.carrier }}
+              </span>
+            </div>
+            <div class="flex justify-between gap-3 text-xs">
+              <span class="text-v4-secondary-text-color">Rate</span>
+              <span class="text-v4-main-text-color font-medium text-right">
+                ${{ shipping.rate }}
+              </span>
+            </div>
+            @if (shipping.deliveryDate) {
+              <div class="flex justify-between gap-3 text-xs">
+                <span class="text-v4-secondary-text-color">Delivery Day</span>
+                <span class="text-v4-main-text-color font-medium text-right">
+                  {{ shipping.deliveryDate }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- From address -->
+        <div
+          class="rounded-xl border border-v4-border-color bg-v4-tertiary-background-color px-4 py-3"
+        >
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span
+              class="text-sm font-semibold text-v4-main-text-color font-peridot"
+            >
+              From Address
+            </span>
+            @if (fromAddressData(); as address) {
+              <button aria-label="Edit from address"
+                type="button"
+                class="text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity"
+                matTooltip="Edit from address"
+                (click)="editAddress(address, 'Edit', 'from')"
+              >
+                <lucide-icon name="square-pen" [size]="15"></lucide-icon>
+              </button>
+            }
+          </div>
+          @if (fromAddressData(); as address) {
+            <div
+              class="flex flex-col text-xs text-v4-secondary-text-color font-peridot leading-5"
+            >
+              @if (address.name) {
+                <span class="text-v4-main-text-color font-medium">
+                  {{ address.name }}
+                </span>
+              }
+              @if (address.nickName) {
+                <span>{{ address.nickName }}</span>
+              }
+              @if (address.company) {
+                <span>{{ address.company }}</span>
+              }
+              @if (address.address1) {
+                <span>{{ address.address1 }}</span>
+              }
+              @if (address.address2) {
+                <span>{{ address.address2 }}</span>
+              }
+              <span>
+                {{ address.city }} {{ address.state }} {{ address.zip }}
+              </span>
+              @if (address.country) {
+                <span>{{ address.country }}</span>
+              }
+              @if (address.phone) {
+                <span>{{ formatePhoneNum(address.phone) }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Delivery address -->
+        <div
+          class="rounded-xl border border-v4-border-color bg-v4-tertiary-background-color px-4 py-3"
+        >
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span
+              class="text-sm font-semibold text-v4-main-text-color font-peridot"
+            >
+              Delivery Address
+            </span>
+            @if (selectedPayee(); as payee) {
+              <button aria-label="Edit delivery address"
+                type="button"
+                class="text-v4-primary-brand-bold-color hover:opacity-80 transition-opacity"
+                matTooltip="Edit delivery address"
+                (click)="openPayeeModal(payee.id, true)"
+              >
+                <lucide-icon name="square-pen" [size]="15"></lucide-icon>
+              </button>
+            }
+          </div>
+          @if (selectedPayee(); as payee) {
+            <div
+              class="flex flex-col text-xs text-v4-secondary-text-color font-peridot leading-5"
+            >
+              @if (payee.name) {
+                <span class="text-v4-main-text-color font-medium">
+                  {{ payee.name }}
+                </span>
+              }
+              @if (payee.nickName) {
+                <span>{{ payee.nickName }}</span>
+              }
+              @if (payee.addressLine1) {
+                <span>{{ payee.addressLine1 }}</span>
+              }
+              @if (payee.addressLine2) {
+                <span>{{ payee.addressLine2 }}</span>
+              }
+              <span>{{ payee.city }} {{ payee.state }} {{ payee.zip }}</span>
+              @if (payee.country) {
+                <span>{{ payee.country }}</span>
+              }
+              @if (payee.phone) {
+                <span>{{ formatePhoneNum(payee.phone) }}</span>
+              }
+              @if (payee.email) {
+                <span>{{ payee.email }}</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,246 @@
+<div class="bg-main-background-color">
+  <div class="border-b border-input-border-color">
+    <div class="flex p-7">
+      <h3
+        class="font-medium text-main-text-color text-sm items-center capitalize font-inter"
+      >
+        Uploaded Documents
+      </h3>
+    </div>
+  </div>
+  <div class="p-7">
+    <div class="shadow-common-box-shadow rounded p-3">
+      <div>
+        <h3
+          class="py-3 text-secondary-text-color font-inter font-medium text-[13px]"
+        >
+          Business documents
+        </h3>
+        <div
+          class="flex border-b border-input-border-color justify-between pb-4"
+        >
+          <div class="w-full flex gap-5 max-lg:flex-col">
+            <app-common-upload-button-v35
+              #formationDocument
+              class="w-full"
+              buttonText="Upload Formation Document"
+              [acceptedFileTypes]="[
+                '.pdf',
+                '.jpg',
+                '.png',
+                '.csv',
+                '.xlsx',
+                '.xls',
+                '.docx',
+                '.doc',
+                '.rtf',
+                '.txt'
+              ]"
+              (selectedFileEvent)="filePicked($event, 0)"
+            />
+            <app-common-upload-button-v35
+              #ownerShipDocument
+              class="w-full"
+              buttonText="Upload Ownership Document"
+              [acceptedFileTypes]="[
+                '.pdf',
+                '.jpg',
+                '.png',
+                '.csv',
+                '.xlsx',
+                '.xls',
+                '.docx',
+                '.doc',
+                '.rtf',
+                '.txt'
+              ]"
+              (selectedFileEvent)="filePicked($event, 1)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="border-b border-input-border-color pb-4 grid grid-cols-2 max-lg:grid-cols-1"
+      >
+        <div>
+          <h3
+            class="py-3 text-secondary-text-color font-inter font-medium text-[13px]"
+          >
+            Personal documents
+          </h3>
+          <app-common-upload-button-v35
+            #principleDocument
+            inputWidth="98%"
+            buttonText="Upload Principal Officer ID"
+            [acceptedFileTypes]="[
+              '.pdf',
+              '.jpg',
+              '.png',
+              '.csv',
+              '.xlsx',
+              '.xls',
+              '.docx',
+              '.doc',
+              '.rtf',
+              '.txt'
+            ]"
+            (selectedFileEvent)="filePicked($event, 2)"
+          />
+        </div>
+      </div>
+      <div [ngClass]="{ 'pb-4': !currentFileName.length }">
+        <h3
+          class="py-3 text-secondary-text-color font-inter font-medium text-[13px]"
+        >
+          Supporting Documents
+        </h3>
+
+        <div
+          class="flex items-center bg-common-secondary-blue-color w-[49%] rounded justify-between pr-2 max-lg:w-full"
+        >
+          <div class="single_input p-[2px] w-3/4">
+            <select
+              name="uplaod_document_name[]"
+              class="form-select input_style !bg-main-background-color"
+              (change)="onChange($event?.target?.value)"
+            >
+              <option disabled [selected]="'' === supportDocName">
+                Select file type
+              </option>
+              @for (item of supportDocuments; track $index) {
+                <option
+                  [value]="item.value"
+                  [selected]="item.value === supportDocName"
+                >
+                  {{ item.name }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <button
+            (click)="uploadButton()"
+            class="bg-main-background-color rounded-sm shadow-common-button"
+            [disabled]="!supportDocName"
+          >
+            <input
+              hidden
+              [disabled]="!supportDocName"
+              type="file"
+              id="file"
+              (change)="multipleUploadInput($event)"
+              name="supp-for-doc"
+              #input4
+              accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+            />
+            <h1
+              [ngClass]="{
+                'text-secondary-text-color font-normal': !supportDocName
+              }"
+              class="font-inter font-medium text-main-text-color text-[12px] py-[6px] px-4 max-xl:p-1 max-lg:px-4 max-lg:py-[6px]"
+            >
+              Select File
+            </h1>
+          </button>
+        </div>
+      </div>
+      @for (item of currentFileName; track item; let i = $index) {
+        <div
+          class="w-[49%] flex items-center pt-2 justify-between max-lg:w-full pb-4"
+        >
+          <h1 class="font-inter font-medium text-main-text-color text-sm">
+            {{ item }}
+          </h1>
+          <fa-icon
+            class="cursor-pointer text-common-red-color"
+            [icon]="faXmark"
+            matTooltip="Remove"
+            (click)="removeFile(i)"
+          />
+        </div>
+      }
+      <div class="flex justify-end">
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          backGroundInput="var(--common-green-color)"
+          textColorInput="white"
+          text="Upload"
+          (clickEvent)="onUploadClick()"
+          width="125px"
+          [disabled]="isSubmit()"
+          [loading]="isSubmit()"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+<div class="px-7 pb-7">
+  <div class="shadow-common-box-shadow rounded p-3">
+    <h3
+      class="pb-3 text-secondary-text-color font-inter font-medium text-[13px]"
+    >
+      Uploaded Documents
+    </h3>
+
+    @if (uploadedFiles?.length > 0 && !isLoading()) {
+      <table class="w-full">
+        <tr>
+          <th
+            class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+          >
+            File Name
+          </th>
+          <th
+            class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+          >
+            Date
+          </th>
+          <th
+            class="bg-tertiary-background-color px-2 py-3 text-secondary-text-color font-roboto font-medium text-xs text-left"
+          >
+            Action
+          </th>
+        </tr>
+        @for (item of uploadedFiles; track $index) {
+          <tr>
+            <td
+              class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+            >
+              {{ item.document_name }}
+            </td>
+            <td
+              class="text-main-text-color px-2 py-3 font-roboto font-medium text-xs border-b border-input-border-color"
+            >
+              {{ item.created_at }}
+            </td>
+            <td class="border-b border-input-border-color pl-4">
+              <a [href]="item.s3_filename" target="_blank">
+                <fa-icon
+                  [icon]="faDownload"
+                  class="cursor-pointer text-common-blue-color"
+                />
+              </a>
+            </td>
+          </tr>
+        }
+      </table>
+    } @else if (!uploadedFiles?.length && !isLoading()) {
+      <div class="flex flex-col justify-center items-center">
+        <img
+          ngSrc="/assets/images/no_activity.svg"
+          alt="No data"
+          width="120"
+          height="100"
+        />
+        <span class="font-roboto font-normal text-main-text-color text-sm"
+          >Sorry No Data Found!!</span
+        >
+      </div>
+    } @else {
+      @for (_ of [].constructor(3); track $index) {
+        <div class="skelton w-full h-8 mb-2"></div>
+      }
+    }
+  </div>
+</div>

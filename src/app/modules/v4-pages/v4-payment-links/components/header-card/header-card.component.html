@@ -1,0 +1,170 @@
+<div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-5">
+  <!-- Top Row: Name + Status + Toggle -->
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-base font-bold text-v4-main-text-color">{{ link().name }}</h2>
+    <div class="flex items-center gap-2">
+      <!-- Status Badge with dot -->
+      <span
+        class="px-2 py-0.5 rounded-full text-[12px] font-semibold inline-flex items-center gap-1"
+        [style.background-color]="statusConfig.bg"
+        [style.color]="statusConfig.color"
+      >
+        <span
+          class="w-1.5 h-1.5 rounded-full"
+          [style.background-color]="statusConfig.dot"
+        ></span>
+        {{ statusConfig.label }}
+      </span>
+      <!-- Toggle Switch -->
+      @if (!isArchived()) {
+        <button
+          (click)="onToggle(!isActive)"
+          [disabled]="busy()"
+          class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          [style.background-color]="
+            isActive ? 'var(--v4-common-green-color)' : 'var(--v4-badge-error-text-color)'
+          "
+        >
+          <span
+            class="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm"
+            [style.transform]="isActive ? 'translateX(18px)' : 'translateX(2px)'"
+          ></span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- URL Row -->
+  @if (isArchived()) {
+    <!-- Archived: read-only, no copy/external-link affordances -->
+    <div class="flex items-center gap-2 px-3 py-2 bg-v4-tertiary-background-color border border-v4-border-color rounded-lg mb-3 text-v4-tertiary-text-color opacity-60 select-none">
+      <lucide-angular name="lock" [size]="14" class="shrink-0" />
+      <span class="text-xs font-medium truncate flex-1">{{ fullUrl }}</span>
+    </div>
+  } @else {
+    <div class="flex items-center gap-2 px-3 py-2 bg-v4-tertiary-background-color border border-v4-border-color rounded-lg mb-3 text-v4-primary-brand-bold-color">
+      <lucide-angular name="external-link" [size]="14" class="shrink-0" />
+      <span class="text-xs font-medium truncate flex-1">{{ fullUrl }}</span>
+      <button [attr.aria-label]="(copied() ? 'Copied!' : 'Copy link') || null"
+        (click)="copyUrl()"
+        class="p-1 rounded hover:opacity-80 transition-opacity shrink-0 cursor-pointer"
+        [matTooltip]="copied() ? 'Copied!' : 'Copy link'"
+      >
+        @if (copied()) {
+          <lucide-angular name="check-circle-2" [size]="14" class="text-v4-common-green-color" />
+        } @else {
+          <lucide-angular name="copy" [size]="14" />
+        }
+      </button>
+    </div>
+  }
+
+  <!-- Info Row (main text color for visibility in dark mode) -->
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-1 mb-3 text-xs text-v4-main-text-color [@media(max-height:900px)]:hidden">
+    @if (receivedToValue) {
+      <div class="flex items-center gap-1.5">
+        <span>Payment Received To:</span>
+        <span class="font-medium">{{ receivedToValue }}</span>
+      </div>
+    }
+    @if (link().companyName) {
+      <div class="flex items-center gap-1.5">
+        <span>Company:</span>
+        <span class="font-medium">{{ link().companyName }}</span>
+      </div>
+    }
+    @if (link().redirectUrl) {
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span class="shrink-0">Redirect URL:</span>
+        <span class="font-medium truncate">{{ link().redirectUrl }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Payment Methods with icon squares -->
+  <div class="flex items-center gap-2 mb-4 [@media(max-height:900px)]:hidden">
+    <span class="text-xs text-v4-secondary-text-color">Methods:</span>
+    <div class="flex flex-wrap gap-1.5">
+      @for (method of paymentMethods; track method) {
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-v4-tertiary-background-color border border-v4-border-color rounded text-[12px] font-semibold text-v4-main-text-color">
+          <div
+            class="w-4 h-4 rounded flex items-center justify-center"
+            [class]="PAYMENT_METHOD_CONFIG[method].iconBg"
+          >
+            <span
+              class="text-[7px] font-bold"
+              [class]="PAYMENT_METHOD_CONFIG[method].iconText"
+            >{{ PAYMENT_METHOD_CONFIG[method].iconChar }}</span>
+          </div>
+          {{ PAYMENT_METHOD_CONFIG[method].label }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Action Buttons (theme-aware: primary = white text, outline = brand-bold for dark visibility) -->
+  @if (!isArchived()) {
+    <div class="grid grid-cols-2 xl:grid-cols-5 gap-3 mb-3">
+      <div class="min-w-0">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Edit"
+          lucideIcon="square-pen"
+          [width]="'100%'"
+          (clickEvent)="edit.emit()"
+        />
+      </div>
+      <div class="min-w-0">
+        <app-common-button-v4
+          [type]="{ style: 'neon', name: 'main' }"
+          text="Share"
+          lucideIcon="share-2"
+          [width]="'100%'"
+          (clickEvent)="share.emit()"
+        />
+      </div>
+      <div class="min-w-0">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Preview"
+          lucideIcon="layout-grid"
+          [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+          [width]="'100%'"
+          (clickEvent)="preview.emit()"
+        />
+      </div>
+      <div class="min-w-0">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Duplicate"
+          lucideIcon="copy"
+          [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+          [width]="'100%'"
+          (clickEvent)="duplicate.emit()"
+        />
+      </div>
+      <div class="min-w-0">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Archive"
+          lucideIcon="archive"
+          [textColorInput]="'var(--v4-common-red-color)'"
+          [width]="'100%'"
+          [disabled]="busy()"
+          (clickEvent)="archive.emit()"
+        />
+      </div>
+    </div>
+
+    <!-- Secondary actions row: Customize Notification (right) -->
+    <div class="flex justify-end items-center gap-4 flex-wrap">
+      <button
+        (click)="customizeNotification.emit()"
+        class="text-xs text-v4-primary-brand-bold-color hover:underline flex items-center gap-1 cursor-pointer"
+      >
+        <lucide-angular name="message-square" [size]="12" />
+        Customize Notification
+      </button>
+    </div>
+  }
+</div>

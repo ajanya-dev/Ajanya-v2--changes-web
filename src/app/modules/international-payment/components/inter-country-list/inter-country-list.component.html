@@ -1,0 +1,480 @@
+<div
+  class="bg-main-background-color w-full rounded-lg h-full flex flex-col justify-between"
+>
+  <!-- Top content area -->
+  <div class="px-4 pb-1" [formGroup]="initalForm">
+    <div class="rounded-lg p-4 !pb-0">
+      <p class="text-sm text-main-text-color font-inter pb-2">
+        Select Recipient Type <span class="text-common-red-color">*</span>
+      </p>
+
+      <!-- Segmented Control -->
+      <div class="flex flex-col gap-2">
+        <div
+          class="recipient-type-segmented flex bg-main-background-color rounded-lg gap-2"
+        >
+          <button
+            type="button"
+            class="segmented-option flex-1 py-3 px-4 rounded-md transition-all duration-200 flex items-center justify-center gap-2"
+            [ngClass]="{
+              'bg-common-blue-color shadow-sm border-input-border-color text-white font-semibold':
+                selectedRecipientType() === 'business',
+              'bg-secondary-background-color text-secondary-text-color hover:text-main-text-color':
+                selectedRecipientType() !== 'business'
+            }"
+            (click)="onRecipientTypeChange('business')"
+          >
+            <fa-icon [icon]="faBuilding" class="text-sm"></fa-icon>
+            <span class="text-sm font-medium">Business</span>
+          </button>
+
+          <button
+            type="button"
+            class="segmented-option flex-1 py-3 px-4 rounded-md transition-all duration-200 flex items-center justify-center gap-2"
+            [ngClass]="{
+              'bg-common-blue-color shadow-sm border-input-border-color text-white font-semibold':
+                selectedRecipientType() === 'personal',
+              'bg-secondary-background-color text-secondary-text-color hover:text-main-text-color':
+                selectedRecipientType() !== 'personal'
+            }"
+            (click)="onRecipientTypeChange('personal')"
+          >
+            <fa-icon [icon]="faUser" class="text-sm"></fa-icon>
+            <span class="text-sm font-medium">Personal</span>
+          </button>
+        </div>
+      </div>
+      <app-control-message-v35
+        [control]="initalForm.controls.type"
+        label="Please select a recipient type"
+      />
+    </div>
+
+    <!-- Monthly Limit Status -->
+    @if (selectedRecipientType() === "personal") {
+      <div
+        class="p-4 border border-input-border-color rounded-lg mt-4 mx-[14px]"
+      >
+        <div class="flex items-center gap-2 justify-between">
+          <div class="flex items-center gap-2">
+            <p class="text-sm text-main-text-color font-inter">
+              Monthly Limit Status
+            </p>
+            <fa-icon
+              [icon]="faInfoCircle"
+              class="text-common-blue-color text-sm cursor-pointer"
+              matTooltip="Monthly transaction limits for international payments"
+            >
+            </fa-icon>
+          </div>
+
+          <div
+            class="flex items-end"
+            [ngClass]="{ 'skelton h-4': isLoadingLimits() }"
+          >
+            @if (transactionLimits()) {
+              <span class="text-xs text-main-text-color font-medium">
+                {{
+                  transactionLimits()!.amount_spent_this_month
+                    | currency: "USD" : "symbol" : "1.2-2"
+                }}
+                of
+                {{
+                  transactionLimits()!.monthly_amount_limit
+                    | currency: "USD" : "symbol" : "1.2-2"
+                }}
+                used
+              </span>
+            }
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col gap-2"
+          [ngClass]="{ 'skelton h-10': isLoadingLimits() }"
+        >
+          <div
+            class="w-full bg-secondary-background-color border border-input-border-color rounded-full h-2"
+          >
+            @if (transactionLimits()) {
+              <div
+                class="h-full rounded-full bg-common-blue-color transition-all duration-300"
+                [style.width.%]="amountPercentage()"
+                [ngClass]="{
+                  'bg-common-blue-color': amountPercentage() < 80,
+                  'bg-common-yellow-color':
+                    amountPercentage() >= 80 && amountPercentage() < 95,
+                  'bg-common-red-color': amountPercentage() >= 95
+                }"
+              ></div>
+            }
+          </div>
+
+          <div
+            class="flex justify-between items-center"
+            [ngClass]="{ 'skelton h-4': isLoadingLimits() }"
+          >
+            @if (transactionLimits()) {
+              <span class="text-xs text-secondary-text-color">
+                {{ transactionLimits()!.transaction_count_this_month }} of
+                {{ transactionLimits()!.monthly_transaction_limit }}
+                transactions used
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="p-4 !pb-0">
+      <p class="text-sm text-main-text-color font-inter pb-2">Recipient <span class="text-common-red-color">*</span></p>
+      <div class="flex flex-col gap-3">
+        <app-payee-dropdown-v3
+          id="recipient-payee"
+          class="w-full recipient-payee-dropdown"
+          customHeight="3"
+          [ngModel]="recipient"
+          (ngModelChange)="selectRecipient($event)"
+          [ngModelOptions]="{ standalone: true }"
+          appendTo="ng-select"
+          (clearEvent)="clearRecipient()"
+          placeholder="Select Your Recipient"
+          (ready)="
+            autoPopulateDropdown(
+              $event,
+              walletDataService?.interSelectedRecipientSignal()?.encryptedId
+            )
+          "
+        />
+      </div>
+      <app-control-message-v35
+        [control]="initalForm.controls.recipient"
+        label="Please select a recipient"
+      />
+
+      @if (isRecipientSelected() && (noBanksAvailable() || (!isLoadBank() && internationalAccounts().length === 0))) {
+        <div
+          class="mt-3 flex items-center gap-3 p-3 rounded-lg bg-common-secondary-blue-color"
+        >
+          <div
+            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-main-background-color"
+          >
+            <fa-icon
+              [icon]="faBuildingColumns"
+              class="text-common-blue-color text-base"
+            ></fa-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="m-0 text-sm font-semibold text-main-text-color">
+              No Bank Account Added
+            </p>
+            <p class="m-0 text-xs text-secondary-text-color">
+              Add the recipient's bank account to send this payment.
+            </p>
+          </div>
+          <app-common-button-v35
+            [type]="{ style: 'filled-blue', name: 'action' }"
+            text="Add Bank Account"
+            [isAddIcon]="true"
+            [icon]="faPlus"
+            (clickEvent)="addNewRecipientBank(false)"
+          />
+        </div>
+      }
+
+      <!-- Bank Details Section - Dynamic -->
+      @if (isRecipientSelected()) {
+        @if (selectedRecipientBank && getSelectedBank() && (getSelectedBank()?.account_type === selectedRecipientType()) ) {
+          <div
+            class="py-2 px-2 rounded-lg bg-common-secondary-blue-color mt-3"
+            [ngClass]="{ 'skelton h-10': isLoadBank() }"
+          >
+            <div class="flex gap-2 items-center">
+              <div
+                class="bg-common-secondary-blue-color rounded-full h-7 w-7 text-center"
+              >
+                <fa-icon
+                  [icon]="faBuildingColumns"
+                  class="text-common-blue-color text-lg"
+                ></fa-icon>
+              </div>
+
+              <div class="flex flex-1 flex-col w-full">
+                <p
+                  class="font-semibold text-sm text-main-text-color font-inter"
+                >
+                  {{ getSelectedBank()?.bank_name }}
+                </p>
+                <p class="text-xs text-secondary-text-color">
+                  ****{{ getLastFourDigits(getSelectedBank()?.account_number) }}
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2 justify-end flex-1">
+                <app-common-button-v35
+                  [type]="'small'"
+                  text="Change"
+                  [backGroundInput]="'var(--common-secondary-blue-color)'"
+                  [textColorInput]="'var(--common-blue-color)'"
+                  customClasses="!text-xs !font-medium !rounded-2xl !border !border-common-blue-color"
+                  (clickEvent)="onChangeBankDetails()"
+                />
+                <app-common-button-v35
+                  [type]="'small'"
+                  text="Add"
+                  customClasses="!text-xs !font-medium !rounded-2xl px-2 !border !border-common-blue-color"
+                  [backGroundInput]="'var(--common-secondary-blue-color)'"
+                  [textColorInput]="'var(--common-blue-color)'"
+                  (clickEvent)="onAddBankDetails()"
+                />
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div
+            class="flex items-center justify-between mt-3"
+            [ngClass]="{ 'skelton h-10': isLoadBank() }"
+          ></div>
+        }
+      }
+    </div>
+
+    <div class="p-4 !pb-0 wallet-dropdown-container">
+      <p class="text-sm text-main-text-color font-inter pb-2">Source <span class="text-common-red-color">*</span></p>
+      <div class="wallet-positioning-wrapper">
+        <app-wallet-dropdown-v3
+          #walletDropdown
+          id="wallet-source"
+          class="w-full wallet-source-dropdown"
+          append="ng-select"
+          customHeight="3"
+          formControlName="wallet"
+          dropdownPosition="bottom"
+          (ready)="
+            autoPopulateDropdown(
+              $event,
+              walletDataService.interSelectedWalletSignal()?.uuId
+            )
+          "
+          [showLogoUpdateModal]="false"
+          [permissionContext]="'international-payment-wallets'"
+          (dropdownOpenChange)="onWalletDropdownOpen($event)"
+        />
+      </div>
+      <app-control-message-v35
+        [control]="initalForm.controls.wallet"
+        [customMessages]="{
+          walletFundsError: walletFundsErrorMsg()
+        }"
+      />
+    </div>
+
+    <div class="p-4 !pb-0">
+      <p class="text-sm text-main-text-color font-inter pb-2">
+        Recipient Country <span class="text-common-red-color">*</span>
+      </p>
+      <div
+        class="single_input w-full"
+        [ngClass]="{ 'skelton h-10': isEnabledCountriesLoading() }"
+      >
+        <mat-select
+          class="mat_select_style !rounded-md"
+          (selectionChange)="onCountryChange($event)"
+          placeholder="Select Recipient Country"
+          [(value)]="selectedCountry"
+          [compareWith]="compareCountries"
+        >
+          <mat-select-trigger>
+            @if (selectedCountry) {
+              <div class="flex items-center gap-3">
+                <img
+                  [src]="selectedCountry.flag"
+                  class="w-6 h-6 rounded-full"
+                  alt=""
+                />
+                <span class="text-main-text-color text-sm">{{
+                  selectedCountryName()
+                }}</span>
+              </div>
+            } @else {
+              <span class="text-main-text-color text-sm"
+                >Select Recipient Country</span
+              >
+            }
+          </mat-select-trigger>
+          @for (
+            item of internationalPaymentsEnabledCountries() | keyvalue;
+            track item.key
+          ) {
+            <mat-option [value]="item.value" class="ml-0 !mb-2">
+              <div class="!w-full flex justify-between items-center gap-3">
+                <div class="!w-20 rounded-full">
+                  <img
+                    [src]="item.value.flag"
+                    class="w-10 h-10 rounded-full"
+                    alt=""
+                  />
+                </div>
+                <div class="!w-full !flex !gap-1">
+                  <span class="text-center !text-main-text-color !text-sm"
+                    >{{ item.key }}
+                  </span>
+                  (
+                  <p
+                    class="font-semibold text-center !text-common-green-color !text-sm"
+                  >
+                    {{ item.value.currency }}
+                  </p>
+                  )
+                </div>
+              </div>
+            </mat-option>
+          }
+        </mat-select>
+      </div>
+      <app-control-message-v35
+        [control]="initalForm.controls.country"
+        label="Please select a country"
+      />
+    </div>
+
+    <!-- Amount Input -->
+    <div>
+      <div class="flex gap-2 p-4 flex-col">
+        <div class="flex gap-2">
+          <div
+            class="flex flex-col gap-2"
+            [ngClass]="{
+              'skelton h-12 mt-[28px]':
+                isLoading() && isSendAmountLoading() === 'receive'
+            }"
+          >
+            <p class="text-sm text-main-text-color font-inter">Send Amount <span class="text-common-red-color">*</span></p>
+            <div class="relative">
+              <!-- Input -->
+              <input
+                type="text"
+                class="w-full px-3 py-2 border border-input-border-color text-main-text-color rounded-lg text-lg font-medium focus:outline-none font-inter disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="0.00"
+                maxlength="15"
+                mask="separator.2"
+                [(ngModel)]="sendAmount"
+                [ngModelOptions]="{ standalone: true }"
+                (keypress)="utils.numberOnly($event, 'decimal')"
+                thousandSeparator=","
+                (input)="calculateReceivedAmount()"
+                (ngModelChange)="syncAmountToForm()"
+                [disabled]="
+                  isCalculatingExchangeRate() || isCalculatingSendAmount()
+                "
+                (blur)="formatSendAmount()"
+              />
+
+              <span
+                class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-secondary-text-color font-inter"
+              >
+                USD
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex flex-col gap-2"
+            [ngClass]="{
+              'skelton h-12 mt-[28px]':
+                isLoading() && isSendAmountLoading() === 'send'
+            }"
+          >
+            <p class="text-sm text-main-text-color font-inter">
+              Receiving Amount
+            </p>
+            <div class="relative">
+              <!-- Input -->
+              <input
+                type="text"
+                class="w-full px-3 py-2 border border-input-border-color text-main-text-color rounded-lg text-lg font-medium focus:outline-none font-inter disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="0.00"
+                maxlength="15"
+                mask="separator.2"
+                [(ngModel)]="receivedAmount"
+                [ngModelOptions]="{ standalone: true }"
+                (input)="calculateSendingAmount()"
+                (keypress)="utils.numberOnly($event, 'decimal')"
+                (blur)="formatReceivedAmount()"
+                thousandSeparator=","
+                [disabled]="
+                  isCalculatingExchangeRate() || isCalculatingSendAmount()
+                "
+              />
+
+              <span
+                class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-secondary-text-color font-inter"
+              >
+                {{ selectedCountry?.currency }}
+              </span>
+            </div>
+            @if (onContinueClick() && sendAmount && !receivedAmount) {
+              <small class="flex items-center gap-1 text-sm font-normal pl-1 mt-1">
+                <fa-icon
+                  class="text-common-red-color text-[12px]"
+                  [icon]="['fas', 'circle-exclamation']"
+                  animation="shake"
+                  size="lg"
+                ></fa-icon>
+                <p class="text-common-red-color text-xs font-medium font-roboto">
+                  Received amount is required
+                </p>
+              </small>
+            }
+          </div>
+        </div>
+        <app-control-message-v35
+          [control]="initalForm.controls.amount"
+          [label]="
+            initalForm.controls.amount.errors?.['min']
+              ? 'Minimum transaction amount should be $10.00.'
+              : 'Amount is required'
+          "
+        />
+      </div>
+    </div>
+
+    <!-- Exchange Rate -->
+    @if (showExchangeRate()) {
+      <div
+        class="rounded-lg bg-common-secondary-blue-color border border-common-secondary-blue-color p-4 mb-3 mx-[14px]"
+        [ngClass]="{ 'skelton h-16': isLoading() }"
+      >
+        <!-- Exchange Rate Section -->
+        <div class="flex justify-between items-center">
+          <div class="flex gap-2">
+            <p class="text-sm text-main-text-color mb-1">Exchange Rate</p>
+            <div class="flex gap-2 flex-col">
+              <p class="text-sm font-medium text-common-blue-color">
+                1 USD = {{ exchangeRate | number: "1.2-2" }}
+                {{ selectedCountry?.currency }}
+                <span class="text-sm font-medium text-common-blue-color"
+                  >({{ exhangeRateUnParsed }})</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Button section at the bottom -->
+  <div class="px-8">
+    <div class="flex gap-4">
+      <app-common-button-v35
+        class="flex-1"
+        [type]="{ style: 'filled', name: 'main' }"
+        text="Continue"
+        width="100%"
+        (clickEvent)="continue()"
+        [disabled]="isSubmit() || isLoading() || isEnabledCountriesLoading()"
+        [loading]="isSubmit()"
+      />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,233 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Withdraw Funds
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <form [formGroup]="withdrawFundsForm" class="flex flex-col gap-5">
+      <!-- Amount -->
+      <div class="flex flex-col items-center">
+        <app-common-amount-input-v4
+          formControlName="amount"
+          [customClass]="'hero-input'"
+          [maxLength]="15"
+        />
+        <app-control-message-v4
+          [control]="withdrawFundsForm.controls.amount"
+          [customMessages]="{ min: 'This field is required' }"
+        />
+        @if (showMinimumAmountError) {
+          <small
+            class="flex items-center gap-1 text-v4-common-red-color text-xs font-medium mt-1"
+          >
+            <lucide-icon [img]="AlertCircleIcon" [size]="12" />
+            Minimum withdrawal amount should be $10.00 to Process via RTP
+          </small>
+        }
+      </div>
+
+      <!-- Memo -->
+      <div>
+        <app-common-input-v4
+          formControlName="comment"
+          [placeholder]="'Memo'"
+          [maxLength]="50"
+          [control]="withdrawFundsForm.controls.comment"
+          [fieldLabel]="'Memo'"
+          [isFieldRequired]="true"
+        />
+      </div>
+
+      <!-- From Wallet -->
+      <div>
+        <label class="block text-xs font-medium text-v4-secondary-text-color mb-1.5" for="fromWallet">From Wallet <span class="text-v4-common-red-color">*</span></label>
+        <app-wallet-dropdown-v4
+          placeholder="From Wallet"
+          [formControl]="selectedWallet"
+          [showLogoUpdateModal]="false"
+          [append]="'body'"
+        />
+        <app-control-message-v4
+          [control]="withdrawFundsForm.controls.fromWallet"
+        />
+      </div>
+
+      <!-- To Bank Account -->
+      <div>
+        <label class="block text-xs font-medium text-v4-secondary-text-color mb-1.5" for="toBankAccountId">To Bank Account <span class="text-v4-common-red-color">*</span></label>
+        <app-bank-ac-dropdown-v4
+          placeholder="To Account"
+          [append]="'body'"
+          [zIndex]="1001"
+          [formControl]="selectedBankAccount"
+        />
+        <app-control-message-v4
+          [control]="withdrawFundsForm.controls.toBankAccountId"
+        />
+      </div>
+
+      <!-- Withdrawal Method -->
+      <div>
+        <mat-radio-group
+          aria-labelledby="radio-label"
+          class="radio-group flex flex-wrap gap-3"
+          formControlName="selectedWithdrawMethod"
+          (change)="changeWithdrawOption($event.value)"
+        >
+          @for (option of withdrewOptions; track $index) {
+            <mat-radio-button
+              class="radio-button !font-peridot"
+              [value]="option.id"
+              [checked]="selectedWithdrawMethod === option.id"
+            >
+              <span class="flex items-center gap-1 !font-peridot">
+                {{ option.name }}
+                @if (option?.tootTip) {
+                  <lucide-icon
+                    [img]="InfoIcon"
+                    [size]="13"
+                    class="text-v4-tertiary-text-color"
+                    [matTooltip]="option?.tootTip"
+                  />
+                }
+              </span>
+            </mat-radio-button>
+          }
+        </mat-radio-group>
+
+        @if (withdrawFundsForm.controls.isSameDay.value) {
+          <div class="p-3 mt-3 rounded-lg bg-v4-main-background-color">
+            @if (isSameDayFeeLoading) {
+              <div class="skelton h-4 w-full"></div>
+              <div class="skelton h-4 w-3/4 mt-1"></div>
+            } @else {
+              <p class="font-normal text-xs text-v4-secondary-text-color">
+                Great! Your ACH request will be processed in same day. This
+                process will have a fee of {{ sameDayFeeAmount | currency }}. You should initiate the payment
+                before 10:30 AM PST (12:30 PM CST) to process on same day, else it
+                will be processed on next business day and will be considered as
+                'same day ach' with the same fee.
+              </p>
+            }
+          </div>
+        }
+      </div>
+
+      @if (selectedWithdrawMethod === 'mail') {
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="block text-xs font-medium text-v4-secondary-text-color mb-1.5">
+              Custom To <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-v4-common-dropdown
+              formControlName="customTo"
+              [config]="customToDropdownConfig"
+              [listData]="shippingAddressTo"
+              [loading]="isCustomToAddressLoading()"
+              [isRequired]="true"
+              appendTo="body"
+              (buttonClick)="openAddMailAddressModal()"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-v4-secondary-text-color mb-1.5">
+              Shipping Type <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-v4-common-dropdown
+              formControlName="shippingType"
+              [config]="shippingTypeDropdownConfig"
+              [listData]="shippingTypeList"
+              [loading]="isShippingTypeLoading()"
+              [isRequired]="true"
+              appendTo="body"
+            />
+          </div>
+
+          <div class="flex justify-between items-center px-3 py-2 rounded-lg bg-v4-main-background-color text-xs">
+            <span class="text-v4-secondary-text-color">Mailing Fee</span>
+            <span class="font-medium text-v4-main-text-color">{{ mailFee }}</span>
+          </div>
+        </div>
+      }
+    </form>
+
+    <!-- Fee Details -->
+    @if (showSectionFee) {
+      <div
+        class="w-full rounded-lg border border-v4-input-border-color p-3 text-xs mt-4"
+      >
+        <h2
+          class="text-start text-v4-main-text-color font-semibold mb-2 underline"
+        >
+          Transfer Fee Details
+        </h2>
+        <div class="space-y-2">
+          <div class="flex">
+            <span class="w-1/2 text-v4-tertiary-text-color text-left"
+              >Amount:</span
+            >
+            <span
+              class="w-1/2 text-v4-main-text-color font-medium text-left"
+              [ngClass]="{ 'skelton h-4 w-28': fetchingFeeDetails }"
+              >{{ withdrawFeeDetails?.amount | currency }}</span
+            >
+          </div>
+          <div class="flex">
+            <span class="w-1/2 text-v4-secondary-text-color text-left"
+              >Fee:</span
+            >
+            <span
+              class="w-1/2 text-v4-main-text-color font-medium text-left"
+              [ngClass]="{ 'skelton h-4 w-28': fetchingFeeDetails }"
+              >{{ withdrawFeeDetails?.transfer_fee | currency }}</span
+            >
+          </div>
+          <div class="flex">
+            <span class="w-1/2 text-v4-tertiary-text-color text-left"
+              >You Will Receive:</span
+            >
+            <span
+              class="w-1/2 text-v4-tertiary-text-color font-medium text-left"
+              [ngClass]="{ 'skelton h-4 w-28': fetchingFeeDetails }"
+              >{{ withdrawFeeDetails?.transfer_amount | currency }}</span
+            >
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="'Submit'"
+      width="120px"
+      [loading]="loading()"
+      (clickEvent)="onSubmit()"
+    />
+  </div>
+</div>

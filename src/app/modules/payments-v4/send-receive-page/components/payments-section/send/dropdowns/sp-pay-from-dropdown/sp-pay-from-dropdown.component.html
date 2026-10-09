@@ -1,0 +1,96 @@
+<app-sp-dropdown-shell
+  label="Pay from"
+  tooltip="Choose which account funds this payment."
+  [(open)]="open"
+  (cleared)="clearSelection()"
+>
+  <ng-container trigger>
+    @if (trigger(); as sel) {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon [img]="getIcon(sel.icon)" [size]="16" />
+      </span>
+      <span
+        class="truncate font-bold text-v4-main-text-color text-[13px]"
+        >{{ sel.name }}</span
+      >
+    } @else {
+      <span
+        class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-v4-brand-tint text-v4-brand-border-color"
+      >
+        <lucide-icon [img]="WalletIcon" [size]="16" />
+      </span>
+      <span
+        class="font-medium text-v4-tertiary-text-color text-[12px]"
+        >{{ placeholder() }}</span
+      >
+    }
+  </ng-container>
+
+  <div panel class="flex flex-col gap-[3px]">
+    @for (row of optionsView(); track row.item.id) {
+      <button
+        type="button"
+        class="group flex w-full items-center gap-2.5 rounded-[9px] border-[1.5px] border-transparent p-2 text-left transition-colors hover:bg-v4-main-background-color"
+        [ngClass]="{ 'bg-v4-brand-tint': row.isSelected, '!border-v4-brand-tint-strong': row.isSelected }"
+        [class.opacity-50]="row.item.soon"
+        [class.cursor-not-allowed]="row.item.soon"
+        [attr.aria-disabled]="row.item.soon"
+        [matTooltip]="'This payment source is coming soon.'"
+        [matTooltipDisabled]="!row.item.soon"
+        matTooltipPosition="right"
+        (click)="onSelect(row.item)"
+      >
+        <span
+          class="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] transition-colors"
+          [class.bg-v4-primary-brand-color]="row.isSelected"
+          [class.text-white]="row.isSelected"
+          [ngClass]="{ 'bg-v4-brand-tint': !row.isSelected }"
+          [class.text-v4-brand-border-color]="!row.isSelected"
+        >
+          <lucide-icon [img]="getIcon(row.item.icon)" [size]="15" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span
+            class="block truncate font-bold text-v4-main-text-color text-[13px]"
+            >{{ row.item.name }}</span
+          >
+          <span
+            class="block truncate text-v4-tertiary-text-color text-[12px]"
+            >{{ row.subtitle }}</span
+          >
+        </span>
+        @if (row.item.soon) {
+          <span
+            class="shrink-0 rounded-full bg-v4-badge-neutral-bg-color px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-v4-badge-neutral-text-color"
+            >Soon</span
+          >
+        }
+        @if (showDefaultStar() && !row.item.soon) {
+          <span
+            role="button"
+            tabindex="0"
+            class="ml-1 shrink-0 grid place-items-center rounded-md p-1 hover:bg-v4-badge-neutral-bg-color"
+            [ngClass]="{ '[&_svg]:fill-current': row.isDefault }"
+            [attr.aria-label]="
+              row.isDefault ? 'Default source' : 'Set as default source'"
+            matTooltip="Set it as your default for next time"
+            matTooltipPosition="above"
+            (click)="onStar($event, row.item)"
+            (keyup.enter)="onStar($event, row.item)"
+          >
+            <lucide-icon
+              [img]="StarIcon"
+              [size]="15"
+              [class]="
+                row.isDefault
+                  ? 'text-v4-favorite-star-color'
+                  : 'text-v4-tertiary-text-color'"
+            />
+          </span>
+        }
+      </button>
+    }
+  </div>
+</app-sp-dropdown-shell>

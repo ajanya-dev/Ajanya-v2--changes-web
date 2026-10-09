@@ -1,0 +1,98 @@
+<div class="v4-common-input-full-width">
+  <!-- HEADER -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex items-center gap-3">
+      @if (proofType() === 'email' || proofType() === 'sms') {
+        <button
+          (click)="back()"
+          class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center bg-transparent border-none"
+        >
+          <lucide-icon [img]="ArrowLeftIcon" [size]="20" class="text-v4-subtle-text-color" />
+        </button>
+      }
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    @if (proofType() === 'email') {
+      <!-- Email input -->
+      <div class="flex items-center gap-2">
+        <div class="flex-1">
+          <app-common-input-v4
+            placeholder="Enter Email"
+            type="email"
+            [formControl]="sendEmail"
+            [control]="sendEmail"
+          />
+        </div>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Send Email"
+          (clickEvent)="emailProof()"
+          [loading]="isEmailProofLoading()"
+        />
+      </div>
+    } @else if (proofType() === 'sms') {
+      <!-- SMS input -->
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <app-phone-input-v4
+              [formControl]="sendPhoneNumber"
+              placeholder="Phone"
+              (countryDropdown)="countryChange($event)"
+            />
+          </div>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Send SMS"
+            (clickEvent)="smsProof()"
+            [loading]="isSMSProofLoading()"
+          />
+        </div>
+        <p class="text-sm text-v4-secondary-text-color">
+          Cost:
+          <span class="text-common-green-color font-bold">
+            ${{ sendPhoneNumber.value ? '0.50' : '0.00' }}
+          </span>
+        </p>
+      </div>
+    } @else {
+      <!-- Hero section -->
+      <div class="flex flex-col items-center mb-5">
+        <div class="w-12 h-12 rounded-full bg-v4-brand-tint flex items-center justify-center mb-2">
+          <lucide-icon name="send" [size]="22" class="text-v4-primary-brand-bold-color" />
+        </div>
+        <h2 class="text-base font-bold text-v4-main-text-color font-funnel m-0">{{ modalTitle }}</h2>
+      </div>
+
+      <!-- Options grid -->
+      <div class="grid grid-cols-2 gap-3">
+        @for (item of proofsList; track item.action) {
+          <button
+            (click)="onClickAction(item.action)"
+            class="flex flex-col items-center justify-center gap-1.5 py-4 px-3 border border-v4-border-color rounded-xl bg-v4-secondary-background-color hover:border-v4-primary-brand-bold-color hover:shadow-sm transition-all cursor-pointer"
+          >
+            <lucide-icon [img]="item.icon" [size]="26" class="text-v4-primary-brand-bold-color" />
+            <span class="text-sm font-semibold text-v4-main-text-color">
+              @if (item.action === 'copy' && isCopyProofLoading()) {
+                Copying..
+              } @else if (item.action === 'download' && isDownloadLoading()) {
+                Downloading..
+              } @else {
+                {{ item.name }}
+              }
+            </span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>

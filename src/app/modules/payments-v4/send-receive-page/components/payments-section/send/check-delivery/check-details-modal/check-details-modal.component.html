@@ -1,0 +1,212 @@
+<div class="cd-modal" [formGroup]="form">
+  <div class="cd-modal-head">
+    <div>
+      <h3 class="cd-modal-title">Check details</h3>
+      <p class="cd-modal-sub">
+        Pre-filled with smart defaults — edit number, date &amp; preview below.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="cd-modal-x"
+      (click)="closeCheckModal()"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div class="cd-modal-body">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      @if (control("checkNumber"); as checkNumberControl) {
+        <div>
+          <label
+            class="mb-1 block text-v4-main-text-color text-[12px] font-semibold tracking-[-0.01em]"
+            for="checkNumber"
+          >
+            Check number <span class="text-v4-common-red-color">*</span>
+          </label>
+          <app-common-input-v4
+            variant="compact"
+            formControlName="checkNumber"
+            placeholder="Check number"
+            type="text"
+            [control]="checkNumberControl"
+            [isNumberOnly]="true"
+            numberType="numeric"
+            [maxLength]="12"
+            [isFieldRequired]="true"
+            [customMessages]="{
+              required: 'Please enter a check number'
+            }"
+          />
+        </div>
+      }
+
+      @if (control("issueDate"); as issueDateControl) {
+        <div
+          matTooltip="Untick Process without Date checkbox to change date."
+          [matTooltipDisabled]="!issueDateControl.disabled"
+        >
+          <app-v4-date-picker
+            formControlName="issueDate"
+            placeholder="Select date"
+            fieldLabel="Date of issue"
+            [control]="issueDateControl"
+            [isFieldRequired]="true"
+            errorLabel="Please choose a date of issue"
+          />
+        </div>
+      }
+
+      @if (isWalletSource) {
+        @if (control("payeeEmail"); as payeeEmailControl) {
+        <div>
+          <label
+            class="mb-1 block text-v4-main-text-color text-[12px] font-semibold tracking-[-0.01em]"
+            for="wallet-payee-email"
+          >
+            Payee Email
+            @if (emailRequired()) {
+              <span class="text-v4-common-red-color">*</span>
+            }
+          </label>
+          <app-common-input-v4
+            variant="compact"
+            formControlName="payeeEmail"
+            placeholder="Enter payee email"
+            type="email"
+          />
+          <app-control-message-v4
+            [control]="payeeEmailControl"
+            [customMessages]="{
+              required: 'Please enter an email address for the payee',
+              invalidEmailAddress: 'Please enter a valid email address'
+            }"
+          />
+        </div>
+        }
+      }
+    </div>
+
+    @if (showScheduleDate()) {
+      <div class="mt-3">
+        <label
+          class="mb-1 block text-v4-main-text-color text-[12px] font-semibold tracking-[-0.01em]"
+          for="scheduleDate"
+        >
+          Schedule Date <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-common-input-v4
+          variant="compact"
+          formControlName="scheduleDate"
+          placeholder="Select schedule date"
+          type="date"
+          [control]="asControl('scheduleDate')"
+          [minDate]="getMinScheduleDate()"
+          [isFieldRequired]="true"
+          [customMessages]="{
+            required: 'Please choose a schedule date'
+          }"
+        />
+      </div>
+    }
+
+    <div class="cd-preview">
+      <button aria-label="Refresh preview"
+        type="button"
+        class="cd-preview-refresh"
+        (click)="refreshCheckPreview()"
+        [disabled]="checkPreviewLoading()"
+        matTooltip="Refresh preview"
+      >
+        <i-lucide
+          [img]="RefreshIcon"
+          [size]="14"
+          [class.spin]="checkPreviewLoading()"
+        ></i-lucide>
+      </button>
+      <app-check-preview-v4
+        [templateJson]="checkPreviewTemplateJson()"
+        [checkData]="checkPreviewData()"
+        [loading]="checkPreviewLoading()"
+        [showSampleCheck]="false"
+      />
+    </div>
+
+    @if (isBankSource) {
+      @if (control("noSign"); as noSignControl) {
+      <div
+        class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2.5"
+        data-field="signature"
+        [class.border-v4-common-red-color]="
+          signatureResolved() && !hasSignature() && !noSignControl.value
+        "
+        [class.border-v4-border-color]="
+          !signatureResolved() || hasSignature() || !!noSignControl.value
+        "
+      >
+        <div class="flex items-center gap-1.5">
+          @if (noSignControl.value) {
+            <i-lucide
+              [img]="InfoIcon"
+              [size]="14"
+              class="text-v4-tertiary-text-color"
+            ></i-lucide>
+            <span
+              class="font-medium text-v4-tertiary-text-color text-[12px]"
+            >
+              Processing without signature — a blank signature line will be
+              printed.
+            </span>
+          } @else if (!signatureResolved()) {
+            <span class="cd-skel-bar cd-skel-icon"></span>
+            <span class="cd-skel-bar cd-skel-text"></span>
+          } @else if (hasSignature()) {
+            <i-lucide
+              [img]="CheckIcon"
+              [size]="14"
+              class="text-v4-common-green-color"
+            ></i-lucide>
+            <span class="font-medium text-v4-main-text-color text-[12px]">
+              Signature on file — it will be applied to this check.
+            </span>
+          } @else {
+            <i-lucide
+              [img]="InfoIcon"
+              [size]="14"
+              class="text-v4-common-red-color"
+            ></i-lucide>
+            <span class="font-medium text-v4-common-red-color text-[12px]">
+              This bank account has no signature. Add one to send the check, or
+              tick “Signature” under Process Without.
+            </span>
+          }
+        </div>
+
+        @if (signatureResolved() && !hasSignature() && !noSignControl.value) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 rounded-lg border border-v4-primary-brand-color px-2.5 py-1 font-medium text-v4-primary-brand-bold-color transition-colors hover:bg-v4-brand-tint text-[12px] disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="signatureBusy()"
+            (click)="openAddSignature()"
+          >
+            @if (signatureBusy()) {
+              <i-lucide [img]="LoaderIcon" [size]="13" class="spin"></i-lucide>
+            } @else {
+              <i-lucide [img]="PlusIcon" [size]="13"></i-lucide>
+            }
+            Add signature
+          </button>
+        }
+      </div>
+      }
+    }
+  </div>
+
+  <div class="cd-modal-foot">
+    <button type="button" class="cd-modal-done" (click)="closeCheckModal()">
+      Done
+    </button>
+  </div>
+</div>

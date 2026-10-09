@@ -1,0 +1,214 @@
+<div class="font-funnel flex flex-col max-h-[90vh]">
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-6 py-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+  >
+    <h2 class="text-xl font-bold text-v4-main-text-color font-funnel">
+      Add Attachments
+    </h2>
+    <button
+      class="p-1 rounded-md text-v4-subtle-text-color hover:text-v4-main-text-color hover:bg-v4-tertiary-background-color transition-colors cursor-pointer"
+      (click)="close()"
+    >
+      <lucide-icon [img]="XIcon" [size]="20"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <!-- Drop Zone -->
+    <div
+      class="mb-4 border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors"
+      [ngClass]="{
+        'border-v4-primary-brand-bold-color bg-v4-secondary-background-color':
+          isDragging,
+        'border-v4-border-color hover:border-v4-subtle-text-color': !isDragging
+      }"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="triggerFileInput()"
+      tabindex="0"
+      role="button"
+    >
+      <div class="flex flex-col items-center gap-2">
+        <div
+          class="w-10 h-10 rounded-full bg-v4-secondary-background-color flex items-center justify-center"
+        >
+          <lucide-icon
+            [img]="UploadIcon"
+            [size]="20"
+            class="text-v4-subtle-text-color"
+          ></lucide-icon>
+        </div>
+        <p class="text-sm text-v4-subtle-text-color font-peridot">
+          Upload or drag a file here
+        </p>
+        @if (selectedFileName) {
+          <p class="text-sm font-medium text-v4-main-text-color font-peridot">
+            {{ selectedFileName }}
+          </p>
+        } @else {
+          <p class="text-xs text-v4-subtle-text-color font-peridot">No file chosen</p>
+        }
+        @if (submitting) {
+          <p class="text-xs text-v4-primary-brand-bold-color font-medium font-peridot">
+            Uploading...
+          </p>
+        }
+      </div>
+    </div>
+
+    @if (invalid) {
+      <p class="text-xs text-v4-common-red-color mb-3">
+        Please select at least one document!
+      </p>
+    }
+
+    <!-- Attachments Table -->
+    <div class="border border-v4-border-color rounded-lg overflow-hidden">
+      <div class="max-h-[200px] overflow-y-auto">
+        <table class="w-full table-fixed">
+          <colgroup>
+            @if (data.type !== "group_payments") {
+              <col style="width: 40px" />
+            }
+            <col style="width: 80px" />
+            <col />
+            <col style="width: 70px" />
+          </colgroup>
+          <thead class="bg-v4-secondary-background-color sticky top-0 z-[1]">
+            <tr class="border-b border-v4-border-color">
+              @if (data.type !== "group_payments") {
+                <th class="px-3 py-2.5 text-left">
+                  <input
+                    type="checkbox"
+                    class="v4-checkbox-sm"
+                    name="sms"
+                    id="sms"
+                    (change)="checkAll($event)"
+                  />
+                </th>
+              }
+              <th
+                class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color text-left font-peridot"
+              >
+                Date
+              </th>
+              <th
+                class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color text-left font-peridot"
+              >
+                File
+              </th>
+              <th
+                class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color text-center font-peridot"
+              >
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-v4-border-color">
+            @for (item of attachments; track item; let i = $index) {
+              <tr
+                class="hover:bg-v4-secondary-background-color transition-colors"
+              >
+                @if (data.type !== "group_payments") {
+                  <td class="px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      (click)="singlecheck($event, item)"
+                      id="attachId_{{ item.id }}"
+                      [checked]="item.pageCount"
+                      [(ngModel)]="item.checked"
+                      class="v4-checkbox-sm"
+                    />
+                  </td>
+                }
+                <td class="px-3 py-2.5 text-sm text-v4-subtle-text-color font-peridot">
+                  {{ item.formated_date }}
+                </td>
+                <td
+                  class="px-3 py-2.5 text-sm text-v4-main-text-color overflow-hidden font-peridot"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="truncate" [matTooltip]="item.fileName">
+                      {{ item.fileName }}
+                    </span>
+                    <button aria-label="Open attachment"
+                      class="p-0.5 rounded text-v4-primary-brand-bold-color hover:text-v4-primary-brand-color transition-colors flex-shrink-0 cursor-pointer"
+                      (click)="openAttachment(item.id)"
+                      matTooltip="Open attachment"
+                    >
+                      <lucide-icon
+                        [img]="ExternalLinkIcon"
+                        [size]="14"
+                      ></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+                <td class="px-3 py-2.5 text-center">
+                  <button aria-label="Delete attachment"
+                    class="p-1.5 rounded-md text-v4-common-red-color hover:bg-v4-badge-error-bg-color transition-colors cursor-pointer"
+                    [ngClass]="{
+                      'opacity-50 pointer-events-none': disabled
+                    }"
+                    (click)="deleteAttachment(item.id)"
+                    matTooltip="Delete attachment"
+                  >
+                    <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (attachments.length === 0) {
+              <tr>
+                <td
+                  [attr.colspan]="data.type !== 'group_payments' ? 4 : 3"
+                  class="px-3 py-10 text-center text-sm text-v4-subtle-text-color font-peridot"
+                >
+                  No attachments yet
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex items-center justify-between px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    @if (data.type === "mail") {
+      <div>
+        <p class="text-xs text-v4-subtle-text-color font-peridot">
+          Select attachments to mail
+        </p>
+        <p class="text-xs text-v4-subtle-text-color mt-1 font-peridot">
+          * Attach pdf for ${{ data?.cost }} per page.
+        </p>
+      </div>
+    } @else {
+      <div></div>
+    }
+    <div class="flex gap-3">
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        width="90px"
+        [disabled]="isLoading || submitting"
+        (clickEvent)="close()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Done"
+        width="90px"
+        [disabled]="isLoading || submitting"
+        [loading]="isLoading || submitting"
+        (clickEvent)="close()"
+      />
+    </div>
+  </div>
+</div>

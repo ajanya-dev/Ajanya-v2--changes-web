@@ -1,0 +1,239 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden relative">
+
+  <!-- Header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <h2 class="text-lg font-semibold text-v4-main-text-color font-funnel">
+      {{
+        data.mode === "receive" ? "Confirm Payment Request" : "Confirm Payment"
+      }}
+    </h2>
+    <div role="presentation"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      (click)="onCancel()"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <div
+    class="flex flex-col items-center px-6 pt-6 pb-5 bg-v4-tertiary-background-color"
+  >
+    <!-- Top Icon -->
+    <div
+      class="flex items-center justify-center w-[72px] h-[72px] rounded-full bg-v4-primary-brand-color mb-4"
+    >
+      <lucide-icon
+        [img]="CircleCheckIcon"
+        [size]="32"
+        class="text-v4-secondary-brand-color"
+      />
+    </div>
+
+    <!-- Subtitle -->
+    <p class="text-sm text-v4-tertiary-text-color mb-6 text-center font-peridot">
+      {{
+        data.mode === "receive"
+          ? "Please review the payment request details before sending"
+          : "Please review the payment details before confirming"
+      }}
+    </p>
+
+    <!-- Summary Section -->
+    <div class="w-full pl-5 py-3 mb-5">
+      <div
+        class="text-xs font-bold text-v4-main-text-color tracking-widest mb-3 font-funnel uppercase"
+      >
+        {{ data.mode === "receive" ? "REQUEST SUMMARY" : "PAYMENT DETAILS" }}
+      </div>
+
+      <!-- Amount Row -->
+      <div
+        class="flex justify-between items-center py-2.5 border-b border-v4-border-color font-peridot"
+      >
+        <span class="text-sm text-v4-tertiary-text-color">
+          {{ data.mode === "receive" ? "Request Amount" : "Payment Amount" }}
+        </span>
+        <span class="text-xl font-semibold text-v4-main-text-color">
+          ${{ formattedAmount }}
+        </span>
+      </div>
+
+      <!-- ===== Receive Mode Rows ===== -->
+      @if (data.mode === "receive") {
+        @if (data.from) {
+          <div class="flex justify-between items-center py-2 font-peridot">
+            <span class="text-sm text-v4-tertiary-text-color">From</span>
+            <span class="text-sm font-medium text-v4-main-text-color">{{
+              data.from
+            }}</span>
+          </div>
+        }
+
+        @if (data.toBankAccount) {
+          <div class="flex justify-between items-center py-2 font-peridot">
+            <span class="text-sm text-v4-tertiary-text-color">To Bank Account</span>
+            <span class="text-sm font-medium text-v4-main-text-color">{{
+              data.toBankAccount
+            }}</span>
+          </div>
+        }
+      }
+
+      <!-- ===== Send Mode Rows ===== -->
+      @if (data.mode === "send") {
+        @if (data.bankName || data.accNumber) {
+          <div class="flex items-start py-2 font-peridot">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">{{ sourceLabel }}</span>
+            <span class="text-sm font-medium text-v4-main-text-color w-1/2 text-right">
+              {{ data.bankName }}@if (data.accNumber) { {{ data.accNumber }} }
+            </span>
+          </div>
+        }
+
+        @if (data.payeeName) {
+          <div class="flex items-start py-2 font-peridot">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">Payee</span>
+            <span class="text-sm font-medium text-v4-main-text-color w-1/2 text-right">{{
+              data.payeeName
+            }}</span>
+          </div>
+        }
+
+        @if (paymentMethodLabel) {
+          <div class="flex items-start py-2 font-peridot">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">Payment Method</span>
+            <span class="text-sm font-medium text-v4-main-text-color w-1/2 text-right">
+              {{ paymentMethodLabel }}
+              @if (shippingType) {
+                <br />
+                <span class="text-xs text-v4-tertiary-text-color">{{ shippingType }}</span>
+              }
+            </span>
+          </div>
+        }
+
+        @if (estimatedTime) {
+          <div class="flex items-start py-2 font-peridot">
+            <span class="text-sm text-v4-tertiary-text-color w-1/3 shrink-0">Processing Time</span>
+            <span class="text-sm font-medium text-v4-main-text-color w-2/3 text-right">
+              {{ estimatedTime }}
+            </span>
+          </div>
+        }
+      }
+
+      @if (hasRecurringDetails) {
+        <div class="flex justify-between items-center py-2 font-peridot">
+          <span class="text-sm text-v4-tertiary-text-color">Frequency</span>
+          <span class="text-sm font-medium text-v4-main-text-color">{{
+            formattedFrequency
+          }}</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 font-peridot">
+          <span class="text-sm text-v4-tertiary-text-color">Start Date</span>
+          <span class="text-sm font-medium text-v4-main-text-color">{{
+            formattedStartDate
+          }}</span>
+        </div>
+        <div class="flex justify-between items-center py-2 font-peridot">
+          <span class="text-sm text-v4-tertiary-text-color">Pay Until</span>
+          <span class="text-sm font-medium text-v4-main-text-color">
+            {{ formattedPayUntil ? formattedPayUntil : "Cancelled" }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <!-- ACH / Wire Scheduled Maintenance Notice -->
+    @if (showAchWireMaintenanceNotice) {
+      <div
+        class="w-full relative overflow-hidden rounded-xl border border-v4-border-warning bg-v4-surface-warning px-5 py-4 mb-3"
+        role="alert"
+      >
+        <div class="relative z-10 flex items-start gap-3">
+          <span
+            class="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-v4-surface-warning-bold"
+          >
+            <lucide-icon
+              [img]="WarningIcon"
+              [size]="16"
+              class="text-v4-text-warning"
+            />
+          </span>
+          <div class="flex flex-col gap-1">
+            <span
+              class="text-[12px] font-bold uppercase tracking-widest text-v4-text-warning font-funnel"
+            >
+              Scheduled Maintenance
+            </span>
+            <p class="text-xs leading-relaxed text-v4-main-text-color font-peridot">
+              ACH and Wire transfers will be temporarily unavailable from
+              <span
+                class="font-semibold text-v4-text-warning whitespace-nowrap"
+                >June 23 to June 25</span
+              >
+              due to scheduled maintenance. We apologize for the inconvenience and appreciate your patience.
+            </p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Unverified Payee Bank Warning -->
+    @if (showUnverifiedBankWarning) {
+      <div
+        class="w-full flex items-start gap-3 rounded-xl border border-v4-border-warning bg-v4-surface-warning px-5 py-4 mb-3"
+      >
+        <lucide-icon
+          [img]="WarningIcon"
+          [size]="20"
+          class="text-v4-text-warning shrink-0 mt-0.5"
+        />
+        <div class="text-xs text-v4-main-text-color font-peridot">
+          <strong>Almost there!</strong> The payee just needs to verify their bank account before this transaction can be completed.
+        </div>
+      </div>
+    }
+
+    <!-- Info Banner -->
+    <div
+      class="w-full flex items-center gap-3 rounded-xl bg-v4-primary-brand-color px-5 py-4 mb-6"
+    >
+      <lucide-icon
+        [img]="InfoIcon"
+        [size]="20"
+        class="text-white shrink-0"
+      />
+      <div>
+        <div class="text-sm font-bold text-white font-funnel">
+          Payment Instructions
+        </div>
+        <div class="text-xs text-white opacity-80 font-peridot">
+          {{ infoMessage }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="w-full flex justify-between gap-3">
+      <app-common-button-v4
+        class="w-full"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        width="100%"
+        (clickEvent)="onCancel()"
+        [disabled]="isProcessing()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        class="w-full"
+        [text]="actionButtonText"
+        width="100%"
+        [loading]="isProcessing()"
+        [disabled]="isProcessing()"
+        (clickEvent)="onConfirm()"
+      />
+    </div>
+  </div>
+</div>

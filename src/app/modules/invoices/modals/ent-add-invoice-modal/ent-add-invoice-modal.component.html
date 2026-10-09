@@ -1,0 +1,471 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+     <div>
+        <span class="mt-18 w-full text-base text-main-text-color align-middle flex items-center">
+            @if(datas?.isClone){
+                <span class="pl-1 font-inter font-semibold text-base pb-0.5">Clone Invoice</span>
+            }@else{
+                <span class="pl-1 font-inter font-semibold text-base pb-0.5">{{ !editMode ? "Add Invoice" : "Edit Invoice" }}</span>
+            }
+        </span>
+     </div>
+     <div [mat-dialog-close]="false">
+      <fa-icon class="text-secondary-text-color cursor-pointer" [icon]="faXmark"></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div [formGroup]="invoice">
+    <div class="grid grid-cols-1">
+      <div
+        class="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-4"
+      >
+      <div class="w-full">
+        <app-bank-ac-dropdown-v3
+          [enableAddNew]="true"
+          append="body"
+          formControlName="bank"
+          (ready)="
+          autoPopulateDropdown(
+            $event,
+            invoice.controls.bankAccountId.value
+          )
+        "
+        />
+        <app-control-message-v35
+        [control]="invoice.controls.bankAccountId"
+      />
+      </div>
+      <div>
+        <app-payee-dropdown-v3
+        class="w-full"
+        [enableAddNew]="true"
+        appendTo="body"
+        placeholder="Select Your Customer"
+        formControlName="payee"
+        (ready)="
+        autoPopulateDropdown(
+          $event,
+          invoice.controls.payeeId.value
+        )
+      "
+      />
+      <app-control-message-v35
+        [control]="invoice.controls.payeeId"
+      />
+      </div>
+      </div>
+
+      <div class="flex flex-col items-center justify-center">
+        <div class="w-full grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+          <div class="col-span-2">
+                    <app-v35-common-dropdown
+          [(ngModel)]="selectedUser"
+          (ngModelChange)="onChangeUser($event)"
+          [ngModelOptions]="{ standalone: true }"
+          [required]="true"
+          [loading]="isUserLoading()"
+          [config]="{
+            placeholder: isUserLoading() ? 'Loading...' : 'Select User',
+            displayField: 'client_name',
+            style: {
+          size: 2,
+          enableLabelIcon: true,
+          labelIconData: {
+            icon_fa: ['fas', 'user'],
+            color: 'common-blue-color'
+          }
+        },
+        commons: {
+          iconColor: {
+            background: 'common-secondary-blue-color',
+            text: 'common-blue-color'
+          },
+          iconData: ['fas', 'user']
+        },
+        enableAddNew: false
+          }"
+          [listData]="usersList()"
+          appendTo="body"
+          (searchEvent)="onSearchUser($event)"
+        />
+          </div>
+          <div>
+           <app-common-input-field 
+             placeholder="Invoice No" 
+             formControlName="InvoiceNo"
+             maxlength="100"
+             (keypress)="utils.prevantSpecialChar($event)"
+           />
+           <app-control-message-v35 
+             [control]="invoice.controls.InvoiceNo"
+           />
+          </div>
+          <div>
+           <app-common-input-field 
+             placeholder="PO No" 
+             formControlName="poNo"
+             maxlength="100"
+             [isFieldRequired]="false"
+           />
+          </div>
+        </div>
+        <div class="w-full grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+          <div>
+            <app-common-input-field 
+              placeholder="Invoice Date" 
+              formControlName="Date"
+              type="date"
+              (change)="datepickerdate($event)"
+            />
+            <app-control-message-v35 
+              [control]="invoice.controls.Date"
+            />
+           </div>
+           <div>
+            <app-common-input-field 
+              placeholder=" Due Date" 
+              formControlName="DueDate"
+              maxlength="100"
+              type="date"
+            />
+            <app-control-message-v35 
+              [control]="invoice.controls.DueDate"
+            />
+           </div>
+          <div class="col-span-2">
+            <app-common-input-field 
+              placeholder="Account No" 
+              formControlName="accountNumber"
+              maxlength="100"
+              [isFieldRequired]="false"
+            />
+           </div>
+        </div>
+        <div class="w-full flex gap-4">
+          <div class="w-full">
+            <app-common-input-field 
+              placeholder="Enter private note" 
+              formControlName="note"
+              maxlength="100"
+              [isFieldRequired]="false"
+            />
+           </div>
+           <div class="w-full">
+             <app-common-input-field 
+             placeholder="Enter memo" 
+             formControlName="memo"
+             maxlength="150"
+             [isFieldRequired]="false"
+           />
+           </div>
+        </div>
+      </div>
+    </div>
+    <!-- </div> -->
+    <div class="mt-5 h-[300px] overflow-auto">
+      <table class="new-table">
+        <thead>
+          <tr>
+            @for (
+              hed of [
+                "S.N",
+                "Item",
+                "Description",
+                "QTY",
+                "Unit Cost",
+                "Total",
+                "Action"
+              ];
+              track $index
+            ) {
+              <th>{{ hed }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody formArrayName="item">
+          @for (credit of getFormControl()['controls']; track credit; let i = $index) {
+            <tr
+              [formGroupName]="i"
+            >
+              <td style="margin-left: 5%">{{ i + 1 }}</td>
+              <td style="width: 30%">
+              <app-v35-common-dropdown
+              #itemDropdown
+              [(ngModel)]="itemName[i]"
+              (ngModelChange)="onChangeItem($event,i)"
+              [ngModelOptions]="{ standalone: true }"
+              [required]="true"
+              [loading]="isItemsLoading()"
+              [config]="{
+                placeholder: isItemsLoading() ? 'Loading...' : 'Select Item',
+                displayField: 'name',
+                style: {
+              size: 6,
+              enableLabelIcon: false,
+            },
+            enableAddNew: true,
+            extraStyles: i === 0 && isFirstItemEmpty() && invoice.touched ? 'border border-common-red-color rounded-[5px]' : ''
+              }"
+              [listData]="filteredInvoiceItems"
+              (buttonClick)="openInvoiceItemModal()"
+              appendTo="body"
+              (searchEvent)="onSearch($event)"
+              (scrollToEnd)="onScroll()"
+            />
+              </td>
+  
+              <td style="width: 30%">
+                <input
+                  type="text"
+                  formControlName="description"
+                  maxlength="100"
+                  class="single_input input_style"
+                />
+              </td>
+              <td style="width: 10%">
+                <input
+                  type="text"
+                  formControlName="qty"
+                  placeholder="0"
+                  (keyup)="onQtyChanges($event, i, '')"
+                  (keypress)="utils.numberOnly($event, 'decimal')"
+                  mask="separator.2"
+                  thousandSeparator=","
+                  class="single_input input_style"
+                />
+              </td>
+              <td style="width: 15%">
+                <app-amount-input
+                  formControlName="cost"
+                  height="27px"
+                  (keyup)="onQtyChanges($event, i, 'cost')"
+                  [ngClass]="{'border border-common-red-color rounded-[5px] block':i === 0 && isFirstCostEmpty() && invoice.touched}"
+                />
+              </td>
+              <td style="width: 20%">
+                <app-amount-input
+                  formControlName="total"
+                  height="27px"
+                  [isReadOnly]="true"
+                />
+              </td>
+              <td style="width: 10%">
+                <button
+                  type="button"
+                  (click)="removeRow(i, credit)"
+                  class="btn btn-danger"
+                >
+                  <i style="color: red" class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="w-full flex justify-end">
+        <div class="flex pt-1">
+          <button
+            type="button"
+            class="bg-common-secondary-blue-color text-main-text-color rounded-md h-7 w-7 hover:shadow-common-button ocw-btn"
+            (click)="addNewRow()"
+            matTooltip="Add New Row"
+          >
+            <fa-icon [icon]="faPlus" />
+          </button>
+        </div>
+      </div>
+
+      <div class="w-full flex gap-5 mt-2 flex-col md:flex-row">
+        <div class="flex flex-col gap-4 w-full">
+          <div class="flex flex-col gap-4">
+            <app-v35-common-dropdown
+            [(ngModel)]="selectedTax"
+            (ngModelChange)="onSelectTax($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [required]="true"
+            [loading]="isTaxLoading()"
+            [config]="{
+              placeholder: isTaxLoading() ? 'Loading...' : 'Select tax',
+              displayField: 'name',
+              style: {
+            size: 0,
+            enableLabelIcon: false,
+          },
+          enableAddNew: true
+            }"
+            [listData]="taxList"
+            (buttonClick)="opentaxmodal()"
+            appendTo="body"
+            (scrollToEnd)="onScrollTax()"
+          />
+  
+            <div class="flex justify-center items-center relative gap-4">
+              <app-amount-input
+                [isRequired]="false"
+                fieldLabel="Apply Credit"
+                [maxLength]="13"
+                class="w-full"
+                formControlName="creditMemoApplied"
+                (change)="ApplyCredit($event)"
+              ></app-amount-input>
+              <div
+                class="flex justify-center items-center w-max"
+              >
+                <span class="text-xs sm:text-sm px-2 whitespace-nowrap font-inter font-medium text-secondary-text-color">
+                  Total Credits &nbsp;&nbsp;:
+                </span>
+                <span class="font-inter font-semibold text-main-text-color text-sm">{{
+                  creditbalance ? creditbalance : "0.00"
+                }}</span>
+              </div>
+            </div>
+            @if(Applycredit){
+              <span class="font-inter text-[12px] font-normal text-common-red-color">
+                Should not exceed Invoice Amount or available Credit.</span
+              >
+            }
+          </div>
+          <div class="invoice-details-left-pane">
+            <button
+            class="h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md !text-common-blue-color border-none bg-common-secondary-blue-color"
+            matTooltip="Add attachments"
+            (click)="openAttachmentModal()"
+          >
+            <fa-icon [icon]="faPaperclip"></fa-icon>
+          </button>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col w-full item-end invoice-details-right-pane mt-3 md:mt-0"
+        >
+          <div>
+            <table class="total-invoice-table">
+              <tr>
+                <td>Sub Total</td>
+                <td>
+                  <span id="sub-total-value" class="text-right">{{
+                    subtotal().toFixed(2) | currency
+                  }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Total Tax</td>
+                <td>
+                  <span id="total-tax-value" class="text-right">{{
+                    taxAmount.toFixed(2) | currency
+                  }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Invoice Total</td>
+                <td>
+                  <span
+                    id="invoice-total-value"
+                    mask="separator.2"
+                    class="text-right"
+                    >{{ invoiceTotal().toFixed(2) | currency }}</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Applied Credits</td>
+                <td>
+                  <span id="applied-credits-value" class="text-right">{{
+                    (invoice.get("creditMemoApplied")?.value
+                      ? invoice.get("creditMemoApplied")?.value
+                      : "0"
+                    ) | currency
+                  }}</span>
+                  <span
+                    >&nbsp;
+                    @if(editMode && invoice.get('creditMemoApplied')?.value){
+                      <button
+                        (click)="deleteApplied(this.creditmemoId, this.ids)"
+                        type="button"
+                        class="btn btn-danger"
+                      >
+                        <i style="color: red" class="fa fa-trash"></i>
+                      </button>
+                    }
+                </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Grand Total</td>
+                <td>
+                  <span id="grand-total-value" class="text-right">{{
+                    grandTotal().toFixed(2) | currency
+                  }}</span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- </form> -->
+  </div>
+  <!-- modal body end -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+    width="125px"
+    mat-dialog-close
+    [type]="{ style: 'bordered', name: 'main' }"
+    text="Cancel"
+    [disabled]="Applycredit || addInvoiceProcessing"
+  />
+  @if (editMode) {
+    <app-common-button-v35
+      width="125px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Update"
+      (clickEvent)="onSubmit('update')"
+      [disabled]="Applycredit || addInvoiceProcessing"
+      [loading]="addInvoiceProcessing"
+    />
+  } @else {
+    <app-common-button-v35
+      width="125px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Save"
+      (clickEvent)="onSubmit('new')"
+      [disabled]="Applycredit || addInvoiceProcessing"
+      [loading]="addInvoiceProcessing"
+    />
+    <app-common-button-v35
+      width="125px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Send"
+      [disabled]="Applycredit || isSending()"
+      [loading]="isSending()"
+      [matMenuTriggerFor]="menu"
+      [suffix]="true"
+      [suffixIcon]="
+        isShowDropDown ? ['fas', 'caret-up'] : ['fas', 'caret-down']
+      "
+      (clickEvent)="isShowDropDown = true"
+    />
+  }
+  <mat-menu #menu="matMenu">
+    <button
+      mat-menu-item
+      (click)="onSubmit('mail')"
+      (closed)="onMatMenuClosed()"
+    >
+      Mail
+    </button>
+    <button
+      mat-menu-item
+      (click)="onSubmit('email')"
+      (closed)="onMatMenuClosed()"
+    >
+      Email
+    </button>
+  </mat-menu>
+  </div>
+</div>
+
+  

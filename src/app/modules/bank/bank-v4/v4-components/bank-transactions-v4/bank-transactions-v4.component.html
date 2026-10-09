@@ -1,0 +1,88 @@
+@if (bankDataService.bankAccountCountSignal() && (bankDataV4Service.selectedDetailsTab() === 'account' || bankDataV4Service.selectedDetailsTab() === 'all')) {
+  <!-- h-full, not flex-1: the host is display:block, so only an explicit
+       height keeps the chain down to the grid's compact empty state intact. -->
+  <div class="flex h-full flex-col">
+    <!-- Tab strip row -->
+    @if (canShowTransactionTabs()) {
+      <div class="flex items-center mb-3">
+        <app-common-tab-v4
+          [tabs]="[
+            { label: 'Zil Payments', value: 'Zil Payments' },
+            { label: 'Bank Account', value: 'Bank Account' }
+          ]"
+          [activeTab]="selectedTransactionTab"
+          [variant]="'underline'"
+          (activeTabChange)="changeTransactionTab($any($event))"
+        />
+      </div>
+    }
+
+    @if (selectedTransactionTab === 'Zil Payments') {
+      <div class="flex min-h-0 flex-1 flex-col">
+        <!-- Transactions heading + Fetch Bank Records, shown on the left of the
+             grid's toolbar row (saves a row). The toolbar stays rendered when the
+             grid is empty (emptyStateKeepToolbar), so the heading never disappears. -->
+        <ng-template #transactionsHeading>
+          <div class="flex items-center gap-3">
+            <h3 class="text-base font-semibold text-v4-main-text-color">
+              Transactions
+            </h3>
+            @if (fetchBankRecordsState?.canFetch) {
+              <app-common-button-v4
+                [type]="{ style: 'outline', name: 'main' }"
+                [text]="'Fetch Bank Records'"
+                [toolTip]="
+                  'Pull the latest transactions for this account from your bank'
+                "
+                [lucideIcon]="'database'"
+                [lucideIconSize]="12"
+                [customHeight]="'32px'"
+                [textClasses]="'text-[12px] font-semibold'"
+                [customClasses]="
+                  'h-8 flex items-center rounded-md border-v4-border-color text-v4-main-text-color hover:bg-v4-tertiary-background-color'
+                "
+                [loading]="fetchBankRecordsState?.loading ?? false"
+                [disabled]="fetchBankRecordsState?.loading ?? false"
+                (clickEvent)="fetchBankRecords()"
+              />
+            }
+          </div>
+        </ng-template>
+        <app-v4-data-table
+          class="flex-1 min-h-0"
+          [columnDefs]="columnDefs"
+          [tableId]="tableId"
+          [defaultDisabledColumn]="['description']"
+          [frameworkComponents]="frameworkComponents"
+          [useCustomEmptyState]="true"
+          [toolbarLeftTemplate]="transactionsHeading"
+          [emptyStateKeepToolbar]="true"
+          [emptyStateScopeKey]="
+            bankDataService.selectedBankAccountSignal()?.encrypted_bankacc_id
+          "
+          [emptyStateConfig]="{
+            icon: 'arrow-left-right',
+            title: 'No transactions yet',
+            description:
+              'Payments sent from or received into this bank account will appear here',
+            buttonText: 'Send Payment',
+            buttonIcon: 'send',
+            compact: true
+          }"
+          (emptyStateActionClick)="onEmptyStateSendPayment()"
+        />
+      </div>
+    }
+
+    @if (selectedTransactionTab === 'Bank Account') {
+      <app-bank-plaid-records-wrapper-v4
+        [bankDataSubject]="bankDataSubject"
+        (errorOutput)="onBankAccountError($event)"
+        [plaidId]="
+          bankDataService.selectedBankAccountSignal()?.plaid_detail
+            ?.plaid_account_id
+        "
+      />
+    }
+  </div>
+}

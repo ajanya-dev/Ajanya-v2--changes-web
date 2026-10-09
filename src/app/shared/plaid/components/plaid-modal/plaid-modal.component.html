@@ -1,0 +1,167 @@
+<div class="relative w-full h-full">
+
+    @if(!loading){
+
+    @if(currentFormIndexSignal() > 0 && currentFormIndexSignal() < addressFormArray.length){ <fa-icon
+        [icon]="faArrowLeft" matTooltip="Go Back" matTooltipPosition="right"
+        class="absolute top-3 text-xl cursor-pointer z-[12] left-[19px]" (click)="onPrev()"></fa-icon>
+        }
+
+        <div class="cross-bar text-end p-2.5 
+      z-[11] absolute right-0" [ngClass]="{
+          'cursor-not-allowed': false
+        }" matTooltip="Close" matTooltipPosition="left">
+            <img class="ml-auto cursor-pointer" [ngClass]="{
+            'pointer-events-none':
+             false
+          }" ngSrc="assets/icon/persona-v4/xmark-persona.svg" width="17" height="22" alt="close-mark"
+                (click)="closeModal()" role="presentation" />
+        </div>
+        }
+
+        @if(loading){
+        <div
+            class="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-gray-100 bg-opacity-80 z-10">
+            <span class="tracking-[2px] text-[15px] text-[gray]"> PLEASE WAIT...</span>
+        </div>
+        }
+
+        @if(isError){
+        <div
+            class="absolute top-0 left-0 w-full h-full flex flex-col gap-[7px] justify-center items-center bg-gray-100 bg-opacity-80 z-10 px-5">
+            <span class="tracking-[2px] text-[15px] text-[gray] text-center">{{errorMessage}}</span>
+            <span class="tracking-[2px] text-[13px] text-[gray] mt-1">{{subErrorMsg}}</span>
+        </div>
+        }
+
+        @if(closed){
+        <div
+            class="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-gray-100 bg-opacity-80 z-10">
+            <span class="tracking-[2px] text-[15px] text-[gray]">CLOSING...</span>
+        </div>
+        }
+
+        @if(completing){
+        <div class="main-container h-[600px] flex flex-col justify-between">
+            <div>
+                <div class="pt-[240px]">
+                    <div class="lds-ripple !block mx-auto">
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+
+                <div class="message text-center flex flex-col h-[200px]">
+                    <p class="text-[20px] font-medium">Please wait while we finalize.</p>
+                    <p class="text-[var(--mat-checkbox-disabled-label-color)] text-sm">
+                        This window will automatically close shortly.
+                    </p>
+                </div>
+            </div>
+        </div>
+        }
+
+        @if(addressMissing){
+
+        <div class="p-5 flex h-[600px] flex-col gap-3 pt-[55px] relative" [class.fade-in]="true"
+            [class.show]="formVisible">
+            <!--Enter Address -->
+            <form [formGroup]="addressFormArray.at(currentFormIndexSignal())">
+
+                <div class="text-[14px] pb-[5px]">
+                    Please enter the address associated with your bank accounts to continue!
+
+                    <div class="mt-2 acc-details">
+                        <span>Acc Name :
+                            {{addressFormArray.at(currentFormIndexSignal()).get('bank_account_name')?.value}}</span>
+                        <span>xx{{addressFormArray.at(currentFormIndexSignal()).get('account_number')?.value | slice:
+                            -4}}</span>
+                    </div>
+                </div>
+
+
+                <div class="floating-label-input">
+                    <input #commonInput class="input-text" type="text" id="address" formControlName="address" placeholder="Address"
+                        autocomplete="off" (focus)="loadGoogleAddress(commonInput)"
+                        [ngClass]="{ 'invalid': submitted && addressFormArray.at(currentFormIndexSignal()).get('address')?.errors }">
+                    <label for="email">Address</label>
+                </div>
+
+                <div class="flex justify-between gap-2">
+                    <div class="floating-label-input">
+                        <input class="input-text" type="text" id="city" formControlName="city" placeholder="City"
+                            autocomplete="off"
+                            [ngClass]="{ 'invalid': submitted && addressFormArray.at(currentFormIndexSignal()).get('city')?.errors }">
+                        <label for="email">City</label>
+                    </div>
+
+                    <div class="floating-label-input">
+                        <input class="input-text" type="text" id="state" formControlName="state" placeholder="State"
+                            autocomplete="off"
+                            [ngClass]="{ 'invalid': submitted && addressFormArray.at(currentFormIndexSignal()).get('state')?.errors }">
+                        <label for="email">State</label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between gap-2">
+                    <div class="floating-label-input">
+                        <input class="input-text" type="text" id="zip" formControlName="zip" placeholder="zip"
+                            autocomplete="off"
+                            [ngClass]="{ 'invalid': submitted && addressFormArray.at(currentFormIndexSignal()).get('zip')?.errors }">
+                        <label for="email">Zip</label>
+                    </div>
+
+                    <div class="floating-label-input">
+                        <input class="input-text" type="text" id="country" formControlName="country"
+                            placeholder="Country" autocomplete="off"
+                            [ngClass]="{ 'invalid': submitted && addressFormArray.at(currentFormIndexSignal()).get('country')?.errors }">
+                        <label for="email">Country</label>
+                    </div>
+                </div>
+
+                @if(currentFormIndexSignal() === 0){
+                <div class="pt-[15px]" [matTooltip]="!isCompleted(0) ? 'Please enter the address details' : ''">
+                    <div class="checkbox-container" [ngClass]="{'pointer-events-none opacity-50' : !isCompleted(0)}">
+                        <input type="checkbox" id="useSameAddress" (change)="toggleUseSameAddress($event)" />
+                        <label for="useSameAddress" class="text-sm pl-2">Use this address for all banks accounts</label>
+                    </div>
+                </div>
+                }
+            </form>
+
+
+            <div class="stepper-container" [ngClass]="currentFormIndexSignal() === 0 ? '!pt-[8px]' : '!pt-[30px]'">
+                @if(currentFormIndexSignal() >= 2 ){
+                <div class="ml-[5px]">|</div>
+                }
+                <div *ngFor="let account of accountsVisible(); let i = index" class="step">
+                    <div class="stepper-header">
+                        <div class="flex">
+                            <div class="step-circle relative"
+                                [ngClass]="{ 'completed': addressFormArray.at(currentFormIndexSignal()).get('indentity_status') && isCompleted(account.id), 'current-item': currentFormIndexSignal() === account.id }">
+                                <span *ngIf="!isCompleted(account.id)">{{ account.id + 1 }}</span>
+                                <span class="text-[12px]"
+                                    *ngIf="addressFormArray.at(currentFormIndexSignal()).get('indentity_status') && isCompleted(account.id)">✔</span>
+                            </div>
+                            <div class="bank-name">{{ account.account_nick_name }}</div>
+                        </div>
+                        @if(account.id !== accountsSignal()?.length - 1){
+                        <div class="ml-[5px] mt-[-5px] -mb-2.5">|</div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-[20px] w-[322px]">
+                <button (click)="onNext()" class=" css-3vc87p w-[322px] " tabindex="0" type="button"
+                    aria-disabled="false" id="aut-button" role="button"><span class="Thr-Button-Text"> {{ useSameAddress
+                        ||
+                        currentFormIndexSignal() === addressFormArray.length - 1 ? 'Continue' : 'Next' }}</span>
+                </button>
+            </div>
+
+        </div>
+        }
+
+</div>

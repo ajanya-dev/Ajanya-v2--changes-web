@@ -1,0 +1,252 @@
+<!-- h-screen -> flex-1 min-h-0: fill the page area (100vh ignored the header and double-scrolled). -->
+<div class="flex flex-col flex-1 min-h-0 w-full overflow-hidden bg-v4-main-background-color">
+  <!-- Page Header -->
+  <div class="flex-shrink-0 bg-v4-main-background-color shadow-sm border-b border-v4-border-color px-6 py-4">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-4 min-w-0">
+        <div
+          class="w-9 h-9 rounded-lg border border-v4-border-color hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center flex-shrink-0"
+          (click)="goBack()"
+          (keyup.enter)="goBack()"
+          tabindex="0"
+          role="button"
+        >
+          <lucide-icon
+            name="arrow-left"
+            [size]="18"
+            class="text-v4-secondary-text-color"
+          ></lucide-icon>
+        </div>
+        <div class="min-w-0">
+          <h1 class="m-0 text-xl font-semibold text-v4-main-text-color font-peridot truncate">
+            {{ documentDetails().name || 'Document Details' }}
+          </h1>
+          <p class="m-0 text-xs text-v4-secondary-text-color">Document Details</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <app-v4-zil-sign-status-badge [status]="documentDetails().status" />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Download"
+          lucideIcon="download"
+          (clickEvent)="downloadAll()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-auto p-6">
+    @if (loading()) {
+      <div class="flex items-center justify-center h-full">
+        <div class="text-sm text-v4-secondary-text-color">Loading document details...</div>
+      </div>
+    } @else {
+      <div class="max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        <!-- Left column -->
+        <div class="flex flex-col gap-6 min-w-0">
+          <!-- Documents card -->
+          <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5">
+            <h2 class="m-0 mb-4 text-base font-semibold text-v4-main-text-color font-peridot">Documents</h2>
+            @if (documents().length === 0) {
+              <p class="m-0 text-sm text-v4-secondary-text-color">No documents available.</p>
+            } @else {
+              <div class="flex flex-col gap-2">
+                @for (doc of documents(); track doc.id) {
+                  <div class="flex items-center gap-3 p-3 rounded-lg border border-v4-border-color bg-v4-tertiary-background-color">
+                    <div
+                      class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      [style.background-color]="'var(--v4-badge-error-bg-color)'"
+                    >
+                      <lucide-icon
+                        name="file-text"
+                        [size]="18"
+                        [style.color]="'var(--v4-common-red-color)'"
+                      ></lucide-icon>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="m-0 text-sm font-medium text-v4-main-text-color truncate">{{ doc.name }}</p>
+                      @if (doc.size && doc.size !== 'N/A') {
+                        <p class="m-0 text-xs text-v4-secondary-text-color">{{ doc.size }}</p>
+                      }
+                    </div>
+                    <button aria-label="View"
+                      type="button"
+                      class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color hover:text-v4-primary-brand-bold-color transition-colors"
+                      matTooltip="View"
+                      (click)="viewDocument(doc.id)"
+                    >
+                      <lucide-icon name="eye" [size]="16"></lucide-icon>
+                    </button>
+                    <button aria-label="Download"
+                      type="button"
+                      class="w-8 h-8 rounded-md flex items-center justify-center text-v4-secondary-text-color hover:bg-v4-tertiary-background-color hover:text-v4-primary-brand-bold-color transition-colors"
+                      matTooltip="Download"
+                      (click)="downloadDocument(doc.id)"
+                    >
+                      <lucide-icon name="download" [size]="16"></lucide-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+
+          <!-- Recipients card -->
+          <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5">
+            <h2 class="m-0 mb-4 text-base font-semibold text-v4-main-text-color font-peridot">Recipients</h2>
+            @if (recipients().length === 0) {
+              <p class="m-0 text-sm text-v4-secondary-text-color">No recipients.</p>
+            } @else {
+              <div class="flex flex-col gap-3">
+                @for (recipient of recipients(); track recipient.id) {
+                  <div class="flex items-start gap-3 p-3 rounded-lg border border-v4-border-color bg-v4-tertiary-background-color">
+                    <div
+                      class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold"
+                      [style.background-color]="'var(--v4-badge-info-bg-color)'"
+                      [style.color]="'var(--v4-common-sky-color)'"
+                    >
+                      {{ getInitials(recipient.name) }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="m-0 text-sm font-medium text-v4-main-text-color truncate">{{ recipient.name }}</p>
+                        <app-v4-zil-sign-status-badge [status]="recipient.status" />
+                      </div>
+                      <div class="flex items-center gap-3 flex-wrap mt-1 text-xs text-v4-secondary-text-color">
+                        @if (recipient.email) {
+                          <span class="inline-flex items-center gap-1">
+                            <lucide-icon name="mail" [size]="12"></lucide-icon>
+                            {{ recipient.email }}
+                          </span>
+                        }
+                        @if (recipient.role) {
+                          <span class="inline-flex items-center gap-1">
+                            <lucide-icon name="user" [size]="12"></lucide-icon>
+                            Role: {{ recipient.role }}
+                          </span>
+                        }
+                        @if (recipient.signedDate) {
+                          <span class="inline-flex items-center gap-1 text-v4-common-green-color">
+                            <lucide-icon name="check" [size]="12"></lucide-icon>
+                            Signed {{ recipient.signedDate }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+
+          <!-- Activity Timeline card -->
+          <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5">
+            <h2 class="m-0 mb-4 text-base font-semibold text-v4-main-text-color font-peridot">Activity Timeline</h2>
+            @if (loadingActivities()) {
+              <p class="m-0 text-sm text-v4-secondary-text-color">Loading activity…</p>
+            } @else if (activities().length === 0) {
+              <p class="m-0 text-sm text-v4-secondary-text-color">No activity yet.</p>
+            } @else {
+              <ol class="relative flex flex-col gap-4">
+                @for (item of activities(); track item.id; let isLast = $last) {
+                  <li class="flex gap-3">
+                    <div class="relative flex-shrink-0">
+                      <div
+                        class="w-8 h-8 rounded-full flex items-center justify-center"
+                        [style.background-color]="getActivityIconColor(item.type).bg"
+                      >
+                        <lucide-icon
+                          [name]="getActivityIcon(item.type)"
+                          [size]="14"
+                          [style.color]="getActivityIconColor(item.type).fg"
+                        ></lucide-icon>
+                      </div>
+                      @if (!isLast) {
+                        <div
+                          class="absolute left-1/2 top-full w-px h-full -translate-x-1/2 bg-v4-border-color"
+                        ></div>
+                      }
+                    </div>
+                    <div class="flex-1 min-w-0 pb-3">
+                      <p class="m-0 text-sm text-v4-main-text-color font-medium">
+                        {{ item.description }}
+                      </p>
+                      <div class="flex items-center gap-3 flex-wrap mt-1 text-xs text-v4-secondary-text-color">
+                        <span>{{ item.formatted_date || item.timestamp }}</span>
+                        @if (item.user || item.actor) {
+                          <span>User: {{ item.user || item.actor }}</span>
+                        }
+                        @if (item.ip_address) {
+                          <span>Device: {{ item.ip_address }}</span>
+                        }
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ol>
+            }
+          </section>
+        </div>
+
+        <!-- Right column (sidebar) -->
+        <div class="flex flex-col gap-6">
+          <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5">
+            <h2 class="m-0 mb-4 text-base font-semibold text-v4-main-text-color font-peridot">Summary</h2>
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-v4-secondary-text-color">Status</span>
+                <app-v4-zil-sign-status-badge [status]="documentDetails().status" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-v4-secondary-text-color">Recipients</span>
+                <span class="text-sm font-medium text-v4-main-text-color">
+                  {{ documentDetails().recipientsCount || recipients().length || 0 }} recipients
+                </span>
+              </div>
+              @if (documentDetails().createdDate) {
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs text-v4-secondary-text-color">Created</span>
+                  <span class="text-sm font-medium text-v4-main-text-color">
+                    {{ documentDetails().createdDate }}
+                  </span>
+                </div>
+              }
+              @if (documentDetails().signedDate) {
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs text-v4-secondary-text-color">Signed</span>
+                  <span class="text-sm font-medium text-v4-main-text-color">
+                    {{ documentDetails().signedDate }}
+                  </span>
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-5">
+            <h2 class="m-0 mb-4 text-base font-semibold text-v4-main-text-color font-peridot">Actions</h2>
+            <div class="flex flex-col gap-3">
+              <app-common-button-v4
+                [type]="{ style: 'outline', name: 'main' }"
+                text="Resend Document"
+                lucideIcon="send"
+                [width]="'100%'"
+                [disabled]="isResendDisabled()"
+                (clickEvent)="resendDocument()"
+              />
+              <app-common-button-v4
+                [type]="{ style: 'destructive', name: 'main' }"
+                text="Cancel Request"
+                lucideIcon="x-circle"
+                [width]="'100%'"
+                [disabled]="isCancelDisabled()"
+                (clickEvent)="cancelRequest()"
+              />
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+  </div>
+</div>

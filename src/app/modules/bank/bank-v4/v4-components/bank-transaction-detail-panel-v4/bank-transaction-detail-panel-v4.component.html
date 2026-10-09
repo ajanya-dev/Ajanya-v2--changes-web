@@ -1,0 +1,474 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [title]="panelTitle()"
+  [subtitle]="panelSubtitle()"
+  [icon]="'receipt'"
+  [iconBgColor]="'var(--v4-common-blue-color)'"
+  [statusBadge]="panelStatusBadge()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+/>
+
+<ng-template #bodyContent>
+  <div class="panel-body flex flex-col pb-6">
+    <!-- Check Design / Check Preview — for check payments only -->
+    @if (isCheckPayment()) {
+      <div class="mt-4 mx-4">
+        <app-check-preview-v4
+          [templateJson]="checkTemplateJson()"
+          [checkStatus]="checkStatusForPreview()"
+          [loading]="isLoading()"
+          [error]="
+            !isLoading() && !checkTemplateJson()
+              ? 'Check design could not be loaded.'
+              : null
+          "
+        />
+      </div>
+    }
+
+    <!-- Payment Details Card -->
+    <div
+      class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-4 mx-4 mt-4"
+    >
+      <p class="text-sm font-bold text-v4-main-text-color mb-3">
+        Payment Details
+      </p>
+
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color">Payee</span>
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          row()?.payee_name ?? "—"
+        }}</span>
+      </div>
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color">Amount</span>
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          row()?.amount ? "$" + row()!.amount : "—"
+        }}</span>
+      </div>
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color"
+          >Mode of Transfer</span
+        >
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          row()?.transfer_type ?? row()?.transfer_mode ?? "—"
+        }}</span>
+      </div>
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color">Source</span>
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          row()?.source_name ?? "—"
+        }}</span>
+      </div>
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color"
+          >Reference ID</span
+        >
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          row()?.reference_no ?? "—"
+        }}</span>
+      </div>
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color"
+          >Created Date</span
+        >
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          (row()?.created_at | date: "MM/dd/yyyy") || "—"
+        }}</span>
+      </div>
+      <div
+        class="flex justify-between items-center py-2 border-b border-v4-border-color"
+      >
+        <span class="text-[13px] text-v4-secondary-text-color"
+          >Updated At</span
+        >
+        <span class="text-[13px] font-medium text-v4-main-text-color">{{
+          (row()?.updated_at | date: "MM/dd/yyyy hh:mm a") || "—"
+        }}</span>
+      </div>
+      @if (row()?.description) {
+        <div class="pt-2.5 border-t border-v4-border-color mt-1">
+          <span class="block text-[13px] text-v4-secondary-text-color mb-1"
+            >Description</span
+          >
+          <p class="text-sm font-semibold text-v4-main-text-color">
+            {{ row()?.description }}
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- Loading skeleton -->
+    @if (isLoading()) {
+      <div class="animate-pulse">
+        <!-- Payee Info skeleton -->
+        <div
+          class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4"
+        >
+          <div class="bg-v4-border-color rounded w-32 h-4 mb-3"></div>
+          @for (j of [1, 2, 3, 4]; track j) {
+            <div
+              class="flex items-start gap-2.5 py-2.5 border-b border-v4-border-color last:border-b-0"
+            >
+              <div
+                class="w-[18px] h-[18px] bg-v4-border-color rounded shrink-0 mt-0.5"
+              ></div>
+              <div class="flex-1 min-w-0">
+                <div class="bg-v4-border-color rounded w-12 h-3 mb-1"></div>
+                <div class="bg-v4-border-color rounded w-full h-4"></div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Action Grid skeleton -->
+        <div
+          class="mt-3 mx-4 grid grid-cols-6 gap-2.5 rounded-xl border border-v4-border-color p-3"
+        >
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <div
+              class="flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-[10px] border border-v4-border-color bg-white px-2.5 py-4"
+            >
+              <div
+                class="w-[22px] h-[22px] bg-v4-border-color rounded shrink-0"
+              ></div>
+              <div class="bg-v4-border-color rounded w-10 h-3"></div>
+            </div>
+          }
+        </div>
+
+        <!-- Last 10 Transactions skeleton -->
+        <div
+          class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4 overflow-hidden"
+        >
+          <div class="bg-v4-border-color rounded w-56 h-4 mb-3"></div>
+          <div class="space-y-0 border-t border-v4-border-color">
+            @for (srow of skeletonTransactionRows; track $index) {
+              <div class="flex border-b border-v4-border-color py-2.5 gap-2">
+                @for (cell of srow; track $index) {
+                  <div
+                    class="bg-v4-border-color rounded"
+                    [ngClass]="cell"
+                  ></div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (!isLoading()) {
+      <!-- Payee Information -->
+      <div
+        class="bg-white border border-v4-border-color rounded-[10px] shadow-sm p-4 mt-3 mx-4"
+      >
+        <p class="text-sm font-bold text-v4-main-text-color m-0 mb-3">
+          Payee Information
+        </p>
+        <div
+          class="flex items-start gap-2.5 py-2.5 border-b border-v4-border-color"
+        >
+          <lucide-icon
+            [img]="UserIcon"
+            [size]="18"
+            class="text-v4-secondary-text-color mt-0.5 shrink-0"
+          ></lucide-icon>
+          <div>
+            <p class="text-xs text-v4-secondary-text-color m-0 mb-0.5">Name</p>
+            <p class="text-[13px] font-semibold text-v4-main-text-color m-0">
+              {{ row()?.payee_name || "—" }}
+            </p>
+          </div>
+        </div>
+        <div
+          class="flex items-start gap-2.5 py-2.5 border-b border-v4-border-color"
+        >
+          <lucide-icon
+            name="mail"
+            [size]="18"
+            class="text-v4-secondary-text-color mt-0.5 shrink-0"
+          ></lucide-icon>
+          <div>
+            <p class="text-xs text-v4-secondary-text-color m-0 mb-0.5">Email</p>
+            <p class="text-[13px] font-semibold text-v4-main-text-color m-0">
+              {{
+                (paymentDetails()?.payee)?.["email"]
+                  || (paymentDetails()?.payee)?.["payeeEmail"]
+                  || "—"
+              }}
+            </p>
+          </div>
+        </div>
+        <div
+          class="flex items-start gap-2.5 py-2.5 border-b border-v4-border-color"
+        >
+          <lucide-icon
+            name="phone"
+            [size]="18"
+            class="text-v4-secondary-text-color mt-0.5 shrink-0"
+          ></lucide-icon>
+          <div>
+            <p class="text-xs text-v4-secondary-text-color m-0 mb-0.5">Phone</p>
+            <p class="text-[13px] font-semibold text-v4-main-text-color m-0">
+              {{
+                (paymentDetails()?.payee)?.["phone"]
+                  || (paymentDetails()?.payee)?.["payeePhone"]
+                  || "—"
+              }}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 py-2.5">
+          <lucide-icon
+            [img]="MapPinIcon"
+            [size]="18"
+            class="text-v4-secondary-text-color mt-0.5 shrink-0"
+          ></lucide-icon>
+          <div>
+            <p class="text-xs text-v4-secondary-text-color m-0 mb-0.5">
+              Address
+            </p>
+            <p class="text-[13px] font-semibold text-v4-main-text-color m-0">
+              {{ payeeAddress() }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Grid (6 buttons) -->
+      <div
+        class="mt-3 mx-4 grid grid-cols-6 gap-1.5 rounded-xl border border-v4-border-color p-3"
+      >
+        <!-- Audit Logs -->
+        <button
+          class="flex min-h-[72px] min-w-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-1 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'audit'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white text-v4-primary-brand-color hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleAuditLogs()"
+        >
+          <lucide-icon
+            name="activity"
+            [size]="22"
+            class="shrink-0"
+          ></lucide-icon>
+          <span
+            class="block w-full text-center text-[12px] font-semibold leading-tight"
+            >Audit<br />Logs</span
+          >
+        </button>
+
+        <!-- Comments -->
+        <button
+          class="flex min-h-[72px] min-w-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-1 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'comments'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white text-v4-primary-brand-color hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleComments()"
+        >
+          <lucide-icon
+            name="message-square"
+            [size]="22"
+            class="shrink-0"
+          ></lucide-icon>
+          <span
+            class="block w-full text-center text-[12px] font-semibold leading-tight"
+            >Comments</span
+          >
+        </button>
+
+        <!-- Attachments -->
+        <button
+          class="flex min-h-[72px] min-w-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-1 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'attachments'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white text-v4-primary-brand-color hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleAttachments()"
+        >
+          <lucide-icon
+            name="paperclip"
+            [size]="22"
+            class="shrink-0"
+          ></lucide-icon>
+          <span
+            class="block w-full text-center text-[12px] font-semibold leading-tight"
+            >Attachments</span
+          >
+        </button>
+
+        <!-- Remittance -->
+        <button
+          class="flex min-h-[72px] min-w-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-1 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'remittance'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white text-v4-primary-brand-color hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleRemittance()"
+        >
+          <lucide-icon
+            name="file-text"
+            [size]="22"
+            class="shrink-0"
+          ></lucide-icon>
+          <span
+            class="block w-full text-center text-[12px] font-semibold leading-tight"
+            >Remittance</span
+          >
+        </button>
+
+        <!-- Signed Receipt -->
+        <button
+          class="flex min-h-[72px] min-w-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-1 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'signed-receipt'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white text-v4-primary-brand-color hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="toggleSignedReceipt()"
+        >
+          <lucide-icon
+            name="pen-tool"
+            [size]="22"
+            class="shrink-0"
+          ></lucide-icon>
+          <span
+            class="block w-full text-center text-[12px] font-semibold leading-tight"
+            >Signed<br />Receipt</span
+          >
+        </button>
+
+        <!-- Proof of Delivery -->
+        <button
+          class="flex min-h-[72px] min-w-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border px-1 py-4 transition-[border-color,background-color] duration-150"
+          [ngClass]="
+            openActionSection() === 'pod'
+              ? 'border-v4-primary-brand-color bg-v4-primary-brand-color text-white'
+              : 'border-v4-border-color bg-white text-v4-primary-brand-color hover:border-v4-primary-brand-color hover:bg-v4-tertiary-background-color'
+          "
+          (click)="togglePod()"
+        >
+          <lucide-icon
+            name="truck"
+            [size]="22"
+            class="shrink-0"
+          ></lucide-icon>
+          <span
+            class="block w-full text-center text-[12px] font-semibold leading-tight"
+            >Proof of<br />Delivery</span
+          >
+        </button>
+      </div>
+
+      <!-- Inline Audit Logs -->
+      @if (openActionSection() === "audit") {
+        <div class="mt-3 mx-4">
+          <app-audit-log-list-v4
+            [logs]="activityLogsForList()"
+            [maxHeight]="'400px'"
+            (closed)="closeSection()"
+          ></app-audit-log-list-v4>
+        </div>
+      }
+
+      <!-- Inline Comments -->
+      @if (openActionSection() === "comments") {
+        <div class="mt-3 mx-4">
+          <app-comments-activity-list-v4
+            [comments]="commentsForList()"
+            [maxHeight]="'400px'"
+            (addComment)="openAddCommentModal()"
+            (closed)="closeSection()"
+          ></app-comments-activity-list-v4>
+        </div>
+      }
+
+      <!-- Inline Attachments -->
+      @if (openActionSection() === "attachments") {
+        <div class="mt-3 mx-4">
+          <app-attachments-activity-list-v4
+            [attachments]="attachmentsForList()"
+            [maxHeight]="'400px'"
+            [deletingId]="deletingAttachmentId()"
+            (addAttachment)="openAddAttachmentModal()"
+            (closed)="closeSection()"
+            (deleteAttachment)="onDeleteAttachment($event)"
+            (openAttachment)="onOpenAttachment($event)"
+          ></app-attachments-activity-list-v4>
+        </div>
+      }
+
+      <!-- Inline Remittance -->
+      @if (openActionSection() === "remittance") {
+        <div class="mt-3 mx-4">
+          <app-remittance-activity-list-v4
+            [remittanceItems]="remittanceForList()"
+            [total]="remittanceTotal()"
+            [maxHeight]="'400px'"
+            (closed)="closeSection()"
+          ></app-remittance-activity-list-v4>
+        </div>
+      }
+
+      <!-- Inline Signed Receipt -->
+      @if (openActionSection() === "signed-receipt") {
+        <div class="mt-3 mx-4">
+          <app-signed-receipt-activity-list-v4
+            [signatureUrl]="signatureUrl()"
+            [maxHeight]="'400px'"
+            (requestSignedReceipt)="openSignedReceiptModal()"
+            (closed)="closeSection()"
+          ></app-signed-receipt-activity-list-v4>
+        </div>
+      }
+
+      <!-- Inline Proof of Delivery -->
+      @if (openActionSection() === "pod") {
+        <div class="mt-3 mx-4">
+          <app-pod-activity-list-v4
+            [podList]="podForList()"
+            [maxHeight]="'400px'"
+            (closed)="closeSection()"
+          ></app-pod-activity-list-v4>
+        </div>
+      }
+
+      <!-- Check Image (only for check payments, separate from top preview) -->
+      @if (openActionSection() === "check-image" && isCheckPayment() && checkTemplateJson()) {
+        <div class="mt-3 mx-4">
+          <app-check-preview-v4
+            [templateJson]="checkTemplateJson()"
+            [checkStatus]="checkStatusForPreview()"
+          />
+        </div>
+      }
+
+      <!-- Last 10 Transactions -->
+      <app-transactions-list-v4
+        [transactions]="transactionsForList()"
+        [total]="totalForList()"
+        [title]="'Last 10 Transactions to ' + (row()?.payee_name ?? 'Payee')"
+      />
+    }
+  </div>
+</ng-template>

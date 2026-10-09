@@ -1,0 +1,158 @@
+<div class="space-y-6 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  } @else if (!isConnected()) {
+    <!-- Disconnected state -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl"
+      style="background-color: var(--v4-badge-error-bg-color)"
+    >
+      <lucide-icon
+        name="x-circle"
+        [size]="20"
+        [color]="'var(--v4-badge-error-text-color)'"
+      ></lucide-icon>
+      <span
+        class="text-sm font-semibold"
+        style="color: var(--v4-badge-error-text-color)"
+      >
+        Status: <span class="font-bold">Disconnected</span>
+      </span>
+    </div>
+    <p class="text-sm text-v4-tertiary-text-color">
+      Connect to Xero from the Overview tab to manage your accounting
+      integration.
+    </p>
+  } @else {
+    <!-- Status banner -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl border border-v4-badge-success-text-color bg-v4-badge-success-bg-color"
+    >
+      <lucide-icon
+        name="circle-check"
+        [size]="24"
+        class="flex-shrink-0 text-v4-badge-success-text-color"
+      ></lucide-icon>
+      <div>
+        <p class="font-semibold text-v4-badge-success-text-color">Connected</p>
+      </div>
+    </div>
+
+    <!-- Heading -->
+    <div>
+      <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">Xero Settings</h3>
+      <p class="text-sm text-v4-tertiary-text-color mt-1">
+        Manage Xero companies and import bills, checks, or invoices.
+      </p>
+    </div>
+
+    <!-- Connected companies -->
+    <div
+      class="border border-v4-input-border-color rounded-xl bg-main-background p-4 space-y-3"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+          Connected Companies
+        </h4>
+        <div class="flex items-center gap-2">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Add Company"
+            width="160px"
+            [isAddIcon]="true"
+            [icon]="['fas', 'plus']"
+            [loading]="loading().connecting"
+            [disabled]="loading().connecting"
+            (clickEvent)="onConnect()"
+          />
+          <button
+            type="button"
+            class="p-2 rounded-lg hover:bg-v4-tertiary-background-color transition-colors cursor-pointer"
+            style="color: var(--v4-primary-brand-bold-color)"
+            aria-label="Settings"
+            (click)="openSettingsModal()"
+          >
+            <lucide-icon name="settings" [size]="18" />
+          </button>
+        </div>
+      </div>
+
+      @if (companies().length) {
+        <div class="space-y-2">
+          @for (company of companies(); track company.companyId) {
+            <div
+              class="p-3 border border-v4-input-border-color rounded-xl bg-main-background hover:bg-v4-input-background-color transition-colors"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p
+                      class="text-sm font-semibold text-v4-main-text-color truncate"
+                    >
+                      {{ company.companyName }}
+                    </p>
+                    <span
+                      class="text-[12px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                      [ngClass]="
+                        company.status === 'Connected'
+                          ? 'bg-v4-badge-success-bg-color text-v4-badge-success-text-color'
+                          : 'bg-v4-badge-error-bg-color text-v4-badge-error-text-color'
+                      "
+                    >
+                      {{ company.status }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-v4-tertiary-text-color mt-1">
+                    Last update: {{ company.lastUpdated || "-" }}
+                  </p>
+                </div>
+                <button [attr.aria-label]="(company.status === 'Connected' ? 'Disconnect' : 'Remove') || null"
+                  type="button"
+                  class="p-2 rounded-lg hover:bg-v4-tertiary-background-color transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  style="color: var(--v4-badge-error-text-color)"
+                  [matTooltip]="
+                    company.status === 'Connected' ? 'Disconnect' : 'Remove'
+                  "
+                  [disabled]="
+                    loading().disconnectingCompany === company.companyId
+                  "
+                  (click)="onDisconnectCompany(company)"
+                >
+                  @if (loading().disconnectingCompany === company.companyId) {
+                    <lucide-icon
+                      name="loader-circle"
+                      [size]="18"
+                      class="animate-spin"
+                    />
+                  } @else {
+                    <lucide-icon name="log-out" [size]="18" />
+                  }
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm text-v4-tertiary-text-color">
+          No companies connected yet. Use "Add Company" to add one from Xero.
+        </p>
+      }
+    </div>
+
+    <!-- Bank mapping -->
+    <div class="mt-6">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Bank Account Mapping"
+        [width]="'100%'"
+        (clickEvent)="openBankMapping()"
+      />
+    </div>
+  }
+</div>

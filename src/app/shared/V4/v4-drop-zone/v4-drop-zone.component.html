@@ -1,0 +1,71 @@
+<div
+  class="drop-zone-wrapper relative flex flex-col items-center justify-center gap-3 w-full min-h-44 border-2 border-dashed rounded-xl transition-colors"
+  [class.focused]="hasFocus"
+>
+  @if (loading()) {
+    <!-- Uploading state -->
+    <lucide-icon
+      [img]="LoaderIcon"
+      [size]="32"
+      class="drop-zone-icon animate-spin"
+    />
+    <span class="text-sm text-muted-foreground">Uploading...</span>
+  } @else {
+    <!-- Clear button -->
+    @if (clearable() && file) {
+      <button
+        type="button"
+        (click)="clear()"
+        class="absolute top-2 right-2 z-20 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      >
+        <lucide-icon [img]="XIcon" [size]="16" />
+      </button>
+    }
+
+    <!-- Upload icon -->
+    <lucide-icon
+      [img]="UploadIcon"
+      [size]="32"
+      class="drop-zone-icon"
+    />
+
+    <!-- Label -->
+    <span class="text-sm text-muted-foreground">
+      Upload or drag a file here
+    </span>
+
+    @if (description()) {
+      <span class="text-xs text-muted-foreground">{{ description() }}</span>
+    }
+
+    <!-- No file chosen button -->
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      text="No file chosen"
+      class="pointer-events-none"
+    />
+
+    <!-- Supported types and size -->
+    <span class="text-[12px] text-v4-tertiary-text-color">
+      {{ fileConstraintLabel() }}
+    </span>
+  }
+
+  <!-- Hidden file input (covers full area for click & drag) -->
+  <input
+    #inputElm
+    type="file"
+    title=""
+    [accept]="accept()"
+    [multiple]="false"
+    [disabled]="disabled() || loading()"
+    (click)="changeFocus(true)"
+    (dragenter)="changeFocus(true)"
+    (focus)="changeFocus(true)"
+    (drop)="changeFocus(false)"
+    (blur)="changeFocus(false)"
+    (dragleave)="changeFocus(false)"
+    (change)="fileChange($event)"
+    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+  />
+</div>

@@ -1,0 +1,338 @@
+<app-detail-side-panel
+  [isOpen]="isOpen()"
+  [width]="'clamp(460px, 34vw, 640px)'"
+  [expandable]="true"
+  [expandedWidth]="'min(1150px, 94vw)'"
+  [panelId]="'check-draft-detail'"
+  (expandedChange)="isPanelExpanded.set($event)"
+  [title]="panelTitle()"
+  [titleSuffix]="panelTitleSuffix()"
+  [subtitleTemplate]="checkMeta"
+  [iconTemplate]="panelIcon"
+  [statusBadge]="panelStatusBadge()"
+  [actionButtons]="panelActionButtons()"
+  [contentTemplate]="bodyContent"
+  (closed)="closed.emit()"
+  (actionButtonClicked)="actionButtonClicked.emit($event)"
+/>
+
+<!-- Header icon: navy circle -->
+<ng-template #panelIcon>
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-v4-primary-brand-color"
+  >
+    <lucide-icon name="file-text" [size]="18" color="white"></lucide-icon>
+  </div>
+</ng-template>
+
+<!-- Check # / Bank · date · By — labels muted, values bold main colour. -->
+<ng-template #checkMeta>
+  @if (isPanelExpanded()) {
+    <div class="flex min-w-0 items-center gap-2 whitespace-nowrap">
+      @for (part of headerMetaParts(); track part.key; let first = $first) {
+        @if (!first) {
+          <span
+            class="h-1 w-1 shrink-0 rounded-full bg-v4-secondary-text-color"
+          ></span>
+        }
+        <span
+          [ngClass]="part.key === 'bank' ? 'min-w-0 truncate' : 'shrink-0'"
+          [matTooltip]="part.key === 'bank' ? part.value : ''"
+        >
+          {{ part.label }}
+          @if (part.bold) {
+            <span class="font-semibold text-v4-main-text-color">{{
+              part.value
+            }}</span>
+          } @else {
+            {{ part.value }}
+          }
+        </span>
+      }
+    </div>
+  } @else {
+    <div class="flex min-w-0 flex-col gap-1">
+      @if (checkNo()) {
+        <p class="m-0 shrink-0">
+          Check #:
+          <span class="font-semibold text-v4-main-text-color">{{ checkNo() }}</span>
+        </p>
+      }
+      @if (bankName() || checkDateText() || row()?.created_by_name) {
+        <p class="m-0 min-w-0 truncate" [matTooltip]="bankName()">
+          @if (bankName()) {
+            Bank:
+            <span class="font-semibold text-v4-main-text-color">{{ bankName() }}</span>
+          }
+          @if (checkDateText()) {
+            &middot; {{ checkDateText() }}
+          }
+          @if (row()?.created_by_name) {
+            &middot; By {{ row()?.created_by_name }}
+          }
+        </p>
+      }
+    </div>
+  }
+</ng-template>
+
+<ng-template #bodyContent>
+  <div
+    class="panel-body panel-body--surface panel-body--capped"
+    [class.panel-body--expanded]="isPanelExpanded()"
+    [class.grid-rows-[auto_1fr]]="isPanelExpanded() && !isLoading()"
+  >
+    @if (isLoading()) {
+      <app-pd-skeleton [rows]="5" [tiles]="3" [timeline]="0" [party]="false" />
+    } @else {
+      <!-- Check details -->
+      <div class="pd-card">
+        <button
+          type="button"
+          class="pd-card-head"
+          (click)="toggleCard('check')"
+        >
+          <span class="pd-card-title">Check details</span>
+          <lucide-icon
+            [name]="isCardCollapsed('check') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("check")) {
+          <div
+            class="pd-card-body divide-y divide-v4-border-color [&>.pd-row]:py-1.5"
+          >
+            <div class="pd-row">
+              <span class="pd-row-label">Check no</span>
+              <span class="pd-row-value">{{
+                viewData()?.check_no ?? "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Bank account</span>
+              <span
+                class="pd-row-value truncate"
+                [title]="viewData()?.bank_account_name ?? ''"
+                >{{ viewData()?.bank_account_name ?? "—" }}</span
+              >
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Payee name</span>
+              <span
+                class="pd-row-value truncate"
+                [title]="viewData()?.payee_name ?? row()?.payee_name ?? ''"
+                >{{ viewData()?.payee_name ?? row()?.payee_name ?? "—" }}</span
+              >
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Amount</span>
+              <span class="pd-row-value">
+                @if (viewData()?.amount ?? row()?.amount; as amount) {
+                  ${{ amount }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Check date</span>
+              <span class="pd-row-value">{{
+                viewData()?.check_date
+                  ? formatDate(viewData()!.check_date)
+                  : "—"
+              }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- References -->
+      <div class="pd-card">
+        <button type="button" class="pd-card-head" (click)="toggleCard('refs')">
+          <span class="pd-card-title">References</span>
+          <lucide-icon
+            [name]="isCardCollapsed('refs') ? 'chevron-down' : 'chevron-up'"
+            [size]="15"
+            class="text-v4-tertiary-text-color"
+          ></lucide-icon>
+        </button>
+
+        @if (!isCardCollapsed("refs")) {
+          <div
+            class="pd-card-body divide-y divide-v4-border-color [&>.pd-row]:py-1.5"
+          >
+            <div class="pd-row">
+              <span class="pd-row-label">Ac#</span>
+              <span class="pd-row-value">{{ viewData()?.ac_no ?? "—" }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label">Inv#</span>
+              <span class="pd-row-value">{{ viewData()?.inv_no ?? "—" }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Memo</span>
+              <span class="pd-row-value min-w-0 text-right [overflow-wrap:anywhere]">{{
+                viewData()?.memo ?? row()?.memo ?? "—"
+              }}</span>
+            </div>
+            <div class="pd-row">
+              <span class="pd-row-label shrink-0">Note</span>
+              <span class="pd-row-value min-w-0 text-right [overflow-wrap:anywhere]">{{
+                viewData()?.note ?? "—"
+              }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Actions — the tile row is the card head; the open section renders below. -->
+      <div
+        class="o4-actions-card pd-full overflow-hidden rounded-xl border border-v4-border-color bg-v4-secondary-background-color"
+      >
+        <div
+          class="pd-card-head-flush grid grid-cols-3 gap-1.5 px-3 py-2"
+          [class.border-b]="!!openActionSection()"
+          [class.border-v4-border-color]="!!openActionSection()"
+        >
+          @for (tile of actionTiles; track tile.key) {
+            <button
+              type="button"
+              class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 transition-[border-color,background-color] duration-150"
+              [ngClass]="
+                openActionSection() === tile.key
+                  ? 'border-v4-primary-brand-bold-color bg-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_10%,transparent)] text-v4-primary-brand-bold-color'
+                  : 'bg-v4-secondary-background-color border-v4-border-color text-v4-secondary-text-color hover:border-v4-primary-brand-bold-color hover:text-v4-main-text-color [.dark-mode_&]:bg-v4-tertiary-background-color [.dark-mode_&]:border-[color-mix(in_srgb,var(--v4-primary-brand-bold-color)_45%,transparent)] [.dark-mode_&]:text-v4-main-text-color [.dark-mode_&]:hover:border-v4-primary-brand-bold-color'
+              "
+              (click)="toggleSection(tile.key)"
+            >
+              <lucide-icon
+                [name]="tile.icon"
+                [size]="16"
+                class="shrink-0"
+              ></lucide-icon>
+              <span
+                class="block w-full max-w-full text-center text-[12px] font-medium leading-tight"
+                >{{ tile.label }}</span
+              >
+            </button>
+          }
+        </div>
+
+        <!-- Activity log -->
+        @if (openActionSection() === "activity") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            @if (activityLogs().length > 0) {
+              <div class="overflow-x-auto">
+                <div class="max-h-[400px] overflow-y-auto">
+                  <table class="w-full border-collapse">
+                    <thead>
+                      <tr
+                        class="[&>th]:whitespace-nowrap [&>th]:border-b [&>th]:border-v4-border-subtle-color [&>th]:p-2 [&>th]:text-left [&>th]:text-[12px] [&>th]:font-semibold [&>th]:uppercase [&>th]:tracking-[.04em] [&>th]:text-v4-tertiary-text-color"
+                      >
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>By</th>
+                        <th>Device</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (
+                        item of activityLogs();
+                        track item.formattedCreatedAt + $index
+                      ) {
+                        <tr
+                          class="text-xs [&>td]:border-b [&>td]:border-v4-border-subtle-color [&>td]:px-2 [&>td]:py-1.5 [&>td]:align-top"
+                        >
+                          <td class="text-v4-tertiary-text-color">
+                            {{ $index + 1 }}
+                          </td>
+                          <td class="text-v4-main-text-color">
+                            <app-pd-date-time
+                              [value]="item.formattedCreatedAt"
+                            />
+                          </td>
+                          <td
+                            class="whitespace-nowrap font-semibold text-v4-main-text-color"
+                          >
+                            {{ item.status }}
+                          </td>
+                          <td
+                            class="whitespace-nowrap text-v4-secondary-text-color"
+                          >
+                            {{ item.userName }}
+                          </td>
+                          <td
+                            class="whitespace-nowrap text-v4-tertiary-text-color"
+                          >
+                            {{ item.ipAddress }}
+                          </td>
+                          <td
+                            class="min-w-[140px] break-words text-v4-secondary-text-color"
+                          >
+                            {{ item.note }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="pd-empty !justify-start">
+                <p class="m-0 py-6 text-center text-v4-tertiary-text-color">
+                  No activity logs available.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Attachments — shared list, reference (view-panel) format. -->
+        @if (openActionSection() === "attachments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-po-attachments-list
+              variant="view-panel"
+              emptyHint="Files attached to this check draft will show up here."
+              [bare]="true"
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [attachments]="attachmentsForList()"
+              [maxHeight]="'400px'"
+              [deletingId]="deletingAttachmentId()"
+              [uploading]="attachmentUploading()"
+              [error]="attachmentError()"
+              (fileSelected)="onAttachmentSelected($event)"
+              (openAttachment)="onOpenAttachment($event)"
+              (deleteAttachment)="onDeleteAttachment($event)"
+              (closed)="toggleSection('attachments')"
+            />
+          </div>
+        }
+
+        <!-- Comments — shared composer and list, reference (view-panel) format. -->
+        @if (openActionSection() === "comments") {
+          <div class="pd-action-panel bg-v4-secondary-background-color p-3">
+            <app-po-comments-list
+              variant="view-panel"
+              emptyHint="Notes you add here stay with the check draft."
+              [bare]="true"
+              [collapsedCount]="4"
+              [forceExpand]="isPanelExpanded()"
+              [comments]="commentsForList()"
+              [maxHeight]="'400px'"
+              [posting]="isAddingComment()"
+              [error]="commentError()"
+              (submitComment)="onSubmitComment($event)"
+              (deleteComment)="onDeleteComment($event)"
+              (closed)="toggleSection('comments')"
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

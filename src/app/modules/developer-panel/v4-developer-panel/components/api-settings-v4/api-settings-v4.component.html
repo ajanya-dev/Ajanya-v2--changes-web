@@ -1,0 +1,243 @@
+<div class="space-y-6">
+  <!-- Security Warning Banner -->
+  <div
+    class="flex items-start gap-3 p-4 bg-v4-surface-warning-bold border-[1px] border-v4-border-warning rounded-lg"
+  >
+    <lucide-icon
+      name="triangle-alert"
+      [size]="20"
+      class="text-v4-text-warning flex-shrink-0 mt-0.5"
+    />
+    <div>
+      <h4 class="text-xs font-bold text-v4-text-warning mb-1">
+        Security Warning
+      </h4>
+      <p class="text-xs text-v4-text-warning">
+        Generating a new API key will immediately invalidate the current key.
+        Make sure to update all applications using the old key.
+      </p>
+    </div>
+  </div>
+
+  <!-- API Key Card -->
+  <div
+    class="relative overflow-hidden p-6 bg-v4-secondary-background-color border-2 border-v4-border-color rounded-xl"
+    style="box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+  >
+    <h2 class="text-sm font-bold text-v4-main-text-color mb-4">API Key</h2>
+    <div class="mb-4">
+      <label
+        for="api-key"
+        class="block text-xs font-semibold text-v4-secondary-text-color mb-2"
+      >
+        Use this key to authenticate your API requests. Keep it secure and never
+        share it publicly.
+      </label>
+
+      <!-- Input row -->
+      <div class="flex gap-2">
+        <!-- Password input with eye/copy overlays -->
+        <div class="flex-1 relative">
+          <!-- Copied! popup -->
+          <div
+            class="absolute top-full right-0 mt-2 px-3 py-1 bg-v4-primary-brand-color text-white text-xs font-semibold rounded-lg shadow-md pointer-events-none z-10 transition-all duration-300"
+            [class.opacity-0]="!copied()"
+            [class.opacity-100]="copied()"
+            [class.translate-y-1]="!copied()"
+            [class.translate-y-0]="copied()"
+          >
+            Copied!
+            <div
+              class="absolute -top-1 right-4 w-2 h-2 bg-v4-primary-brand-color rotate-45"
+            ></div>
+          </div>
+          <input
+            id="api-key"
+            [type]="isTokenRevealed() ? 'text' : 'password'"
+            [ngModel]="tokenValue()"
+            placeholder="••••••••••••••••••••••••••••••••"
+            readonly
+            class="flex h-11 min-h-[44px] w-full rounded-xl border px-4 py-3 text-sm shadow-sm transition-all duration-200 border-v4-border-color bg-v4-secondary-background-color text-v4-main-text-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-brand-focus-color disabled:cursor-not-allowed disabled:opacity-50 pr-20"
+          />
+          <div
+            class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1"
+          >
+            <!-- Eye / reveal button -->
+            <button [attr.aria-label]="revealTokenLoading()
+                  ? 'Loading...'
+                  : isTokenRevealed()
+                    ? 'Hide API key'
+                    : 'Click to reveal API key'"
+              type="button"
+              (click)="revealToken()"
+              [matTooltip]="
+                revealTokenLoading()
+                  ? 'Loading...'
+                  : isTokenRevealed()
+                    ? 'Hide API key'
+                    : 'Click to reveal API key'
+              "
+              class="p-2 hover:bg-v4-tertiary-background-color rounded transition-colors"
+            >
+              @if (revealTokenLoading()) {
+                <lucide-icon
+                  name="loader-circle"
+                  [size]="16"
+                  class="text-v4-tertiary-text-color animate-spin"
+                />
+              } @else {
+                <lucide-icon
+                  [name]="isTokenRevealed() ? 'eye-off' : 'eye'"
+                  [size]="16"
+                  class="text-v4-tertiary-text-color"
+                />
+              }
+            </button>
+
+            <!-- Copy button -->
+            <button [attr.aria-label]="copied()
+                  ? 'Copied!'
+                  : isTokenRevealed()
+                    ? 'Copy to clipboard'
+                    : 'Reveal API key first to copy'"
+              type="button"
+              [matTooltip]="
+                copied()
+                  ? 'Copied!'
+                  : isTokenRevealed()
+                    ? 'Copy to clipboard'
+                    : 'Reveal API key first to copy'
+              "
+              [disabled]="!isTokenRevealed()"
+              (click)="copyToClipboard('api')"
+              class="p-2 hover:bg-v4-tertiary-background-color rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <lucide-icon
+                name="copy"
+                [size]="16"
+                class="text-v4-tertiary-text-color"
+              />
+            </button>
+          </div>
+        </div>
+
+        <!-- Generate New Key button -->
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Generate New Key"
+          lucideIcon="refresh-cw"
+          [lucideIconSize]="14"
+          customHeight="44px"
+          [loading]="generateLoading()"
+          (clickEvent)="generateNewKey()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Connect with your partner Card -->
+  <div
+    class="relative overflow-hidden p-6 bg-v4-secondary-background-color border-2 border-v4-border-color rounded-xl"
+    style="box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px"
+  >
+    <h2 class="text-sm font-bold text-v4-main-text-color mb-4">
+      Connect with your partner
+    </h2>
+    <div class="mb-4">
+      <label
+        for="partner-key"
+        class="block text-xs font-semibold text-v4-secondary-text-color mb-2"
+      >
+        Reveal and copy this key to securely connect your partner integration.
+      </label>
+
+      <!-- Input row -->
+      <div class="flex gap-2">
+        <!-- Password input with eye/copy overlays -->
+        <div class="flex-1 relative">
+          <!-- Copied! popup -->
+          <div
+            class="absolute top-full right-0 mt-2 px-3 py-1 bg-v4-primary-brand-color text-white text-xs font-semibold rounded-lg shadow-md pointer-events-none z-10 transition-all duration-300"
+            [class.opacity-0]="!partnerCopied()"
+            [class.opacity-100]="partnerCopied()"
+            [class.translate-y-1]="!partnerCopied()"
+            [class.translate-y-0]="partnerCopied()"
+          >
+            Copied!
+            <div
+              class="absolute -top-1 right-4 w-2 h-2 bg-v4-primary-brand-color rotate-45"
+            ></div>
+          </div>
+          <input
+            id="partner-key"
+            [type]="isPartnerTokenRevealed() ? 'text' : 'password'"
+            [ngModel]="partnerTokenValue()"
+            placeholder="••••••••••••••••••••••••••••••••"
+            readonly
+            class="flex h-11 min-h-[44px] w-full rounded-xl border px-4 py-3 text-sm shadow-sm transition-all duration-200 border-v4-border-color bg-v4-secondary-background-color text-v4-main-text-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-brand-focus-color disabled:cursor-not-allowed disabled:opacity-50 pr-20"
+          />
+          <div
+            class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1"
+          >
+            <!-- Eye / reveal button -->
+            <button [attr.aria-label]="revealPartnerTokenLoading()
+                  ? 'Loading...'
+                  : isPartnerTokenRevealed()
+                    ? 'Hide partner key'
+                    : 'Click to reveal partner key'"
+              type="button"
+              (click)="revealPartnerToken()"
+              [matTooltip]="
+                revealPartnerTokenLoading()
+                  ? 'Loading...'
+                  : isPartnerTokenRevealed()
+                    ? 'Hide partner key'
+                    : 'Click to reveal partner key'
+              "
+              class="p-2 hover:bg-v4-tertiary-background-color rounded transition-colors"
+            >
+              @if (revealPartnerTokenLoading()) {
+                <lucide-icon
+                  name="loader-circle"
+                  [size]="16"
+                  class="text-v4-tertiary-text-color animate-spin"
+                />
+              } @else {
+                <lucide-icon
+                  [name]="isPartnerTokenRevealed() ? 'eye-off' : 'eye'"
+                  [size]="16"
+                  class="text-v4-tertiary-text-color"
+                />
+              }
+            </button>
+
+            <!-- Copy button -->
+            <button [attr.aria-label]="partnerCopied()
+                  ? 'Copied!'
+                  : isPartnerTokenRevealed()
+                    ? 'Copy to clipboard'
+                    : 'Reveal partner key first to copy'"
+              type="button"
+              [matTooltip]="
+                partnerCopied()
+                  ? 'Copied!'
+                  : isPartnerTokenRevealed()
+                    ? 'Copy to clipboard'
+                    : 'Reveal partner key first to copy'
+              "
+              [disabled]="!isPartnerTokenRevealed()"
+              (click)="copyToClipboard('partner')"
+              class="p-2 hover:bg-v4-tertiary-background-color rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <lucide-icon
+                name="copy"
+                [size]="16"
+                class="text-v4-tertiary-text-color"
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

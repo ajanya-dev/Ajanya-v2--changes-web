@@ -1,0 +1,1759 @@
+/* V4 Global Overrides - Wrapper classes to replace ::ng-deep in components */
+
+// Raise CDK overlay above detail side panel (z-index 10003) when V4 alert dialogs open
+.cdk-global-overlay-wrapper:has(.v4_alert_wrapper) {
+  z-index: 10004 !important;
+}
+
+// MatTooltip renders into `.cdk-overlay-container` (z-index 10001), which sits
+// UNDER an open detail side panel (backdrop 10002, surface 10003) — so every
+// tooltip triggered inside a panel paints behind it and reads as "not showing".
+// Lift the container while a tooltip is on screen; `.mat-mdc-tooltip-panel` is
+// only ever in the overlay, so the lift drops back the moment it hides. Skipped
+// when a MatDialog is open, so the lift can't drag a dialog surface and its
+// backdrop over the panel (the dialog rules below already place it).
+body:has(.panel-backdrop)
+  .cdk-overlay-container:not(:has(.mat-mdc-dialog-container)):has(
+    .mat-mdc-tooltip-panel
+  ) {
+  z-index: 10020 !important;
+}
+
+// Lift the CDK overlay container above any open detail side panel (rendered via
+// DetailSidePanelComponent into document.body with backdrop class .panel-backdrop)
+// the moment a second dialog appears in the overlay — i.e. when a sub-modal is
+// opened from inside the drawer on top of an existing parent modal. Each
+// MatDialog wraps its pane in its own .cdk-global-overlay-wrapper, so 2+
+// sibling wrappers indicates 2+ stacked dialogs; the drawer stays on top
+// while only the parent modal is open.
+body:has(.panel-backdrop)
+  .cdk-overlay-container:has(
+    .cdk-global-overlay-wrapper ~ .cdk-global-overlay-wrapper
+  ) {
+  z-index: 10010 !important;
+}
+
+// When the container has been lifted above the drawer (above rule), hide every
+// modal wrapper and backdrop that isn't the newest one. Both modals live in
+// the same stacking context, so without this the *previously* opened modal
+// (the parent of the drawer) would also pop in front of the drawer. We keep
+// only the latest wrapper/backdrop visible — that's the modal opened from
+// inside the drawer. When the sub-modal closes the parent rule stops matching
+// and the older modal returns to view automatically.
+body:has(.panel-backdrop)
+  .cdk-overlay-container:has(
+    .cdk-global-overlay-wrapper ~ .cdk-global-overlay-wrapper
+  )
+  > .cdk-global-overlay-wrapper:has(~ .cdk-global-overlay-wrapper),
+body:has(.panel-backdrop)
+  .cdk-overlay-container:has(
+    .cdk-global-overlay-wrapper ~ .cdk-global-overlay-wrapper
+  )
+  > .cdk-overlay-backdrop:has(~ .cdk-overlay-backdrop) {
+  display: none !important;
+}
+
+// ========================================
+// V4 Zil Sign — Send for Signature confirm modal
+// Strip MatDialog's default surface padding/background so the inner template
+// fully owns the visual (no double-padding ring around the dialog).
+// Selector mirrors `.paddingless-modal` in modal_common.scss to win specificity
+// over `.cdk-global-overlay-wrapper .mat-mdc-dialog-container .mat-mdc-dialog-surface`.
+// ========================================
+.v4-zil-sign-confirm-modal {
+  .mat-mdc-dialog-container {
+    .mat-mdc-dialog-surface {
+      padding: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+    }
+  }
+}
+
+// ========================================
+// V4 Mat Select Override
+// Used by: check-mail-settings-modal-v4
+// ========================================
+.v4-settings-select-wrapper {
+  .mat-mdc-select-value {
+    padding-left: 12px !important;
+    font-family: var(--font-funnel) !important;
+    font-size: 0.875rem !important;
+    color: var(--foreground) !important;
+  }
+
+  .mat-mdc-select-placeholder {
+    color: var(--muted-foreground) !important;
+    font-family: var(--font-funnel) !important;
+  }
+
+  .mat-mdc-select-arrow {
+    padding-right: 12px !important;
+    color: var(--muted-foreground) !important;
+  }
+}
+
+// ========================================
+// V4 Common Input Override
+// Used by: add-mail-address-modal-v4
+// ========================================
+.v4-mail-address-form {
+  app-common-input-v4 {
+    display: block;
+    width: 100%;
+
+    .relative.inline-block {
+      display: block;
+      width: 100%;
+    }
+
+    input {
+      width: 100% !important;
+    }
+  }
+}
+
+// ========================================
+// V4 Common Input Override
+// Used by: check-mail-modal-v4
+// ========================================
+.v4-check-mail-form {
+  app-common-input-v4 {
+    display: block;
+    width: 100%;
+
+    .relative.inline-block {
+      display: block;
+      width: 100%;
+    }
+
+    input {
+      width: 100% !important;
+    }
+  }
+}
+
+// ========================================
+// V4 Common Input Override
+// Used by: update-payee-modal-v4
+// ========================================
+.v4-update-payee-form {
+  app-common-input-v4 {
+    display: block;
+    width: 100%;
+
+    .relative.inline-block {
+      display: block;
+      width: 100%;
+    }
+
+    input {
+      width: 100% !important;
+    }
+  }
+
+  // Ensures dropdown host element is block-level to match input field alignment
+  app-v4-common-dropdown {
+    display: block;
+    width: 100%;
+  }
+}
+
+// ========================================
+// V4 Tooltip Surface Override (global)
+// Previously ::ng-deep in check-mail-modal-v4
+// ========================================
+.mdc-tooltip__surface {
+  min-width: unset !important;
+  max-width: 600px !important;
+  width: auto !important;
+  white-space: pre-line !important;
+  font-family: var(--font-peridot) !important;
+}
+
+// ========================================
+// V4 Dialog Overlay Responsive (panelClass)
+// Used by: check-mail-modal-v4
+// ========================================
+@media (max-width: 1199.98px) {
+  .v4-check-mail-overlay {
+    max-width: 95% !important;
+  }
+}
+
+// ========================================
+// V4 Ng Select Dropdown Override
+// Used by: bank-ac-dropdown-v4 and other v4 dropdown components
+// ========================================
+.angular-ocw-v4-ng-select-dropdown {
+  @apply text-sm;
+
+  .ng-select-container {
+    border-radius: 0.5rem !important;
+    border: 1px solid var(--v4-input-border-color) !important;
+    background-color: var(--v4-secondary-background-color) !important;
+
+    .ng-value-container {
+      padding-left: 1rem !important;
+    }
+  }
+
+  .height-0 {
+    .ng-select-container {
+      height: 44px;
+      .ng-input {
+        padding-left: 16px !important;
+        top: 9px !important;
+      }
+    }
+  }
+
+  .height-1 {
+    .ng-select-container {
+      height: 40px; // ZM dense tier
+      min-height: 40px !important;
+    }
+  }
+
+  .height-2 {
+    .ng-select-container {
+      height: 44px; // ZM form tier (was 54px)
+      .ng-input {
+        padding-left: 16px !important;
+        top: 9px !important;
+      }
+    }
+  }
+
+  .ng-select.ng-select-opened.ng-select-bottom,
+  .ng-select.ng-select-opened.ng-select-top {
+    .ng-select-container {
+      background-color: var(--v4-secondary-background-color);
+      border: 2px solid var(--v4-primary-brand-color) !important;
+      outline: none;
+      color: var(--v4-secondary-text-color);
+      border-radius: 0.5rem !important;
+    }
+  }
+
+  // Invalid state — red border on required dropdowns
+  ng-select.v4-dropdown-invalid .ng-select-container {
+    border-color: var(--v4-common-red-color) !important;
+  }
+
+  ng-select.v4-dropdown-invalid.ng-has-value .ng-select-container {
+    border-color: var(--v4-common-red-color) !important;
+  }
+
+  // Scoped: MAIL FROM / MAIL TO dropdowns (no left icon) — pull cursor/text closer to left edge
+  &.v4-mail-address-dropdown {
+    .height-0 .ng-select-container .ng-input {
+      padding-left: 8px !important;
+    }
+
+    .ng-select-container .ng-value-container {
+      padding-left: 8px !important;
+    }
+  }
+
+  // Scoped: source floating filter (bank/wallet/card picker in the 44px filter row) —
+  // 10px placeholder, selected label and typed search text, on a shorter control than
+  // the shared height-1 (32px) so it sits inside the filter row's 36px content box.
+  &.v4-ff-source-dropdown {
+    .ng-select-container {
+      height: 28px !important;
+      min-height: 28px !important;
+    }
+
+    .ng-value-container {
+      font-size: 10px !important;
+
+      .ng-placeholder,
+      .ng-value,
+      .ng-input > input {
+        font-size: 10px !important;
+      }
+
+      // Theme pins the absolute search input at top:5px for a 36px box; centre it here.
+      .ng-input {
+        top: 0 !important;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+      }
+    }
+  }
+
+  // Scoped: shared state/country location selects (app-common-{state,country}-select-v4).
+  // Suppress ng-select's default blue focus ring/border that lingers after a value
+  // is picked — keep the neutral input border instead. The opened state still shows
+  // the brand-color border (rule above).
+  &.ocw-location-select {
+    ng-select.ng-select-focused:not(.ng-select-opened) .ng-select-container {
+      border-color: var(--v4-input-border-color) !important;
+      box-shadow: none !important;
+    }
+  }
+
+  // ng-select's default theme hardcodes the loading spinner to a dark gray
+  // ring (rgba(66,66,66,...)), which is invisible against V4's dark-mode
+  // background. Use theme-aware colors so it's visible in both themes.
+  .ng-spinner-loader {
+    border-top-color: var(--v4-subtle-text-color) !important;
+    border-right-color: var(--v4-subtle-text-color) !important;
+    border-bottom-color: var(--v4-subtle-text-color) !important;
+    border-left-color: var(--v4-primary-brand-color) !important;
+  }
+}
+
+.angular-ocw-v4-ng-select-dropdown .ng-dropdown-panel,
+.ng-dropdown-panel-v4.ng-dropdown-panel {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  background-color: var(--v4-secondary-background-color);
+  padding: 0px;
+  margin-top: 5px;
+  border-radius: 7px;
+  border: 1px solid var(--v4-input-border-color);
+  background-color: var(--v4-secondary-background-color);
+  overflow: hidden;
+  // width: max-content !important;
+  min-width: 200px;
+  &.w-auto {
+    width: auto !important;
+  }
+  .ng-dropdown-header {
+    border: 0;
+    padding: 8px 10px;
+    padding-bottom: 0px !important;
+  }
+  .ng-dropdown-footer {
+    border: 0;
+    padding: 5px;
+  }
+  .ng-dropdown-panel-items {
+    max-height: 240px;
+    padding: 8px 10px 12px;
+    border-radius: inherit;
+    overflow-x: hidden;
+    &::-webkit-scrollbar {
+      height: 5px;
+      width: 5px;
+    }
+    .ng-option {
+      box-sizing: border-box;
+      max-width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--v4-input-border-color);
+      border-radius: 0.5rem;
+      font-family: "Inter", Arial, sans-serif;
+      font-size: 14px;
+      font-style: normal;
+      line-height: normal;
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 2px 10px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+      background-color: var(--v4-secondary-background-color);
+      &.ng-option-marked {
+        background-color: var(--v4-tertiary-background-color);
+        border-color: var(--v4-primary-brand-color);
+      }
+      &.ng-option-selected {
+        background-color: var(--v4-tertiary-background-color);
+        border-color: var(--v4-primary-brand-color);
+      }
+      .add-new-btn-ng-option {
+        display: block;
+        flex: 1;
+      }
+      .main-text-highlight {
+        color: var(--v4-main-text-color);
+        font-weight: 500;
+      }
+      .add-new-btn-ng-option {
+        height: 33px;
+        border-radius: 5px;
+        .add-new-text-ng-option {
+          font-family: "Inter", Arial, sans-serif;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: normal;
+          letter-spacing: 0.42px;
+        }
+      }
+      .ng-option-label {
+        color: var(--v4-main-text-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        p.main-text-highlight {
+          font-weight: 500;
+        }
+        width: 100%;
+      }
+    }
+    .ng-option-disabled.ng-optgroup .ng-option-label {
+      color: var(--v4-secondary-text-color);
+      font-size: 12px;
+    }
+    .ng-option.ng-option-disabled:not(.ng-optgroup) {
+      // notFoundText/loadingText ("No banks found", "Loading...", etc.)
+      // render as a bare text node here with no .ng-option-label child, so
+      // it never got an explicit color — it fell back to the generic
+      // .ng-option color (_overrides.scss) dimmed to 50% opacity, which
+      // read as barely visible in both themes.
+      color: var(--v4-secondary-text-color);
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .ng-dropdown-panel.ng-select-bottom
+      .ng-dropdown-panel-items
+      .ng-option:last-child {
+      border-radius: 0.5rem !important;
+    }
+  }
+}
+
+// The Select Bank/Wallet dropdowns are narrow (w-[130px] trigger), so the
+// not-found message ("No banks found") clips under ng-select's built-in
+// nowrap/ellipsis on .ng-option. Scoped to .payment-source only so other,
+// wider v4 dropdowns keep their default truncation behavior.
+.ng-dropdown-panel-v4.ng-dropdown-panel.payment-source {
+  .ng-dropdown-panel-items .ng-option.ng-option-disabled:not(.ng-optgroup) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+}
+.angular-ocw-v4-ng-select-dropdown
+  .ng-dropdown-panel
+  .ng-dropdown-panel-items
+  .ng-option:last-child,
+.ng-dropdown-panel-v4.ng-dropdown-panel
+  .ng-dropdown-panel-items
+  .ng-option:last-child {
+  border-radius: 0.5rem !important;
+}
+.v4-column-menu {
+  max-width: none !important;
+  width: 348px;
+
+  .mat-mdc-menu-content {
+    padding: 0 !important;
+  }
+
+  .v4-col-panel {
+    padding: 14px 14px 0;
+  }
+
+  .v4-col-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .v4-col-title {
+    font-family: var(--font-funnel);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--v4-main-text-color);
+  }
+
+  .v4-col-count {
+    font-family: var(--font-peridot);
+    font-size: 11px;
+    color: var(--v4-subtle-text-color);
+  }
+
+  .v4-col-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--v4-input-border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--v4-primary-background-color);
+    color: var(--v4-subtle-text-color);
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-family: var(--font-peridot);
+      font-size: 12px;
+      color: var(--v4-main-text-color);
+    }
+
+    button {
+      display: flex;
+      color: var(--v4-subtle-text-color);
+    }
+  }
+
+  .v4-col-bulk {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 2px 4px;
+
+    button {
+      font-family: var(--font-peridot);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--v4-primary-brand-bold-color);
+    }
+  }
+
+  .v4-col-bulk-sep {
+    width: 1px;
+    height: 10px;
+    background-color: var(--v4-border-color);
+  }
+
+  .v4-col-list {
+    max-height: 288px;
+    overflow-y: auto;
+    padding-bottom: 8px;
+  }
+
+  .v4-col-group {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 6px 2px 4px;
+    background-color: var(--v4-secondary-background-color);
+    font-family: var(--font-peridot);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--v4-subtle-text-color);
+  }
+
+  .v4-col-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    text-align: left;
+
+    &:not(.is-locked):hover {
+      background-color: var(--v4-list-hover-color);
+    }
+
+    &.is-locked {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  .v4-col-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--v4-input-border-color);
+    border-radius: 4px;
+    background-color: var(--v4-primary-background-color);
+    color: transparent;
+
+    &.is-on {
+      border-color: var(--v4-primary-brand-color);
+      background-color: var(--v4-primary-brand-color);
+      color: #fff;
+    }
+  }
+
+  .v4-col-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-peridot);
+    font-size: 12px;
+    color: var(--v4-main-text-color);
+  }
+
+  .v4-col-lock {
+    flex-shrink: 0;
+    color: var(--v4-subtle-text-color);
+  }
+
+  .v4-col-empty {
+    padding: 12px 4px;
+    font-family: var(--font-peridot);
+    font-size: 12px;
+    color: var(--v4-subtle-text-color);
+  }
+}
+
+// View-panel header ⋮ menu (detail side panel): brand icons, red only for destructive.
+.v4-action-menu.v4-action-menu--view-panel .mat-mdc-menu-item-text > div {
+  &:not(.v4-danger-item) > lucide-icon {
+    color: var(--v4-primary-brand-bold-color);
+  }
+}
+
+// View-panel ⋮ menu: inset, rounded, hoverable items (design "Actions" menu).
+.v4-action-menu.v4-action-menu--view-panel {
+  min-width: 170px;
+
+  .mat-mdc-menu-content {
+    padding: 8px 6px !important;
+  }
+
+  .v4-menu-group-label {
+    padding: 2px 10px 6px !important;
+    font-size: 10px !important;
+    letter-spacing: 0.06em;
+  }
+
+  .mat-mdc-menu-item {
+    --mdc-list-list-item-one-line-container-height: 30px;
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    border-radius: 8px;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background-color: var(--v4-list-hover-color) !important;
+    }
+
+    &:has(.v4-danger-item):hover {
+      background-color: var(--v4-badge-error-bg-color) !important;
+    }
+  }
+
+  .mat-mdc-menu-item-text > div {
+    gap: 10px;
+  }
+}
+
+.v4-action-menu {
+  --mat-menu-container-color: var(--v4-secondary-background-color);
+  border: 1px solid var(--v4-border-color) !important;
+  border-radius: 0.75rem !important; // design O5: rounded-xl
+
+  .mat-mdc-menu-item:focus:not(:hover) {
+    background-color: transparent !important;
+  }
+
+  .mat-mdc-menu-content {
+    padding: 4px 0;
+    background-color: var(--v4-secondary-background-color) !important;
+  }
+
+  .mat-mdc-menu-item-text {
+    font-family: var(--font-peridot) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      > span {
+        color: var(--v4-main-text-color) !important;
+        font-size: 12px !important;
+      }
+
+      > lucide-icon {
+        color: var(--v4-tertiary-text-color);
+      }
+
+      &.v4-danger-item {
+        > span {
+          color: var(--v4-badge-error-text-color) !important;
+        }
+        > lucide-icon {
+          color: var(--v4-badge-error-text-color) !important;
+        }
+      }
+
+      &.v4-warning-item {
+        > span {
+          color: var(--v4-badge-warning-text-color) !important;
+        }
+        > lucide-icon {
+          color: var(--v4-badge-warning-text-color) !important;
+        }
+      }
+
+      &.v4-success-item {
+        > span {
+          color: var(--v4-badge-success-text-color) !important;
+        }
+        > lucide-icon {
+          color: var(--v4-badge-success-text-color) !important;
+        }
+      }
+    }
+  }
+
+  .mat-mdc-menu-item {
+    padding: 5px 14px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    // MDC drives item height off this var (default 48px). Compact with a little
+    // breathing room.
+    --mdc-list-list-item-one-line-container-height: 34px;
+  }
+
+  // Item label sizing — larger, readable options; clearly bigger than the
+  // section headers below so the two are visually distinct.
+  .v4-menu-item {
+    gap: 8px !important;
+    font-size: 12px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    line-height: 1.3 !important;
+
+    span {
+      font-size: 12px !important;
+    }
+  }
+
+  // Wraps a mat-menu-item button + its trailing info icon. The icon is a
+  // sibling of the (possibly disabled) button, not a descendant, so it
+  // always receives hover events — and can always show its tooltip — even
+  // when the button itself is natively disabled (disabled buttons block
+  // pointer events for their own descendants, but not for siblings).
+  // .v4-menu-item is shared by ~28 other v4 action menus that have no info
+  // icon, so the extra right padding is scoped to only apply inside this
+  // wrapper rather than on the base .v4-menu-item rule above.
+  .v4-menu-item-row {
+    position: relative;
+
+    .v4-menu-item {
+      // Reserves room for the absolutely-positioned
+      // .v4-menu-item-tooltip-icon (14px icon + 14px offset + gap) so labels
+      // never run underneath it and wrap to a second line.
+      padding-right: 36px !important;
+    }
+  }
+
+  .v4-menu-item-tooltip-icon {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    color: var(--v4-subtle-text-color);
+    cursor: pointer !important;
+  }
+
+  // Grouped-menu section header — reads as a LABEL, not a clickable option:
+  // muted, uppercase, wider tracking, and a hairline divider above each group
+  // so ACTIONS / DOCUMENTS / PROOF are clearly separated from their items.
+  .v4-menu-group-label {
+    margin-top: 4px;
+    padding: 10px 14px 4px !important;
+    border-top: 1px solid var(--v4-border-subtle-color);
+    font-family: var(--font-peridot);
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--v4-subtle-text-color);
+    pointer-events: none;
+  }
+
+  // First heading sits tight to the menu's top padding (no divider, no double gap).
+  .mat-mdc-menu-content > .v4-menu-group-label:first-child {
+    margin-top: 0;
+    padding-top: 6px !important;
+    border-top: 0;
+  }
+
+  // Destructive item (Delete) — red text + icon (design O5). Applies on every
+  // .v4-action-menu (All, Check, …) so the danger styling is consistent.
+  .mat-mdc-menu-item.v4-menu-item-danger .v4-menu-item {
+    &,
+    span,
+    lucide-icon {
+      color: var(--v4-common-red-color) !important;
+    }
+  }
+
+  // Currently picked option (New-check Print menu) — tinted + ticked so the
+  // choice stays visible when the menu is reopened.
+  .mat-mdc-menu-item.v4-menu-item-selected {
+    background-color: var(--v4-list-hover-color);
+
+    .mat-mdc-menu-item-text > div {
+      > span,
+      > lucide-angular {
+        color: var(--v4-common-blue-color) !important;
+      }
+    }
+  }
+}
+
+// Dark mode: Material's default menu shadow is dark-on-dark (invisible on the
+// dark surface), so the 3-dot action menu blends into the page. Lift it with a
+// strong black shadow + a hairline light ring + a clearer border — mirrors the
+// source-select dropdown fix.
+.dark-mode .v4-action-menu {
+  border-color: color-mix(
+    in srgb,
+    var(--v4-main-text-color) 18%,
+    transparent
+  ) !important;
+  box-shadow:
+    0 24px 64px -12px rgba(0, 0, 0, 0.7),
+    0 8px 20px -6px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+// ========================================
+// V4 Export Mat Menu Positioning
+// Used by: v4-data-table export menu
+// ========================================
+.v4-export-mat-menu {
+  margin-top: 16px !important;
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.18),
+    0 4px 10px rgba(15, 23, 42, 0.1) !important;
+
+  // Strengthen the section separators so "Export All Data",
+  // "Filter and Export" and "Export Current Table" read as distinct blocks.
+  .export-menu-container .border-b {
+    border-bottom-width: 1px;
+    border-color: var(--v4-border-color);
+  }
+}
+
+// Dark mode: lift the popover off the page background with a stronger
+// shadow + a slightly brighter border so it stops blending in.
+.dark-mode .v4-export-mat-menu {
+  border-color: #4a5468 !important;
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.55),
+    0 6px 14px rgba(0, 0, 0, 0.4) !important;
+
+  .export-menu-container .border-b {
+    border-color: #4a5468;
+  }
+}
+
+// ========================================
+// V4 Bulk Shipping Type Panel Override
+// Used by: v4-check-mail-type2-bulk
+// ========================================
+.bulk-shipping-type-panel {
+  .mat-mdc-option .mdc-list-item__primary-text {
+    font-family: var(--font-funnel) !important;
+    font-size: 12px !important;
+    width: 100%;
+  }
+}
+
+.angular-v4-multi-dropdown-filter {
+  .ng-select-container .ng-value-container .ng-placeholder {
+    color: var(--v4-subtle-text-color) !important;
+    font-size: 10px !important;
+  }
+}
+
+// ========================================
+// V4 Checkbox Override (ag-grid style)
+// Used by: v4-payment-links-create
+// ========================================
+.v4-mat-check-box {
+  --mdc-checkbox-selected-checkmark-color: white;
+  --mdc-checkbox-selected-icon-color: var(--v4-primary-brand-color);
+  --mdc-checkbox-selected-focus-icon-color: var(--v4-primary-brand-color);
+  --mdc-checkbox-selected-hover-icon-color: var(--v4-primary-brand-color);
+  --mdc-checkbox-selected-pressed-icon-color: var(--v4-primary-brand-color);
+  --mdc-checkbox-unselected-icon-color: var(--v4-input-border-color);
+  --mdc-checkbox-unselected-hover-icon-color: var(--v4-primary-brand-color);
+  --mdc-checkbox-unselected-focus-icon-color: var(--v4-primary-brand-color);
+  --mdc-checkbox-selected-focus-state-layer-color: transparent;
+  --mdc-checkbox-selected-hover-state-layer-color: transparent;
+  --mdc-checkbox-selected-pressed-state-layer-color: transparent;
+  --mdc-checkbox-unselected-hover-state-layer-color: transparent;
+  --mdc-checkbox-unselected-focus-state-layer-color: transparent;
+  --mdc-checkbox-unselected-pressed-state-layer-color: transparent;
+  --mdc-checkbox-state-layer-size: 20px;
+}
+
+.v4-checkbox {
+  .mdc-checkbox {
+    width: 20px !important;
+    height: 20px !important;
+    padding: 0 !important;
+    flex: 0 0 20px !important;
+  }
+
+  .mdc-checkbox__background {
+    width: 20px !important;
+    height: 20px !important;
+    top: 0 !important;
+    left: 0 !important;
+    border-radius: 4px !important;
+    border-width: 1.5px !important;
+    border-color: var(--v4-input-border-color) !important;
+  }
+
+  // Checked state — match ag-grid v4 checkbox
+  .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+  .mdc-checkbox__native-control:enabled:indeterminate
+    ~ .mdc-checkbox__background {
+    background-color: var(--v4-primary-brand-color) !important;
+    border-color: var(--v4-primary-brand-color) !important;
+  }
+
+  .mat-mdc-checkbox-touch-target {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .mdc-checkbox__ripple,
+  .mat-mdc-checkbox-ripple {
+    display: none !important;
+  }
+}
+
+// ========================================
+// V4 Common Dropdown — Trigger / Container
+// Works with: ng-select, custom CDK overlay buttons
+// Usage: Add class "v4-common-dropdown" to the wrapper element
+// Add ".compact" modifier for ag-grid floating filters
+// ========================================
+.v4-common-dropdown {
+  font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+
+  // Trigger — targets ng-select and plain buttons
+  .ng-select-container,
+  > button,
+  .v4-dropdown-trigger {
+    height: 44px;
+    min-height: 44px;
+    padding: 12px 16px;
+    border-radius: 0.75rem;
+    border: 1px solid var(--v4-border-color);
+    background-color: var(--v4-secondary-background-color);
+    color: var(--v4-main-text-color);
+    font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+    font-size: 14px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #d1d5db;
+    }
+  }
+
+  // Focus / opened state
+  .ng-select.ng-select-opened .ng-select-container,
+  .ng-select.ng-select-focused .ng-select-container,
+  > button:focus,
+  .v4-dropdown-trigger:focus {
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    outline: none;
+  }
+
+  // Placeholder
+  .ng-placeholder {
+    color: var(--v4-subtle-text-color) !important;
+    font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+  }
+
+  // Value text
+  .ng-value-label {
+    color: var(--v4-main-text-color);
+    font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+    font-size: 14px;
+  }
+
+  // Arrow
+  .ng-arrow-wrapper .ng-arrow {
+    border-color: var(--v4-tertiary-text-color) transparent transparent;
+  }
+
+  // Dark mode
+  .dark-mode & {
+    .ng-select-container:hover,
+    > button:hover,
+    .v4-dropdown-trigger:hover {
+      border-color: #475569;
+    }
+  }
+
+  // ---- Compact modifier (ag-grid floating filters) ----
+  &.compact {
+    .ng-select-container,
+    > button,
+    .v4-dropdown-trigger {
+      height: 28px;
+      min-height: 28px;
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 0.5rem;
+    }
+
+    .ng-value-label {
+      font-size: 10px;
+    }
+  }
+}
+
+// ========================================
+// V4 Common Dropdown — Panel (CDK overlay)
+// Works with: ng-select panels, custom CDK overlay panels
+// Usage:
+//   ng-select:   [panelClass]="'v4-common-dropdown-panel'"
+//   CDK overlay: add class directly to the panel <div>
+// Add ".compact" modifier for ag-grid floating filters
+// ========================================
+.v4-common-dropdown-panel {
+  background-color: var(--v4-secondary-background-color);
+  border: 1px solid var(--v4-border-color);
+  border-radius: 0.75rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  overflow: hidden;
+  font-family: var(--font-peridot, "Plus Jakarta Sans", sans-serif);
+
+  // ---- Dropdown items (custom CDK overlays / ag-grid filters) ----
+  .v4-dropdown-item {
+    padding: 10px 16px;
+    min-height: 40px;
+    font-size: 14px;
+    color: var(--v4-main-text-color);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+
+    &:hover,
+    &.active {
+      background-color: #f3f4f6;
+    }
+
+    &.selected {
+      background-color: #f3f4f6;
+      font-weight: 500;
+    }
+
+    &.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+
+  // ---- Bordered-items variant: each option is a bordered rounded rectangle ----
+  &.bordered-items {
+    padding: 8px;
+
+    .overflow-y-auto {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .v4-dropdown-item {
+      border: 1px solid var(--v4-border-color);
+      border-radius: 0.5rem;
+      background-color: var(--v4-secondary-background-color);
+      padding: 10px 14px;
+
+      &:hover,
+      &.active {
+        border-color: var(--v4-primary-brand-color);
+        background-color: var(--v4-secondary-background-color);
+      }
+
+      &.selected {
+        border-color: var(--v4-primary-brand-color);
+        background-color: var(--v4-secondary-background-color);
+        font-weight: 600;
+      }
+
+      lucide-icon {
+        display: none;
+      }
+    }
+  }
+
+  // ---- ng-select panel items ----
+  .ng-dropdown-panel-items {
+    max-height: 240px;
+    padding: 4px;
+
+    .ng-option {
+      padding: 10px 16px;
+      min-height: 40px;
+      font-size: 14px;
+      color: var(--v4-main-text-color);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+
+      &:hover,
+      &.ng-option-marked {
+        background-color: #f3f4f6;
+      }
+
+      &.ng-option-selected {
+        background-color: #f3f4f6;
+        font-weight: 500;
+      }
+    }
+  }
+
+  // Scrollbar
+  &::-webkit-scrollbar,
+  .ng-dropdown-panel-items::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  // Dark mode
+  .dark-mode & {
+    .v4-dropdown-item {
+      &:hover,
+      &.active {
+        background-color: #334155;
+      }
+
+      &.selected {
+        background-color: #334155;
+      }
+    }
+
+    .ng-dropdown-panel-items .ng-option {
+      &:hover,
+      &.ng-option-marked {
+        background-color: #334155;
+      }
+
+      &.ng-option-selected {
+        background-color: #334155;
+      }
+    }
+  }
+
+  // ---- Compact modifier (ag-grid floating filters) ----
+  &.compact {
+    border-radius: 0.375rem;
+    margin-top: 2px;
+
+    .v4-dropdown-item {
+      padding: 6px 8px;
+      min-height: 28px;
+      font-size: 12px;
+      border-radius: 0.25rem;
+    }
+
+    .ng-dropdown-panel-items {
+      padding: 2px;
+
+      .ng-option {
+        padding: 6px 8px;
+        min-height: 28px;
+        font-size: 12px;
+        border-radius: 0.25rem;
+      }
+    }
+  }
+}
+
+// ========================================
+// Angular Editor — override library global styles
+// Library uses ViewEncapsulation.None — transparent doesn't reliably win.
+// Explicitly match the toolbar background so the label visually blends in.
+// ========================================
+.angular-editor-toolbar .ae-font .ae-picker-label,
+.angular-editor-toolbar .ae-font .ae-picker-label:hover,
+.angular-editor-toolbar .ae-font.ae-expanded .ae-picker-label {
+  background-color: var(--v4-tertiary-background-color) !important;
+}
+
+// Kill the white fade-out gradient on the right edge of the picker label
+.angular-editor-toolbar .ae-font .ae-picker-label::before,
+.angular-editor-toolbar .ae-font .ae-picker-label:hover::before {
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--v4-tertiary-background-color)
+  ) !important;
+}
+
+// ========================================
+// V4 Radio — Small (16px) — fully custom v4 style
+// Usage: Add class "v4-radio-sm" to <input type="radio">
+// ========================================
+.v4-radio-sm {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--v4-subtle-text-color);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  transition: all 200ms;
+  position: relative;
+
+  &:checked {
+    border-color: var(--v4-primary-brand-bold-color);
+    &::after {
+      content: "";
+      position: absolute;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background-color: var(--v4-primary-brand-bold-color);
+      top: 2px;
+      left: 2px;
+    }
+  }
+  &:hover {
+    border-color: var(--v4-primary-brand-bold-color);
+  }
+  &:focus-visible {
+    border-color: var(--v4-primary-brand-bold-color);
+    box-shadow: 0 0 0 2px hsl(var(--v4-primary-brand-bold-color) / 0.2);
+  }
+}
+
+// ========================================
+// V4 Radio — Medium (20px) — fully custom v4 style
+// Usage: Add class "v4-radio-md" to <input type="radio">
+// ========================================
+.v4-radio-md {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--v4-subtle-text-color);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  transition: all 200ms;
+  position: relative;
+
+  &:checked {
+    border-color: var(--v4-primary-brand-bold-color);
+    &::after {
+      content: "";
+      position: absolute;
+      width: 0.625rem;
+      height: 0.625rem;
+      border-radius: 9999px;
+      background-color: var(--v4-primary-brand-bold-color);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+  &:hover {
+    border-color: var(--v4-primary-brand-bold-color);
+  }
+  &:focus-visible {
+    border-color: var(--v4-primary-brand-bold-color);
+    box-shadow: 0 0 0 2px hsl(var(--v4-primary-brand-bold-color) / 0.2);
+  }
+}
+
+// ========================================
+// V4 Checkbox — Small (16px) — custom styled to match AG Grid table checkbox
+// Usage: Add class "v4-checkbox-sm" to <input type="checkbox">
+// ========================================
+.v4-checkbox-sm {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1.5px solid var(--v4-main-text-color);
+  border-radius: 4px;
+  background-color: transparent;
+  position: relative;
+  flex-shrink: 0;
+
+  &:checked {
+    background-color: var(--v4-primary-brand-color);
+    border-color: var(--v4-primary-brand-color);
+
+    &::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 4px;
+      height: 8px;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v4-primary-brand-color);
+    outline-offset: 1px;
+  }
+}
+
+// ========================================
+// V4 Checkbox — Medium (20px) — custom styled to match AG Grid table checkbox
+// Usage: Add class "v4-checkbox-md" to <input type="checkbox">
+// ========================================
+.v4-checkbox-md {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1.5px solid var(--v4-main-text-color);
+  border-radius: 4px;
+  background-color: transparent;
+  position: relative;
+  flex-shrink: 0;
+
+  &:checked {
+    background-color: var(--v4-primary-brand-color);
+    border-color: var(--v4-primary-brand-color);
+
+    &::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 5px;
+      height: 10px;
+      border: solid #ffffff;
+      border-width: 0 2.5px 2.5px 0;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v4-primary-brand-color);
+    outline-offset: 1px;
+  }
+}
+
+// ========================================
+// Shipping Type Dropdown — wider panel for full text
+// Used by: v4-check-mail-type2-bulk
+// ========================================
+// Shipping Type Dropdown — auto-width panel for full text visibility
+// Used by: v4-check-mail-type2-bulk (header "Apply shipping to all")
+ng-dropdown-panel.shipping-type-panel .ng-option {
+  white-space: nowrap;
+}
+
+// ========================================
+// V4 Multi-Select Dropdowns (shared)
+// Used by: bank-multi-select-dropdown-v4,
+//          cards-multi-select-dropdown-v4,
+//          wallet-multi-select-dropdown-v4
+// ========================================
+app-bank-multi-select-dropdown-v4,
+app-cards-multi-select-dropdown-v4,
+app-wallet-multi-select-dropdown-v4 {
+  @apply block w-full;
+
+  .angular-ocw-v4-ng-select-dropdown .ng-select {
+    @apply w-full #{!important};
+  }
+
+  .angular-ocw-v4-ng-select-dropdown .ng-select-container {
+    border-radius: 0.5rem !important;
+    min-height: 44px;
+  }
+
+  .angular-ocw-v4-ng-select-dropdown
+    .ng-select
+    .ng-select-container
+    .ng-value-container
+    .ng-input
+    input {
+    caret-color: var(--v4-main-text-color) !important;
+    color: var(--v4-main-text-color) !important;
+  }
+
+  .angular-ocw-v4-ng-select-dropdown
+    .ng-select.ng-select-multiple
+    .ng-select-container
+    .ng-value-container
+    .ng-placeholder {
+    top: 50%;
+    transform: translateY(-50%);
+    padding-bottom: 0;
+  }
+
+  .angular-ocw-v4-ng-select-dropdown
+    .ng-select.ng-select-multiple
+    .ng-select-container
+    .ng-value-container
+    .ng-value {
+    @apply inline-flex items-center gap-1 max-w-[150px] rounded-md px-2 py-0.5 text-xs border border-v4-border-color bg-v4-tertiary-background-color text-v4-main-text-color;
+
+    .ng-value-label {
+      @apply truncate text-v4-main-text-color;
+    }
+
+    .ng-value-icon {
+      @apply text-v4-secondary-text-color;
+
+      &:hover {
+        @apply text-v4-main-text-color bg-transparent;
+      }
+    }
+  }
+
+  .angular-ocw-v4-ng-select-dropdown .ng-dropdown-panel {
+    @apply w-full #{!important};
+    left: 0 !important;
+
+    .ng-dropdown-panel-items .ng-option {
+      border: none !important;
+      border-radius: 0 !important;
+      margin-bottom: 0 !important;
+      min-height: auto !important;
+      @apply px-2.5 py-0 bg-transparent max-w-full overflow-hidden #{!important};
+
+      &.ng-option-marked {
+        @apply bg-v4-tertiary-background-color #{!important};
+        border: none !important;
+      }
+
+      &.ng-option-selected {
+        @apply bg-transparent #{!important};
+        border: none !important;
+
+        &.ng-option-marked {
+          @apply bg-v4-tertiary-background-color #{!important};
+        }
+      }
+
+      &:last-child {
+        border-radius: 0 !important;
+      }
+    }
+  }
+}
+
+// International bank dropdowns — wrap long labels (country names, org ID types)
+// Used by: add-payee-international-bank-v4 (appendTo="body" panels)
+.ng-dropdown-panel.intl-wrap-dropdown
+  .ng-dropdown-panel-items
+  .ng-option-label {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  line-height: 1.4;
+}
+
+// BankAcDropdownV4Component panel must clear stacked Material dialogs
+// when a v4 detail side panel is also open (e.g. Sage settings drawer ->
+// Bank Account Mapping modal -> Map Bank Account modal). In that case the
+// `.cdk-overlay-container` is lifted to z-index 10010 by the rule above
+// (`body:has(.panel-backdrop) .cdk-overlay-container:has(...~...)`), so the
+// dropdown panel must sit above 10010, not the usual 10001/10002 baseline.
+// ng-select v12 forwards the host element's static class list to the
+// body-appended `<ng-dropdown-panel>` via [ngClass], so adding
+// `v4-bank-ac-dropdown-panel` to the BankAcDropdownV4 host's static class
+// lands here.
+.ng-dropdown-panel.v4-bank-ac-dropdown-panel {
+  z-index: 10015 !important;
+}
+
+.ng-dropdown-panel.ng-dropdown-panel-v4 {
+  z-index: 10015 !important;
+}
+
+// Export-check grid dropdowns (QBO / QBD / NetSuite / FreshBooks) sit in narrow
+// grid columns. ng-select pins the body-appended panel to the input width inline,
+// so give this panel (class forwarded from the host) a FIXED width. A fixed width
+// (not max-content) stops the list from widening as longer items load on scroll;
+// overflowing option text is truncated with an ellipsis and its full value is
+// exposed via a hover tooltip (see the ng-option-tmp templates in the HTML).
+// Used by: export-check-v4 (appendTo="body" panels).
+.ng-dropdown-panel.export-check-dropdown-panel {
+  width: 260px !important;
+  max-width: 260px !important;
+}
+
+// Flat, compact option rows for the Export Check dropdowns — the default renders
+// each option as a large bordered box; make them plain rows like a normal select.
+.ng-dropdown-panel.export-check-dropdown-panel
+  .ng-dropdown-panel-items
+  .ng-option {
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+  line-height: 1.3 !important;
+  padding: 7px 12px !important;
+  background-color: transparent !important;
+  font-size: 12px !important;
+
+  &.ng-option-marked,
+  &.ng-option-selected.ng-option-marked {
+    background-color: var(--v4-tertiary-background-color, #eef0fb) !important;
+    border: none !important;
+  }
+  &.ng-option-selected {
+    background-color: transparent !important;
+    border: none !important;
+  }
+}
+
+// ng-select panel appended to body (outside component DOM).
+// Used by: bank / cards / wallet multi-select dropdowns via panelClass "v4-multi-select-panel".
+.v4-multi-select-panel.ng-dropdown-panel .ng-dropdown-panel-items .ng-option,
+.ng-dropdown-panel-v4.v4-multi-select-panel.ng-dropdown-panel
+  .ng-dropdown-panel-items
+  .ng-option {
+  border: none !important;
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  min-height: auto !important;
+  padding: 0 10px !important;
+  background-color: transparent !important;
+  max-width: 100%;
+  overflow: hidden;
+
+  &.ng-option-marked {
+    background-color: var(--v4-tertiary-background-color) !important;
+    border: none !important;
+  }
+
+  &.ng-option-selected {
+    background-color: transparent !important;
+    border: none !important;
+
+    &.ng-option-marked {
+      background-color: var(--v4-tertiary-background-color) !important;
+    }
+  }
+
+  &:last-child {
+    border-radius: 0 !important;
+  }
+}
+
+// Recipient-limits tooltip for the compact International payment form.
+// A mat-tooltip panel is rendered by the CDK at <body> level with no component
+// template behind it, so it cannot be component-scoped. Moved here from the
+// pay-compact override sheet.
+/* Recipient-limits tooltip (International) — taller, 2-line. The CDK overlay
+   renders at <body> level, OUTSIDE .sp-compact, so this rule is top-level. */
+.intl-limits-tip .mdc-tooltip__surface {
+  white-space: pre-line;
+  max-width: 280px;
+  padding: 9px 13px;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+// Compact send-payment: attention shake for the "missing info for this payment"
+// nudge under the payee, and the inline field-level submit error.
+// Both cross component boundaries (.sp-field-err is used by check / wire /
+// international / virtual-card details and the compact page itself), so they live
+// here rather than in any one component. Moved out of the pay-compact override sheet.
+@keyframes sp-missing-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-5px);
+  }
+  30% {
+    transform: translateX(4px);
+  }
+  45% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+  75% {
+    transform: translateX(-1px);
+  }
+}
+
+.sp-shake {
+  animation: sp-missing-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.sp-field-err {
+  margin-top: 4px;
+  min-height: 15px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--v4-common-red-color);
+}
+
+// Promo/upsell card entrance for the compact page.
+@keyframes sp-promo-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Compact field metrics for the Send Payment rails. Global so each rail applies a
+   class instead of repeating the same ::ng-deep block. */
+.sp-dd-compact {
+  .ng-select .ng-select-container {
+    min-height: 44px;
+    height: 44px;
+    border: 1.5px solid var(--v4-border-color);
+    border-radius: 12px;
+    background: var(--v4-secondary-background-color);
+    box-shadow: none;
+    font-size: 13px;
+    color: var(--v4-main-text-color);
+    padding: 0 4px 0 12px;
+  }
+
+  .ng-select .ng-select-container .ng-value-container {
+    padding-left: 0;
+  }
+
+  .ng-select.ng-select-focused .ng-select-container {
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: 0 0 0 3px rgb(32 49 157 / 8%);
+  }
+
+  .ng-select .ng-select-container:hover {
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: none;
+  }
+
+  .ng-select:not(.ng-select-multiple) .ng-clear-wrapper {
+    display: none;
+  }
+}
+
+.sp-date-compact .date-picker-trigger {
+  border-width: 1.5px;
+  border-color: var(--v4-border-color);
+  padding-left: 12px;
+  box-shadow: none;
+
+  span {
+    font-size: 13px;
+  }
+}
+
+/* The compact variant sets text-[13px] through ngClass, but .v4-input-style
+   carries its own font-size and outranks a single utility class. Same element,
+   so pairing the two selectors is enough. */
+input.v4-input-style.text-\[13px\],
+textarea.v4-input-style.text-\[13px\] {
+  font-size: 13px;
+}
+
+/* Additional Details field alignment.
+
+   The self-labelling dropdowns (Category, Payee bank, the generic select) render
+   their own label at 14px with a 9px margin, while the template fields use a
+   13px <label> and rely on the column's 7px gap. The two columns' controls then
+   land at different heights. Pin both to the same size and spacing so each row
+   lines up. Scoped to the rails: the pay-from / payee / method dropdowns sit in
+   un-gapped columns and need their 9px margin. Mirrors the reference's own
+   normalisation in sp-compact-detail-fields.scss. */
+app-wallet-payment,
+app-card-payment,
+app-bank-payment,
+app-bank-check,
+app-international-additional-details {
+  > div {
+    align-items: start;
+  }
+
+  [data-field] > label {
+    margin: 0 !important;
+    min-height: 17px;
+    line-height: 17px;
+  }
+
+  app-sp-category-dropdown,
+  app-sp-payee-bank-dropdown,
+  app-sp-select-dropdown,
+  app-sp-bank-ac-dropdown {
+    .relative > span:first-child {
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      line-height: 17px !important;
+      min-height: 17px;
+      letter-spacing: -0.01em;
+      margin-bottom: 7px !important;
+    }
+  }
+}
+
+// ========================================
+// ZilMoney brand layer (design/zilmoney-rebrand)
+// Spec: docs/superpowers/specs/2026-10-02-zilmoney-rebrand-design.md
+// ========================================
+
+// Teal (secondary brand) is an accent, never text on a Cerulean fill: there it
+// drops to ~1.5:1. Anything teal-coloured sitting on a primary fill reads white.
+.bg-v4-primary-brand-color.text-v4-secondary-brand-color,
+.bg-v4-primary-brand-color .text-v4-secondary-brand-color,
+.bg-v4-primary-brand-bold-color .text-v4-secondary-brand-color {
+  color: #ffffff !important;
+}
+
+// Visible focus for every native control (WCAG 2.4.7), 2px Cerulean ring.
+:is(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--v4-brand-focus-color);
+  outline-offset: 2px;
+}
+
+// Placeholders use the AA placeholder token, not tertiary/subtle greys.
+.v4-input-style::placeholder,
+.ng-select .ng-placeholder {
+  color: var(--v4-placeholder-text-color) !important;
+}

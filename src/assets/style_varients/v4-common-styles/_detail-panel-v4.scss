@@ -1,0 +1,267 @@
+// V4 DETAIL SIDE PANEL — the shared section/card vocabulary every v4 panel
+// renders inside its `.panel-body`. Section spacing belongs to the panel body,
+// not to the cards — cards carry no outer margins.
+
+.panel-body {
+  * {
+    font-family: "Inter", Arial, sans-serif
+      var(--font-peridot),
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+}
+
+// Opt-in gray ground so the lighter `.pd-card` sections lift off it.
+.panel-body--surface {
+  min-height: 100%;
+  background: color-mix(
+    in srgb,
+    var(--v4-border-color) 26%,
+    var(--v4-secondary-background-color)
+  );
+}
+
+// Transparent wrapper: its children lay out as direct children of the body.
+.o4-left-col {
+  display: contents;
+}
+
+// The check preview hides itself below `lg` (see check-preview-v4); drop its
+// wrapper too, or it holds an empty grid cell and the blank slot comes back.
+@media (max-width: 1023.98px) {
+  .o4-check-preview {
+    display: none;
+  }
+}
+
+// One section card.
+.pd-card {
+  padding: 0.75rem;
+  border: 1px solid var(--v4-border-color);
+  border-radius: 0.75rem;
+  background: var(--v4-secondary-background-color);
+}
+
+// Full-bleed title band: the negative margins escape the card's 0.75rem
+// padding, the width adds both sides back.
+.pd-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(100% + 1.5rem);
+  margin: -0.75rem -0.75rem 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--v4-border-color);
+  border-radius: 0.7rem 0.7rem 0 0;
+  background: color-mix(in srgb, var(--v4-border-color) 18%, transparent);
+}
+
+// Collapsed card: the body is gone, so the head is the only element left.
+// Cancel its header→content gap and the card's bottom padding (1.25rem of bare
+// surface otherwise hangs under the heading), and round off the bottom corners
+// the body used to own — a collapsed card is exactly its heading.
+.pd-card-head:only-child {
+  margin-bottom: -0.75rem;
+  border-bottom: none;
+  border-radius: 0.7rem;
+}
+
+// Tint only — flush cards already carry their own border and padding.
+.pd-card-head-flush {
+  background: color-mix(in srgb, var(--v4-border-color) 18%, transparent);
+}
+
+.pd-card-title {
+  margin: 0;
+  font-family: var(--font-peridot), "Plus Jakarta Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--v4-main-text-color);
+}
+
+// Empty-state line ("No … found."): centred in whatever height the card was
+// stretched to, instead of hugging the top of a tall empty tile. The `:has()`
+// rule turns whichever box owns it into a column so the line can grow — scoped
+// to `.panel-body` so the matcher never runs against the whole document.
+.panel-body :has(> .pd-empty) {
+  display: flex;
+  flex-direction: column;
+}
+
+.pd-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+// A label ↔ value data line.
+.pd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 3px 0;
+}
+
+.pd-row-label {
+  font-size: 11px;
+  color: var(--v4-tertiary-text-color);
+}
+
+.pd-row-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--v4-main-text-color);
+}
+
+// A stacked label/value block, split off from the rows above (e.g. Memo).
+.pd-row-block {
+  margin-top: 0.25rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--v4-border-color);
+
+  .pd-row-label {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+}
+
+// Collapsed: one flat column that owns all section spacing (`--surface` panels
+// only, so the older flat panels keep their own).
+.panel-body--surface:not(.panel-body--expanded) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 1.5rem;
+}
+
+// Expanded (⤢): the two-column tile grid.
+.panel-body--expanded {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: auto;
+  gap: 0.875rem;
+  align-items: stretch; // row-mates match height
+  align-content: start;
+  padding: 1rem 1rem 1.5rem;
+
+  // Tiles take the track width, flattened out of `.o4-left-col` or not.
+  > *:not(.pd-full):not(.o4-left-col),
+  > .o4-left-col > *:not(.pd-full) {
+    min-width: 0;
+  }
+
+  // A collapsed tile shrinks to its heading instead of stretching to its
+  // row-mate. Without this, `align-items: stretch` above keeps the collapsed
+  // card at the row height — it reads as still open, and the card beside it
+  // visibly resizes. Collapsing one section now only collapses that section.
+  > *:has(> .pd-card-head:only-child),
+  > *:has(.check-preview-body.hidden),
+  > .o4-left-col > *:has(> .pd-card-head:only-child) {
+    align-self: start;
+  }
+
+  // Descendant selector so flattened `.o4-left-col` cards match too.
+  .pd-full {
+    grid-column: 1 / -1;
+    min-width: 0;
+    max-height: none;
+  }
+
+  // The action card is the panel's footer.
+  .o4-actions-card {
+    order: 1;
+  }
+}
+
+// Opt-in: cap each card's height and scroll its own `.pd-card-body`, so no card
+// sets an oversized grid row. `.pd-full` opts out.
+.panel-body--expanded.panel-body--capped {
+  column-gap: 1.25rem;
+
+  > .pd-card:not(.pd-full) {
+    display: flex;
+    flex-direction: column;
+    max-height: 24rem;
+  }
+
+  .pd-card-head {
+    flex: none;
+  }
+
+  .pd-card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+// The action card takes the height left in the panel (collapsed view; grid
+// rows can't grow only the last one, so expanded keeps the minimum), and the
+// open section — list or empty state — fills it.
+.panel-body--surface {
+  &:not(.panel-body--expanded) > .o4-actions-card {
+    flex: 1 1 auto;
+  }
+
+  > .o4-actions-card {
+    min-height: 20rem;
+  }
+
+  .o4-actions-card,
+  .o4-actions-card > .pd-action-panel,
+  .pd-action-panel > :not(.pd-share-bar) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .o4-actions-card > .pd-action-panel,
+  .pd-action-panel > :not(.pd-share-bar),
+  .pd-action-panel > :not(.pd-empty, .pd-share-bar) > :first-child {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  // An empty list has nothing to scroll, so let it grow past its maxHeight.
+  .pd-action-panel > * > :first-child:has(app-pd-empty-state) {
+    max-height: none !important;
+  }
+
+  .pd-action-panel :has(> app-pd-empty-state) {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.panel-body--fill {
+  .pd-action-panel .v21-btn.v21-sm {
+    font-size: 11px;
+  }
+
+  .v4-ocw-table thead th {
+    &.text-right {
+      text-align: right;
+    }
+
+    &.text-center {
+      text-align: center;
+    }
+  }
+}
+
+// The one loading primitive: a pulsing grey bar.
+.pd-skeleton-bar {
+  background: var(--v4-border-color);
+  animation: pd-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pd-skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}

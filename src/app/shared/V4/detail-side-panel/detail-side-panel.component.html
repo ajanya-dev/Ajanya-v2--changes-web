@@ -1,0 +1,224 @@
+<ng-template cdkPortal>
+  @if (isOpen()) {
+    <!-- Backdrop -->
+    <div
+      class="fixed inset-0 panel-backdrop"
+      [ngClass]="panelClass()"
+      [style.z-index]="backdropZIndex()"
+      role="button"
+      tabindex="0"
+      aria-label="Close panel"
+      @fadeBackdrop
+      (click)="onBackdropClick()"
+      (keydown.enter)="onBackdropClick()"
+      (keydown.space)="onBackdropKeydown($event)"
+    ></div>
+
+    <!-- Panel -->
+    <div
+      class="fixed right-0 top-0 h-full w-full shadow-2xl overflow-y-auto flex flex-col panel-container transition-[max-width] duration-300 ease-out"
+      [ngClass]="panelClass()"
+      [style.z-index]="backdropZIndex() + 1"
+      [style.max-width]="isExpanded() ? expandedWidth() : width()"
+      @slidePanel
+    >
+      <!-- Sticky Header -->
+      <div class="sticky top-0 z-20 panel-header">
+        <div class="flex items-center justify-between gap-3 p-4">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            @if (iconTemplate(); as iconTmpl) {
+              <ng-container [ngTemplateOutlet]="iconTmpl"></ng-container>
+            } @else {
+              <div
+                class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                [style.background-color]="iconBgColor()"
+              >
+                <lucide-icon
+                  [name]="icon()"
+                  [size]="20"
+                  [color]="iconColor()"
+                ></lucide-icon>
+              </div>
+            }
+            @if (headerLoading()) {
+              <div class="flex min-w-0 flex-1 flex-col gap-2">
+                <div class="pd-skeleton-bar h-4 w-28 rounded"></div>
+                <div
+                  class="pd-skeleton-bar h-2.5 w-44 max-w-full rounded"
+                ></div>
+              </div>
+            } @else {
+              <div class="min-w-0">
+                <h2 class="panel-title pr-3">
+                  <span class="min-w-0 truncate" [matTooltip]="title()">{{
+                    title()
+                  }}</span>
+                  @if (titleSuffix()) {
+                    <span
+                      class="panel-title-suffix min-w-0 flex-1"
+                      [class.truncate]="!isExpanded()"
+                      [matTooltip]="titleSuffix()"
+                    >{{ titleSuffix() }}</span>
+                  }
+                  @if (statusBadge(); as badge) {
+                    <span
+                      class="ml-2 inline-flex shrink-0 items-center rounded-lg px-2 py-0.5 align-middle font-peridot text-[12px] font-bold"
+                      [style.background-color]="badgeBackground(badge)"
+                      [style.color]="badge.color"
+                    >
+                      {{
+                        badge.preserveText
+                          ? badge.text
+                          : (badge.text.replaceAll("_", " ") | titlecase)
+                      }}
+                    </span>
+                  }
+                </h2>
+                @if (subtitleTemplate(); as subtitleTmpl) {
+                  <div class="panel-subtitle">
+                    <ng-container
+                      [ngTemplateOutlet]="subtitleTmpl"
+                    ></ng-container>
+                  </div>
+                } @else if (subtitle()) {
+                  <p class="panel-subtitle">{{ subtitle() }}</p>
+                }
+                @if (subtitleDetail()) {
+                  <p
+                    class="panel-subtitle truncate cursor-pointer"
+                    [matTooltip]="subtitleDetail()"
+                  >
+                    {{ subtitleDetail() }}
+                  </p>
+                }
+              </div>
+            }
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            @for (extra of extraBadges(); track extra.text) {
+              <span
+                class="inline-flex items-center rounded-lg px-2 py-0.5 font-peridot text-[12px] font-bold whitespace-nowrap"
+                [style.background-color]="badgeBackground(extra)"
+                [style.color]="extra.color"
+              >
+                {{ extra.text }}
+              </span>
+            }
+            @if (showExpandToggle()) {
+              <button [attr.aria-label]="(isExpanded() ? 'Collapse' : 'Expand') || null"
+                class="p-1.5 panel-close-btn hidden md:inline-flex"
+                [matTooltip]="isExpanded() ? 'Collapse' : 'Expand'"
+                (click)="toggleExpand()"
+              >
+                <lucide-icon
+                  [name]="isExpanded() ? 'minimize-2' : 'maximize-2'"
+                  [size]="20"
+                ></lucide-icon>
+              </button>
+            }
+            <button aria-label="Close"
+              class="p-1.5 panel-close-btn"
+              (click)="close()"
+              [matTooltip]="'Close'"
+            >
+              <lucide-icon name="x" [size]="20"></lucide-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        @if (actionButtons().length) {
+          <div class="flex items-center gap-2 px-4 pb-3">
+            @for (btn of actionButtons(); track btn.key) {
+              @if (btn.menu) {
+                <!-- ⋮ overflow menu (design O3 header: Edit / Void / Delete) -->
+                <button [attr.aria-label]="(btn.tooltip || 'More actions') || null"
+                  type="button"
+                  class="detail-panel-more-btn inline-flex items-center justify-center hover:bg-v4-list-hover-color"
+                  [ngClass]="
+                    btn.menuHeading
+                      ? 'h-8 w-8 rounded-xl border border-v4-primary-brand-bold-color text-v4-primary-brand-bold-color'
+                      : 'h-9 w-9 rounded-lg border border-v4-primary-brand-bold-color text-v4-primary-brand-bold-color'
+                  "
+                  [matMenuTriggerFor]="actionOverflowMenu"
+                  [matTooltip]="btn.tooltip || 'More actions'"
+                >
+                  <lucide-icon
+                    name="more-vertical"
+                    [size]="btn.menuHeading ? 16 : 18"
+                  ></lucide-icon>
+                </button>
+                <mat-menu
+                  #actionOverflowMenu="matMenu"
+                  [class]="
+                    btn.menuHeading
+                      ? 'v4-action-menu v4-action-menu--view-panel'
+                      : 'v4-action-menu'
+                  "
+                >
+                  @if (btn.menuHeading) {
+                    <div class="v4-menu-group-label">
+                      {{ btn.menuHeading }}
+                    </div>
+                  }
+                  @for (item of btn.menu; track item.key) {
+                    <button
+                      mat-menu-item
+                      [disabled]="!!item.disabled"
+                      [class.v4-menu-item-danger]="
+                        item.danger && !btn.menuHeading
+                      "
+                      (click)="onActionClick(item.key)"
+                    >
+                      <div
+                        class="flex items-center gap-2"
+                        [class.v4-danger-item]="item.danger && btn.menuHeading"
+                      >
+                        @if (item.lucideIcon) {
+                          <lucide-icon
+                            [name]="item.lucideIcon"
+                            [size]="14"
+                            class="inline-flex shrink-0"
+                          ></lucide-icon>
+                        }
+                        <span>{{ item.label }}</span>
+                      </div>
+                    </button>
+                  }
+                </mat-menu>
+              } @else {
+                <app-common-button-v4
+                  [minWidth]="'fit-content'"
+                  [type]="mapVariant(btn.variant)"
+                  [text]="btn.label"
+                  [textColorInput]="btn.color"
+                  [lucideIcon]="btn.lucideIcon"
+                  [isAddIcon]="!btn.lucideIcon && !!btn.icon"
+                  [icon]="btn.icon || ['fas', 'circle']"
+                  [disabled]="!!btn.disabled || !!btn.loading"
+                  [loading]="!!btn.loading"
+                  [backGroundInput]="btn.customBgColor"
+                  [textColorInput]="btn.customTextColor"
+                  [toolTip]="btn.tooltip || btn.label"
+                  (clickEvent)="onActionClick(btn.key)"
+                ></app-common-button-v4>
+              }
+            }
+          </div>
+        }
+
+        <!-- Header Extension Slot (tabs, filters, etc.) -->
+        @if (headerExtraTemplate(); as headerExtraTmpl) {
+          <ng-container [ngTemplateOutlet]="headerExtraTmpl"></ng-container>
+        }
+      </div>
+
+      <!-- Content (rendered via template ref) -->
+      <div class="flex-1">
+        @if (contentTemplate(); as tmpl) {
+          <ng-container [ngTemplateOutlet]="tmpl"></ng-container>
+        }
+      </div>
+    </div>
+  }
+</ng-template>

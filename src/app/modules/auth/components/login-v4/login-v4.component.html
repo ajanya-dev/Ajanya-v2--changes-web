@@ -1,0 +1,288 @@
+<div class="min-h-screen bg-v4-main-background-color">
+  <div class="h-screen flex overflow-hidden">
+
+    <!-- LEFT PANEL -->
+    <div class="hidden lg:block lg:w-[40%]">
+      <div class="relative overflow-hidden h-full bg-v4-cta-banner-bg-color">
+        <div class="absolute inset-0 pointer-events-none opacity-[0.12]">
+          <svg
+            class="absolute inset-0 w-full h-full"
+            viewBox="0 0 400 400"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M400 0 Q200 150, 0 100 L0 400 L400 400 Z"
+              class="fill-v4-secondary-brand-color"
+            ></path>
+          </svg>
+        </div>
+
+        <div class="relative z-10 h-full flex flex-col p-8 lg:p-12">
+          <div class="mb-8">
+            <img
+              ngSrc="/assets/main/zil_Money_logo.svg"
+              [alt]="authV3Service.appConfig?.websiteTitle || 'Logo'"
+              class="brightness-0 invert h-10 w-auto"
+              width="120" height="40"
+            />
+          </div>
+
+          <div class="mb-8">
+            <h2 class="font-funnel text-3xl lg:text-4xl font-bold text-white mb-3">
+              Welcome Back
+            </h2>
+            <p class="text-lg text-white/80">
+              All-in-One Payments, Tailored for Your Business
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            @for (feature of features; track feature.label) {
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#00a5b233]">
+                  <lucide-icon [img]="feature.icon" [size]="16" class="text-v4-secondary-brand-color"></lucide-icon>
+                </div>
+                <span class="text-white/90">{{ feature.label }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="mt-8 pt-4" appWhiteLabel hiddenIf="hideLoginPageFooterText">
+            <div class="flex items-center gap-2 text-white/60 text-sm flex-wrap">
+              <lucide-icon [img]="ShieldIcon" [size]="16" aria-hidden="true"></lucide-icon>
+              @for (badge of securityBadges; track badge; let last = $last) {
+                <span>{{ badge }}</span>
+                @if (!last) {
+                  <span class="mx-2">|</span>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="w-full lg:w-[60%] p-6 lg:p-12 flex flex-col relative overflow-y-auto bg-v4-popup-header-footer-color">
+      <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center">
+
+        <!-- Logo -->
+        <div class="mb-6">
+          <img
+            ngSrc="/assets/main/zil_Money_logo.svg"
+            [alt]="authV3Service.appConfig?.websiteTitle || 'Zil Money'"
+            class="h-10 w-auto"
+            width="120" height="40"
+          />
+        </div>
+
+        <!-- Heading -->
+        <div class="mb-6">
+          <h1 class="font-funnel text-3xl font-bold text-v4-main-text-color">Sign In</h1>
+        </div>
+
+        <!-- Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="submit()">
+
+          <!-- Email -->
+          <app-common-input-v4
+            formControlName="username"
+            [control]="loginForm.controls.username"
+            [fieldLabel]="'Email Address'"
+            [placeholder]="'email@company.com'"
+            [type]="'email'"
+            [autocomplete]="'email'"
+            [isFieldRequired]="true"
+            [maxLength]="100"
+            [readOnly]="isReadOnly"
+            (inputEvent)="onchange()"
+            (keydown.enter)="enterKey($event, 1)"
+          />
+
+          <!-- Password -->
+          <div class="relative mt-4">
+            <app-common-input-v4
+              formControlName="password"
+              [control]="loginForm.controls.password"
+              [fieldLabel]="'Password'"
+              [placeholder]="'Enter your password'"
+              [type]="passwordHide ? 'password' : 'text'"
+              [autocomplete]="'current-password'"
+              [isFieldRequired]="true"
+              [inputId]="'password-field-v4'"
+              (inputEvent)="onchange()"
+              (keydown.enter)="enterKey($event, 2)"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-[22px] h-11 flex items-center justify-center text-v4-secondary-text-color hover:text-v4-main-text-color transition-colors z-10"
+              (click)="passwordHide = !passwordHide"
+              [attr.aria-label]="passwordHide ? 'Show password' : 'Hide password'"
+            >
+              <lucide-icon [img]="passwordHide ? EyeIcon : EyeOffIcon" [size]="18" aria-hidden="true"></lucide-icon>
+            </button>
+          </div>
+
+          <!-- API warning message (wrong password / account locked) -->
+          @if (authV3Service.warningMsg) {
+            <small class="flex items-center gap-1 text-v4-common-red-color font-normal pl-1 mt-1 font-funnel">
+              <lucide-icon [img]="CircleAlertIcon" [size]="12" class="text-v4-common-red-color shrink-0"></lucide-icon>
+              <p class="text-v4-common-red-color text-xs font-medium font-peridot">{{ authV3Service.warningMsg }}</p>
+            </small>
+          }
+
+          <!-- Lockout retry timer -->
+          @if (authV3Service.timerExist()) {
+            <p class="text-center text-sm text-v4-secondary-text-color font-peridot mt-1">
+              Retry After:
+              <span class="text-v4-common-red-color font-semibold">{{ authV3Service.displayTimer() }}</span>
+            </p>
+          }
+
+          <!-- Existing account banner (?existingAccount=true) -->
+          @if (showExistingAccountMessage()) {
+            <div class="flex items-start gap-2 p-3 mt-3 rounded-xl border border-v4-common-blue-color bg-v4-badge-info-bg-color">
+              <lucide-icon [img]="InfoIcon" [size]="16" class="text-v4-common-blue-color shrink-0 mt-0.5"></lucide-icon>
+              <p class="text-sm text-v4-main-text-color font-peridot">
+                <span class="font-semibold">You already have an account.</span>
+                Please log in with your password, or
+                <a routerLink="/password/reset" class="text-v4-primary-brand-color hover:underline font-medium">
+                  reset it here
+                </a>
+                if you've forgotten it.
+              </p>
+            </div>
+          }
+
+          <!-- Remember Me + Forgot Password (hidden when existing account banner shown) -->
+          @if (!showExistingAccountMessage()) {
+            <div class="flex items-center justify-between mt-3">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  class="v4-checkbox-md"
+                  [checked]="isRememberMe"
+                  (change)="isRememberMe = !isRememberMe"
+                />
+                <span class="text-sm text-v4-secondary-text-color">Remember Me</span>
+              </label>
+              <a
+                routerLink="/password/reset"
+                class="text-sm text-v4-primary-brand-color hover:underline font-medium"
+              >
+                Forgot Password?
+              </a>
+            </div>
+          }
+
+          <!-- Sign In Button -->
+          <div class="mt-5">
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              text="Sign In"
+              width="100%"
+              [loading]="authV3Service.loading"
+              [disabled]="loginForm.invalid || authV3Service.loading || authV3Service.timerExist()"
+              (clickEvent)="submit()"
+            />
+          </div>
+        </form>
+
+        <!-- Social Login -->
+        @if (authV3Service.staticWhiteLabelConditions.socialLoginVisible) {
+          <div class="mt-6 space-y-4">
+            <!-- Divider -->
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-v4-input-border-color"></div>
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="px-4 bg-v4-popup-header-footer-color text-v4-secondary-text-color">
+                  {{ authV3Service.pageLabels?.signInWith?.heading }} With
+                </span>
+              </div>
+            </div>
+
+            <!-- Social icons grid -->
+            <div class="grid grid-cols-3 gap-3">
+              @for (item of authV3Service.socialLoginIcons; track item.name) {
+                <button [attr.aria-label]="('Sign in with ' + item.name) || null"
+                  type="button"
+                  class="flex items-center justify-center p-3 h-14 rounded-xl bg-v4-secondary-background-color border border-v4-input-border-color hover:bg-v4-tertiary-background-color hover:border-v4-brand-border-color transition-all"
+                  [matTooltip]="'Sign in with ' + item.name"
+                  (click)="authV3Service.onClickSocialIcon(item.url)"
+                >
+                  <img
+                    [ngSrc]="'assets/images/login/social/' + item.image"
+                    [alt]="item.name"
+                    [ngClass]="item?.styles?.others"
+                    class="max-h-6 w-auto max-w-[130px] object-contain"
+                    width="130" height="24"
+                  />
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Sign Up link -->
+        <p class="mt-6 text-center text-sm text-v4-secondary-text-color">
+          Don't have an account yet?
+          <span
+            role="presentation"
+            class="text-v4-primary-brand-color hover:underline font-semibold cursor-pointer"
+            [class.pointer-events-none]="authV3Service.loading"
+            (click)="authV3Service.register()"
+          >
+            {{ authV3Service.pageLabels?.signUpText }}
+          </span>
+        </p>
+
+        <!-- Footer -->
+        <div class="mt-auto pt-8 text-center text-sm text-v4-subtle-text-color">
+          @if (isZilMoneyLogoVisible) {
+            <div class="flex items-center justify-center gap-2 mb-2">
+              <span class="uppercase">Powered by</span>
+              <span class="font-semibold text-v4-primary-brand-color">Zil Money</span>
+            </div>
+          }
+          @if (staticWhiteLabelConditions.customerSupportNo) {
+            <a
+              [href]="'tel:' + staticWhiteLabelConditions.customerSupportNo"
+              class="flex items-center justify-center gap-1 text-v4-secondary-text-color hover:text-v4-primary-brand-color"
+            >
+              <lucide-icon [img]="PhoneIcon" [size]="14" aria-hidden="true"></lucide-icon>
+              <span>{{ staticWhiteLabelConditions.customerSupportNo }}</span>
+            </a>
+          }
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Dev-only: environment selector + Change Root Url -->
+  @if (isItDev) {
+    <div class="fixed bottom-4 left-4 z-50 flex items-center gap-2">
+      <div class="w-44">
+        <app-v4-common-dropdown
+          [config]="{ placeholder: 'Environments', displayField: 'environmentId', outputField: 'environmentId' }"
+          [listData]="authV3Service.dynamicWhiteLabelData"
+          [(ngModel)]="authV3Service.selectedEnvironmentId"
+          (ngModelChange)="authV3Service.setGlobalEnvironmentId()"
+        />
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Change Root Url"
+        width="auto"
+        [matTooltip]="'Change root url (API)'"
+        (clickEvent)="openChangeRootUrl()"
+      />
+    </div>
+  }
+
+</div>

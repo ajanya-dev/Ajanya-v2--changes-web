@@ -1,0 +1,153 @@
+<!-- Hidden file input -->
+<input
+  #fileInput
+  type="file"
+  accept="image/*"
+  (change)="onFileSelected($event)"
+  class="hidden"
+/>
+
+<!-- modal body -->
+<div class="p-6 bg-v4-tertiary-background-color">
+
+  @if (!cropping()) {
+    @if (currentLogoUrl() && !replacingExisting()) {
+      <!-- Current logo preview -->
+      <div class="flex flex-col items-center gap-4">
+        <div class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 flex items-center justify-center w-full">
+          <img [src]="currentLogoUrl()" alt="Current logo" class="max-h-40 max-w-full object-contain rounded" />
+        </div>
+        <div class="flex items-center gap-3">
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [lucideIcon]="'upload'"
+            [lucideIconSize]="14"
+            text="Replace Logo"
+            (clickEvent)="replacingExisting.set(true)"
+          />
+          <app-common-button-v4
+            [type]="{ style: 'destructive', name: 'main' }"
+            [lucideIcon]="'trash-2'"
+            [lucideIconSize]="14"
+            text="Remove Logo"
+            (clickEvent)="onRemoveLogo()"
+          />
+        </div>
+      </div>
+    } @else {
+      <!-- Upload / drag-drop section -->
+      <div
+        class="border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 bg-v4-secondary-background-color"
+        [ngClass]="{
+          'border-v4-badge-info-text-color': isDragOver(),
+          'border-v4-input-border-color': !isDragOver(),
+          'scale-105': isDragOver()
+        }"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="triggerFileInput()"
+      >
+        <lucide-icon [img]="UploadIcon" [size]="48" class="text-v4-primary-brand-bold-color mb-4 mx-auto block" matTooltip="Upload Company Logo" />
+        <h4 class="text-xl font-semibold text-v4-main-text-color mb-2">Drop your logo here</h4>
+        <p class="text-sm text-v4-secondary-text-color mb-6">or click to browse</p>
+        <div class="flex flex-col gap-2 items-center">
+          <div class="flex items-center gap-2 text-xs text-v4-secondary-text-color">
+            <lucide-icon [img]="InfoIcon" [size]="14" class="text-v4-primary-brand-bold-color" />
+            <span>Supports: JPG, PNG</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-v4-secondary-text-color">
+            <lucide-icon [img]="InfoIcon" [size]="14" class="text-v4-primary-brand-bold-color" />
+            <span>Max size: {{ formatFileSize(maxFileSize()) }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  @if (cropping()) {
+    <!-- Cropping section -->
+    <div class="rounded-lg overflow-hidden border border-v4-input-border-color bg-v4-secondary-background-color">
+      <image-cropper
+        style="width: 228px; height: 228px"
+        [imageChangedEvent]="imageChangedEvent"
+        [maintainAspectRatio]="true"
+        [aspectRatio]="2 / 2"
+        format="png"
+        (imageCropped)="imageCropped($event)"
+        [output]="'base64'"
+        [resizeToWidth]="228"
+        [onlyScaleDown]="true"
+        [cropperMinWidth]="128"
+        [roundCropper]="false"
+        [transform]="transform"
+      />
+    </div>
+
+    <!-- Transform controls -->
+    <div class="flex items-center justify-center gap-3 mt-4">
+      <app-common-button-v4 ariaLabel="Rotate left"
+        [type]="{ style: 'outline', name: 'main' }"
+        [lucideIcon]="'rotate-ccw'"
+        [lucideIconSize]="16"
+        text=""
+        [matTooltip]="'Rotate left'"
+        (clickEvent)="rotateLeft()"
+      />
+      <app-common-button-v4 ariaLabel="Rotate right"
+        [type]="{ style: 'outline', name: 'main' }"
+        [lucideIcon]="'rotate-cw'"
+        [lucideIconSize]="16"
+        text=""
+        [matTooltip]="'Rotate right'"
+        (clickEvent)="rotateRight()"
+      />
+      <app-common-button-v4 ariaLabel="Reset"
+        [type]="{ style: 'outline', name: 'main' }"
+        [lucideIcon]="'refresh-cw'"
+        [lucideIconSize]="16"
+        text=""
+        [matTooltip]="'Reset'"
+        (clickEvent)="resetTransform()"
+      />
+      <app-common-button-v4 ariaLabel="Remove image"
+        [type]="{ style: 'outline', name: 'main' }"
+        text=""
+        [lucideIcon]="'trash-2'"
+        [lucideIconSize]="16"
+        [textColorInput]="'var(--v4-badge-error-text-color)'"
+        [backGroundInput]="'var(--v4-badge-error-bg-color)'"
+        [matTooltip]="'Remove image'"
+        (clickEvent)="removeFile()"
+      />
+    </div>
+
+    <!-- Error message -->
+    @if (isError()) {
+      <div class="flex items-center gap-2 p-3 bg-v4-badge-error-bg-color border border-v4-badge-error-text-color rounded-lg mt-4">
+        <lucide-icon [img]="AlertTriangleIcon" [size]="16" class="text-v4-badge-error-text-color shrink-0" />
+        <span class="text-sm text-v4-badge-error-text-color">Please crop the image before proceeding</span>
+      </div>
+    }
+  }
+
+</div>
+
+<!-- modal footer -->
+<div class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color">
+  <app-common-button-v4
+    width="120px"
+    [type]="{ style: 'outline', name: 'main' }"
+    text="Cancel"
+    (clickEvent)="onCancel()"
+  />
+  @if (cropping()) {
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Confirm"
+      (clickEvent)="onConfirm()"
+      [disabled]="!croppedImageData().base64"
+    />
+  }
+</div>
