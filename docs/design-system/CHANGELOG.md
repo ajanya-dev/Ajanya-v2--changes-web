@@ -83,9 +83,9 @@ Branch: `design/zilmoney-rebrand` (main copy, port 4200). Every change was also 
 
 - New `docs/design-system/v4-ui-reference.md`: colour theme, button styling, component states, today's changes and open items. Shared copies generated as Word, HTML and Markdown in `C:\Users\Ajanya\Downloads\ZilMoney-v4-UI-Reference.*`.
 - New `docs/design-system/CHANGELOG.md` (this file).
--  gained a "5. Style samples" section: ten live-rendered examples (primary, outline and destructive buttons, compact and action buttons, buttons on a brand surface, form field states, dropdown with add-new tile and rows, status badges, choice pills and optional-detail chips, inline banners, modal shell with empty state). The Word and Markdown copies are unchanged.
-- New  (22 pages): a phase-by-phase knowledge base in the company's 16-phase format, covering the whole programme from 2 to 13 October. Rendered from HTML with headless Chrome.
-- Pushed to the design-snapshot repo  (): snapshot 4 (all code changes), 4.1 (PDF and reference copies), 4.2 (style samples), 4.3 (full-programme knowledge base). The snapshot holds every file that differs from the Bitbucket  branch.
+- `docs/design-system/v4-ui-reference.html` gained a "5. Style samples" section: ten live-rendered examples (primary, outline and destructive buttons, compact and action buttons, buttons on a brand surface, form field states, dropdown with add-new tile and rows, status badges, choice pills and optional-detail chips, inline banners, modal shell with empty state). The Word and Markdown copies are unchanged.
+- New `docs/design-system/ZilMoney-v4-UI-Knowledge-Base.pdf` (22 pages): a phase-by-phase knowledge base in the company's 16-phase format, covering the whole programme from 2 to 13 October. Rendered from HTML with headless Chrome.
+- Pushed to the design-snapshot repo `ajanya-dev/Ajanya-v2--changes-web` (`main`): snapshot 4 (all code changes), 4.1 (PDF and reference copies), 4.2 (style samples), 4.3 (full-programme knowledge base), 4.4 (this change log). The snapshot holds every file that differs from the Bitbucket `staging` branch.
 
 ### Open items noted, not changed
 
