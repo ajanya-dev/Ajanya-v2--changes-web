@@ -76,7 +76,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
               </div>
               <div class="absolute top-1.5 right-1.5">
                 <span
-                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] font-semibold bg-v4-badge-warning-bg-color text-v4-badge-warning-text-color border border-v4-border-warning"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-white/15 text-white/90 border border-white/30"
                 >
                   <lucide-icon name="clock" [size]="9"></lucide-icon>
                   Coming Soon

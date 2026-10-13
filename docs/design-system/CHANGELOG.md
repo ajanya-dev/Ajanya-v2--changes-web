@@ -15,6 +15,7 @@ Branch: `design/zilmoney-rebrand` (main copy, port 4200). Every change was also 
 - **Bulk Payment Center**
   - Replaced the hard-coded indigo `#3746a7` on the three info tiles and the three secondary buttons with a 15% white tint over the card colour.
   - "Coming Soon" badge moved from hard-coded yellow hex values to the warning badge tokens.
+  - Later the same day the "Coming Soon" badge was restyled to match the card: a translucent white pill (15% white fill, 30% white border, 11px white text, rounded-full) instead of the yellow warning chip, which stood out on the navy surface in both themes.
   - "Go to Bulk Payment Center" changed from the invisible neon style to the secondary brand teal fill with white text.
   - Card background moved from the primary token to `--v4-cta-banner-bg-color` with a 15% white hairline, so dark mode renders a deep navy instead of a bright blue block.
   - File: `src/app/modules/v4-pages/v4-dashboard/components/bulk-payment-center/bulk-payment-center.component.ts`
