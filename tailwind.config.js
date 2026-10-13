@@ -65,6 +65,7 @@ module.exports = {
       "v4-secondary-background-color": "var(--v4-secondary-background-color)",
       "v4-tertiary-background-color": "var(--v4-tertiary-background-color)",
       "v4-list-hover-color": "var(--v4-list-hover-color)",
+      "v4-hover-color": "var(--v4-hover-color)",
       "v4-popup-background-color": "var(--v4-popup-background-color)",
       "v4-popup-header-footer-color": "var(--v4-popup-header-footer-color)",
       "v4-input-border-color": "var(--v4-input-border-color)",

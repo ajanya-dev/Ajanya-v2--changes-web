@@ -11,7 +11,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
   imports: [LucideAngularModule, CommonButtonV4Component],
   template: `
     <div
-      class="bg-v4-primary-brand-color rounded-2xl p-6 border-2 border-v4-primary-brand-color"
+      class="bg-v4-cta-banner-bg-color rounded-2xl p-6 border border-white/15"
     >
       <!-- Header -->
       <div class="flex items-center gap-3 mb-3">
@@ -44,7 +44,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
           <!-- Info Grid -->
           <div class="grid grid-cols-3 gap-2 xl:gap-3 mb-3">
             <div
-              class="p-2 xl:p-3 bg-[#3746a7] rounded-xl border border-white/20"
+              class="p-2 xl:p-3 bg-white/15 rounded-xl border border-white/20"
             >
               <div class="text-[12px] xl:text-xs font-bold text-white mb-1">Create Payment</div>
               <div class="text-[12px] xl:text-xs font-normal text-white/80 line-clamp-2 leading-snug">
@@ -52,7 +52,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
               </div>
             </div>
             <div
-              class="p-2 xl:p-3 bg-[#3746a7] rounded-xl border border-white/20"
+              class="p-2 xl:p-3 bg-white/15 rounded-xl border border-white/20"
             >
               <div class="text-[12px] xl:text-xs font-bold text-white mb-1">Saved Groups</div>
               @if (groupPaymentsCount() > 0) {
@@ -68,7 +68,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
             <div
               class="relative rounded-xl pointer-events-none select-none"
             >
-              <div class="p-2 xl:p-3 bg-[#3746a7] rounded-xl border border-white/20 opacity-40 h-full">
+              <div class="p-2 xl:p-3 bg-white/15 rounded-xl border border-white/20 opacity-40 h-full">
                 <div class="text-[12px] xl:text-xs font-bold text-white mb-1">Schedule</div>
                 <div class="text-[12px] xl:text-xs font-normal text-white/80 line-clamp-2 leading-snug">
                   Schedule payments for future delivery
@@ -76,7 +76,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
               </div>
               <div class="absolute top-1.5 right-1.5">
                 <span
-                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] font-semibold bg-[#FEF9C3] text-[#A16207] border border-[#FDE047]"
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] font-semibold bg-v4-badge-warning-bg-color text-v4-badge-warning-text-color border border-v4-border-warning"
                 >
                   <lucide-icon name="clock" [size]="9"></lucide-icon>
                   Coming Soon
@@ -101,10 +101,12 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
         <!-- Action Buttons (right side) -->
         <div class="flex-shrink-0 flex flex-col gap-2 2xl:ml-6">
           <app-common-button-v4
-            [type]="{ style: 'neon', name: 'main' }"
+            [type]="{ style: 'secondary', name: 'main' }"
             [text]="'Go to Bulk Payment Center'"
             [lucideIcon]="'credit-card'"
             [lucideIconSize]="16"
+            [backGroundInput]="'var(--v4-secondary-brand-color)'"
+            [textColorInput]="'white'"
             [width]="'100%'"
             (clickEvent)="navigateToBulkPayments()"
           />
@@ -114,7 +116,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
               [text]="'Create Payment'"
               [lucideIcon]="'credit-card'"
               [lucideIconSize]="14"
-              [backGroundInput]="'#3746a7'"
+              [backGroundInput]="'rgba(255, 255, 255, 0.15)'"
               [textColorInput]="'white'"
               [width]="'100%'"
               [customClasses]="'border border-white/30'"
@@ -125,7 +127,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
               [text]="'Import Payments'"
               [lucideIcon]="'download'"
               [lucideIconSize]="14"
-              [backGroundInput]="'#3746a7'"
+              [backGroundInput]="'rgba(255, 255, 255, 0.15)'"
               [textColorInput]="'white'"
               [width]="'100%'"
               [customClasses]="'border border-white/30'"
@@ -136,7 +138,7 @@ import { PaymentsV4Service } from 'src/app/modules/payments-v4/shared/services/p
               [text]="'Manage Groups'"
               [lucideIcon]="'folder-open'"
               [lucideIconSize]="14"
-              [backGroundInput]="'#3746a7'"
+              [backGroundInput]="'rgba(255, 255, 255, 0.15)'"
               [textColorInput]="'white'"
               [width]="'100%'"
               [customClasses]="'border border-white/30'"

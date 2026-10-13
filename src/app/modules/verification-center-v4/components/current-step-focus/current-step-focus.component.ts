@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Clock,
   Lock,
-  LockOpen
+  LockOpen,
+  TriangleAlert
 } from 'lucide-angular';
 import { StepConfig, StepChecklistItem } from '../../models/verification-v4.model';
 import { StepStatus } from '../../constants/verification-v4.constants';
@@ -27,6 +28,8 @@ interface StepView {
   isDone: boolean;
   isLocked: boolean;
   isUnderReview: boolean;
+  /** Completed step with an open compliance deadline: Done content, amber badge. */
+  isActionRequired: boolean;
   isActive: boolean;
   badge: string;
   cardClasses: string;
@@ -61,6 +64,7 @@ export class CurrentStepFocusComponent {
   readonly Clock = Clock;
   readonly Lock = Lock;
   readonly LockOpen = LockOpen;
+  readonly TriangleAlert = TriangleAlert;
 
   readonly personaTooltip =
     'Persona is a secure, industry-standard identity verification partner used by leading financial platforms. Your information is encrypted and never shared.';
@@ -77,7 +81,8 @@ export class CurrentStepFocusComponent {
 
     return this.stepConfigs().map((config, i) => {
       const status = statuses[i] ?? 'locked';
-      const isDone = status === 'completed';
+      const isActionRequired = status === 'action-required';
+      const isDone = status === 'completed' || isActionRequired;
       const isUnderReview = status === 'under-review';
       const isLocked = status === 'locked';
 
@@ -87,6 +92,7 @@ export class CurrentStepFocusComponent {
         isDone,
         isLocked,
         isUnderReview,
+        isActionRequired,
         isActive: !isDone && !isLocked && !isUnderReview,
         badge: this.badgeFor(status, config.id),
         cardClasses: this.cardClassesFor(status),
@@ -139,6 +145,7 @@ export class CurrentStepFocusComponent {
 
     switch (status) {
       case 'completed':
+      case 'action-required':
         return NEUTRAL;
       case 'under-review':
         return `min-h-[380px] bg-v4-tertiary-background-color border border-v4-border-warning`;
@@ -152,6 +159,7 @@ export class CurrentStepFocusComponent {
   private badgeFor(status: StepStatus, id: number): string {
     if (status === 'completed') return 'Done';
     if (status === 'under-review') return 'Under Review';
+    if (status === 'action-required') return 'Action needed';
     if (status === 'locked') return `Step ${id}`;
     return id === 1 ? 'Ready now' : 'Next up';
   }

@@ -658,23 +658,37 @@ export class AddPayeeModalV4Component implements OnInit {
     }
   }
 
+  /** Optional panels open one at a time so the form never grows into a wall. */
+  private readonly optionalSections = ['address', 'banking', 'tax'];
+
   toggleSection(section: string): void {
     if (this.expandedSections.has(section)) {
       this.expandedSections.delete(section);
-    } else {
-      this.expandedSections.add(section);
+      return;
     }
+    if (this.optionalSections.includes(section)) {
+      this.optionalSections.forEach((s) => this.expandedSections.delete(s));
+    }
+    this.expandedSections.add(section);
+  }
+
+  /** The entity chooser reads and writes the form control directly. */
+  get entityTypeValue(): string | null {
+    return this.payeeForm?.controls?.entityType?.value ?? null;
+  }
+
+  setEntityType(value: 'business' | 'individual'): void {
+    const control = this.payeeForm.controls.entityType;
+    if (control.value !== value) {
+      control.setValue(value);
+    }
+    control.markAsTouched();
   }
 
   expandSectionsWithErrors(): { firstSection: string | null; invalidFields: string[] } {
     const sectionFieldMap: Record<string, string[]> = {
       basic: ['payeeName', 'payeeNickName'],
-      entity: [
-        'payeeCompany',
-        'customerAccountNumber',
-        'vendorAccountNumber',
-        'employeeAccountNumber'
-      ],
+      entity: ['payeeCompany'],
       address: [
         'payeeAddress1',
         'payeeAddress2',
@@ -684,6 +698,9 @@ export class AddPayeeModalV4Component implements OnInit {
         'payeeZip'
       ],
       tax: [
+        'customerAccountNumber',
+        'vendorAccountNumber',
+        'employeeAccountNumber',
         'customerDefaultPayFromAcount',
         'customerCategory',
         'customerDefaultPayFromMethod',

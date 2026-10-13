@@ -161,7 +161,9 @@ export class SpBankAcDropdownComponent extends BankAcDropdownV4Component {
 
   /** "xxxx8547" -> "••8547": shorter and reads as a mask, not as data. */
   maskAccount(bank: IBankDropdown): string {
-    return String(bank.accountNumber ?? '').replace(/^[xX*•]+/, '••');
+    // Same mask as the card and wallet rows: "•••• 1234".
+    const last4 = String(bank.accountNumber ?? '').replace(/[^0-9a-zA-Z]/g, '').slice(-4);
+    return last4 ? `•••• ${last4}` : '';
   }
 
   getBankSubText(bank: IBankDropdown): string {

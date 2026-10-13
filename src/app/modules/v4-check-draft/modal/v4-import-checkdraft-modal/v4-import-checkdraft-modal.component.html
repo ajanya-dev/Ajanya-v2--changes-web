@@ -1,0 +1,436 @@
+<div class="flex flex-col max-h-[90vh]">
+  <!-- Modal Header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-3">
+      @if (currentStep() > 1) {
+        <div
+          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer"
+          (click)="goBack()"
+        >
+          <lucide-icon
+            name="arrow-left"
+            [size]="16"
+            class="text-v4-subtle-text-color"
+          />
+        </div>
+      }
+      <div>
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          @switch (currentStep()) {
+            @case (1) {
+              Import Check Draft
+            }
+            @case (2) {
+              Match Your Data
+            }
+            @case (3) {
+              Review & Import
+            }
+          }
+        </h1>
+        <h2 class="text-xs text-v4-subtle-text-color">
+          Step {{ currentStep() }} of 3
+        </h2>
+      </div>
+    </div>
+    <div
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- Modal Body -->
+  <div class="flex-1 overflow-y-auto bg-v4-tertiary-background-color">
+    <!-- ======================== -->
+    <!-- STEP 1: Upload File     -->
+    <!-- ======================== -->
+    @if (currentStep() === 1) {
+      <div class="p-6 space-y-5">
+        <div
+          class="bg-v4-secondary-background-color rounded-xl p-6 border border-v4-border-color space-y-5"
+        >
+          <!-- Select Account (V4 Bank Dropdown) -->
+          <div>
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color mb-2 font-peridot"
+            >
+              Select Account <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-bank-ac-dropdown-v4
+              [formControl]="selectedBankControl"
+              [enableAddNew]="true"
+              permissionContext="forPayment"
+              (changeEvent)="onBankChange($event)"
+              (clearEvent)="onBankClear()"
+            />
+            @if (
+              importForm.controls.bankAccount.touched &&
+              importForm.controls.bankAccount.invalid
+            ) {
+              <span class="text-xs text-v4-common-red-color mt-1"
+                >Please select bank account</span
+              >
+            }
+          </div>
+
+          <!-- Select File -->
+          <div>
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color mb-2 font-peridot"
+            >
+              Select File <span class="text-v4-common-red-color">*</span>
+            </label>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex-1 px-3 py-2 rounded-lg border bg-v4-secondary-background-color text-sm truncate"
+                [class.border-v4-border-color]="
+                  !(
+                    importForm.controls.excelFile.touched &&
+                    importForm.controls.excelFile.invalid
+                  )
+                "
+                [class.border-v4-common-red-color]="
+                  importForm.controls.excelFile.touched &&
+                  importForm.controls.excelFile.invalid
+                "
+              >
+                <span
+                  [class.text-v4-tertiary-text-color]="!fileName"
+                  [class.text-v4-main-text-color]="fileName"
+                >
+                  {{ fileName || "No file selected" }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-v4-primary-brand-color text-v4-primary-brand-color text-sm font-medium font-peridot cursor-pointer hover:bg-v4-brand-tint transition-colors whitespace-nowrap"
+                (click)="fileInput.click()"
+              >
+                <lucide-icon name="upload" [size]="14" />
+                BROWSE
+              </button>
+              <input
+                #fileInput
+                type="file"
+                class="hidden"
+                accept=".csv,.xlsx"
+                (change)="onFileSelected($event)"
+              />
+            </div>
+            @if (
+              importForm.controls.excelFile.touched &&
+              importForm.controls.excelFile.invalid
+            ) {
+              <span class="text-xs text-v4-common-red-color mt-1"
+                >Please select file</span
+              >
+            }
+          </div>
+
+          <!-- Include Column Heading Lines (V4 Dropdown) -->
+          <div>
+            <label
+              class="block text-sm font-medium text-v4-secondary-text-color mb-2 font-peridot"
+            >
+              Include Column Heading Lines
+            </label>
+            <app-v4-common-dropdown
+              [config]="includeHeaderConfig"
+              [listData]="includeHeaderOptions"
+              [loading]="false"
+              [clearable]="false"
+              [formControl]="importForm.controls.includeHeader"
+              appendTo="body"
+            />
+          </div>
+        </div>
+
+        <!-- Info Section -->
+        <div
+          class="bg-v4-secondary-background-color rounded-xl p-5 border border-v4-border-color"
+        >
+          <div class="space-y-2 text-xs text-v4-tertiary-text-color">
+            <div class="flex items-center gap-2">
+              <lucide-icon
+                name="info"
+                [size]="14"
+                class="text-v4-primary-brand-color shrink-0"
+              />
+              <span
+                >Dates must be in mm/dd/yyyy or mm/dd/yy format</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <lucide-icon
+                name="info"
+                [size]="14"
+                class="text-v4-primary-brand-color shrink-0"
+              />
+              <span>We only support csv/xlsx file</span>
+            </div>
+          </div>
+          <button
+            class="flex items-center gap-1.5 mt-3 text-xs font-medium text-v4-primary-brand-color cursor-pointer hover:underline"
+            (click)="downloadSampleFile()"
+            [disabled]="isSampleFileLoading()"
+          >
+            <lucide-icon name="download" [size]="14" />
+            <span>Download Sample File</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ======================== -->
+    <!-- STEP 2: Mapping          -->
+    <!-- ======================== -->
+    @if (currentStep() === 2) {
+      <div class="p-6">
+        <div
+          class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color overflow-hidden"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <tbody>
+                <!-- Mapping Row -->
+                <tr
+                  class="border-b border-v4-border-color bg-v4-tertiary-background-color"
+                >
+                  <td
+                    class="px-3 py-2 font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                  >
+                    S.No
+                  </td>
+                  @for (item of headerColumns; track $index) {
+                    <td class="px-2 py-2 min-w-[180px]">
+                      <div class="relative">
+                        <select
+                          [formControl]="item"
+                          class="mapping-select w-full appearance-none rounded-lg border border-v4-border-color bg-v4-secondary-background-color pl-3 pr-8 py-2 text-sm text-v4-main-text-color cursor-pointer transition-colors hover:border-v4-primary-brand-color focus:outline-none focus:border-v4-primary-brand-color focus:ring-1 focus:ring-v4-primary-brand-color"
+                          [class.text-v4-tertiary-text-color]="!item.value"
+                        >
+                          <option value="">-- Match --</option>
+                          @for (
+                            opt of mappingDropdownOptions;
+                            track opt.value
+                          ) {
+                            <option
+                              [value]="opt.value"
+                              [disabled]="
+                                disableMapping[opt.value] &&
+                                item.value !== opt.value
+                              "
+                              class="text-v4-main-text-color"
+                            >
+                              {{ opt.label }}
+                            </option>
+                          }
+                        </select>
+                        <div
+                          class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5"
+                        >
+                          <lucide-icon
+                            name="chevron-down"
+                            [size]="14"
+                            class="text-v4-tertiary-text-color"
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  }
+                </tr>
+
+                <!-- File Header Row -->
+                @if (importDatas?.fileHeader?.length) {
+                  <tr class="border-b border-v4-border-color">
+                    <td class="px-3 py-2 text-v4-tertiary-text-color">1</td>
+                    @for (item of importDatas?.header; track item) {
+                      <td class="px-3 py-2 text-v4-main-text-color">
+                        {{ item }}
+                      </td>
+                    }
+                  </tr>
+                }
+
+                <!-- Data Preview Rows -->
+                @for (row of checkDraftData; track $index; let i = $index) {
+                  <tr
+                    class="border-b border-v4-border-color last:border-b-0 hover:bg-v4-tertiary-background-color/50"
+                  >
+                    <td class="px-3 py-2 text-v4-tertiary-text-color">
+                      {{ importDatas?.fileHeader?.length ? i + 2 : i + 1 }}
+                    </td>
+                    <td class="px-3 py-2">{{ row?.date }}</td>
+                    <td class="px-3 py-2">{{ row?.checkDraftSerialNumber }}</td>
+                    <td class="px-3 py-2">{{ row?.amount }}</td>
+                    <td class="px-3 py-2">{{ row?.memo }}</td>
+                    <td class="px-3 py-2">{{ row?.notes }}</td>
+                    <td class="px-3 py-2">{{ row?.categoryName }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeAccount }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeAddressLine1 }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeAddressLine2 }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeCompany }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeEmail }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeInvoiceNumber }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeName }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeNickName }}</td>
+                    <td class="px-3 py-2">{{ row?.payeePhone }}</td>
+                    <td class="px-3 py-2">{{ row?.city }}</td>
+                    <td class="px-3 py-2">{{ row?.state }}</td>
+                    <td class="px-3 py-2">{{ row?.country }}</td>
+                    <td class="px-3 py-2">{{ row?.zip }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeAccountType }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeRoutingNumber }}</td>
+                    <td class="px-3 py-2">{{ row?.payeeAccountNumber }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ======================== -->
+    <!-- STEP 3: Review & Import  -->
+    <!-- ======================== -->
+    @if (currentStep() === 3) {
+      <div class="p-6">
+        <div
+          class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color overflow-hidden"
+        >
+          @if (step3Loading()) {
+            <div class="p-10 text-center text-sm text-v4-tertiary-text-color">
+              Loading data...
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr
+                    class="border-b border-v4-border-color bg-v4-tertiary-background-color"
+                  >
+                    <td class="px-3 py-2">
+                      <mat-checkbox
+                        [checked]="isAllSelected"
+                        (change)="toggleSelectAll($event.checked)"
+                        color="primary"
+                      />
+                    </td>
+                    @for (head of columnsHead; track head) {
+                      <td
+                        class="px-3 py-2 font-semibold text-v4-secondary-text-color whitespace-nowrap min-w-[120px]"
+                      >
+                        {{ head }}
+                      </td>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of step3Data; track item.id) {
+                    <tr
+                      class="border-b border-v4-border-color last:border-b-0 hover:bg-v4-tertiary-background-color/50 cursor-pointer"
+                      (click)="selectItem(item)"
+                    >
+                      <td class="px-3 py-2">
+                        <mat-checkbox
+                          [checked]="item.selected"
+                          color="primary"
+                        />
+                      </td>
+                      <td class="px-3 py-2">{{ item?.date }}</td>
+                      <td class="px-3 py-2">
+                        {{ item?.checkDraftSerialNumber }}
+                      </td>
+                      <td class="px-3 py-2">{{ item?.amount }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeName }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeNickName }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeAddressLine1 }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeAddressLine2 }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeCity }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeState }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeZip }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeCountry }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeEmail }}</td>
+                      <td class="px-3 py-2">{{ item?.payeePhone }}</td>
+                      <td class="px-3 py-2">{{ item?.invoiceNumber }}</td>
+                      <td class="px-3 py-2">{{ item?.payeeCompanyName }}</td>
+                      <td class="px-3 py-2">{{ item?.accountNumber }}</td>
+                      <td class="px-3 py-2">{{ item?.routingNumber }}</td>
+                      <td class="px-3 py-2">{{ item?.accountType }}</td>
+                      <td class="px-3 py-2">{{ item?.categoryName }}</td>
+                      <td class="px-3 py-2">{{ item?.memo }}</td>
+                      <td class="px-3 py-2">{{ item?.notes }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Modal Footer -->
+  <div
+    class="flex justify-between items-center gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <!-- Step Indicator -->
+    <div class="flex items-center gap-2">
+      @for (step of [1, 2, 3]; track step) {
+        <div
+          class="w-2 h-2 rounded-full transition-colors"
+          [class.bg-v4-primary-brand-color]="currentStep() >= step"
+          [class.bg-v4-border-color]="currentStep() < step"
+        ></div>
+      }
+    </div>
+
+    <div class="flex gap-3">
+      <app-common-button-v4
+        width="100px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="close()"
+      />
+
+      @switch (currentStep()) {
+        @case (1) {
+          <app-common-button-v4
+            width="120px"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Import"
+            (clickEvent)="submitStep1()"
+            [disabled]="step1Loading()"
+            [loading]="step1Loading()"
+          />
+        }
+        @case (2) {
+          <app-common-button-v4
+            width="120px"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Submit"
+            (clickEvent)="submitStep2()"
+            [disabled]="step2Loading()"
+            [loading]="step2Loading()"
+          />
+        }
+        @case (3) {
+          <app-common-button-v4
+            width="120px"
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Import"
+            (clickEvent)="submitStep3()"
+            [disabled]="step3Submitting()"
+            [loading]="step3Submitting()"
+          />
+        }
+      }
+    </div>
+  </div>
+</div>

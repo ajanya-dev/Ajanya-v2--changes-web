@@ -28,28 +28,47 @@ import {
   CheckCircle2,
   ArrowRight,
   Check,
-  MessageCircle
+  CircleAlert,
+  FileText,
+  MessageCircle,
+  RefreshCw
 } from 'lucide-angular';
 import { EmailPhoneVerificationModalV4Component } from 'src/app/modules/user/user-v4/modals/email-phone-verification-modal-v4/email-phone-verification-modal-v4.component';
 import { BankVerificationModalV4Component } from 'src/app/modules/user/user-v4/modals/bank-verification-modal-v4/bank-verification-modal-v4.component';
+import { IKybMissingField } from 'src/app/shared/persona-v4/model/persona-v4';
+import { HeaderService } from 'src/app/shared/service/header/header.service';
+import { RerunVerificationComponent } from 'src/app/modules/payments/shared/modal/rerun-verification/rerun-verification.component';
 import { CurrentStepFocusComponent } from './components/current-step-focus/current-step-focus.component';
 import { PaymentSourceModalV4Component } from './modals/payment-source-modal-v4/payment-source-modal-v4.component';
-import { STEP_CONFIGS } from './data/verification-v4.data';
+import {
+  EDD_DOCS,
+  RERUN_KYB_DOCS,
+  STEP_CONFIGS
+} from './data/verification-v4.data';
 import {
   PaymentSourceResult,
-  StepConfig
+  StepConfig,
+  VerificationActionCase
 } from './models/verification-v4.model';
-import { StepStatus } from './constants/verification-v4.constants';
+import {
+  ActionCaseKind,
+  StepStatus
+} from './constants/verification-v4.constants';
 import { PersonaHelperService } from 'src/app/shared/persona-v4/service/persona-helper.service';
 import { CVSourceType } from 'src/app/modules/common-verification/model/common-verification';
 import { DynamicWhiteLabelService } from '../dynamic-white-label/service/dynamic-white-label.service';
 import { environment } from 'src/environments/environment';
+import { VerificationActionRequiredComponent } from './components/verification-action-required/verification-action-required.component';
 
 @Component({
   selector: 'app-verification-center-v4',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, CurrentStepFocusComponent],
+  imports: [
+    LucideAngularModule,
+    CurrentStepFocusComponent,
+    VerificationActionRequiredComponent
+  ],
   templateUrl: './verification-center-v4.component.html',
   styleUrl: './verification-center-v4.component.scss'
 })
@@ -61,6 +80,7 @@ export class VerificationCenterV4Component implements OnInit {
   readonly MessageCircle = MessageCircle;
 
   private gettingStartedService = inject(GettingStartedService);
+  private headerService = inject(HeaderService);
   private dynamicWhiteLabelService = inject(DynamicWhiteLabelService);
   private userProfileService = inject(UserProfileService);
   private localStorageService = inject(LocalStorageService);
@@ -105,6 +125,71 @@ export class VerificationCenterV4Component implements OnInit {
     return status?.kybStatus === 1;
   });
 
+  /**
+   * Open compliance cases, most urgent first. Driven by the same header
+   * signals as the top-bar badges; the header persists each payload to
+   * local storage before it flips the signal, so the payload is readable
+   * whenever the signal is true.
+   */
+  actionCases = computed<VerificationActionCase[]>(() => {
+    const cases: VerificationActionCase[] = [];
+
+    if (this.headerService.eddTriggerStatus()) {
+      const edd = this.localStorageService.getItem('eddRequestData');
+      const days = edd?.days_remaining;
+      cases.push({
+        kind: 'edd',
+        severity: 'warning',
+        icon: CircleAlert,
+        title: 'Additional verification required',
+        why: 'A payment triggered a compliance check. Enhanced Due Diligence must be completed before the deadline, or payments pause.',
+        docsLabel: 'Have ready',
+        docs: EDD_DOCS,
+        cta: 'Start verification',
+        daysRemaining: typeof days === 'number' ? days : undefined
+      });
+    }
+
+    if (this.headerService.rerurnKybStatus()) {
+      cases.push({
+        kind: 'rerun',
+        severity: 'info',
+        icon: RefreshCw,
+        title: 'Business re-verification requested',
+        why: 'Compliance asks for a periodic refresh of your business details. It takes a few minutes.',
+        docsLabel: 'Have ready',
+        docs: RERUN_KYB_DOCS,
+        cta: 'Re-verify business'
+      });
+    }
+
+    if (this.headerService.kybPersonaVerificationStatus()) {
+      const persona = this.localStorageService.getItem('kybPersonaVerification');
+      const docs = (persona?.missing_fields ?? [])
+        .map((field: IKybMissingField) => field.label)
+        .filter((label: string | undefined): label is string => !!label);
+      cases.push({
+        kind: 'missing',
+        severity: 'info',
+        icon: FileText,
+        title: 'A few business details are still needed',
+        why: 'Your verification went through without some details. Add them whenever convenient.',
+        docsLabel: 'Still needed',
+        docs: docs.length ? docs : ['Details listed in the form'],
+        cta: 'Add details'
+      });
+    }
+
+    return cases;
+  });
+
+  hasActionCases = computed(() => this.actionCases().length > 0);
+
+  /** Only a deadline-bound case reopens the business step and the headline. */
+  urgentActionCase = computed(
+    () => this.actionCases().find((c) => c.severity === 'warning') ?? null
+  );
+
   currentStepConfig = computed<StepConfig | null>(() => {
     const status = this.gettingStartedDetails();
     if (!status) return STEP_CONFIGS[0];
@@ -134,7 +219,8 @@ export class VerificationCenterV4Component implements OnInit {
     if (step1Done) step1Status = 'completed';
 
     let step2Status: StepStatus = 'locked';
-    if (step2Done) step2Status = 'completed';
+    if (step2Done && this.urgentActionCase()) step2Status = 'action-required';
+    else if (step2Done) step2Status = 'completed';
     else if (step2UnderReview) step2Status = 'under-review';
     else if (step1Done) step2Status = 'pending';
 
@@ -161,6 +247,7 @@ export class VerificationCenterV4Component implements OnInit {
     this.stepStatuses().map((s) => {
       if (s === 'completed') return 'bg-v4-primary-brand-color';
       if (s === 'under-review') return 'bg-v4-common-yellow-color';
+      if (s === 'action-required') return 'bg-v4-common-yellow-color';
       return 'bg-v4-badge-neutral-bg-color';
     })
   );
@@ -301,6 +388,66 @@ export class VerificationCenterV4Component implements OnInit {
       });
   }
 
+
+  /** Opens the same flow the header badge opens for this case. */
+  onCaseAction(kind: ActionCaseKind): void {
+    if (kind === 'missing') {
+      this.openKybPersonaVerificationModal();
+      return;
+    }
+    this.openRerunVerificationModal(kind === 'edd' ? 'edd' : 'kyb');
+  }
+
+  private openRerunVerificationModal(mode: 'kyb' | 'edd'): void {
+    const rerun = this.localStorageService.getItem('rerunVerification');
+    const edd = this.localStorageService.getItem('eddRequestData');
+    const data =
+      mode === 'kyb'
+        ? {
+            mode,
+            sourceType: CVSourceType.other,
+            reVerificationId: rerun?.id,
+            businessId: rerun?.business_id
+          }
+        : {
+            mode,
+            sourceType: CVSourceType.other,
+            reVerificationId: rerun?.id,
+            businessId: edd?.kyb_id,
+            eddInquiryId: edd?.edd_inquiry_id
+          };
+    this.dialog.open(RerunVerificationComponent, {
+      panelClass: 'paddingless-modal-rounded',
+      width: '400px',
+      height: 'auto',
+      disableClose: true,
+      data
+    });
+  }
+
+  /** The inquiry is pre-created by the backend, so Persona opens on it directly. */
+  private openKybPersonaVerificationModal(): void {
+    const persona = this.localStorageService.getItem('kybPersonaVerification');
+    if (!persona?.inquiry_id) return;
+    this.personaHelperService
+      .openModal(
+        'kyc_kyb',
+        CVSourceType.other,
+        false,
+        undefined,
+        persona.inquiry_id,
+        'default',
+        undefined,
+        persona.missing_fields
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res?.data?.inquiry_id) {
+          this.localStorageService.removeItem('kybPersonaVerification');
+          this.headerService.setKybPersonaVerificationStatus(false);
+        }
+      });
+  }
 
   onContinueVerification(): void {
     const step = this.currentStepConfig();

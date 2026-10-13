@@ -295,86 +295,29 @@
                             Pending
                           </span>
                         }
+                        <button
+                          type="button"
+                          class="p-1 rounded text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color hover:bg-v4-tertiary-background-color transition-colors"
+                          aria-label="Edit account details"
+                          matTooltip="Edit account details"
+                          (click)="openEditBankAccountV4()"
+                        >
+                          <lucide-icon name="pencil" [size]="15" />
+                        </button>
                       </div>
                       <p class="mt-0.5 text-[13px] text-v4-secondary-text-color truncate">
                         {{ transFormData(bankDataService.selectedBankAccountSignal()?.bank_name) }}
-                        @if (
-                          bankDataService.selectedBankAccountSignal()?.bank_account_nick_name &&
-                          bankDataService.selectedBankAccountSignal()?.bank_account_nick_name !==
-                            bankDataService.selectedBankAccountSignal()?.bank_account_account_name
-                        ) {
-                          <span aria-hidden="true"> · </span>
-                          <span>“{{ bankDataService.selectedBankAccountSignal()?.bank_account_nick_name }}”</span>
-                        }
                       </p>
                     </div>
                   </div>
-
-                  <!-- Balance + edit account -->
-                  <div class="flex items-center gap-2 shrink-0">
-                    @if (
-                      !(
-                        (selectedBankAccount$ | async)?.bank_account_nature_type === 2 &&
-                        (selectedBankAccount$ | async)?.verified_by === 13
-                      )
-                    ) {
-                      @if (!bankData.bankAccountBalance) {
-                        <app-common-button-v4
-                          appWhiteLabel
-                          hiddenIf="isCSNHCRequirement"
-                          [type]="{ style: 'outline', name: 'main' }"
-                          [text]="'View balance'"
-                          [lucideIcon]="'eye'"
-                          [lucideIconSize]="13"
-                          [customHeight]="'32px'"
-                          [customPadding]="'0 12px'"
-                          [textClasses]="'text-[12px] font-semibold'"
-                          [customClasses]="'min-w-fit'"
-                          [loading]="balanceFetching || mappingAccount"
-                          [disabled]="balanceFetching || mappingAccount"
-                          (clickEvent)="fetchBalance('balance')"
-                        />
-                      } @else {
-                        <span
-                          appWhiteLabel
-                          hiddenIf="isCSNHCRequirement"
-                          class="flex items-center gap-1 text-[15px] font-bold text-v4-main-text-color tabular-nums"
-                        >
-                          {{ bankData.bankAccountBalance | currency }}
-                          <app-common-button-v4
-                            [type]="{ style: 'outline', name: 'main' }"
-                            [text]="''"
-                            [lucideIcon]="'refresh-cw'"
-                            [lucideIconSize]="14"
-                            [customHeight]="'32px'"
-                            [customClasses]="'h-8 min-w-8 rounded-md border-0 shadow-none text-v4-primary-brand-color hover:text-v4-primary-brand-color/80'"
-                            [toolTip]="'Last updated: ' + (bankData.lastUpdated | relativeTime)"
-                            [loading]="balanceFetching || mappingAccount"
-                            [disabled]="balanceFetching || mappingAccount"
-                            (clickEvent)="fetchBalance('balance')"
-                          />
-                        </span>
-                      }
-                    }
-                    <app-common-button-v4
-                      [type]="{ style: 'outline', name: 'main' }"
-                      [text]="''"
-                      [lucideIcon]="'pencil'"
-                      [lucideIconSize]="14"
-                      [customHeight]="'32px'"
-                      [customClasses]="'h-8 min-w-8'"
-                      [toolTip]="'Edit account details'"
-                      (clickEvent)="openEditBankAccountV4()"
-                    />
-                  </div>
                 </div>
 
-                <!-- Tier 2: the numbers people copy into other systems -->
-                <div class="flex flex-wrap items-stretch gap-x-6 gap-y-3 pl-[52px]">
-                  <div>
-                    <div class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Account number</div>
-                    <div class="mt-1 flex items-center gap-1">
-                      <span class="text-[15px] font-semibold text-v4-main-text-color tabular-nums tracking-wide">
+                <!-- Tier 2: every account detail in one grid. Labels and values share the name's left edge (icon 40px + gap 12px). -->
+                <dl class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-3 pl-[52px]">
+                  <div class="min-w-0">
+                    <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Account number</dt>
+                    <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color flex items-center gap-1 tabular-nums tracking-wide">
+                      <span>
                         {{
                           !bankDataService.accountNumberVisible
                             ? utils.getMaskedAcNo2(bankDataService.selectedBankAccountSignal()?.bank_account_account_number ?? "")
@@ -399,87 +342,124 @@
                       >
                         <lucide-icon [name]="copiedField() === 'account' ? 'check' : 'copy'" [size]="14" />
                       </button>
-                    </div>
+                    </dd>
                   </div>
-                  @if (bankAccountData?.bank_account_country === "USA") {
-                    <div class="w-px bg-v4-border-color" aria-hidden="true"></div>
-                    <div>
-                      <div class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Routing number</div>
-                      <div class="mt-1 flex items-center gap-1">
-                        <span class="text-[15px] font-semibold text-v4-main-text-color tabular-nums tracking-wide">
-                          {{ bankDataService.selectedBankAccountSignal()?.bank_routing_number }}
-                        </span>
-                        <button
-                          type="button"
-                          class="p-1 rounded text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color hover:bg-v4-tertiary-background-color transition-colors"
-                          aria-label="Copy routing number"
-                          [matTooltip]="copiedField() === 'routing' ? 'Copied' : 'Copy'"
-                          (click)="copyValue(bankDataService.selectedBankAccountSignal()?.bank_routing_number, 'routing')"
-                        >
-                          <lucide-icon [name]="copiedField() === 'routing' ? 'check' : 'copy'" [size]="14" />
-                        </button>
-                      </div>
-                    </div>
-                  }
                   @if (bankAccountData?.bank_account_country === "Canada") {
-                    <div class="w-px bg-v4-border-color" aria-hidden="true"></div>
                     <div>
-                      <div class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Transit no.</div>
-                      <div class="mt-1 text-[15px] font-semibold text-v4-main-text-color tabular-nums">
-                        {{ bankAccountCheckDesignData?.transitNo || "—" }}
-                      </div>
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Transit no.</dt>
+                      <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color tabular-nums">{{ bankAccountCheckDesignData?.transitNo || "—" }}</dd>
                     </div>
-                    <div class="w-px bg-v4-border-color" aria-hidden="true"></div>
                     <div>
-                      <div class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Institution no.</div>
-                      <div class="mt-1 text-[15px] font-semibold text-v4-main-text-color tabular-nums">
-                        {{ bankAccountCheckDesignData?.financialInstitutionNo || "—" }}
-                      </div>
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Institution no.</dt>
+                      <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color tabular-nums">{{ bankAccountCheckDesignData?.financialInstitutionNo || "—" }}</dd>
+                    </div>
+                  } @else {
+                    <div>
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Routing number</dt>
+                      <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color flex items-center gap-1 tabular-nums tracking-wide">
+                        <span>{{ bankDataService.selectedBankAccountSignal()?.bank_routing_number || "—" }}</span>
+                        @if (bankDataService.selectedBankAccountSignal()?.bank_routing_number) {
+                          <button
+                            type="button"
+                            class="p-1 rounded text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color hover:bg-v4-tertiary-background-color transition-colors"
+                            aria-label="Copy routing number"
+                            [matTooltip]="copiedField() === 'routing' ? 'Copied' : 'Copy'"
+                            (click)="copyValue(bankDataService.selectedBankAccountSignal()?.bank_routing_number, 'routing')"
+                          >
+                            <lucide-icon [name]="copiedField() === 'routing' ? 'check' : 'copy'" [size]="14" />
+                          </button>
+                        }
+                      </dd>
                     </div>
                   }
-                </div>
-
-                <!-- Tier 3: check printing & account holder (quiet reference strip) -->
-                @if (bankDataService.checkNumberLoadingSignal()) {
-                  <div class="h-9 rounded-lg skelton"></div>
-                } @else {
-                  <dl class="flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg bg-v4-tertiary-background-color px-3 py-2 text-[12px]">
-                    <div class="flex items-center gap-1.5">
-                      <lucide-icon name="receipt" [size]="13" class="text-v4-tertiary-text-color" aria-hidden="true" />
-                      <dt class="text-v4-secondary-text-color">Next check</dt>
-                      <dd class="font-semibold text-v4-main-text-color tabular-nums">
+                  <div>
+                    <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Next check no.</dt>
+                    <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color tabular-nums">
+                      @if (bankDataService.checkNumberLoadingSignal()) {
+                        <span class="inline-block h-4 w-24 rounded skelton" aria-label="Loading"></span>
+                      } @else {
                         {{ bankDataService.checkNumberSignal()?.nextCheckNumber || "—" }}
+                      }
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Fractional no.</dt>
+                    <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color tabular-nums">{{ bankDataService.selectedBankAccountSignal()?.fractional_no || "—" }}</dd>
+                  </div>
+                  @if (
+                    !(
+                      (selectedBankAccount$ | async)?.bank_account_nature_type === 2 &&
+                      (selectedBankAccount$ | async)?.verified_by === 13
+                    )
+                  ) {
+                    <div appWhiteLabel hiddenIf="isCSNHCRequirement">
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Balance</dt>
+                      <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color flex items-center gap-1 tabular-nums">
+                        @if (balanceFetching || mappingAccount) {
+                          <span class="inline-block h-4 w-24 rounded skelton" aria-label="Loading"></span>
+                        } @else if (bankData.bankAccountBalance) {
+                          <span>{{ bankData.bankAccountBalance | currency }}</span>
+                          <button
+                            type="button"
+                            class="p-1 rounded text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color hover:bg-v4-tertiary-background-color transition-colors"
+                            aria-label="Refresh balance"
+                            [matTooltip]="'Last updated: ' + (bankData.lastUpdated | relativeTime)"
+                            (click)="fetchBalance('balance')"
+                          >
+                            <lucide-icon name="refresh-cw" [size]="14" />
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="inline-flex items-center gap-1 rounded font-semibold text-v4-primary-brand-bold-color hover:underline"
+                            (click)="fetchBalance('balance')"
+                          >
+                            <lucide-icon name="eye" [size]="14" aria-hidden="true" />
+                            View balance
+                          </button>
+                        }
                       </dd>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                      <dt class="text-v4-secondary-text-color">Fractional</dt>
-                      <dd class="font-semibold text-v4-main-text-color tabular-nums">
-                        {{ bankDataService.selectedBankAccountSignal()?.fractional_no || "—" }}
+                  }
+                  @if (bankDataService.selectedBankAccountSignal()?.bank_account_nick_name) {
+                    <div class="min-w-0">
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Nickname</dt>
+                      <dd
+                        class="mt-1 text-[14px] font-semibold text-v4-main-text-color truncate"
+                        [matTooltip]="bankDataService.selectedBankAccountSignal()?.bank_account_nick_name ?? ''"
+                      >
+                        {{ bankDataService.selectedBankAccountSignal()?.bank_account_nick_name }}
                       </dd>
                     </div>
-                    <div class="flex items-center gap-1.5 min-w-0">
-                      <lucide-icon name="map-pin" [size]="13" class="text-v4-tertiary-text-color shrink-0" aria-hidden="true" />
-                      <dt class="sr-only">Account holder address</dt>
-                      <dd class="font-medium text-v4-main-text-color truncate" [matTooltip]="holderAddress()">
-                        {{ holderAddress() || "No address" }}
+                  }
+                  <div class="col-span-2 min-w-0">
+                    <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Account holder address</dt>
+                    <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color truncate" [matTooltip]="holderAddress()">
+                      @if (bankDataService.checkNumberLoadingSignal()) {
+                        <span class="inline-block h-4 w-24 rounded skelton" aria-label="Loading"></span>
+                      } @else {
+                        {{ holderAddress() || "—" }}
+                      }
+                    </dd>
+                  </div>
+                  @if (bankDataService.checkNumberSignal()?.bankAccountPhone) {
+                    <div>
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Phone</dt>
+                      <dd class="mt-1 text-[14px] font-semibold text-v4-main-text-color tabular-nums">{{ bankDataService.checkNumberSignal()?.bankAccountPhone }}</dd>
+                    </div>
+                  }
+                  @if (bankDataService.checkNumberSignal()?.bankAccountEmail) {
+                    <div class="min-w-0">
+                      <dt class="text-[11px] font-medium uppercase tracking-wider text-v4-tertiary-text-color">Email</dt>
+                      <dd
+                        class="mt-1 text-[14px] font-semibold text-v4-main-text-color truncate"
+                        [matTooltip]="bankDataService.checkNumberSignal()?.bankAccountEmail ?? ''"
+                      >
+                        {{ bankDataService.checkNumberSignal()?.bankAccountEmail }}
                       </dd>
                     </div>
-                    @if (bankDataService.checkNumberSignal()?.bankAccountPhone) {
-                      <div class="flex items-center gap-1.5">
-                        <lucide-icon name="phone" [size]="13" class="text-v4-tertiary-text-color" aria-hidden="true" />
-                        <dt class="sr-only">Phone</dt>
-                        <dd class="font-medium text-v4-main-text-color">{{ bankDataService.checkNumberSignal()?.bankAccountPhone }}</dd>
-                      </div>
-                    }
-                    @if (bankDataService.checkNumberSignal()?.bankAccountEmail) {
-                      <div class="flex items-center gap-1.5 min-w-0">
-                        <lucide-icon name="mail" [size]="13" class="text-v4-tertiary-text-color" aria-hidden="true" />
-                        <dt class="sr-only">Email</dt>
-                        <dd class="font-medium text-v4-main-text-color truncate">{{ bankDataService.checkNumberSignal()?.bankAccountEmail }}</dd>
-                      </div>
-                    }
-                  </dl>
-                }
+                  }
+                </dl>
               </div>
 
               <!-- Right: Check Design Canvas (image only) -->
@@ -547,8 +527,8 @@
                 !bankDataService.selectedBankAccountSignal()?.mark_as_verified) &&
               bankAccountData?.bank_account_country !== "Canada"
             ) {
-              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg bg-v4-badge-warning-bg-color px-3 py-2">
-                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-badge-warning-text-color">
+              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-v4-border-warning-subtle bg-v4-surface-warning px-3 py-2">
+                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-text-warning">
                   <lucide-icon name="circle-alert" [size]="14" aria-hidden="true" />
                   Verify this account to enable ACH payments.
                 </p>
@@ -596,8 +576,8 @@
               bankDataService.selectedBankAccountSignal()?.ach_application_status === 3 ||
               bankDataService.selectedBankAccountSignal()?.ach_application_status === 8
             ) {
-              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg bg-v4-badge-warning-bg-color px-3 py-2">
-                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-badge-warning-text-color">
+              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-v4-border-warning-subtle bg-v4-surface-warning px-3 py-2">
+                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-text-warning">
                   <lucide-icon name="circle-alert" [size]="14" aria-hidden="true" />
                   ACH application was unsuccessful. Review your details and try again.
                 </p>
@@ -617,8 +597,8 @@
               bankDataService.selectedBankAccountSignal()?.verified_by === 3 &&
               bankDataService.selectedBankAccountSignal()?.mark_as_verified !== 1
             ) {
-              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg bg-v4-badge-warning-bg-color px-3 py-2">
-                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-badge-warning-text-color">
+              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-v4-border-warning-subtle bg-v4-surface-warning px-3 py-2">
+                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-text-warning">
                   <lucide-icon name="circle-alert" [size]="14" aria-hidden="true" />
                   Confirm the 2 amounts deposited in your bank account.
                 </p>
@@ -639,8 +619,8 @@
               bankDataService.selectedBankAccountSignal()?.verified_by === 10 &&
               bankDataService.selectedBankAccountSignal()?.ach_application_status !== 1
             ) {
-              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg bg-v4-badge-warning-bg-color px-3 py-2">
-                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-badge-warning-text-color">
+              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-v4-border-warning-subtle bg-v4-surface-warning px-3 py-2">
+                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-text-warning">
                   <lucide-icon name="circle-alert" [size]="14" aria-hidden="true" />
                   Verification was unsuccessful. Review your details and try again.
                 </p>
@@ -662,8 +642,8 @@
                 bankDataService.selectedBankAccountSignal()?.verified_by === 12) &&
               bankDataService.selectedBankAccountSignal()?.ach_application_status !== 1
             ) {
-              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg bg-v4-badge-warning-bg-color px-3 py-2">
-                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-badge-warning-text-color">
+              <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-v4-border-warning-subtle bg-v4-surface-warning px-3 py-2">
+                <p class="flex items-center gap-2 text-[12px] font-medium text-v4-text-warning">
                   <lucide-icon name="circle-alert" [size]="14" aria-hidden="true" />
                   {{
                     bankDataService.selectedBankAccountSignal()?.verified_by === 6

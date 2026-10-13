@@ -1,0 +1,72 @@
+<!--
+  Surface tint comes from the brand colour at low opacity (same recipe as the
+  header badges) so it reads correctly in both themes without a new token.
+-->
+<div
+  role="region"
+  aria-label="Verification requests"
+  class="flex flex-col rounded-xl border"
+  [class]="
+    urgent()
+      ? 'bg-v4-surface-warning border-v4-border-warning-subtle'
+      : 'bg-[color-mix(in_srgb,var(--v4-primary-brand-color)_7%,transparent)] border-[color-mix(in_srgb,var(--v4-primary-brand-color)_18%,transparent)]'
+  "
+>
+  @for (c of cases(); track c.kind; let first = $first) {
+    <div
+      class="flex items-center gap-3 flex-wrap px-3.5 py-2.5"
+      [class.border-t]="!first"
+      [class.border-v4-border-warning-subtle]="urgent()"
+      [class.border-v4-border-color]="!urgent()"
+    >
+      <span
+        class="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0 bg-v4-secondary-background-color"
+        [class]="
+          c.severity === 'warning'
+            ? 'text-v4-text-warning'
+            : 'text-v4-primary-brand-bold-color'
+        "
+      >
+        <lucide-angular [img]="c.icon" [size]="15"></lucide-angular>
+      </span>
+
+      <div class="flex-1 min-w-[220px] flex flex-col gap-0.5 text-[13px]">
+        <div class="flex items-center gap-x-2 gap-y-0.5 flex-wrap">
+          <span
+            class="font-bold"
+            [class]="
+              c.severity === 'warning'
+                ? 'text-v4-text-warning'
+                : 'text-v4-primary-brand-bold-color'
+            "
+          >
+            {{ c.title }}
+          </span>
+          @if (c.daysRemaining !== undefined) {
+            <span
+              class="inline-flex items-center gap-1 text-[12px] font-bold rounded-full px-2 py-0.5 bg-v4-badge-warning-bg-color text-v4-badge-warning-text-color whitespace-nowrap"
+            >
+              <lucide-angular [img]="Clock" [size]="11"></lucide-angular>
+              {{ deadlineLabel(c) }}
+            </span>
+          }
+        </div>
+        <span class="text-v4-secondary-text-color">{{ c.why }}</span>
+      </div>
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12.5px] font-bold cursor-pointer whitespace-nowrap hover:brightness-110"
+        [class]="
+          c.severity === 'warning'
+            ? 'bg-v4-primary-brand-color text-white border-0'
+            : 'bg-v4-secondary-background-color border border-v4-border-color text-v4-primary-brand-bold-color hover:bg-v4-list-hover-color'
+        "
+        (click)="actionClicked.emit(c.kind)"
+      >
+        {{ c.cta }}
+        <lucide-angular [img]="ArrowRight" [size]="13"></lucide-angular>
+      </button>
+    </div>
+  }
+</div>

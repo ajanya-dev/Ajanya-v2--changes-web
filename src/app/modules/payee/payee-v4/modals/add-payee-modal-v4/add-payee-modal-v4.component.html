@@ -160,140 +160,152 @@
               </div>
             </div>
 
-            <!-- Entity Information (Accordion) -->
+            <!-- Entity: a separate, always-visible choice -->
             <div
               id="accordion-entity"
-              class="accordion-section entity-section"
+              class="form-card entity-card"
               [class.section-focused]="focusedSection === 'entity'"
-              [class.expanded]="expandedSections.has('entity')"
             >
-              <button
-                class="accordion-header"
-                (click)="toggleSection('entity')"
-              >
-                <h3 class="accordion-title">
-                  <lucide-icon name="building-2" [size]="16" class="accordion-section-icon" />
-                  Entity information
-                  <span class="accordion-hint">Optional</span>
-                </h3>
-                <div class="accordion-toggle">
-                  <span class="toggle-text">{{
-                    expandedSections.has("entity") ? "Collapse" : "Expand"
-                  }}</span>
-                  @if (expandedSections.has("entity")) {
-                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
-                  } @else {
-                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
-                  }
+              <div class="entity-row">
+                <div class="entity-copy">
+                  <h3 class="card-title">Entity</h3>
+                  <p class="entity-hint">
+                    @switch (entityTypeValue) {
+                      @case ('business') {
+                        Company name and address are required for a business.
+                      }
+                      @case ('individual') {
+                        Company name is optional for an individual.
+                      }
+                      @default {
+                        Is this {{ activeTypeTitle | lowercase }} a person or a company?
+                      }
+                    }
+                  </p>
                 </div>
-              </button>
-              @if (expandedSections.has("entity")) {
-                <div class="accordion-body">
-                  <div class="form-grid">
-                    <div class="form-field">
-                      <label
-                        class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
-                        >Entity Type</label
-                      >
-                      <div class="angular-ocw-v4-ng-select-dropdown">
-                        <ng-select
-                          class="ng-dropdown-panel-v4 text-sm"
-                          formControlName="entityType"
-                          [items]="[
-                            { value: 'business', name: 'Business' },
-                            { value: 'individual', name: 'Individual' }
-                          ]"
-                          bindLabel="name"
-                          bindValue="value"
-                          placeholder="Select Entity Type"
-                          appendTo="body"
-                          [clearable]="false"
-                          [searchable]="false"
-                        ></ng-select>
-                      </div>
-                    </div>
-                    <div class="form-field" data-field="payeeCompany">
-                      <app-common-input-v4
-                        [placeholder]="'Company Name'"
-                        [fieldLabel]="'Company Name'"
-                        inputId="payee-company"
-                        formControlName="payeeCompany"
-                        [control]="payeeForm.controls.payeeCompany"
-                        [maxLength]="60"
-                        [showInfoIcon]="true"
-                        [tooltip]="
-                          'If an individual and not a business, please use your full legal name instead.'
-                        "
-                        [isFieldRequired]="
-                          isBusinessIsRequired ||
-                          effectiveData?.page === 'addCompany'
-                        "
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                    <div class="form-field full-width">
-                      <app-common-input-v4
-                        [placeholder]="'Payee ID/Acc Number'"
-                        [fieldLabel]="'Payee ID/Acc Number'"
-                        [formControlName]="
-                          payeeType === 1
-                            ? 'customerAccountNumber'
-                            : payeeType === 2
-                              ? 'vendorAccountNumber'
-                              : 'employeeAccountNumber'
-                        "
-                        [control]="
-                          payeeType === 1
-                            ? payeeForm.controls.customerAccountNumber
-                            : payeeType === 2
-                              ? payeeForm.controls.vendorAccountNumber
-                              : payeeForm.controls.employeeAccountNumber
-                        "
-                        [maxLength]="60"
-                        [isFieldRequired]="false"
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                  </div>
+                <div class="entity-choice" role="radiogroup" aria-label="Entity type">
+                  <button
+                    type="button"
+                    role="radio"
+                    class="entity-option"
+                    [class.selected]="entityTypeValue === 'individual'"
+                    [attr.aria-checked]="entityTypeValue === 'individual'"
+                    (click)="setEntityType('individual')"
+                  >
+                    <lucide-icon name="user" [size]="16" />
+                    Individual
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    class="entity-option"
+                    [class.selected]="entityTypeValue === 'business'"
+                    [attr.aria-checked]="entityTypeValue === 'business'"
+                    (click)="setEntityType('business')"
+                  >
+                    <lucide-icon name="building-2" [size]="16" />
+                    Business
+                  </button>
+                </div>
+              </div>
+              @if (entityTypeValue || effectiveData?.page === 'addCompany') {
+                <div class="form-grid entity-fields">
+                <div class="form-field full-width" data-field="payeeCompany">
+                  <app-common-input-v4
+                    [placeholder]="'Company Name'"
+                    [fieldLabel]="'Company Name'"
+                    inputId="payee-company"
+                    formControlName="payeeCompany"
+                    [control]="payeeForm.controls.payeeCompany"
+                    [maxLength]="60"
+                    [showInfoIcon]="true"
+                    [tooltip]="
+                      'If an individual and not a business, please use your full legal name instead.'
+                    "
+                    [isFieldRequired]="
+                      isBusinessIsRequired ||
+                      effectiveData?.page === 'addCompany'
+                    "
+                    [variant]="'compact'"
+                    [fieldHeight]="'34px'"
+                  />
+                </div>
                 </div>
               }
             </div>
 
+            <!-- Optional details: one quiet row, one panel open at a time -->
+            <div class="optional-row">
+              <span class="optional-label">Add optional details</span>
+              <div class="optional-chips">
+                <button
+                  type="button"
+                  class="optional-chip"
+                  [class.active]="expandedSections.has('address')"
+                  [class.done]="isFinishedAddress"
+                  [class.has-error]="isAddressRequired() || isAddressCountryStateRequired()"
+                  (click)="toggleSection('address')"
+                >
+                  <lucide-icon name="map-pin" [size]="14" />
+                  Address
+                  @if (isFinishedAddress) {
+                    <lucide-icon name="circle-check" [size]="14" class="chip-check" />
+                  } @else if (isAddressRequired() || isAddressCountryStateRequired()) {
+                    <span class="chip-required">Required</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="optional-chip"
+                  [class.active]="expandedSections.has('banking')"
+                  [class.done]="isFinishedBank || isFinishedInternationalBank"
+                  (click)="toggleSection('banking')"
+                >
+                  <lucide-icon name="landmark" [size]="14" />
+                  Bank account
+                  @if (isFinishedBank || isFinishedInternationalBank) {
+                    <lucide-icon name="circle-check" [size]="14" class="chip-check" />
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="optional-chip"
+                  [class.active]="expandedSections.has('tax')"
+                  (click)="toggleSection('tax')"
+                >
+                  <lucide-icon name="file-text" [size]="14" />
+                  More info
+                </button>
+              </div>
+            </div>
+
             <!-- Address (Accordion) -->
+            @if (expandedSections.has('address')) {
             <div
               id="accordion-address"
               class="accordion-section address-section"
               [class.section-focused]="focusedSection === 'address'"
               [class.expanded]="expandedSections.has('address')"
             >
-              <button
-                class="accordion-header"
-                [class.has-error]="isAddressRequired() || isAddressCountryStateRequired()"
-                (click)="toggleSection('address')"
-              >
+              <div class="optional-panel-header">
                 <h3 class="accordion-title">
                   <lucide-icon name="map-pin" [size]="16" class="accordion-section-icon" />
                   Address
-                  @if (!isAddressRequired() && !isAddressCountryStateRequired()) {
+                  @if (isAddressRequired() || isAddressCountryStateRequired()) {
+                    <span class="accordion-hint">Required for a business</span>
+                  } @else {
                     <span class="accordion-hint">Optional</span>
                   }
-                  @if (isFinishedAddress) {
-                    <span class="added-badge">Added</span>
-                  }
                 </h3>
-                <div class="accordion-toggle">
-                  <span class="toggle-text">{{
-                    expandedSections.has("address") ? "Collapse" : "Expand"
-                  }}</span>
-                  @if (expandedSections.has("address")) {
-                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
-                  } @else {
-                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
-                  }
-                </div>
-              </button>
+                <button
+                  type="button"
+                  class="optional-panel-close"
+                  (click)="toggleSection('address')"
+                  aria-label="Close Address"
+                >
+                  <lucide-icon name="x" [size]="16" />
+                </button>
+              </div>
               @if (expandedSections.has("address")) {
                 <div class="accordion-body">
                   <div class="form-grid">
@@ -400,47 +412,30 @@
                 </div>
               }
             </div>
-            @if (isAddressRequired() && !expandedSections.has('address')) {
-              <small class="address-required-msg">
-                <fa-icon
-                  [icon]="faCircleExclamation"
-                  class="text-[var(--destructive)]"
-                  size="sm"
-                  animation="shake"
-                />
-                Address is required
-              </small>
             }
 
             <!-- Bank Accounts (Accordion — Domestic + International) -->
+            @if (expandedSections.has('banking')) {
             <div
               class="accordion-section banking-section"
               [class.section-focused]="focusedSection === 'banking'"
               [class.expanded]="expandedSections.has('banking')"
             >
-              <button
-                class="accordion-header"
-                (click)="toggleSection('banking')"
-              >
+              <div class="optional-panel-header">
                 <h3 class="accordion-title">
                   <lucide-icon name="landmark" [size]="16" class="accordion-section-icon" />
                   Bank accounts
                   <span class="accordion-hint">Optional</span>
-                  @if (isFinishedBank || isFinishedInternationalBank) {
-                    <span class="added-badge">Added</span>
-                  }
                 </h3>
-                <div class="accordion-toggle">
-                  <span class="toggle-text">{{
-                    expandedSections.has("banking") ? "Collapse" : "Expand"
-                  }}</span>
-                  @if (expandedSections.has("banking")) {
-                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
-                  } @else {
-                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
-                  }
-                </div>
-              </button>
+                <button
+                  type="button"
+                  class="optional-panel-close"
+                  (click)="toggleSection('banking')"
+                  aria-label="Close Bank accounts"
+                >
+                  <lucide-icon name="x" [size]="16" />
+                </button>
+              </div>
               @if (expandedSections.has("banking")) {
                 <div class="accordion-body bank-accordion-body">
                   <!-- Domestic / International tab switcher -->
@@ -492,32 +487,58 @@
                 </div>
               }
             </div>
+            }
 
             <!-- Tax & Additional Info (Accordion) -->
+            @if (expandedSections.has('tax')) {
             <div
               id="accordion-tax"
               class="accordion-section"
               [class.expanded]="expandedSections.has('tax')"
             >
-              <button class="accordion-header" (click)="toggleSection('tax')">
+              <div class="optional-panel-header">
                 <h3 class="accordion-title">
                   <lucide-icon name="file-text" [size]="16" class="accordion-section-icon" />
-                  Add more info
+                  More info
                   <span class="accordion-hint">Optional</span>
                 </h3>
-                <div class="accordion-toggle">
-                  <span class="toggle-text">{{
-                    expandedSections.has("tax") ? "Collapse" : "Expand"
-                  }}</span>
-                  @if (expandedSections.has("tax")) {
-                    <lucide-icon name="chevron-down" [size]="20"></lucide-icon>
-                  } @else {
-                    <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
-                  }
-                </div>
-              </button>
+                <button
+                  type="button"
+                  class="optional-panel-close"
+                  (click)="toggleSection('tax')"
+                  aria-label="Close More info"
+                >
+                  <lucide-icon name="x" [size]="16" />
+                </button>
+              </div>
               @if (expandedSections.has("tax")) {
                 <div class="accordion-body">
+                  <div class="form-grid mb-3">
+                    <div class="form-field full-width">
+                      <app-common-input-v4
+                        [placeholder]="'Payee ID/Acc Number'"
+                        [fieldLabel]="'Payee ID/Acc Number'"
+                        [formControlName]="
+                          payeeType === 1
+                            ? 'customerAccountNumber'
+                            : payeeType === 2
+                              ? 'vendorAccountNumber'
+                              : 'employeeAccountNumber'
+                        "
+                        [control]="
+                          payeeType === 1
+                            ? payeeForm.controls.customerAccountNumber
+                            : payeeType === 2
+                              ? payeeForm.controls.vendorAccountNumber
+                              : payeeForm.controls.employeeAccountNumber
+                        "
+                        [maxLength]="60"
+                        [isFieldRequired]="false"
+                        [variant]="'compact'"
+                        [fieldHeight]="'34px'"
+                      />
+                    </div>
+                  </div>
                   <!-- Customer fields -->
                   @if (payeeType?.toString() === "1") {
                     <div class="form-grid">
@@ -1038,6 +1059,7 @@
                 </div>
               }
             </div>
+            }
 
             <!-- Request bank info checkbox -->
             <div class="request-bank-section">
@@ -1101,48 +1123,54 @@
               </div>
 
             <form [formGroup]="requestPayeeForm" class="send-link-form">
+              <p class="send-link-hint">
+                Enter an email, a mobile number, or both. The link goes to
+                every channel you fill in.
+              </p>
               <div class="form-grid">
-                <div class="form-field full-width">
-                  <div class="checkbox-input-row">
-                    <input
-                      type="checkbox"
-                      class="v4-checkbox-sm"
-                      formControlName="emailCheck"
-                      (change)="setCheck('email')"
-                    />
-                    <div class="flex-1">
-                      <app-common-input-v4
-                        [placeholder]="'Email Address'"
-                        [type]="'email'"
-                        formControlName="payeeEmail"
-                        [control]="requestPayeeForm.controls.payeeEmail"
-                        [isFieldRequired]="false"
-                        (inputEvent)="getEmail()"
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                  </div>
+                <div class="form-field full-width send-channel" data-field="payeeEmail">
+                  <label
+                    class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                    for="send-link-email"
+                    >Email</label
+                  >
+                  <app-common-input-v4
+                    [placeholder]="'name@company.com'"
+                    [type]="'email'"
+                    inputId="send-link-email"
+                    formControlName="payeeEmail"
+                    [control]="requestPayeeForm.controls.payeeEmail"
+                    [isFieldRequired]="false"
+                    (inputEvent)="getEmail()"
+                    [variant]="'compact'"
+                    [fieldHeight]="'34px'"
+                  />
+                  @if (requestPayeeForm.controls.emailCheck.value) {
+                    <span class="send-channel-status">
+                      <lucide-icon name="circle-check" [size]="14" />
+                      Link will be emailed
+                    </span>
+                  }
                 </div>
-                <div class="form-field full-width">
-                  <div class="checkbox-input-row">
-                    <input
-                      type="checkbox"
-                      class="v4-checkbox-sm"
-                      formControlName="phoneCheck"
-                      (change)="setCheck('phone')"
-                    />
-                    <div class="flex-1">
-                      <app-phone-input-v4
-                        formControlName="payeePhone"
-                        [control]="requestPayeeForm.controls.payeePhone"
-                        [isFieldRequired]="false"
-                        (countryDropdown)="requestCountryChange($event)"
-                        [variant]="'compact'"
-                        [fieldHeight]="'32px'"
-                      ></app-phone-input-v4>
-                    </div>
-                  </div>
+                <div class="form-field full-width send-channel" data-field="payeePhone">
+                  <label
+                    class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+                    >Mobile number</label
+                  >
+                  <app-phone-input-v4
+                    formControlName="payeePhone"
+                    [control]="requestPayeeForm.controls.payeePhone"
+                    [isFieldRequired]="false"
+                    (countryDropdown)="requestCountryChange($event)"
+                    [variant]="'compact'"
+                    [fieldHeight]="'32px'"
+                  ></app-phone-input-v4>
+                  @if (requestPayeeForm.controls.phoneCheck.value) {
+                    <span class="send-channel-status">
+                      <lucide-icon name="circle-check" [size]="14" />
+                      Link will be texted
+                    </span>
+                  }
                 </div>
               </div>
 

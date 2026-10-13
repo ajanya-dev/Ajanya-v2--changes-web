@@ -10,7 +10,8 @@ const dir = join(root, 'src/assets/style_varients');
 function tokens(file) {
   const map = {};
   const src = readFileSync(join(dir, file), 'utf8');
-  for (const m of src.matchAll(/\$([a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{6})\b/g)) map[m[1]] = m[2].toLowerCase();
+  // 8-digit values (#rrggbbaa) are kept as-is and composited at check time.
+  for (const m of src.matchAll(/\$([a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)\b/g)) map[m[1]] = m[2].toLowerCase();
   return map;
 }
 
@@ -49,6 +50,7 @@ const PAIRS = [
   ['v4-badge-accent-text-color', 'v4-badge-accent-bg-color', 4.5, 'accent badge'],
   ['v4-badge-sky-text-color', 'v4-badge-sky-bg-color', 4.5, 'sky badge'],
   ['v4-text-success', 'v4-secondary-background-color', 4.5, 'success text'],
+  ['v4-text-success', 'v4-surface-success', 4.5, 'success text on success surface'],
   ['v4-text-warning', 'v4-secondary-background-color', 4.5, 'warning text'],
   ['v4-input-border-color', 'v4-input-background-color', 3, 'field border on field'],
   ['v4-input-border-color', 'v4-main-background-color', 3, 'field border on page'],
@@ -70,11 +72,22 @@ const LIGHT_FILLS = [
   [WHITE, 'v4-common-yellow-color', 4.5, 'white on orange fill'],
 ];
 
+/** Composite a translucent #rrggbbaa token over the theme card background. */
+function flatten(hex, map) {
+  if (!hex || hex.length !== 9) return hex;
+  const base = map['v4-secondary-background-color'] || '#ffffff';
+  const a = parseInt(hex.slice(7, 9), 16) / 255;
+  const ch = (i) => parseInt(hex.slice(i, i + 2), 16);
+  const bch = (i) => parseInt(base.slice(i, i + 2), 16);
+  const mix = (i) => Math.round(ch(i) * a + bch(i) * (1 - a)).toString(16).padStart(2, '0');
+  return '#' + mix(1) + mix(3) + mix(5);
+}
+
 function check(label, map, pairs) {
   let fails = 0;
   for (const [f, b, need, use] of pairs) {
-    const fg = f.startsWith('#') ? f : map[f];
-    const bg = b.startsWith('#') ? b : map[b];
+    const fg = flatten(f.startsWith('#') ? f : map[f], map);
+    const bg = flatten(b.startsWith('#') ? b : map[b], map);
     if (!fg || !bg) {
       console.log(`  ?    ${label.padEnd(8)} ${use}: missing ${!fg ? f : b}`);
       fails++;
