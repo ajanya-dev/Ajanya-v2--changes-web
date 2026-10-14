@@ -683,24 +683,34 @@ export class AddPayeeModalV4Component implements OnInit {
       control.setValue(value);
     }
     control.markAsTouched();
+    if (value === 'business') {
+      // Address renders inline in the Entity card for a business
+      this.expandedSections.delete('address');
+    }
   }
 
   expandSectionsWithErrors(): { firstSection: string | null; invalidFields: string[] } {
+    const addressFields = [
+      'payeeAddress1',
+      'payeeAddress2',
+      'payeeCity',
+      'payeeState',
+      'payeeCountry',
+      'payeeZip'
+    ];
+    const accountNumberFields = [
+      'customerAccountNumber',
+      'vendorAccountNumber',
+      'employeeAccountNumber'
+    ];
+    // For a business the address fields sit inside the Entity card
     const sectionFieldMap: Record<string, string[]> = {
       basic: ['payeeName', 'payeeNickName'],
-      entity: ['payeeCompany'],
-      address: [
-        'payeeAddress1',
-        'payeeAddress2',
-        'payeeCity',
-        'payeeState',
-        'payeeCountry',
-        'payeeZip'
-      ],
+      entity: this.isBusinessIsRequired
+        ? ['payeeCompany', ...accountNumberFields, ...addressFields]
+        : ['payeeCompany', ...accountNumberFields],
+      address: this.isBusinessIsRequired ? [] : addressFields,
       tax: [
-        'customerAccountNumber',
-        'vendorAccountNumber',
-        'employeeAccountNumber',
         'customerDefaultPayFromAcount',
         'customerCategory',
         'customerDefaultPayFromMethod',
@@ -809,6 +819,12 @@ export class AddPayeeModalV4Component implements OnInit {
             this.payeeForm.get(field)?.updateValueAndValidity();
           });
           this.isAddressRequired.set(false);
+          // Address typed while "Business" was selected moves back to the
+          // optional Address chip; show the tick only when it is complete.
+          this.isFinishedAddress = addressFields.every(
+            (field) => !!this.payeeForm.get(field)?.value
+          );
+          this.updateAddressCountryStateValidity();
         }
       });
 

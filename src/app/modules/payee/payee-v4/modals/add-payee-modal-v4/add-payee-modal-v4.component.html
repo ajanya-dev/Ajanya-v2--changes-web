@@ -210,7 +210,7 @@
               </div>
               @if (entityTypeValue || effectiveData?.page === 'addCompany') {
                 <div class="form-grid entity-fields">
-                <div class="form-field full-width" data-field="payeeCompany">
+                <div class="form-field" data-field="payeeCompany">
                   <app-common-input-v4
                     [placeholder]="'Company Name'"
                     [fieldLabel]="'Company Name'"
@@ -230,6 +230,34 @@
                     [fieldHeight]="'34px'"
                   />
                 </div>
+                <div class="form-field">
+                  <app-common-input-v4
+                    [placeholder]="'Payee ID/Acc Number'"
+                    [fieldLabel]="'Payee ID/Acc Number (optional)'"
+                    [formControlName]="
+                      payeeType === 1
+                        ? 'customerAccountNumber'
+                        : payeeType === 2
+                          ? 'vendorAccountNumber'
+                          : 'employeeAccountNumber'
+                    "
+                    [control]="
+                      payeeType === 1
+                        ? payeeForm.controls.customerAccountNumber
+                        : payeeType === 2
+                          ? payeeForm.controls.vendorAccountNumber
+                          : payeeForm.controls.employeeAccountNumber
+                    "
+                    [maxLength]="60"
+                    [isFieldRequired]="false"
+                    [variant]="'compact'"
+                    [fieldHeight]="'34px'"
+                  />
+                </div>
+                @if (entityTypeValue === 'business') {
+                  <!-- Address is required for a business, so it lives here, not in optional details -->
+                  <ng-container *ngTemplateOutlet="addressFieldsTpl" />
+                }
                 </div>
               }
             </div>
@@ -238,6 +266,7 @@
             <div class="optional-row">
               <span class="optional-label">Add optional details</span>
               <div class="optional-chips">
+                @if (entityTypeValue !== 'business') {
                 <button
                   type="button"
                   class="optional-chip"
@@ -254,6 +283,7 @@
                     <span class="chip-required">Required</span>
                   }
                 </button>
+                }
                 <button
                   type="button"
                   class="optional-chip"
@@ -280,7 +310,7 @@
             </div>
 
             <!-- Address (Accordion) -->
-            @if (expandedSections.has('address')) {
+            @if (expandedSections.has('address') && entityTypeValue !== 'business') {
             <div
               id="accordion-address"
               class="accordion-section address-section"
@@ -309,87 +339,7 @@
               @if (expandedSections.has("address")) {
                 <div class="accordion-body">
                   <div class="form-grid">
-                    <div class="form-field full-width address-line-compact" data-field="payeeAddress1">
-                      <app-address-autocomplete-v4
-                        [label]="'Address Line 1'"
-                        [placeholder]="'Address Line 1'"
-                        [control]="payeeForm.controls.payeeAddress1"
-                        [maxLength]="150"
-                        [isFieldRequired]="isBusinessIsRequired"
-                        (addressSelected)="onPayeeAddressSelected($event)"
-                      />
-                    </div>
-                    <div class="form-field full-width">
-                      <app-common-input-v4
-                        [placeholder]="'Address Line 2'"
-                        [fieldLabel]="'Address Line 2'"
-                        formControlName="payeeAddress2"
-                        [control]="payeeForm.controls.payeeAddress2"
-                        [maxLength]="150"
-                        [isFieldRequired]="false"
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                    <div class="form-field" data-field="payeeCity">
-                      <app-common-input-v4
-                        [placeholder]="'City'"
-                        [fieldLabel]="'City'"
-                        formControlName="payeeCity"
-                        [control]="payeeForm.controls.payeeCity"
-                        [maxLength]="50"
-                        [isFieldRequired]="isBusinessIsRequired"
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                    <div class="form-field state-field-compact" data-field="payeeState">
-                      <label
-                        class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
-                        >State</label
-                      >
-                      <app-common-state-select-v4
-                        formControlName="payeeState"
-                        [country]="payeeForm.controls.payeeCountry.value"
-                        [isRequired]="isBusinessIsRequired || isAddressCountryStateRequired()"
-                        placeholder="State"
-                        [controlClass]="'height-1'"
-                      ></app-common-state-select-v4>
-                    </div>
-                    <div class="form-field" data-field="payeeZip">
-                      <app-common-input-v4
-                        [placeholder]="
-                          !payeeForm.get('payeeCountry')?.value ||
-                          payeeForm.get('payeeCountry')?.value === 'US'
-                            ? 'Zip'
-                            : 'Postal Code'
-                        "
-                        [fieldLabel]="
-                          !payeeForm.get('payeeCountry')?.value ||
-                          payeeForm.get('payeeCountry')?.value === 'US'
-                            ? 'Zip'
-                            : 'Postal Code'
-                        "
-                        formControlName="payeeZip"
-                        [control]="payeeForm.controls.payeeZip"
-                        [maxLength]="10"
-                        [isFieldRequired]="isBusinessIsRequired"
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                    <div class="form-field" data-field="payeeCountry">
-                      <label
-                        class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
-                        >Country</label
-                      >
-                      <app-common-country-select-v4
-                        formControlName="payeeCountry"
-                        [isRequired]="isBusinessIsRequired || isAddressCountryStateRequired()"
-                        placeholder="Country"
-                        [controlClass]="'height-1'"
-                      ></app-common-country-select-v4>
-                    </div>
+                    <ng-container *ngTemplateOutlet="addressFieldsTpl" />
                   </div>
                   <div class="inline-form-actions">
                     <app-common-button-v4
@@ -513,32 +463,6 @@
               </div>
               @if (expandedSections.has("tax")) {
                 <div class="accordion-body">
-                  <div class="form-grid mb-3">
-                    <div class="form-field full-width">
-                      <app-common-input-v4
-                        [placeholder]="'Payee ID/Acc Number'"
-                        [fieldLabel]="'Payee ID/Acc Number'"
-                        [formControlName]="
-                          payeeType === 1
-                            ? 'customerAccountNumber'
-                            : payeeType === 2
-                              ? 'vendorAccountNumber'
-                              : 'employeeAccountNumber'
-                        "
-                        [control]="
-                          payeeType === 1
-                            ? payeeForm.controls.customerAccountNumber
-                            : payeeType === 2
-                              ? payeeForm.controls.vendorAccountNumber
-                              : payeeForm.controls.employeeAccountNumber
-                        "
-                        [maxLength]="60"
-                        [isFieldRequired]="false"
-                        [variant]="'compact'"
-                        [fieldHeight]="'34px'"
-                      />
-                    </div>
-                  </div>
                   <!-- Customer fields -->
                   @if (payeeType?.toString() === "1") {
                     <div class="form-grid">
@@ -1123,9 +1047,12 @@
               </div>
 
             <form [formGroup]="requestPayeeForm" class="send-link-form">
-              <p class="send-link-hint">
-                Enter an email, a mobile number, or both. The link goes to
-                every channel you fill in.
+              <p class="send-link-hint" role="note">
+                <lucide-icon name="info" [size]="14" class="send-link-hint-icon" />
+                <span>
+                  Enter an email, a mobile number, or both. The link goes to
+                  every channel you fill in.
+                </span>
               </p>
               <div class="form-grid">
                 <div class="form-field full-width send-channel" data-field="payeeEmail">
@@ -1328,6 +1255,96 @@
           }
         </div>
       </div>
+      <!-- Address fields, shared by the Entity card (business) and the optional Address panel -->
+      <ng-template #addressFieldsTpl>
+        <div class="form-field full-width address-line-compact" data-field="payeeAddress1">
+          <app-address-autocomplete-v4
+            [label]="'Address Line 1'"
+            [placeholder]="'Address Line 1'"
+            [control]="payeeForm.controls.payeeAddress1"
+            [maxLength]="150"
+            [isFieldRequired]="isBusinessIsRequired"
+            (addressSelected)="onPayeeAddressSelected($event)"
+          />
+        </div>
+        <div class="form-field full-width">
+          <app-common-input-v4
+            [placeholder]="'Address Line 2'"
+            [fieldLabel]="'Address Line 2'"
+            formControlName="payeeAddress2"
+            [control]="payeeForm.controls.payeeAddress2"
+            [maxLength]="150"
+            [isFieldRequired]="false"
+            [variant]="'compact'"
+            [fieldHeight]="'34px'"
+          />
+        </div>
+        <div class="form-field" data-field="payeeCity">
+          <app-common-input-v4
+            [placeholder]="'City'"
+            [fieldLabel]="'City'"
+            formControlName="payeeCity"
+            [control]="payeeForm.controls.payeeCity"
+            [maxLength]="50"
+            [isFieldRequired]="isBusinessIsRequired"
+            [variant]="'compact'"
+            [fieldHeight]="'34px'"
+          />
+        </div>
+        <div class="form-field state-field-compact" data-field="payeeState">
+          <label
+            class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >State
+            @if (isBusinessIsRequired) {
+              <span class="text-v4-common-red-color">*</span>
+            }
+          </label>
+          <app-common-state-select-v4
+            formControlName="payeeState"
+            [country]="payeeForm.controls.payeeCountry.value"
+            [isRequired]="isBusinessIsRequired || isAddressCountryStateRequired()"
+            placeholder="State"
+            [controlClass]="'height-1'"
+          ></app-common-state-select-v4>
+        </div>
+        <div class="form-field" data-field="payeeZip">
+          <app-common-input-v4
+            [placeholder]="
+              !payeeForm.get('payeeCountry')?.value ||
+              payeeForm.get('payeeCountry')?.value === 'US'
+                ? 'Zip'
+                : 'Postal Code'
+            "
+            [fieldLabel]="
+              !payeeForm.get('payeeCountry')?.value ||
+              payeeForm.get('payeeCountry')?.value === 'US'
+                ? 'Zip'
+                : 'Postal Code'
+            "
+            formControlName="payeeZip"
+            [control]="payeeForm.controls.payeeZip"
+            [maxLength]="10"
+            [isFieldRequired]="isBusinessIsRequired"
+            [variant]="'compact'"
+            [fieldHeight]="'34px'"
+          />
+        </div>
+        <div class="form-field" data-field="payeeCountry">
+          <label
+            class="block text-sm font-medium text-v4-secondary-text-color font-peridot mb-1.5"
+            >Country
+            @if (isBusinessIsRequired) {
+              <span class="text-v4-common-red-color">*</span>
+            }
+          </label>
+          <app-common-country-select-v4
+            formControlName="payeeCountry"
+            [isRequired]="isBusinessIsRequired || isAddressCountryStateRequired()"
+            placeholder="Country"
+            [controlClass]="'height-1'"
+          ></app-common-country-select-v4>
+        </div>
+      </ng-template>
     </form>
   }
 

@@ -6,6 +6,26 @@ Related: `docs/design-system/v4-ui-reference.md` (colour, button and component-s
 
 ---
 
+## 14/10/2026
+
+Branch: `design/zilmoney-rebrand` (main copy, port 4200). Synced to the 4201 and 4202 worktrees with `tools/sync-from-main.mjs`.
+
+### App-wide
+
+- **Field border softened**: `--v4-input-border-color` (light) and `$zm-control-border` from `#7c8fa3` to `#8395a8` by request. 3.07:1 on white, 2.85:1 on the page tint; the page case is a documented exception (floor 2.8:1) in the contrast guard. Dark theme unchanged.
+  - Files: `src/assets/style_varients/_v4-light-theme.scss`, `_zm-palette-preview.scss`, `tools/contrast-check.mjs`
+
+### Payees, Add Payee modal
+
+- **Entity card**: Business now shows the address fields inline under Company Name, all required; the Address chip leaves the optional row. Individual keeps the optional Address chip. Typed address survives switching back to Individual. State and Country labels carry the required asterisk for a business. Save validation points at the Entity card for a business.
+- **Payee ID/Acc Number** moved from More info to the Entity card beside Company Name (Individual and Business), labelled optional.
+- **Send a secure link**: hint restyled as a brand-tinted note with an info icon, 12px from the header and the Email field (was 16px and 28px). "Back to manual entry" restyled as an outline pill; gap below it 12px (was 24px).
+  - Files: `src/app/modules/payee/payee-v4/modals/add-payee-modal-v4/add-payee-modal-v4.component.html`, `.ts`, `.scss`
+
+### Docs
+
+- `v4-ui-reference.md` and `.html`: token table, open item 4.5 and new section 4.6 updated for the field border; this change log entry added. The `.docx` and knowledge-base PDF were not regenerated.
+
 ## 13/10/2026
 
 Branch: `design/zilmoney-rebrand` (main copy, port 4200). Every change was also synced to the `design/zilmoney-rebrand-old-colors` (4201) and `design/zilmoney-rebrand-teal` (4202) worktrees with `tools/sync-from-main.mjs`.

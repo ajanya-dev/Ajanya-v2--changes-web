@@ -53,7 +53,9 @@ const PAIRS = [
   ['v4-text-success', 'v4-surface-success', 4.5, 'success text on success surface'],
   ['v4-text-warning', 'v4-secondary-background-color', 4.5, 'warning text'],
   ['v4-input-border-color', 'v4-input-background-color', 3, 'field border on field'],
-  ['v4-input-border-color', 'v4-main-background-color', 3, 'field border on page'],
+  // Exception agreed 14/10/2026: the field border was softened to #8395a8 (3.07:1 on white).
+  // Fields that sit directly on the page tint measure 2.85:1; see v4-ui-reference.md 4.5.
+  ['v4-input-border-color', 'v4-main-background-color', 2.8, 'field border on page (documented exception)'],
   ['v4-favorite-star-color', 'v4-secondary-background-color', 3, 'favorite star (state indicator)'],
 ];
 // Insight cards: label + number are text on the card tint, the icon is a 3:1 graphic.
@@ -113,7 +115,7 @@ fails += check(
   { ...light, 'v4-input-border-color': zm['zm-control-border'], 'v4-main-background-color': zm['zm-page'] },
   [
     ['v4-input-border-color', 'v4-input-background-color', 3, 'palette field border'],
-    ['v4-input-border-color', 'v4-main-background-color', 3, 'palette field border on page'],
+    ['v4-input-border-color', 'v4-main-background-color', 2.8, 'palette field border on page (documented exception)'],
   ]
 );
 
