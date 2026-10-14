@@ -12,13 +12,17 @@ Branch: `design/zilmoney-rebrand` (main copy, port 4200). Synced to the 4201 and
 
 ### App-wide
 
-- **Field border softened**: `--v4-input-border-color` (light) and `$zm-control-border` from `#7c8fa3` to `#8395a8` by request. 3.07:1 on white, 2.85:1 on the page tint; the page case is a documented exception (floor 2.8:1) in the contrast guard. Dark theme unchanged.
+- **Field border lightened**: `--v4-input-border-color` (light) and `$zm-control-border` from `#7c8fa3` to `#d1d5db` at the user's request, after trying `#8395a8`, `#8a9bad` and the staging grey `#e5e7eb` (a touch too faint). 1.47:1 on white, 1.37:1 on the page tint; WCAG 1.4.11 knowingly not met for field borders, recorded as a documented exception in the contrast guard. Colour only; radius, height and padding untouched. Dark theme unchanged. Same grey in all three worktrees.
   - Files: `src/assets/style_varients/_v4-light-theme.scss`, `_zm-palette-preview.scss`, `tools/contrast-check.mjs`
 
 ### Payees, Add Payee modal
 
 - **Entity card**: Business now shows the address fields inline under Company Name, all required; the Address chip leaves the optional row. Individual keeps the optional Address chip. Typed address survives switching back to Individual. State and Country labels carry the required asterisk for a business. Save validation points at the Entity card for a business.
 - **Payee ID/Acc Number** moved from More info to the Entity card beside Company Name (Individual and Business), labelled optional.
+- **Entity card copy**: for an Individual the subtitle "Company name is optional for an individual" was removed and the field label became "Company Name (optional)". Business keeps the required subtitle.
+- **Entity explanation as a tooltip**: the subtitle under "Entity" is gone. An info icon beside the title (keyboard-focusable) shows: "Who you are paying. Individual: a person, paid under their own name. Business: a company or organisation. Company name and address are required." Tried first as a subtitle, moved to a tooltip on request to keep the card to one line.
+- **Optional-details chips** (Address, Bank account, More info): dashed edge now a 40% mix of the secondary text colour over the surface, white fill and main text colour, so they stay visible against the lighter field border. Active, done and error states unchanged.
+- **Control heights**: all modal controls (phone, date picker, address line, state, country, ng-select triggers, category dropdown) raised from 34px to the 40px compact height the shared text input renders, so Email and Phone match. Phone wrapper radius 8px to match; Phone label "Phone (optional)" styled like Email.
 - **Send a secure link**: hint restyled as a brand-tinted note with an info icon, 12px from the header and the Email field (was 16px and 28px). "Back to manual entry" restyled as an outline pill; gap below it 12px (was 24px).
   - Files: `src/app/modules/payee/payee-v4/modals/add-payee-modal-v4/add-payee-modal-v4.component.html`, `.ts`, `.scss`
 

@@ -52,10 +52,11 @@ const PAIRS = [
   ['v4-text-success', 'v4-secondary-background-color', 4.5, 'success text'],
   ['v4-text-success', 'v4-surface-success', 4.5, 'success text on success surface'],
   ['v4-text-warning', 'v4-secondary-background-color', 4.5, 'warning text'],
-  ['v4-input-border-color', 'v4-input-background-color', 3, 'field border on field'],
-  // Exception agreed 14/10/2026: the field border was softened to #8395a8 (3.07:1 on white).
-  // Fields that sit directly on the page tint measure 2.85:1; see v4-ui-reference.md 4.5.
-  ['v4-input-border-color', 'v4-main-background-color', 2.8, 'field border on page (documented exception)'],
+  // Exception agreed 14/10/2026: at the user's request the field border is #d1d5db, one shade
+  // above the staging grey (1.47:1 on white, 1.37:1 on the page tint). The 3:1 boundary rule
+  // (WCAG 1.4.11) is knowingly not met for field borders. See v4-ui-reference.md 4.6.
+  ['v4-input-border-color', 'v4-input-background-color', 1.4, 'field border on field (documented exception)'],
+  ['v4-input-border-color', 'v4-main-background-color', 1.3, 'field border on page (documented exception)'],
   ['v4-favorite-star-color', 'v4-secondary-background-color', 3, 'favorite star (state indicator)'],
 ];
 // Insight cards: label + number are text on the card tint, the icon is a 3:1 graphic.
@@ -114,8 +115,8 @@ fails += check(
   'palette',
   { ...light, 'v4-input-border-color': zm['zm-control-border'], 'v4-main-background-color': zm['zm-page'] },
   [
-    ['v4-input-border-color', 'v4-input-background-color', 3, 'palette field border'],
-    ['v4-input-border-color', 'v4-main-background-color', 2.8, 'palette field border on page (documented exception)'],
+    ['v4-input-border-color', 'v4-input-background-color', 1.4, 'palette field border (documented exception)'],
+    ['v4-input-border-color', 'v4-main-background-color', 1.3, 'palette field border on page (documented exception)'],
   ]
 );
 

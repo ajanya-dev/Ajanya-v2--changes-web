@@ -63,7 +63,7 @@ Colour theme, button styling, component states, and the changes made in the Octo
 | `--v4-popup-background-color` | `#fbfbfb` | `#1c293c` | Modal surface (header, body and footer) |
 | `--v4-popup-header-footer-color` | `#ffffff` | `#162034` | Legacy modal header/footer band (see 3.4) |
 | `--v4-input-background-color` | `#ffffff` | `#1c293c` | Field background, selected list row |
-| `--v4-input-border-color` | `#8395a8` | `#6b7a90` | Field borders only (3.07:1 on white; 2.85:1 on page, documented exception, see 4.6) |
+| `--v4-input-border-color` | `#d1d5db` | `#6b7a90` | Field borders only. One shade above the staging grey; 1.47:1 on white, documented exception, see 4.6 |
 | `--v4-border-color` | `#e5e7eb` | `#3a3e47` | Card, panel, divider and container borders |
 | `--v4-border-subtle-color` | `#f1f2f4` | `#2b303b` | Hairline separators |
 | `--v4-list-hover-color` / `--v4-hover-color` | 8% tint of main text | same | Row and menu hover |
@@ -342,14 +342,16 @@ Long forms no longer stack identical accordions. The Add payee modal pattern:
 - `app-common-input-v4` applies a legacy `border-common-red-color` class whenever a field is empty (`!inputValue.value`). It is overridden visually but should be removed.
 - Two legacy ag-grid themes (`ag-theme-material`, bare `ag-theme-alpine`) remain on five grids.
 - Country/state selects and three modals use raw ng-select without the shared mixin, so they lack the has-value and hover states.
-- Field border: softened to `#8395a8` on 14 October 2026 by request (3.07:1 on white, 2.85:1 on the page tint). `tools/contrast-check.mjs` now carries a documented 2.8:1 floor for the page case only; see 4.6.
+- Field border: set to `#d1d5db` on 14 October 2026 at the user's request, one shade above the staging grey (1.47:1 on white, 1.37:1 on the page tint). WCAG 1.4.11 (3:1 boundary) is knowingly not met for field borders; `tools/contrast-check.mjs` records it as a documented exception. See 4.6.
 - White text on the teal secondary brand (`#00a5b2`) measures about 3:1. It is used on banner CTAs by request; it is below the 4.5:1 text target.
 
 ### 4.6 Additions on 14 October 2026
 
-- **Field border softened app-wide**: `--v4-input-border-color` (light) and the palette `$zm-control-border` moved from `#7c8fa3` to `#8395a8` by request. 3.07:1 on white cards and modals, 2.85:1 on the page tint. The page case is a documented exception in `tools/contrast-check.mjs` (floor 2.8:1); the field-on-white rule stays at 3:1. Dark theme unchanged (`#6b7a90`, 3.36:1).
+- **Field border lightened**: `--v4-input-border-color` (light) and the palette `$zm-control-border` moved from `#7c8fa3` to `#d1d5db` at the user's request, after trying `#8395a8`, `#8a9bad` and the staging grey `#e5e7eb` (judged a touch too faint). 1.47:1 on white, 1.37:1 on the page tint, so WCAG 1.4.11 (3:1 boundary) is knowingly not met for field borders. Recorded as a documented exception in `tools/contrast-check.mjs`. Only the colour changed; radius, height and padding are untouched. Dark theme unchanged (`#6b7a90`, 3.36:1). All three worktrees share the same grey.
   - Files: `src/assets/style_varients/_v4-light-theme.scss`, `_zm-palette-preview.scss`, `tools/contrast-check.mjs`
 - **Add Payee modal, Entity card**: when Business is selected the address fields (Line 1, Line 2, City, State, Zip, Country) render inside the Entity card under Company Name, all marked required, and the Address chip leaves the "Add optional details" row. Individual keeps the optional Address chip. State and Country labels show the required asterisk for a business. A shared `addressFieldsTpl` template feeds both the Entity card and the optional panel.
 - **Add Payee modal, Payee ID/Acc Number** moved from the More info panel to the Entity card, beside Company Name, for Individual and Business. Labelled optional.
+- **Add Payee modal, Entity card copy**: for an Individual the subtitle "Company name is optional for an individual" is gone; the field label reads "Company Name (optional)" instead. Business keeps the "required" subtitle and the plain label.
+- **Add Payee modal, control heights**: every control in the modal now renders at the 40px compact height of the shared text input (phone, date picker, address line, state, country, ng-select triggers, category dropdown). The modal previously pinned those at 34px while text inputs rendered at 40px, so Email and Phone sat side by side at different heights. The phone wrapper radius is 8px in this modal to match the text fields. The Phone label reads "Phone (optional)" in the same style as Email.
 - **Add Payee modal, Send a secure link**: the "email, mobile, or both" hint is a brand-tinted note (8% primary tint, 3px primary left border, info icon, main text colour) 12px from the header and the Email field. "Back to manual entry" is an outline pill (32px, input border, bold label, brand-tint hover, focus ring); the gap below it is 12px.
   - Files: `src/app/modules/payee/payee-v4/modals/add-payee-modal-v4/add-payee-modal-v4.component.html`, `.ts`, `.scss`
