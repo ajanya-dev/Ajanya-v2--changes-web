@@ -1,0 +1,117 @@
+<div class="angular-ocw-v35-ng-select-dropdown relative">
+
+  <div
+    [class]="labelIconNeeded ? 'height-' + customHeight : ''"
+    class="height-0 absolute top-0 z-[999]"
+    *ngIf="dropdownIconNeeded"
+  >
+    <div
+      class="flex justify-center items-center v35-dropdown-labeled-icon border-r border-input-border-color"
+    >
+      <fa-icon
+        class="text-common-yellow-color"
+        [icon]="['fas', 'credit-card']"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <ng-select
+    [appendTo]="append"
+    id="payee_drop_down_{{ id }}"
+    [class]="labelIconNeeded ? 'height-' + customHeight : ''"
+    class="ng-dropdown-panel-v35 text-sm w-auto height-0"
+    [items]="cards"
+    [formControl]="selectedCard"
+    (blur)="onTouched(); touch.emit()"
+    (open)="onDropdownOpen()"
+    placeholder="{{ placeholder }}"
+    [loading]="((selectIsCardsLoading$ | async) || paymentsService.isGatewayTypeLoading() || openAddCardService.isLoading()) ?? false"
+    bindLabel="nickName"
+    [notFoundText]="
+      !paymentsService.hasPermission.card
+        ? 'Permission Denied'
+        : 'No items found'
+    "
+  >
+    <ng-template ng-header-tmp>
+      <div
+        (click)="addNewCard()"
+        role="presentation"
+        class="add-new-btn-ng-option p-2 flex justify-center items-center text-center bg-common-secondary-blue-color rounded-lg text-common-blue-color cursor-pointer font-semibold text-[14px]"
+      >
+        <fa-icon class="mr-1" [icon]="['fas', 'plus']"></fa-icon>
+        <span class="add-new-text-ng-option">New</span>
+      </div>
+    </ng-template>
+    <ng-template ng-label-tmp let-item="item" let-index="index">
+      <div
+        class="main-text-highlight text-ellipsis overflow-hidden font-medium text-sm"
+      >
+        {{ item.nickName }}
+      </div>
+    </ng-template>
+
+    <ng-template ng-option-tmp let-item="item" let-index="index">
+      <!-- Old code -->
+      <!-- <div
+        class="rounded-full mr-2 text-sm text-common-yellow-color w-8 h-8 flex justify-center items-center bg-tertiary-background-color"
+        *ngIf="labelIconNeeded"
+      >
+        <fa-icon class="px-2" [icon]="['fas', 'credit-card']"></fa-icon>
+      </div>
+      <div class="flex-1 main-text-highlight font-medium overflow-hidden">
+        <div class="main-text-highlight text-ellipsis truncate text-sm">
+          {{ item.nickName }}
+        </div>
+        <div class="!text-secondary-text-color">
+          **** **** **** {{ item.last4 }}
+        </div>
+      </div> -->
+
+      <div
+        class="flex items-center w-full"
+
+      >
+        <div
+          class="rounded-full mr-2 text-sm text-common-yellow-color w-8 h-8 flex justify-center items-center bg-tertiary-background-color"
+          *ngIf="labelIconNeeded"
+        >
+          <fa-icon class="px-2" [icon]="['fas', 'credit-card']"></fa-icon>
+        </div>
+        <div class="flex-1 main-text-highlight font-medium overflow-hidden">
+          <div
+            class="main-text-highlight text-ellipsis truncate text-sm"
+          >
+            {{ item.nickName }}
+          </div>
+          <div class="!text-secondary-text-color">
+            **** **** **** {{ item.last4 }}
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template ng-footer-tmp>
+      @if((selectIsCardsLoading$ | async) || paymentsService.isGatewayTypeLoading()) {
+        <div
+          class="skelton p-1.5 -mt-1 mx-1"
+        ></div>
+      }@else if (credit_card_gateway_switching_status === 1) {
+        <div class="p-2 text-xs text-common-red-color text-center font-semibold">
+          For the best processing of your transaction, please add your card again if it is not found in this list.
+        </div>
+      }
+    </ng-template>
+  </ng-select>
+  <!-- Tooltip icon absolutely positioned to the right, before the arrow -->
+  @if(!selectedCard.value){
+    <fa-icon
+    [icon]="faCircleQuestion"
+    [matTooltip]="'• Choose your saved credit card. \n• Select \'+ New\' to add different card.'"
+    [matTooltipPosition]="'right'"
+    [matTooltipShowDelay]="300"
+    class="tooltip-question-icon absolute"
+    ></fa-icon>
+  }
+  
+</div>

@@ -1,0 +1,161 @@
+<div
+  class="h-sceen pb-[50px] w-full flex justify-center bg-main-background-color rounded-t-md font-inter"
+>
+  <div class="w-8/12 text-main-text-color">
+    <div class="flex gap-2.5">
+      <div class="pt-[38px]">
+        <app-common-back-button-v35
+          class="text-[20px] pt-1"
+          type="takeEvent"
+          (backEvent)="prevStep()"
+        ></app-common-back-button-v35>
+      </div>
+      <div class="pt-10 pb-5">
+        <h1 class="font-semibold text-lg pb-1">
+          Good Choice! Please go through the steps to enable Digital Payments
+        </h1>
+        <span class="text-xs"
+          >You will enable following features by completing these steps:</span
+        >
+
+        <div class="w-full flex flex-col gap-2 pt-5">
+          @for (feature of details?.features; track feature) {
+            <div class="flex justify-start gap-1 items-center">
+              <span
+                class="p-1 rounded-full size-5 flex items-center justify-center bg-common-secondary-green-color"
+              >
+                <fa-icon
+                  size="xs"
+                  class="p-1 rounded-full size-5 flex items-center justify-center text-common-green-color"
+                  [icon]="faCheck"
+                />
+              </span>
+              <span class="text-sm">{{ feature }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-1 gap-3 justify-center">
+      <div>
+        <div
+          class="mx-auto w-[2px] h-fit flex flex-col gap-[5px] justify-center"
+        >
+          <span class="dashed-line opacity-20"></span>
+          <span class="dashed-line opacity-30"></span>
+          <span class="dashed-line opacity-50"></span>
+          <span class="dashed-line opacity-80"></span>
+        </div>
+        @for (item of steps; track $index) {
+          <div
+            class="cursor-pointer relative w-[350px] h-[80px] box-shadow border rounded-[10px] text-sm"
+            [ngClass]="{
+              'step-heighlighted': currentStep === item.id,
+              'pointer-events-none': currentStep !== item.id || loading,
+              '!h-[180px]':
+                showDropDown && item.id === 'connect-verify-bank-acc'
+            }"
+          >
+            <div
+              class="cursor-pointer flex justify-center text-center items-center pt-[30px]"
+              (click)="selectStep(item.id, item.isCompleted)"
+              role="presentation"
+            >
+              @if (currentStep === item.id) {
+                <span
+                  class="absolute -left-10"
+                  [ngClass]="{
+                    'top-[75px]':
+                      showDropDown && item.id === 'connect-verify-bank-acc'
+                  }"
+                >
+                  <fa-icon
+                    [icon]="faAngle"
+                    class="text-common-blue-color text-sm"
+                  />
+                </span>
+              }
+              @if (item.isCompleted) {
+                <span class="absolute -right-10">
+                  <fa-icon
+                    [icon]="faCheck"
+                    class="text-common-green-color text-xl"
+                  />
+                </span>
+              }
+              <fa-icon
+                size="xs"
+                class="absolute left-[20px] rounded-full size-5 flex items-center justify-center text-common-blue-color text-xl border p-5 border-solid border-[#e1e1e1]"
+                [icon]="item?.icon"
+              />
+              <div
+                class="w-full text-center"
+                [ngClass]="{ 'ml-10': $index === 0 }"
+              >
+                {{ item.title }}
+              </div>
+            </div>
+
+            @if (showDropDown && item.id === "connect-verify-bank-acc") {
+              <div
+                class="custom-input-v3-wrapper flex grow shadow max-w-[340px] w-[300px] mt-[30px] m-auto"
+              >
+                <app-bank-ac-dropdown-v3
+                  [enableAddNew]="false"
+                  [shouldReload]="true"
+                  [formControl]="selectedBank"
+                  class="w-full"
+                  customHeight="3"
+                  (clearEvent)="clearEvent()"
+                ></app-bank-ac-dropdown-v3>
+              </div>
+
+              @if (accountStatus || statusName) {
+                <div class="flex justify-evenly p-2.5">
+                  @if (
+                    accountStatus === "Pending" || accountStatus === "Rejected"
+                  ) {
+                    <div
+                      [ngClass]="{
+                        'text-common-yellow-color': statusName === 'Pending',
+                        'text-common-red-color': statusName === 'Rejected'
+                      }"
+                      class="pt-[5px] text-center text-common-yellow-color text-sm font-semibold"
+                    >
+                      {{ statusName }}
+                    </div>
+                  }
+                  @if (accountStatus !== "Pending") {
+                    <app-common-button-v35
+                      class="whitespace-nowrap"
+                      [text]="accountStatus"
+                      [type]="{ name: 'list', style: 'blue' }"
+                      [disableHoverEffect]="false"
+                      customClasses="font-extralight p-0"
+                      backGroundInput="transparent"
+                      (clickEvent)="openBankVerifyModal(accountStatus)"
+                    ></app-common-button-v35>
+                  }
+                </div>
+              }
+            }
+          </div>
+
+          @if ($index < steps.length - 1) {
+            <div
+              class="mx-auto w-[2px] h-[50px] flex flex-col gap-[5px] justify-center"
+            >
+              <span class="dashed-line"></span>
+              <span class="dashed-line"></span>
+              <span class="dashed-line"></span>
+              <span class="dashed-line"></span>
+              <span class="dashed-line"></span>
+              <span class="dashed-line"></span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

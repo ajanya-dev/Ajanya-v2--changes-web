@@ -1,0 +1,170 @@
+<div class="flex justify-center py-4">
+  <div class="ocw_man_modal_wrapper w-[92%]">
+    <!-- modal header -->
+    <div class="ocw_modal_header mb-9">
+      <div class="ocw_modal_title">Set Default Payment</div>
+      <div class="close_btn" [mat-dialog-close]="false">
+        <fa-icon [icon]="['fas', 'x']"></fa-icon>
+      </div>
+    </div>
+    <!-- modal body start -->
+    <div class="ocw_modal_body">
+      <div class="flex mb-5 gap-3 w-full">
+        <div class="w-1/2">
+          <div class="single_input mb-5" [ngClass]="{ skelton: loading }">
+            <select
+              id="payFrom"
+              class="input_style"
+              (change)="payFromSelect($event.target.value)"
+            >
+              @for (item of payFromItems; track item) {
+                <option
+                  value="{{ item.id }}"
+                  [attr.selected]="
+                    item === selectedPayFromItem ? true : undefined
+                  "
+                  [disabled]="item.isDisable"
+                >
+                  <span class="w-full">{{ item.label }}</span>
+                </option>
+              }
+            </select>
+            <span class="floating_label_field"
+              >Pay From<span class="required">*</span></span
+            >
+          </div>
+        </div>
+        <div class="single_input w-1/2">
+          <div class="single_input mb-5" [ngClass]="{ skelton: loading }">
+            <select
+              id="payAs"
+              class="input_style"
+              (change)="payAsSelect($event.target.value)"
+            >
+              @for (item of payAsItems; track item) {
+                <option
+                  value="{{ item.id }}"
+                  [attr.selected]="
+                    item === selectedPayAsItem ? true : undefined
+                  "
+                  [disabled]="item.isDisable || !item.isSelectable"
+                >
+                  <span class="w-full">{{ item.label }}</span>
+                </option>
+              }
+            </select>
+            <span class="floating_label_field"
+              >Pay As<span class="required">*</span></span
+            >
+          </div>
+        </div>
+      </div>
+      <div class="flex mb-5 w-full">
+        <div
+          class="single_input w-full"
+          [ngClass]="{ 'skelton border-none': loading }"
+          [formGroup]="paymentForm"
+        >
+          @if (selectedPayFromItem?.id === "bankaccount" && !loading) {
+            <app-bank-ac-dropdown-v3
+              append="body"
+              (ready)="autoPopulateDropdown($event, paymentAc?.id)"
+              class="w-full"
+              formControlName="paymentAcControl"
+              #dropDownBank
+              (ngModelChange)="accSelect($event)"
+              [ngClass]="{ skelton: loading }"
+              permissionContext="forPayment"
+            />
+          } @else if (selectedPayFromItem?.id === "wallet" && !loading) {
+            <app-wallet-dropdown-v3
+              #dropDownWallet
+              (ngModelChange)="accSelect($event)"
+              (ready)="autoPopulateDropdown($event, paymentAc?.id)"
+              class="w-full"
+              formControlName="paymentAcControl"
+              [ngClass]="{ skelton: loading }"
+              [showLogoUpdateModal]="false"
+            />
+          } @else if (selectedPayFromItem?.id === "cloud" && !loading) {
+            <app-cloud-account-dropdown-v35
+              #dropDownCloud
+              customHeight="2"
+              (ready)="autoPopulateDropdown($event, paymentAc?.id)"
+              class="w-full"
+              (selectionEvent)="accSelect($event)"
+              [ngClass]="{ skelton: loading }"
+            />
+          } @else if (selectedPayFromItem?.id === "card" && !loading) {
+            <app-cards-dropdown-v3
+              append="body"
+              #dropDownCard
+              (ngModelChange)="accSelect($event)"
+              (ready)="autoPopulateDropdown($event, paymentAc?.cardId)"
+              class="w-full"
+              formControlName="paymentAcControl"
+              [ngClass]="{ skelton: loading }"
+            />
+          }
+        </div>
+      </div>
+      <div class="flex mb-5 w-full">
+        <div class="single_input w-full" [ngClass]="{ skelton: loading }">
+          <input
+            type="text"
+            [(ngModel)]="memo"
+            class="input_style memo-input-with-icon"
+            maxlength="100"
+          />
+          <span class="floating_label_field">Memo</span>
+          <fa-icon
+            [icon]="faCircleQuestion"
+            [matTooltip]="
+              '• Brief note about this payment.\n• Example: \'Office rent\' or \'Supplies\'.'
+            "
+            [matTooltipPosition]="'right'"
+            [matTooltipShowDelay]="300"
+            matTooltipClass="dark-tooltip my-tooltip"
+            class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+          ></fa-icon>
+        </div>
+      </div>
+    </div>
+    <!-- modal body end -->
+    <div class="ocw_modal_footer !justify-center !w-full mt-7 flex gap-3">
+      <mat-dialog-actions
+        class="w-1/2"
+        [ngClass]="{ 'skelton border-none': loading }"
+      >
+        <button
+          type="reset"
+          [disabled]="submitLoading || resetLoading"
+          class="ocw-btn ocw-btn-modal-bordered w-full justify-center ml-2"
+          (click)="reset()"
+        >
+          <span class="font-semibold"
+            >Reset
+            @if (resetLoading) {
+              <span class="loadingSpinner-reset ml-2 mt-1"></span>
+            }
+          </span>
+        </button>
+      </mat-dialog-actions>
+      <mat-dialog-actions
+        class="w-1/2"
+        [ngClass]="{ 'skelton border-none': loading }"
+      >
+        <button
+          [disabled]="submitLoading || resetLoading"
+          class="ocw-btn ocw-btn-modal-blue add_btn w-full justify-center mr-2"
+          (click)="submit()"
+        >
+          <span>Save </span>
+          @if (submitLoading) {
+            <span class="loadingSpinner ml-2 mt-2"> </span>
+          }
+        </button>
+      </mat-dialog-actions>
+    </div>
+  </div>
+</div>

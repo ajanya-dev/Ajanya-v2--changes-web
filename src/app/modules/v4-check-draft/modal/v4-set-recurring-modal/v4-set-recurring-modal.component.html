@@ -1,0 +1,236 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-3">
+      <div
+        class="w-10 h-10 rounded-lg bg-v4-brand-tint flex items-center justify-center"
+      >
+        <lucide-icon
+          name="repeat"
+          [size]="20"
+          class="text-v4-primary-brand-color"
+        />
+      </div>
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          Set Recurring Schedule
+        </h1>
+        <h2 class="text-xs text-v4-subtle-text-color">
+          Configure recurring for
+          {{ data.from === "table" ? "1 check" : "new check" }}
+        </h2>
+      </div>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="p-6 bg-v4-tertiary-background-color space-y-6"
+    [formGroup]="recurringForm"
+  >
+    <!-- Frequency -->
+    <div>
+      <label
+        class="block text-sm font-medium text-v4-secondary-text-color mb-3 font-peridot"
+      >
+        Frequency
+      </label>
+      <div class="grid grid-cols-3 gap-3">
+        @for (freq of frequencyOptions; track freq.value) {
+          <div
+            class="relative px-4 py-3 rounded-xl border cursor-pointer transition-all"
+            [ngClass]="
+              recurringForm.controls.frequency.value === freq.value
+                ? 'border-v4-primary-brand-color bg-v4-brand-tint'
+                : 'border-v4-border-color bg-v4-secondary-background-color hover:border-v4-primary-brand-color/50'
+            "
+            (click)="selectFrequency(freq.value)"
+          >
+            <div class="text-sm font-medium text-v4-main-text-color">
+              {{ freq.label }}
+            </div>
+            <div class="text-xs text-v4-tertiary-text-color">
+              {{ freq.description }}
+            </div>
+            @if (recurringForm.controls.frequency.value === freq.value) {
+              <div class="absolute top-2 right-2">
+                <lucide-icon
+                  name="check-circle-2"
+                  [size]="16"
+                  class="text-v4-primary-brand-color"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Start Date -->
+    <div>
+      <app-common-input-v4
+        placeholder="Start Date"
+        [fieldLabel]="'Start Date'"
+        [type]="'date'"
+        formControlName="startDate"
+        [control]="recurringForm.controls.startDate"
+        [minDate]="minDate"
+      />
+      @if (recurringForm.controls.startDate.value < minDate) {
+        <span class="text-xs text-v4-common-red-color mt-1"
+          >Starting date should be a future date.</span
+        >
+      }
+    </div>
+
+    <!-- End Options -->
+    <div>
+      <label
+        class="block text-sm font-medium text-v4-secondary-text-color mb-3 font-peridot"
+      >
+        End
+      </label>
+      <div class="space-y-3">
+        <!-- Never (Until I Cancel) -->
+        <div
+          class="relative px-4 py-3.5 rounded-xl border cursor-pointer transition-all"
+          [ngClass]="
+            recurringForm.controls.endSelect.value === '3'
+              ? 'border-v4-primary-brand-color bg-v4-brand-tint'
+              : 'border-v4-border-color bg-v4-secondary-background-color'
+          "
+          (click)="selectEndOption('3')"
+        >
+          <div class="text-sm font-medium text-v4-main-text-color">Never</div>
+          <div class="text-xs text-v4-tertiary-text-color">
+            Continue indefinitely
+          </div>
+          @if (recurringForm.controls.endSelect.value === "3") {
+            <div class="absolute top-3 right-4">
+              <lucide-icon
+                name="check-circle-2"
+                [size]="16"
+                class="text-v4-primary-brand-color"
+              />
+            </div>
+          }
+        </div>
+
+        <!-- On Date -->
+        <div
+          class="relative px-4 py-3.5 rounded-xl border cursor-pointer transition-all"
+          [ngClass]="
+            recurringForm.controls.endSelect.value === '2'
+              ? 'border-v4-primary-brand-color bg-v4-brand-tint'
+              : 'border-v4-border-color bg-v4-secondary-background-color'
+          "
+          (click)="selectEndOption('2')"
+        >
+          <div class="text-sm font-medium text-v4-main-text-color">On Date</div>
+          @if (recurringForm.controls.endSelect.value === "2") {
+            <div class="mt-2" (click)="$event.stopPropagation()">
+              <app-common-input-v4
+                placeholder="End Date"
+                [type]="'date'"
+                formControlName="until"
+                [control]="recurringForm.controls.until"
+                [minDate]="afterOneWeek"
+              />
+              @if (
+                recurringForm.controls.until.value < afterOneWeek &&
+                recurringForm.controls.endSelect.value === "2"
+              ) {
+                <span class="text-xs text-v4-common-red-color mt-1"
+                  >Enter valid specific date</span
+                >
+              }
+            </div>
+          }
+        </div>
+
+        <!-- After (count) -->
+        <div
+          class="relative px-4 py-3.5 rounded-xl border cursor-pointer transition-all"
+          [ngClass]="
+            recurringForm.controls.endSelect.value === '1'
+              ? 'border-v4-primary-brand-color bg-v4-brand-tint'
+              : 'border-v4-border-color bg-v4-secondary-background-color'
+          "
+          (click)="selectEndOption('1')"
+        >
+          <div class="text-sm font-medium text-v4-main-text-color">After</div>
+          @if (recurringForm.controls.endSelect.value === "1") {
+            <div
+              class="mt-2 flex items-center gap-2"
+              (click)="$event.stopPropagation()"
+            >
+              <app-common-input-v4
+                class="w-20"
+                [type]="'text'"
+                formControlName="count"
+                [control]="recurringForm.controls.count"
+                [maxLength]="3"
+                placeholder="1"
+                [isFieldRequired]="false"
+                [isNeedPreventKey]="true"
+                [preventCharacters]="['negative']"
+                (keyup)="isClick = false"
+              />
+              <span class="text-xs text-v4-tertiary-text-color"
+                >occurrences</span
+              >
+            </div>
+            @if (
+              recurringForm.controls.endSelect.value === "1" &&
+              recurringForm.controls.count.value === "" &&
+              isClick
+            ) {
+              <span class="text-xs text-v4-common-red-color mt-1"
+                >This field is required</span
+              >
+            }
+            @if (
+              recurringForm.controls.endSelect.value === "1" &&
+              recurringForm.controls.count.value == 0 &&
+              isClick
+            ) {
+              <span class="text-xs text-v4-common-red-color mt-1"
+                >Enter valid input</span
+              >
+            }
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      [mat-dialog-close]="false"
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      width="160px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Set Recurring"
+      [lucideIcon]="'repeat'"
+      (clickEvent)="setRecurring()"
+      [disabled]="isProcess"
+      [loading]="isProcess"
+    />
+  </div>
+</div>

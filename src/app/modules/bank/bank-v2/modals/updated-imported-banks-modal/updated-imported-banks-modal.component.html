@@ -1,0 +1,545 @@
+<div class="px-[6px] pb-[6px]">
+  <div class="flex justify-between pb-6">
+    <span
+      class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+    >
+      @if (step().step === 2) {
+        <button (click)="back()">
+          <fa-icon class="cursor-pointer" [icon]="faArrowLeft" />
+        </button>
+      }
+      <span class="pl-3 font-inter font-semibold text-base pb-0.5">
+        Import data from Excel/Csv File
+      </span>
+    </span>
+    <fa-icon
+      [mat-dialog-close]="false"
+      class="text-secondary-text-color cursor-pointer"
+      [icon]="faXmark"
+    />
+  </div>
+
+  <div>
+    @if (step().step === 1) {
+      <div class="mt-5">
+        <form [formGroup]="form">
+          <div class="flex flex-col gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2">
+              <label
+                class="font-inter font-semibold text-main-text-color text-sm"
+                for="file"
+              >
+                Select File:
+                <span class="required">*</span>
+              </label>
+              <div class="flex flex-col">
+                <app-common-upload-button-v35
+                  [uploadedFile]="form.controls.file.value"
+                  buttonText="BROWSE"
+                  [acceptedFileTypes]="fts"
+                  (selectedFileEvent)="onFileUpload($event)"
+                />
+                <app-control-message-v35
+                  [control]="form.controls.file"
+                  labelName="Please select a file"
+                />
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <app-common-button-v35
+                [type]="{ style: 'modal', name: 'main' }"
+                backGroundInput="var(--common-green-color)"
+                text="Import"
+                (clickEvent)="submit()"
+                [loading]="submitting()"
+                [disabled]="submitting()"
+              />
+            </div>
+          </div>
+        </form>
+
+        <div class="text-sm flex flex-col">
+          <span
+            class="mt-3 flex items-center gap-1 font-inter text-main-text-color font-normal"
+          >
+            <fa-icon class="text-common-blue-color" [icon]="faAngleRight" />
+            <span>We only support csv/xlsx file</span>
+          </span>
+
+          <a class="flex items-center gap-1 mt-3">
+            <span class="m-1 text-common-blue-color font-inter font-normal">
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                text="Download Sample File"
+                [type]="{ style: 'bordered', name: 'main' }"
+                [disableHoverEffect]="false"
+                [isAddIcon]="true"
+                [icon]="faArrowDownToLine"
+                [disabled]="fileDownloading()"
+                [loading]="fileDownloading()"
+                (click)="downloadSample()"
+              />
+            </span>
+          </a>
+        </div>
+      </div>
+    }
+    @if (step().step === 2) {
+      <div class="flex flex-col gap-1 !max-w-11/12">
+        <div class="flex flex-shrink !overflow-auto">
+          <table
+            class="ocw-table overflow-auto ocw-table-striped max-h-[700px]"
+          >
+            <tbody>
+              <tr>
+                @for (item of step().info.header; track item; let i = $index) {
+                  <td class="min-w-[250px]">
+                    <div class="single_input no_modal_btn">
+                      <select
+                        [(ngModel)]="selectedHeader[i]"
+                        (ngModelChange)="onSelectHeader(selectedHeader[i], i)"
+                        placeholder="Base Account"
+                        class="input_style"
+                      >
+                        <option selected value="">--Match Your Data--</option>
+                        @for (
+                          option of step().info.header;
+                          track option;
+                          let optIn = $index
+                        ) {
+                          <option
+                            [disabled]="disableMap()[optIn] !== undefined"
+                            [ngValue]="{ opt: option, optIn: optIn }"
+                          >
+                            {{ option }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                  </td>
+                }
+              </tr>
+
+              @for (row of step().info.rows; track row; let i = $index) {
+                <tr>
+                  @for (key of row; track key) {
+                    <ng-container>
+                      @if (i !== 0) {
+                        <td>
+                          {{ key }}
+                        </td>
+                      }
+                    </ng-container>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="flex justify-end">
+          <app-common-button-v35
+            [type]="{ style: 'modal', name: 'main' }"
+            text="Submit"
+            (clickEvent)="submitStep2()"
+            [loading]="submitting()"
+            [disabled]="submitting()"
+          />
+        </div>
+      </div>
+    }
+    @if (step().step === 3) {
+      <div class="flex flex-col gap-1 !max-w-11/12">
+        <div class="flex flex-shrink !overflow-auto max-h-[700px]">
+          <div class="table-container">
+            <table class="new-table">
+              <thead>
+                <tr>
+                  @for (
+                    head of [
+                      "Name",
+                      "Account Number",
+                      "Bank Name",
+                      "Nickname",
+                      "Routing Number",
+                      "Address Line 1",
+                      "Address Line 2",
+                      "City",
+                      "State",
+                      "Zip",
+                      "Country",
+                      "Phone Number",
+                      "Action"
+                    ];
+                    track head
+                  ) {
+                    <th>{{ head }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (data of step().data; track data; let i = $index) {
+                  <tr>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_account_name"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_account_name')
+                          "
+                          >{{ data.bank_account_account_name }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_account_name")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(
+                                data,
+                                'bank_account_account_name'
+                              )
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_account_number"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_account_number')
+                          "
+                          >{{ data.bank_account_account_number }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_account_number")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(
+                                data,
+                                'bank_account_account_number'
+                              )
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_bank_name"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_bank_name')
+                          "
+                          >{{ data.bank_account_bank_name }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_bank_name")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_bank_name')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_nick_name"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_nick_name')
+                          "
+                          >{{ data.bank_account_nick_name }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_nick_name")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_nick_name')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_routing_number"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_routing_number')
+                          "
+                          >{{ data.bank_account_routing_number }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_routing_number")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(
+                                data,
+                                'bank_account_routing_number'
+                              )
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_address_line_1"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_address_line_1')
+                          "
+                          >{{ data.bank_account_address_line_1 }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_address_line_1")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(
+                                data,
+                                'bank_account_address_line_1'
+                              )
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_address_line_2"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_address_line_2')
+                          "
+                          >{{ data.bank_account_address_line_2 }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_address_line_2")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(
+                                data,
+                                'bank_account_address_line_2'
+                              )
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_city"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_city')
+                          "
+                          >{{ data.bank_account_city }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_city")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_city')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_state"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_state')
+                          "
+                          >{{ data.bank_account_state }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_state")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_state')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_zip"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_zip')
+                          "
+                          >{{ data.bank_account_zip }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_zip")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_zip')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_country"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_country')
+                          "
+                          >{{ data.bank_account_country }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_country")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_country')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      @if (editingRow === i) {
+                        <input
+                          type="text"
+                          class="border border-input-border-color rounded px-2 py-1 w-full"
+                          [(ngModel)]="data.bank_account_phone"
+                        />
+                      } @else {
+                        <span
+                          [class.text-common-red-color]="
+                            hasErrors(data, 'bank_account_phone')
+                          "
+                          >{{ data.bank_account_phone }}</span
+                        >
+                        @if (hasErrors(data, "bank_account_phone")) {
+                          <fa-icon
+                            [icon]="faCircleInfo"
+                            class="text-common-red-color ml-1"
+                            [matTooltip]="
+                              getErrorMessages(data, 'bank_account_phone')
+                            "
+                          />
+                        }
+                      }
+                    </td>
+                    <td>
+                      <div class="flex space-x-2">
+                        @if (editingRow === i) {
+                          <button
+                            class="text-common-green-color"
+                            (click)="saveEdit(data)"
+                          >
+                            <fa-icon [icon]="faCheck" />
+                          </button>
+                        } @else {
+                          @if (
+                            hasErrors(data, "bank_account_account_number") ||
+                            hasErrors(data, "bank_account_address_line_1") ||
+                            hasErrors(data, "bank_account_address_line_2") ||
+                            hasErrors(data, "bank_account_city") ||
+                            hasErrors(data, "bank_account_state") ||
+                            hasErrors(data, "bank_account_zip")
+                          ) {
+                            <button
+                              class="text-common-blue-color"
+                              title="Edit fields with errors"
+                              (click)="toggleEdit(i)"
+                            >
+                              <fa-icon [icon]="faPencil" />
+                            </button>
+                          }
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <app-common-button-v35
+            [type]="{ style: 'modal', name: 'main' }"
+            text="Submit"
+            (clickEvent)="submitStep3()"
+            [loading]="submitting()"
+            [disabled]="submitting()"
+          />
+        </div>
+      </div>
+    }
+  </div>
+</div>

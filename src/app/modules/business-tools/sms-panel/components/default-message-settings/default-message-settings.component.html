@@ -1,0 +1,187 @@
+<div class="main-container flex">
+  <div>
+    <div class="flex items-center pb-4 sub-header">
+      <div>Add Default SMS Reply</div>
+      <div class="question-mark ml-1 mt-1">
+        <span
+          mat-raised-button
+          matTooltipPosition="right"
+          matTooltip="Here you can configure a reply message that will be send back to customer if customer sends a message to your phone number"
+          class="example-button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            focusable="false"
+            data-prefix="fas"
+            data-icon="question-circle"
+            class="svg-inline--fa fa-question-circle fa-w-16"
+            role="img"
+            viewBox="0 0 512 512"
+          >
+            <path
+              fill="currentColor"
+              d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zM262.655 90c-54.497 0-89.255 22.957-116.549 63.758-3.536 5.286-2.353 12.415 2.715 16.258l34.699 26.31c5.205 3.947 12.621 3.008 16.665-2.122 17.864-22.658 30.113-35.797 57.303-35.797 20.429 0 45.698 13.148 45.698 32.958 0 14.976-12.363 22.667-32.534 33.976C247.128 238.528 216 254.941 216 296v4c0 6.627 5.373 12 12 12h56c6.627 0 12-5.373 12-12v-1.333c0-28.462 83.186-29.647 83.186-106.667 0-58.002-60.165-102-116.531-102zM256 338c-25.365 0-46 20.635-46 46 0 25.364 20.635 46 46 46s46-20.636 46-46c0-25.365-20.635-46-46-46z"
+            />
+          </svg>
+        </span>
+      </div>
+    </div>
+    <div
+      class="grid grid-cols-1 gap-5 send-sms-form"
+      [formGroup]="defaultSettingsForm"
+    >
+      <div class="single_input">
+        <select class="form-select input_style" formControlName="fromNumber">
+          <option selected disabled value="">Select From Number</option>
+          <option *ngFor="let item of fromNumbers" value="{{ item.id }}">
+            {{ item.fromNumber }}-({{ item.name }})
+          </option>
+        </select>
+        <label class="floating_label_field"
+          >From Phone Number<span class="required">*</span></label
+        >
+        <app-control-message
+          [control]="defaultSettingsForm.controls.fromNumber"
+        ></app-control-message>
+      </div>
+      <div>
+        <div class="flex">
+          <div class="single_input mr-2 grow">
+            <select
+              class="form-select input_style"
+              formControlName="group"
+              (change)="showGroupDetails()"
+            >
+              <option selected disabled value="">Select Group</option>
+              <option *ngFor="let item of groups" [ngValue]="item">
+                {{ item.name }}
+              </option>
+            </select>
+            <label class="floating_label_field"
+              >Group<span class="required">*</span></label
+            >
+            <app-control-message
+              [control]="defaultSettingsForm.controls.group"
+            ></app-control-message>
+          </div>
+          <div class="add_modal_btn" (click)="openCreateGroup()">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              data-prefix="far"
+              data-icon="plus"
+              class="svg-inline--fa fa-plus fa-w-12"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 384 512"
+            >
+              <path
+                fill="currentColor"
+                d="M368 224H224V80c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v144H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h144v144c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V288h144c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+        <div
+          class="group-info flex justify-between items-center mt-2"
+          *ngIf="
+            defaultSettingsForm.controls.group.value?.id && isShowGroupDetails
+          "
+        >
+          <div>
+            <div class="group-name-label">Nickname</div>
+            <div class="group-name">
+              {{ defaultSettingsForm.controls.group.value.nick_name }}
+            </div>
+          </div>
+          <div class="flex items-baseline">
+            <div class="count-label">
+              {{ defaultSettingsForm.controls.group.value.contact }} Contacts
+            </div>
+            <div
+              class="ml-2"
+              (click)="editGroup(defaultSettingsForm.controls.group.value)"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div class="ml-2" (click)="hideGroupDetails()">
+              <i class="fa-regular fa-xmark"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="single_input message-text-area-wrapper">
+        <textarea
+          class="input_style"
+          formControlName="message"
+          placeholder=""
+          maxlength="160"
+        ></textarea>
+        <label class="floating_label_field"
+          >Message<span class="required">*</span></label
+        >
+        <app-control-message
+          [control]="defaultSettingsForm.controls.message"
+        ></app-control-message>
+      </div>
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="ocw-btn-dark-green ocw-btn send-btn"
+          (click)="addDefaultMessage()"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="settings-list ml-4 grow">
+    <div class="sub-header pb-4">Default SMS Reply Services</div>
+    <div class="contacts-table">
+      <div class="table-head">
+        <table class="ocw-table ocw-table-striped">
+          <thead>
+            <tr>
+              <td class="text-left table-column-width">Service Id</td>
+              <td class="text-left table-column-width">From Phone Number</td>
+              <td class="text-left table-column-width">Group</td>
+              <td class="text-left table-column-width">Message</td>
+              <td class="text-left table-column-width">Actions</td>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div class="table-body">
+        <table class="ocw-table ocw-table-striped">
+          <tbody>
+            <tr *ngFor="let item of serviceArray; let i = index">
+              <td class="table-column-width">{{ item.serviceId }}</td>
+              <td class="table-column-width">{{ item.fromNumber }}</td>
+              <td class="table-column-width">{{ item.groupName }}</td>
+              <td class="table-column-width">
+                {{ item.message | slice: 0 : 20 }}
+              </td>
+              <td class="table-column-width px-0">
+                <i
+                  class="fa-solid fa-pen mx-2 cursor-pointer"
+                  matTooltip="Edit Default SMS Service"
+                  (click)="editDefaultSMSGroup(item)"
+                ></i>
+                <i
+                  class="fa-regular fa-trash-can mx-2 cursor-pointer"
+                  matTooltip="Delete Default SMS Service"
+                  (click)="deleteDefaultSMSService(item, i)"
+                ></i>
+              </td>
+            </tr>
+            <tr *ngIf="!serviceArray?.length">
+              <td colspan="4">
+                <div class="text-center">No default messages created</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

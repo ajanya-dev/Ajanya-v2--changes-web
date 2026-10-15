@@ -1,0 +1,204 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >{{selectShippingTypeForAll() ? 'Select your preferred shipping method' : 'Settings'}}</span
+        >
+        @if(!selectShippingTypeForAll()){
+          <fa-icon
+            [icon]="faInfo"
+            class="cursor-pointer text-secondary-text-color ml-1"
+            matTooltip="If you set a default shipping type option,the selected option will be used as the default mailing type when sending checks via mail."
+          ></fa-icon>
+        }
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="flex flex-col gap-5">
+    <div class="flex justify-between items-center">
+      <span class="text-main-text-color text-sm font-inter font-normal">{{
+        selectShippingTypeForAll()
+          ? "Shipping Method"
+          : "Default Shipping Type (US)"
+      }}</span>
+      @if (isLoadingDefaultType()) {
+        <div class="skelton w-60 h-8 mb-2"></div>
+      } @else if(!selectShippingTypeForAll()) {
+        <select
+          name=""
+          id=""
+          class="border border-input-border-color rounded p-1 min-w-64"
+          [(ngModel)]="usDefaultShippingType"
+        >
+          @for (item of usShippingTypes(); track $index) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select>
+      } @else if(selectShippingTypeForAll()) {
+        <div class="">
+          <select
+            name=""
+            id=""
+            class="border border-input-border-color rounded p-1 min-w-64"
+            (change)="updateShippingTypeForAll($event)"
+          >
+          @if(usShippingTypeForAll() === 0) {
+            <option value="" disabled hidden selected>
+              Select Shipping Method
+            </option>
+          }
+            @for (item of usShippingTypes(); track $index) {
+              <option [value]="item.id" [selected]="usShippingTypeForAll() === item.id">{{ item.name }}</option>
+            }
+          </select>
+          @if(usShippingTypeForAll() === 0 && isRequired()){
+            <div class="error-message text-xs text-common-red-color pt-0.5 font-semibold">
+              <fa-icon class="pr-0.5" [icon]="faRequired"></fa-icon> This field is required.
+            </div>
+          }
+        </div>
+      }
+    </div>
+    @if (!selectShippingTypeForAll()) {
+      <div class="flex justify-between items-center">
+        <span class="text-main-text-color text-sm font-inter font-normal"
+          >Default Shipping Type (CA)</span
+        >
+        @if (isLoadingDefaultType()) {
+          <div class="skelton w-60 h-8 mb-2"></div>
+        } @else {
+          <select
+            name=""
+            id=""
+            class="border border-input-border-color rounded p-1 min-w-64"
+            [(ngModel)]="caDefaultShippingType"
+          >
+            @for (item of caShippingTypes(); track $index) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select>
+        }
+      </div>
+    }
+    <div>
+      @if (auditLog()?.length && !selectShippingTypeForAll()) {
+        <span
+          class="text-common-blue-color cursor-pointer text-sm font-inter font-medium hover:underline"
+          role="presentation"
+          (click)="showActivity.set(!showActivity())"
+          >Activities</span
+        >
+      }
+      <div
+        class="overflow-hidden transition-all duration-300 ease-in-out"
+        [class]="
+          showActivity() ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+        "
+      >
+        <div class="pt-2 overflow-auto">
+          <table class="ocw-table ocw-table-base">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Status</th>
+                <th>Crated At</th>
+                <th>Ip Address</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of auditLog(); track $index) {
+                <tr>
+                  <td>{{ item.userName }}</td>
+                  <td>{{ item.status }}</td>
+                  <td>{{ item.formattedCreatedAt }}</td>
+                  <td>{{ item.ip_address }}</td>
+                  <td>{{ item.note }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (totalPage > 1 && auditLog().length) {
+            <div class="py-3 flex items-center justify-between">
+              <div class="flex-1 flex items-center justify-end">
+                <div>
+                  <nav
+                    class="relative z-0 inline-flex rounded-md shadow-sm gap-0.5"
+                    aria-label="Pagination"
+                  >
+                    <a
+                      (click)="onPrevious()"
+                      role="presentation"
+                      class="relative page_indent inline-flex items-center px-2 py-2 rounded-md border border-input-border-color text-sm font-medium text-gray-500 cursor-pointer"
+                    >
+                      <fa-icon [icon]="faAngleLeft">Previous</fa-icon>
+                    </a>
+                    @for (item of pageArr; let i = $index; track item) {
+                      <a
+                        aria-current="page"
+                        (click)="gotoPage(item)"
+                        role="presentation"
+                        class="page_indent z-10 relative inline-flex items-center px-3 py-1 text-sm font-medium cursor-pointer font-inter text-main-text-color"
+                        [ngClass]="{
+                          ' border-w':
+                            (mode === 1 && i + 1 === initialPage) ||
+                            (mode !== 1 && i + 1 === pseudoI),
+                          ' border-gray-300': i + 1 !== initialPage,
+                          'rounded-md border border-input-border-color':
+                            item !== '...',
+                          'bg-common-blue-color text-white':
+                            paginationPage === item
+                        }"
+                      >
+                        {{ item ? item : "..." }}
+                      </a>
+                    }
+
+                    <a
+                      (click)="onNext()"
+                      role="presentation"
+                      class="page_indent relative inline-flex items-center px-2 py-1 rounded-md border border-input-border-color text-sm font-medium text-gray-500 cursor-pointer"
+                    >
+                      <fa-icon [icon]="faAngleRight">Next</fa-icon>
+                    </a>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+  <div
+    class="flex justify-end gap-3 pt-2"
+    [ngClass]="{ 'pt-8': showActivity() }"
+  >
+    <app-common-button-v35
+      width="125px"
+      mat-dialog-close
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      width="125px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="{{selectShippingTypeForAll() ? 'Submit' : 'Save'}}"
+      [disabled]="isSubmit()"
+      [loading]="isSubmit()"
+      (clickEvent)="submit()"
+    ></app-common-button-v35>
+  </div>
+</div>

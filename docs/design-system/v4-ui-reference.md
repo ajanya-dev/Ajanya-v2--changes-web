@@ -5,7 +5,7 @@ Colour theme, button styling, component states, and the changes made in the Octo
 - App: `angular-web.onlinecheckwriter.com`, Angular 17, Tailwind 3, SCSS
 - Design branch: `design/zilmoney-rebrand` (main copy, port 4200). Colour-comparison worktrees: `design/zilmoney-rebrand-old-colors` (indigo, 4201) and `design/zilmoney-rebrand-teal` (teal, 4202). They differ from the main copy only in colour.
 - Source of truth for every value below: `src/assets/style_varients/_v4-light-theme.scss`, `_v4-dark-theme.scss`, `_v4-theme.scss`, `_overrides-v4.scss`, `tailwind.config.js`, and the shared components under `src/app/shared/V4/`.
-- Prepared 13 October 2026, updated 14 October 2026.
+- Prepared 13 October 2026, updated 14 and 15 October 2026.
 
 ---
 
@@ -47,7 +47,7 @@ Colour theme, button styling, component states, and the changes made in the Octo
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--v4-main-text-color` | `#111827` | `#f8fafc` | Headings, values, primary body |
+| `--v4-main-text-color` | `#111827` | `#e2e8f0` | Headings, values, primary body |
 | `--v4-secondary-text-color` | `#374151` | `#c9cfe0` | Body copy, field labels |
 | `--v4-tertiary-text-color` | `#4b5563` | `#94a3b8` | Captions, hints, section labels |
 | `--v4-subtle-text-color` | `#6b7280` | `#a8b4c8` | Subtitles, muted meta |
@@ -297,9 +297,28 @@ Long forms no longer stack identical accordions. The Add payee modal pattern:
 - Optional sections (Address, Bank account, More info) are a single row: label "Add optional details" and dashed chips (32px, 1px dashed input border, 13px / 600). Active chip: solid brand border on a 10% brand tint. Completed chip: solid success border with a tick. Required-but-missing chip: red border with a "Required" tag.
 - Only one optional panel opens at a time, directly below the row, with its own title and close (x) button.
 
+### 3.8 Blocked submit: where the user lands
+
+Rule: pressing Save or Confirm Payment Details with something wrong never ends in a bare dialog. The page opens the collapsed panel if the problem is inside it, scrolls to the field, focuses it, shakes it and shows the message under it. A dialog is used only when there is no field on the page to land on, and then it names the problem and offers the fix in one click.
+
+Order of checks on every rail (bank, card, wallet, international):
+
+1. Compliance freeze: the compliance modal.
+2. Payee record gaps (email, address or company missing; on the wallet rails also a stored email or phone that fails the check): a calm info prompt naming every gap. "Add details" / "Update" opens the payee editor on that section; "Not now" points at the payee field.
+3. Any invalid control: the top-most invalid field in screen order is focused and shaken and its message shown. Several invalid fields are worked top to bottom, one per Confirm. Controls with no field of their own point at the field that drives them: purpose category at Purpose; wallet, bank account and card at the account picker; check-only fields open the check modal.
+4. International only: an unresolved transaction limit scrolls to the limit card, which already holds the message and the Edit amount button. No exchange rate shows a red line under the recipient block ("No exchange rate yet…" or "Still getting the exchange rate…") and scrolls there. Neither opens the confirmation modal.
+5. Wallet balance short: the wallet field. Bank account not verified: the verification modal.
+6. Only then the Confirm Payment Details modal.
+
+After the modal, server answers are handled the same way: a soft limit asks Proceed or Cancel (Cancel opens Edit amount on the card); a hard limit writes its message into the card; a rejected payee phone or bank account alerts with "Update", which opens the right editor; an OTP replays the call; anything else is the error dialog.
+
+How it is built: every field group carries `data-field="<controlName>"` (the `SpFocusAnchorDirective` in `send/field-focus/`); a refused submit calls `requestFieldFocus(invalidKeys)` and the page lands on the first in document order (`field-focus/invalid-fields.ts`, with a spec). Keys without a field of their own map in `DETAIL_KEY_ANCHORS` and `CHECK_KEY_ANCHORS` in `send.component.ts`.
+
 ---
 
 ## 4. Changes in this pass (October 2026)
+
+This section covers the 13 and 14 October passes. The earlier passes (2 to 10 October: brand tokens, palette choice, screen passes, WCAG 2.2 AA, the bank account card and the Verification Center) are recorded day by day in `CHANGELOG.md` in this folder, and the whole programme is told in `ZilMoney-v4-UI-Knowledge-Base.pdf`.
 
 ### 4.1 Dashboard and main pages
 
@@ -352,6 +371,23 @@ Long forms no longer stack identical accordions. The Add payee modal pattern:
 - **Add Payee modal, Entity card**: when Business is selected the address fields (Line 1, Line 2, City, State, Zip, Country) render inside the Entity card under Company Name, all marked required, and the Address chip leaves the "Add optional details" row. Individual keeps the optional Address chip. State and Country labels show the required asterisk for a business. A shared `addressFieldsTpl` template feeds both the Entity card and the optional panel.
 - **Add Payee modal, Payee ID/Acc Number** moved from the More info panel to the Entity card, beside Company Name, for Individual and Business. Labelled optional.
 - **Add Payee modal, Entity card copy**: for an Individual the subtitle "Company name is optional for an individual" is gone; the field label reads "Company Name (optional)" instead. Business keeps the "required" subtitle and the plain label.
+- **Send Payment, field heights**: the four main dropdowns are 44px (from 49px); everything under Additional details is 40px: its dropdowns (shared bar `barHeight` input), the text inputs on all rails, the receive side and the page modals (from 44px), and the Memo minimum (from 45px).
+- **Send Payment, missing payee details**: a payee gap at Confirm opens a calm info prompt ("Payee address is missing", Add address / Not now) that leads into the payee editor instead of a silent refusal. The nudge under the payee is in the error colour with the alert icon and an underlined "Add now" (by request); the panel notice stays neutral (secondary text, brand info icon, brand link).
+- **Dark theme main text softened**: `--v4-main-text-color` (dark) from `#f8fafc` to `#e2e8f0` (slate-200). Bold 13px names in the Send Payment dropdowns (Pay from, Select a wallet) glared in dark mode. 11.9:1 on the card surface, 13.2:1 on the page. Light theme unchanged.
 - **Add Payee modal, control heights**: every control in the modal now renders at the 40px compact height of the shared text input (phone, date picker, address line, state, country, ng-select triggers, category dropdown). The modal previously pinned those at 34px while text inputs rendered at 40px, so Email and Phone sat side by side at different heights. The phone wrapper radius is 8px in this modal to match the text fields. The Phone label reads "Phone (optional)" in the same style as Email.
 - **Add Payee modal, Send a secure link**: the "email, mobile, or both" hint is a brand-tinted note (8% primary tint, 3px primary left border, info icon, main text colour) 12px from the header and the Email field. "Back to manual entry" is an outline pill (32px, input border, bold label, brand-tint hover, focus ring); the gap below it is 12px.
   - Files: `src/app/modules/payee/payee-v4/modals/add-payee-modal-v4/add-payee-modal-v4.component.html`, `.ts`, `.scss`
+
+### 4.7 Send Payment: a refused Confirm lands on the field
+
+Prompted by a review of the International rail. See 3.8 for the rule.
+
+- **Several invalid fields**: the page now lands on the top-most one in screen order on every rail. It used to go to whichever control was declared first in the form. New `field-focus/invalid-fields.ts` (`invalidControlKeys`, `firstInDocumentOrder`) with `invalid-fields.spec.ts`; `requestFieldFocus` accepts a list of keys.
+- **Purpose category** points at the Purpose field (`DETAIL_KEY_ANCHORS`). Before, a block on it shook the payee row.
+- **International, no exchange rate**: Confirm is refused before the confirmation modal, with an inline red line under the recipient block and a scroll to it. Before, the modal opened and only after Confirm did a "Could not price this payment" dialog appear.
+- **International, unresolved transaction limit**: scrolls to the limit card instead of repeating its message in a dialog.
+- **Wallet rails, stored payee email that fails the check**: the calm prompt ("Payee email address needs attention", Update email / Not now) instead of a wordless payee-row shake.
+- **Follow-up from review**: the email prompt fired with no payee selected (the hidden email control was invalid only because it was empty) and its Update button had nothing to open. It now runs only for a selected payee whose stored email has a value that fails (`shared/payee-email-check.ts`, with a spec); with no payee, Confirm lands on the payee field.
+- Checked and left as they are: the card minimum amount is already caught inline by the amount validator before the card gate runs; "cannot be saved as a draft" (international, virtual card) and "payee temporarily restricted" stay dialogs because there is no field to land on.
+- Note for the team: the repo has no unit-test target wired (no Karma or Jasmine installed, no `test` entry in `angular.json`), so the spec was run through esbuild and a small Node runner. Wire `ng test` and it runs as-is.
+  - Files: `send/field-focus/invalid-fields.ts` (new), `invalid-fields.spec.ts` (new), `send/shared/services/send-state.service.ts`, `send/send.component.ts`, `send/wallet/services/wallet-payment.service.ts`, `send/wallet/components/international-payment/international-payment.component.ts`, `.html`, `send/bank/services/bank-payment.service.ts`, `bank-check.service.ts`, `send/card/services/card-payment.service.ts`, `send/bank/components/export-check-section/export-check-section.component.ts`

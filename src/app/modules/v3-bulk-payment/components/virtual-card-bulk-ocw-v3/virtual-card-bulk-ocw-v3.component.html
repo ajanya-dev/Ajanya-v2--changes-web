@@ -1,0 +1,158 @@
+<form
+  [formGroup]="dynamicForm"
+  class="main-container"
+  *ngIf="getFormControl()['controls'].length !== 0"
+>
+  <div class="payment-type-tab">
+    <h2>Virtual Card</h2>
+  </div>
+  <div
+    class="bulk-payment-container relative"
+    [ngClass]="{
+      'pointer-events-none':
+        _v3BulkPaymentService.getIsBulkPaymentProcessing() | async
+    }"
+    formArrayName="virtualCardFormArray"
+  >
+    <table class="check-email-table">
+      <thead>
+        <tr>
+          <th class="w-12">
+            <h2></h2>
+          </th>
+          <th class="w-1/4">
+            <h2>Payee</h2>
+          </th>
+          <th class="w-1/5">
+            <h2>Amount</h2>
+          </th>
+          <th>
+            <h2>Email</h2>
+          </th>
+          <th *ngIf="isSourceCard" class="w-1/6">
+            <h2>Invoice No</h2>
+          </th>
+          <th *ngIf="isShowMoreColumn">
+            <h2>More</h2>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container
+          class="bulk-payment-item flex gap-3"
+          *ngFor="let data of getFormControl()['controls']; let i = index"
+          [formGroupName]="i"
+        >
+          <tr>
+            <td>
+              <i
+                class="fa-sharp fa-solid fa-building-columns icons text-[#9B9ACF]"
+                [matTooltip]="data?.value?.source?.bankName"
+                *ngIf="data?.value?.from === 'BANK'"
+              ></i>
+              <i
+                class="fa-solid fa-wallet icons text-[#7A8FFF]"
+                [matTooltip]="data?.value?.source?.walletName"
+                *ngIf="data?.value?.from === 'WALLET'"
+              ></i>
+              <i
+                class="fa-solid fa-credit-card-front icons text-[#EF7C66]"
+                [matTooltip]="data?.value?.source?.nickName"
+                *ngIf="data?.value?.from === 'CARD'"
+              ></i>
+            </td>
+            <td>
+              <div class="disabled-field payee-dropdown-container">
+                <p class="p-1.5 truncate">{{ data?.value?.payee?.name }}</p>
+              </div>
+            </td>
+            <td>
+              <div class="disabled-field">
+                <p class="p-[5px]">{{ data?.value?.amount }}</p>
+              </div>
+            </td>
+            <td>
+              <input
+                class="w-full"
+                type="text"
+                class="input_style"
+                [ngClass]="
+                  dynamicForm.get('virtualCardFormArray').at(i).controls.email
+                    .invalid
+                    ? 'invalid'
+                    : 'valid'
+                "
+                formControlName="email"
+              />
+            </td>
+            <td *ngIf="isSourceCard">
+              <div class="border w-full">
+                <input
+                  [ngClass]="
+                    data?.controls?.referenceNo?.status === 'INVALID'
+                      ? 'invalid'
+                      : 'valid'
+                  "
+                  class="p-[5px] text-[14px] w-full font-medium"
+                  formControlName="referenceNo"
+                />
+              </div>
+            </td>
+            <td class="flex justify-evenly" *ngIf="isShowMoreColumn">
+              <div
+                class="flex gap-1 items-center cursor-pointer"
+                [matTooltip]="'Click to verify payment'"
+                *ngIf="
+                  dynamicForm.get('virtualCardFormArray').at(i).controls
+                    .documents?.invalid
+                "
+                (click)="
+                  openVerifyCardInvoiceModal(
+                    dynamicForm.get('virtualCardFormArray').at(i)
+                  )
+                "
+              >
+                <i class="fa-solid fa-circle-exclamation invalid-icon"></i>
+                <div class="link-text">Verify</div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+    <!-- <div class="bulk-payment-item flex gap-3" *ngFor="let data of getFormControl()['controls']; let i = index;" [formGroupName]="i">
+      <div class="mr-2" [ngClass]="{'mt-5':i === 0}">
+        <i class="fa-sharp fa-solid fa-building-columns icons text-[#9B9ACF]"
+        [matTooltip]="data?.value?.source?.bankName" *ngIf="data?.value?.from === 'BANK' "></i>
+        <i class="fa-solid fa-wallet icons text-[#7A8FFF]" [matTooltip]="data?.value?.source?.walletName"
+          *ngIf="data?.value?.from === 'WALLET'"></i>
+        <i class="fa-solid fa-credit-card-front icons text-[#EF7C66]" [matTooltip]="data?.value?.source?.nickName"
+          *ngIf="data?.value?.from === 'CARD'"></i>
+      </div>
+      <div class="item-container">
+        <h2 *ngIf="i === 0">Payee</h2>
+        <div class="disabled-field payee-dropdown-container">
+          <p class="p-1.5 truncate">{{data?.value?.payee?.name}}</p>
+        </div>
+      </div>
+      <div class="item-container">
+        <h2 *ngIf="i === 0">Amount</h2>
+        <div class="disabled-field">
+          <p class="p-[5px] text-[15px]">{{data?.value?.amount}}</p>
+        </div>
+      </div>
+      <div class="item-container">
+        <h2 *ngIf="i === 0">Email</h2>
+        <div class="disabled-field">
+          <p class="p-[5px] text-[15px]">{{data?.value?.email}}</p>
+        </div>
+      </div>
+      <div class="item-container" *ngIf="data?.value?.from === 'CARD'">
+        <h2 *ngIf="i === 0">Invoice No</h2>
+        <div class="border w-full">
+          <input [ngClass]="data?.controls?.referenceNo?.status === 'INVALID' ? 'invalid' : 'valid'" class="p-[5px] text-[15px] w-full" formControlName="referenceNo" />
+        </div>
+      </div>
+    </div> -->
+  </div>
+</form>

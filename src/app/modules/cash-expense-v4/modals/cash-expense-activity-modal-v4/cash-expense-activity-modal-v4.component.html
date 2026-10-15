@@ -1,0 +1,200 @@
+<div>
+  <!-- Modal Header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      Cash Expense Activity
+    </h1>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- Modal Body -->
+  <div class="p-6 bg-v4-tertiary-background-color max-h-[70vh] overflow-y-auto">
+    @if (isLoading()) {
+      <div class="flex justify-center items-center py-10">
+        <lucide-icon [img]="LoaderCircleIcon" [size]="28" class="text-v4-subtle-text-color animate-spin" />
+      </div>
+    } @else {
+      <!-- Audit Trail -->
+      <section class="mb-6">
+        <span class="block text-base font-bold text-v4-main-text-color font-peridot mb-3" role="heading" aria-level="3">Audit Trail</span>
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <div class="max-h-[250px] overflow-y-auto">
+            <table class="v4-ocw-table w-full text-sm">
+              <thead>
+                <tr class="bg-v4-tertiary-background-color border-b border-v4-border-color sticky top-0 z-10">
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Date</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Status</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">By</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Device</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Notes</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-v4-border-color">
+                @for (item of auditTrail(); track $index) {
+                  <tr class="hover:bg-v4-secondary-background-color transition-colors">
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color whitespace-nowrap">{{ item.formattedCreatedAt }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color">{{ item.status }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color">{{ item.userName }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-secondary-text-color">{{ item.deviceName || item.ipAddress }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color">{{ item.note }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="px-4 py-6 text-center text-sm text-v4-secondary-text-color">
+                      No audit trail found.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Comments -->
+      <section class="mb-6">
+        <span class="block text-base font-bold text-v4-main-text-color font-peridot mb-3" role="heading" aria-level="3">Comments</span>
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <div class="max-h-[250px] overflow-y-auto">
+            <table class="v4-ocw-table w-full text-sm">
+              <thead>
+                <tr class="bg-v4-tertiary-background-color border-b border-v4-border-color sticky top-0 z-10">
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Date</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">User</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Comment</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase !text-center whitespace-nowrap w-24">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-v4-border-color">
+                @for (item of comments(); track item.id) {
+                  <tr class="hover:bg-v4-secondary-background-color transition-colors">
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color whitespace-nowrap">{{ item.formated_date }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color">{{ item.user || item.user_name }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color">{{ item.comments }}</td>
+                    <td class="px-4 py-2.5 align-middle w-24">
+                      <div class="flex justify-center items-center min-h-[22px]">
+                        @if (commentDeletingId() === item.encrypted_id) {
+                          <lucide-icon
+                            [img]="LoaderCircleIcon"
+                            [size]="15"
+                            class="animate-spin text-v4-common-red-color"
+                          />
+                        } @else {
+                          <button
+                            type="button"
+                            class="cursor-pointer bg-transparent border-none p-0 text-v4-common-red-color hover:opacity-70 inline-flex disabled:opacity-40 disabled:cursor-not-allowed"
+                            [disabled]="(commentDeletingId() !== null && commentDeletingId() !== item.encrypted_id) || attachmentDeletingId() !== null"
+                            (click)="onDeleteComment(item.encrypted_id)"
+                          >
+                            <lucide-icon name="trash-2" [size]="15" />
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="px-4 py-6 text-center text-sm text-v4-secondary-text-color">
+                      No comments found.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Attachments -->
+      <section>
+        <span class="block text-base font-bold text-v4-main-text-color font-peridot mb-3" role="heading" aria-level="3">Attachments</span>
+        <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+          <div class="max-h-[250px] overflow-y-auto">
+            <table class="v4-ocw-table w-full text-sm">
+              <thead>
+                <tr class="bg-v4-tertiary-background-color border-b border-v4-border-color sticky top-0 z-10">
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">Date</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">By</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase">File</th>
+                  <th class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase !text-center whitespace-nowrap w-24">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-v4-border-color">
+                @for (item of attachments(); track item.id) {
+                  <tr class="hover:bg-v4-secondary-background-color transition-colors">
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color whitespace-nowrap">{{ item.formated_date }}</td>
+                    <td class="px-4 py-2.5 text-sm text-v4-main-text-color">{{ item.user_name }}</td>
+                    <td class="px-4 py-2.5 text-sm">
+                      <div
+                        class="flex items-center gap-1.5 min-w-0"
+                        [matTooltip]="item.file_name"
+                        matTooltipShowDelay="200"
+                      >
+                        <button
+                          type="button"
+                          class="text-left text-v4-primary-brand-bold-color hover:underline truncate max-w-[220px] cursor-pointer bg-transparent border-none p-0 min-w-0"
+                          (click)="onOpenAttachment(item.encrypted_id)"
+                        >
+                          {{ item.file_name }}
+                        </button>
+                        <button
+                          type="button"
+                          class="shrink-0 cursor-pointer bg-transparent border-none p-0 text-v4-secondary-text-color hover:text-v4-primary-brand-bold-color"
+                          (click)="onOpenAttachment(item.encrypted_id)"
+                          [attr.aria-label]="'Open ' + item.file_name"
+                        >
+                          <lucide-icon name="external-link" [size]="13" />
+                        </button>
+                      </div>
+                    </td>
+                    <td class="px-4 py-2.5 align-middle w-24">
+                      <div class="flex justify-center items-center min-h-[22px]">
+                        @if (attachmentDeletingId() === item.encrypted_id) {
+                          <lucide-icon
+                            [img]="LoaderCircleIcon"
+                            [size]="15"
+                            class="animate-spin text-v4-common-red-color"
+                          />
+                        } @else {
+                          <button
+                            type="button"
+                            class="cursor-pointer bg-transparent border-none p-0 text-v4-common-red-color hover:opacity-70 inline-flex disabled:opacity-40 disabled:cursor-not-allowed"
+                            [disabled]="(attachmentDeletingId() !== null && attachmentDeletingId() !== item.encrypted_id) || commentDeletingId() !== null"
+                            (click)="onDeleteAttachment(item.encrypted_id)"
+                          >
+                            <lucide-icon name="trash-2" [size]="15" />
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="px-4 py-6 text-center text-sm text-v4-secondary-text-color">
+                      No attachments found.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+
+  <!-- Modal Footer -->
+  <div class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color">
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Close"
+    />
+  </div>
+</div>

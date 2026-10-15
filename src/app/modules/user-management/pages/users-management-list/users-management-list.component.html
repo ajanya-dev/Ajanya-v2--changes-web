@@ -1,0 +1,313 @@
+<div class="user-management">
+  <div class="user-management__container">
+    <!-------------------------  User management list start ------------------------->
+    <section class="user-list">
+      <div class="user-list__container">
+        <div class="top">
+          <div class="list-header">
+            <div class="w-full flex">
+              <div class="w-full">
+                <div class="float-left main-heading">
+                  <p>User Management</p>
+                </div>
+                <div class="float-right">
+                  <button
+                    class="ocw-btn ocw-btn-violet !h-8 user_activity-button"
+                    (click)="goToApprovalPolicy()"
+                    *ngIf="isHamaspik && companyType === 'owncmp'"
+                  >
+                    Approval Policy
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="actions">
+              <div class="search-input">
+                <input
+                  type="text"
+                  [(ngModel)]="usersSearchTerm"
+                  (keyup)="onSearchUser()"
+                  placeholder="Search user name"
+                />
+                <span>
+                  <ng-container *ngIf="usersSearchTerm === ''; else closeIcon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </ng-container>
+                  <ng-template #closeIcon>
+                    <i
+                      class="fa-solid fa-xmark cursor-pointer"
+                      (click)="usersSearchTerm = ''; onSearchUser(10)"
+                      role="presentation"
+                    ></i>
+                  </ng-template>
+                </span>
+              </div>
+
+              <div class="filter-box box" [matMenuTriggerFor]="typeFilter">
+                <ng-container *ngIf="userTypeFilter === 0; else filtered">
+                  <i class="fa-regular fa-filter"></i>
+                </ng-container>
+                <ng-template #filtered>
+                  <i class="fa-solid fa-filter"></i>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <div class="list-content text-center">
+            <!---------  Single User start ---------->
+            <ng-container *ngIf="!loading.default; else skeleton">
+              <ng-container *ngFor="let item of usersDetails; let i = index">
+                <div
+                  class="single_card"
+                  id="singleCard"
+                  #singleUser
+                  (click)="onSingleUser(singleUser, item, i)"
+                  role="presentation"
+                >
+                  <div class="col-1">
+                    <img
+                      [src]="
+                        item.profile_pic || '../../../../assets/images/user.svg'
+                      "
+                      alt="User info"
+                    />
+                  </div>
+
+                  <div class="col-2">
+                    <h6>
+                      {{ item.client_name }} &nbsp;<span
+                        >({{ clientType[item.client_type] }})</span
+                      >
+                    </h6>
+                    <p>{{ item.client_email }}</p>
+
+                    <div *ngIf="item.company_name !== null" class="company-name">
+                      <i class="fas fa-briefcase"></i>
+                      <span>{{ item.company_name | titlecase }}</span>
+                      <p></p>
+                    </div>
+                  </div>
+
+                  <div class="col-3">
+                    <ng-container [ngSwitch]="item.status">
+                      <ng-container *ngSwitchCase="0">
+                        <!-- Resend Start -->
+                        <button
+                          class="resent"
+                          (click)="onResend(item, i); $event.stopPropagation()"
+                          [ngClass]="{ disable_btn: loading.sending === i }"
+                        >
+                          <span
+                            class="loadingSpinner"
+                            style="--i: &quot;#3d72f9&quot;"
+                            *ngIf="loading.sending === i; else resend"
+                          ></span>
+                          <ng-template #resend>
+                            <span>Resend</span></ng-template
+                          >
+                        </button>
+                        <!-- Resend End -->
+                        <button class="pending">Pending</button>
+                      </ng-container>
+
+                      <ng-container *ngSwitchCase="1">
+                        <button class="active">Active</button>
+                      </ng-container>
+
+                      <ng-container *ngSwitchCase="2">
+                        <button class="rejected">Rejected</button>
+                      </ng-container>
+
+                      <ng-container *ngSwitchDefault>
+                        <!-- Approve Start -->
+                        <button
+                          class="approve"
+                          matTooltip="Approve and & Set permission"
+                          matTooltipPosition="above"
+                          (click)="onApprove(item, i); $event.stopPropagation()"
+                          [ngClass]="{ disable_btn: loading.accepting === i }"
+                        >
+                          <span
+                            class="loadingSpinner"
+                            style="--i: &quot;#1b9671&quot;"
+                            *ngIf="loading.accepting === i; else accept"
+                          ></span>
+                          <ng-template #accept>
+                            <span>Approve</span></ng-template
+                          >
+                        </button>
+                        <!-- Approve End -->
+
+                        <!-- Delete Start -->
+                        <button
+                          class="delete"
+                          (click)="onDelete(item, i); $event.stopPropagation()"
+                          [ngClass]="{ disable_btn: loading.deleting === i }"
+                        >
+                          <span
+                            class="loadingSpinner"
+                            style="--i: &quot;#db5858&quot;"
+                            *ngIf="loading.deleting === i; else deleted"
+                          ></span>
+                          <ng-template #deleted>
+                            <span>Delete</span></ng-template
+                          >
+                        </button>
+                        <!-- Delete End -->
+                      </ng-container>
+                      <mat-menu #moreMenu="matMenu" xPosition="before">
+                        <button
+                          *ngFor="let menu of listMenu"
+                          (click)="onActionMenu(menu, item, i)"
+                          mat-menu-item
+                        >
+                          <i [class]="menu.icon"></i>
+                          <span class="text-sm ml-1"> {{ menu.title }}</span>
+                        </button>
+                      </mat-menu>
+                    </ng-container>
+                  </div>
+
+                  <div class="col-4">
+                    <span>
+                      <i
+                        role="presentation"
+                        [matMenuTriggerFor]="moreMenu"
+                        (click)="$event.stopPropagation()"
+                        class="fa-solid fa-ellipsis-vertical option-icon"
+                      ></i>
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+
+            <ng-template class="skel" #skeleton>
+              <table class="ocw-skeleton-table">
+                <tbody>
+                  <tr *ngFor="let i of [1, 2, 3, 4, 5, 6]">
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </ng-template>
+
+            <ng-container *ngIf="!usersDetails?.length">
+              <div class="flex justify-center">
+                <svg
+                  width="80"
+                  height="70"
+                  viewBox="0 0 80 70"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g clip-path="url(#clip0_1899_3204)">
+                    <path
+                      d="M40.2579 75.2631C59.5421 75.2631 75.175 59.7581 75.175 40.6316C75.175 21.5051 59.5421 6 40.2579 6C20.9737 6 5.34082 21.5051 5.34082 40.6316C5.34082 59.7581 20.9737 75.2631 40.2579 75.2631Z"
+                      fill="white"
+                    />
+                    <path
+                      d="M51.608 51.4938L28.8369 51.4254L28.9306 20.7441L44.6762 20.7915L51.6804 27.7806L51.608 51.4938Z"
+                      fill="white"
+                    />
+                    <path
+                      opacity="0.3"
+                      d="M44.6756 20.791L44.6543 27.759L51.6797 27.7801L44.6756 20.791Z"
+                      fill="#505050"
+                    />
+                    <path
+                      d="M51.7851 27.774C51.7845 27.7648 51.7827 27.7558 51.7798 27.747C51.7786 27.7435 51.7776 27.7403 51.7761 27.7365C51.7712 27.725 51.7642 27.7146 51.7555 27.7056L44.7513 20.7165C44.7423 20.7077 44.7318 20.7005 44.7202 20.6954C44.7169 20.6939 44.7137 20.6931 44.7103 20.6919C44.7014 20.6889 44.6921 20.687 44.6826 20.6863C44.6804 20.6863 44.6784 20.6851 44.6762 20.6851L28.9305 20.6377C28.9023 20.6377 28.8753 20.6488 28.8553 20.6686C28.8354 20.6884 28.8242 20.7152 28.8242 20.7432L28.7305 51.4244C28.7305 51.4524 28.7417 51.4792 28.7616 51.499C28.7816 51.5188 28.8086 51.5299 28.8368 51.5299L51.6076 51.5984C51.6358 51.5984 51.6628 51.5872 51.6828 51.5675C51.7027 51.5477 51.7139 51.5208 51.7139 51.4929L51.7863 27.7796C51.7863 27.7784 51.7852 27.7764 51.7851 27.774ZM44.7812 21.0462L51.4234 27.6741L44.761 27.6541L44.7812 21.0462ZM28.9432 51.32L29.0362 20.8497L44.5692 20.8965L44.5479 27.7589C44.5479 27.7869 44.5591 27.8138 44.579 27.8335C44.599 27.8533 44.626 27.8644 44.6542 27.8644L51.5733 27.8855L51.5015 51.3878L28.9432 51.32Z"
+                      fill="#262626"
+                    />
+                    <path
+                      d="M34.5706 38.624C35.451 38.624 36.1647 37.9161 36.1647 37.0429C36.1647 36.1698 35.451 35.4619 34.5706 35.4619C33.6902 35.4619 32.9766 36.1698 32.9766 37.0429C32.9766 37.9161 33.6902 38.624 34.5706 38.624Z"
+                      fill="#474747"
+                    />
+                    <path
+                      d="M45.5013 38.624C46.3817 38.624 47.0953 37.9161 47.0953 37.0429C47.0953 36.1698 46.3817 35.4619 45.5013 35.4619C44.6209 35.4619 43.9072 36.1698 43.9072 37.0429C43.9072 37.9161 44.6209 38.624 45.5013 38.624Z"
+                      fill="#474747"
+                    />
+                    <path
+                      d="M42.1726 41.4151H37.8983C37.8701 41.4151 37.8431 41.404 37.8231 41.3842C37.8032 41.3644 37.792 41.3376 37.792 41.3096C37.792 41.2816 37.8032 41.2548 37.8231 41.235C37.8431 41.2152 37.8701 41.2041 37.8983 41.2041H42.1726C42.2008 41.2041 42.2278 41.2152 42.2478 41.235C42.2677 41.2548 42.2789 41.2816 42.2789 41.3096C42.2789 41.3376 42.2677 41.3644 42.2478 41.3842C42.2278 41.404 42.2008 41.4151 42.1726 41.4151Z"
+                      fill="#262626"
+                    />
+                    <path
+                      d="M32.9259 41.5657C33.7112 41.5657 34.3479 41.2333 34.3479 40.8234C34.3479 40.4134 33.7112 40.0811 32.9259 40.0811C32.1405 40.0811 31.5039 40.4134 31.5039 40.8234C31.5039 41.2333 32.1405 41.5657 32.9259 41.5657Z"
+                      fill="white"
+                    />
+                    <path
+                      d="M47.1446 41.5657C47.93 41.5657 48.5666 41.2333 48.5666 40.8234C48.5666 40.4134 47.93 40.0811 47.1446 40.0811C46.3593 40.0811 45.7227 40.4134 45.7227 40.8234C45.7227 41.2333 46.3593 41.5657 47.1446 41.5657Z"
+                      fill="white"
+                    />
+                    <g opacity="0.4">
+                      <path
+                        d="M32.9259 41.5657C33.7112 41.5657 34.3479 41.2333 34.3479 40.8234C34.3479 40.4134 33.7112 40.0811 32.9259 40.0811C32.1405 40.0811 31.5039 40.4134 31.5039 40.8234C31.5039 41.2333 32.1405 41.5657 32.9259 41.5657Z"
+                        fill="#505050"
+                      />
+                      <path
+                        d="M47.1446 41.5657C47.93 41.5657 48.5666 41.2333 48.5666 40.8234C48.5666 40.4134 47.93 40.0811 47.1446 40.0811C46.3593 40.0811 45.7227 40.4134 45.7227 40.8234C45.7227 41.2333 46.3593 41.5657 47.1446 41.5657Z"
+                        fill="#505050"
+                      />
+                    </g>
+                    <path
+                      d="M51.7142 28.0321C49 24.9413 45.159 23.0464 41.0362 22.7642C36.9134 22.4821 32.8464 23.8358 29.7299 26.5275C24.5231 31.0251 22.9231 38.5026 25.8397 44.7133C26.4253 45.9578 27.1762 47.1189 28.0724 48.1659L28.2639 48.3909L13.9918 63.4132C13.7308 63.692 13.5915 64.0617 13.6043 64.4419C13.6171 64.8221 13.781 65.1819 14.0601 65.4427C14.3393 65.7036 14.7111 65.8443 15.0945 65.8344C15.4779 65.8244 15.8418 65.6645 16.1068 65.3895L30.3753 50.3695L30.6137 50.5465C33.6928 52.8372 37.5178 53.9166 41.3516 53.5766C45.1854 53.2367 48.7567 51.5014 51.3773 48.7053C53.9979 45.9092 55.4823 42.25 55.5446 38.4329C55.6069 34.6158 54.2426 30.9109 51.7147 28.0321H51.7142ZM52.609 39.0478C52.388 42.2215 50.9623 45.1943 48.6192 47.3669C46.2761 49.5395 43.1897 50.7504 39.9821 50.7555C39.686 50.7555 39.3888 50.745 39.0907 50.7239C37.0086 50.5837 34.9935 49.9361 33.2243 48.8385C31.455 47.7409 29.9861 46.2273 28.9479 44.4318C27.9097 42.6363 27.3343 40.6144 27.2727 38.5455C27.211 36.4766 27.6651 34.4246 28.5946 32.5714C29.5241 30.7182 30.9003 29.1212 32.6011 27.9219C34.302 26.7226 36.275 25.9582 38.3451 25.6963C40.4152 25.4344 42.5184 25.6833 44.4684 26.4207C46.4183 27.1582 48.1546 28.3615 49.5233 29.924C50.6198 31.1672 51.4571 32.6136 51.9867 34.1796C52.5164 35.7456 52.7279 37.4002 52.609 39.0478V39.0478Z"
+                      fill="#727272"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_1899_3204">
+                      <rect
+                        width="78.9952"
+                        height="69.2727"
+                        fill="white"
+                        transform="translate(0.760742)"
+                      />
+                    </clipPath>
+                  </defs>
+                </svg>
+              </div>
+              <p class="text-sm">No user found!</p>
+            </ng-container>
+
+            <!---------  Single User end ---------->
+          </div>
+        </div>
+        <div class="list-footer">
+          <div class="add_new">
+            <button (click)="openNewUserModal()">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add New</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-------------------------  User management list end ------------------------->
+
+    <!-------------------------  User activity list start ------------------------->
+    <section class="user-activity">
+      <app-users-activity
+        [selectedUser]="selectedUser"
+        [loading]="loading"
+        (statusAction)="activityStatusAction($event)"
+        [notFoundUser]="notFoundUser"
+      ></app-users-activity>
+    </section>
+    <!-------------------------  User activity list end ------------------------->
+
+    <!-------------------------  Menus------------------------->
+    <mat-menu #typeFilter="matMenu" xPosition="before">
+      <button
+        *ngFor="let item of userTypes"
+        mat-menu-item
+        (click)="onFilterType(item)"
+        [ngClass]="{ filterSelected: item.value === userTypeFilter }"
+      >
+        <span class="text-sm"> {{ item.name }}</span>
+      </button>
+    </mat-menu>
+
+    <!-------------------------  Menus------------------------->
+  </div>
+</div>

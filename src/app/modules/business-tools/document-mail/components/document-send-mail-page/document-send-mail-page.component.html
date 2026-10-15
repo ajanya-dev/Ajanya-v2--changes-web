@@ -1,0 +1,288 @@
+<div class="bg-main-background-color min-h-screen h-auto mx-2.5">
+  <div class="py-8 px-12 max-w-[1400px] mx-auto">
+    <!-- Step Indicator -->
+    <div class="flex justify-center mb-6">
+      <div
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary-background-color"
+      >
+        <span class="text-xs font-medium text-common-blue-color font-inter">
+          Step {{ step }}
+        </span>
+        <span class="text-xs text-secondary-text-color font-inter">of</span>
+        <span class="text-xs text-secondary-text-color font-inter">
+          {{ totalSteps }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-6">
+      <button
+        class="w-10 h-10 rounded-lg bg-secondary-background-color border-none cursor-pointer text-main-text-color flex items-center justify-center transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--common-blue-color)_10%,var(--secondary-background-color))]"
+        (click)="onBack()"
+        aria-label="Go back"
+      >
+        <fa-icon [icon]="faArrowLeft" class="text-lg"></fa-icon>
+      </button>
+      <h1 class="text-2xl font-semibold text-main-text-color m-0 font-inter">
+        Enter the document mail details
+      </h1>
+    </div>
+
+    <div class="w-full h-px bg-input-border-color mb-10"></div>
+
+    <!-- Common Dropdowns Section -->
+    <div class="bg-secondary-background-color rounded-2xl p-6 mb-6">
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Select From -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-sm font-medium text-main-text-color"
+            for="commonFrom"
+          >
+            Select From
+          </label>
+          <app-v35-common-dropdown
+            [(ngModel)]="commonFrom"
+            (ngModelChange)="onCommonFromChange($event)"
+            (buttonClick)="addFromAddress()"
+            class="w-full"
+            [config]="{
+              placeholder: 'Select From',
+              displayField: 'payee_name',
+              enableAddNew: true,
+              style: {
+                enableLabelIcon: false,
+                size: '0'
+              }
+            }"
+            [listData]="addressList"
+            [loading]="addresLoading"
+            appendTo="body"
+          />
+        </div>
+
+        <!-- Shipping Type -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-sm font-medium text-main-text-color"
+            for="commonShippingType"
+          >
+            Shipping Type
+          </label>
+          <app-v35-common-dropdown
+            [(ngModel)]="commonShippingType"
+            (ngModelChange)="onCommonShippingChange($event)"
+            class="w-full"
+            [config]="{
+              placeholder: 'Select Shipping Type',
+              displayField: 'name',
+              style: {
+                enableLabelIcon: false,
+                size: '0'
+              }
+            }"
+            [listData]="shippingTypes"
+            [loading]="shippingTypeLoading"
+            appendTo="body"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Recipients Header -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2.5">
+        <fa-icon
+          [icon]="faUserGroup"
+          class="text-common-blue-color text-lg"
+        ></fa-icon>
+        <h3 class="text-base font-semibold text-main-text-color m-0 font-inter">
+          Recipients
+        </h3>
+        <span class="text-sm text-secondary-text-color font-inter">
+          ({{ mailForm.controls.length }}
+          {{ mailForm.controls.length === 1 ? "recipient" : "recipients" }})
+        </span>
+      </div>
+      <app-common-button-v35
+        [type]="{ style: 'green', name: 'money-action' }"
+        width="96px"
+        text="Add Recipient"
+        isAddIcon="true"
+        (click)="addRow()"
+      />
+    </div>
+    <!-- Form Table -->
+    <div
+      class="mb-6 overflow-x-auto bg-main-background-color rounded-2xl border border-input-border-color !border-b-0"
+    >
+      <table class="new-table w-full">
+        <thead>
+          <tr>
+            <th class="text-left">#</th>
+            <th class="text-left">File Name</th>
+            <th class="text-left">From</th>
+            <th class="text-left">Payee</th>
+            <th class="text-left">Shipping Type</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (control of mailForm.controls; let i = $index; track control) {
+            <tr [formGroup]="control">
+              <!-- File No. -->
+              <td class="col-index">
+                <span class="row-number">{{ i + 1 }}</span>
+              </td>
+
+              <!-- File Name -->
+              <td class="col-filename">
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    formControlName="file_name"
+                    class="w-full border border-input-border-color rounded p-2 text-sm text-main-text-color font-inter"
+                    placeholder="File Name"
+                  />
+                </div>
+                <app-control-message-v35
+                  [control]="control.controls.file_name"
+                  label="File name is required"
+                />
+              </td>
+
+              <!-- From -->
+              <td class="col-from">
+                <app-v35-common-dropdown
+                  formControlName="reply_to_id"
+                  (buttonClick)="addFromAddress(i)"
+                  class="w-full"
+                  [config]="{
+                    placeholder: 'Select From',
+                    displayField: 'payee_name',
+                    enableAddNew: true,
+                    style: {
+                      enableLabelIcon: false,
+                      size: '0'
+                    }
+                  }"
+                  [listData]="addressList"
+                  [loading]="addresLoading"
+                  appendTo="body"
+                />
+                <app-control-message-v35
+                  [control]="control.controls.reply_to_id"
+                  label="From address is required"
+                />
+              </td>
+
+              <!-- Payee -->
+              <td class="col-payee">
+                <app-payee-dropdown-v3
+                  [clearable]="true"
+                  [searchable]="true"
+                  (ready)="
+                    autoPopulateDropdown($event, control.controls.payee_id)
+                  "
+                  formControlName="payee_id"
+                  class="w-full"
+                  appendTo="body"
+                />
+                <app-control-message-v35
+                  [control]="control.controls.payee_id"
+                  label="Payee is required"
+                />
+                @if (
+                  !control.controls.payee_id?.errors?.["required"] &&
+                  control.controls.validPayee?.touched &&
+                  control.controls.validPayee?.errors?.["required"]
+                ) {
+                  <div class="flex items-center gap-2 mt-1">
+                    <app-control-message-v35
+                      [control]="control.controls.validPayee"
+                      label="Invalid Payee Address"
+                    />
+                    <fa-icon
+                      [icon]="faPenToSquare"
+                      class="w-5 h-5 text-common-blue-color cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
+                      (click)="editPayeeAddress(control.controls.payee_id)"
+                      title="Edit Payee Address"
+                    ></fa-icon>
+                  </div>
+                }
+              </td>
+
+              <!-- Shipping Type -->
+              <td class="col-shipping">
+                <app-v35-common-dropdown
+                  formControlName="shipping_type"
+                  class="w-full"
+                  [config]="{
+                    placeholder: 'Select Shipping Type',
+                    displayField: 'name',
+                    style: {
+                      enableLabelIcon: false,
+                      size: '0'
+                    }
+                  }"
+                  [listData]="shippingTypes"
+                  [loading]="shippingTypeLoading"
+                  appendTo="body"
+                />
+                <app-control-message-v35
+                  [control]="control.controls.shipping_type"
+                  label="Shipping type is required"
+                />
+              </td>
+
+              <!-- Delete Icon -->
+              <td class="col-action">
+                <div class="flex items-center justify-center w-full h-full">
+                  <fa-icon
+                    [icon]="faTrash"
+                    class="delete-icon"
+                    (click)="deleteRow(i)"
+                    [ngClass]="{ disabled: mailForm.controls.length === 1 }"
+                  ></fa-icon>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <!-- Shipping Cost Summary -->
+    <div class="mb-6 flex items-center justify-end gap-5">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-full bg-common-green-color flex items-center justify-center"
+        >
+          <fa-icon [icon]="faDollarSign" class="text-white text-lg"></fa-icon>
+        </div>
+        <div>
+          <span
+            class="text-sm text-secondary-text-color font-inter block mb-0.5"
+          >
+            Total Shipping Cost
+          </span>
+          <span
+            class="text-xl font-bold text-main-text-color font-inter block"
+          >
+            {{ shippingCost | currency }}
+          </span>
+        </div>
+      </div>
+      <div>
+        <app-common-button-v35
+        [type]="{ style: 'filled', name: 'main' }"
+        text="Mail Now"
+        width="200px"
+        [loading]="mailing"
+        [disabled]="mailing"
+        (click)="onSubmit()"
+      ></app-common-button-v35>
+      </div>
+    </div>
+  </div>
+</div>

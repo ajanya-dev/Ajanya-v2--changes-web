@@ -1,0 +1,310 @@
+<div class="w-full h-full bg-secondary-background-color px-[10px]">
+  <div class="w-full h-full bg-main-background-color rounded">
+    <div
+      class="container w-full h-full rounded grid grid-cols-[1fr_40fr] md:grid-cols-[1fr_20fr] lg:grid-cols-[1fr_8fr] grid-rows-1"
+    >
+      @if (!loading) {
+        <div class="grid justify-items-end">
+          <div class="pt-[7vh] text-2xl text-main-text-color">
+            <app-common-back-button-v35
+              (backEvent)="goBack()"
+              type="takeEvent"
+            ></app-common-back-button-v35>
+          </div>
+        </div>
+      }
+      <div class="flex justify-center">
+        @if (!loading) {
+          <div class="grid w-[450px] py-[6vh]">
+            <div class="grid justify-items-center">
+              <p class="text-2xl font-semibold text-main-text-color">
+                {{
+                  !emailVerified
+                    ? "Verify Your Email Address"
+                    : emailVerified && !phoneVerified
+                      ? "Verify Your Phone Number"
+                      : "Verification Completed"
+                }}
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 px-5">
+              <app-stepper-v35
+                [numberOfStepperTabs]="2"
+                [currentStepperTabIndex]="currentTabOfStepper"
+                [showIcon]="emailVerified && phoneVerified"
+                [icons]="['fas', 'shield-check']"
+                [stepperHeaders]="[
+                  'Email Verification',
+                  'Phone Number Verification'
+                ]"
+                stepperWidth="flex-1"
+              ></app-stepper-v35>
+            </div>
+
+            <div class="grid grid-cols-[1fr_6fr] pl-4 pt-3">
+              @if (!emailVerified) {
+                <div class="grid justify-items-start items-center">
+                  <fa-icon [icon]="faEnvolope" class="text-[3rem]"></fa-icon>
+                </div>
+              }
+              @if (emailVerified && !phoneVerified) {
+                <div class="grid justify-items-center items-center">
+                  <fa-icon [icon]="faMobile" class="text-[2.5rem]"></fa-icon>
+                </div>
+              }
+
+              <div class="text-sm text_grey pt-2 pl-2 2xl:pl-0 flex items-center mb-2">
+                @if (!emailVerified && !emailOTPSent) {
+                  <div>
+                    <p>Please enter your email address</p>
+                    <p>Example: user&#64;domain.com</p>
+                  </div>
+                }
+                @if (!emailVerified && emailOTPSent) {
+                  <div>
+                    <p>An OTP is sent to your registered email id</p>
+                    @if (userForm) {
+                      <p>
+                        {{ userForm.controls.emailAddress.value }}
+                      </p>
+                    }
+                  </div>
+                }
+                @if (emailVerified && !phoneVerified && !phoneOTPSent) {
+                  <div>
+                    <p>Please enter your Phone Number</p>
+                    <p>Example: (111)-111-1111</p>
+                  </div>
+                }
+                @if (emailVerified && !phoneVerified && phoneOTPSent) {
+                  <div>
+                    @if (isPhillipinesPhone()) {
+                      <p>{{message}}</p>
+                    }@else {
+                      <p>An OTP is sent to your registered Phone Number</p>
+                      @if (userForm) {
+                        <p>
+                          {{ userForm.controls.phoneNumber.value }}
+                        </p>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div>
+              @if (!emailVerified && !emailOTPSent) {
+                <div>
+                  <ng-container
+                    [ngTemplateOutlet]="InputTemplate"
+                  ></ng-container>
+                </div>
+              }
+              @if (!emailVerified && emailOTPSent) {
+                <div>
+                  <ng-container [ngTemplateOutlet]="OTPTemplate"></ng-container>
+                </div>
+              }
+              @if (emailVerified && !phoneVerified && !phoneOTPSent) {
+                <div>
+                  <ng-container
+                    [ngTemplateOutlet]="InputTemplate"
+                  ></ng-container>
+                </div>
+              }
+              @if (emailVerified && !phoneVerified && phoneOTPSent) {
+                <div>
+                  <ng-container [ngTemplateOutlet]="OTPTemplate"></ng-container>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Templates -->
+
+<ng-template #InputTemplate>
+  <form [formGroup]="userForm">
+    <div
+      class="grid grid-rows-[14vh_7vh_14vh_7vh] justify-items-center bg-main-background-color"
+    >
+      <p class="grid items-end justify-items-center pb-8 text-xs text_grey">
+        {{ emailVerified ? "Phone Number" : "Email Address" }}
+      </p>
+      <div class="w-11/12">
+        @if (!emailVerified) {
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              formControlName="emailAddress"
+            />
+            <span class="floating_label_field"
+              >Email <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="userForm.controls.emailAddress"
+            ></app-control-message>
+          </div>
+        }
+        @if (emailVerified) {
+          <div>
+            <app-new-phone-input
+              formControlName="phoneNumber"
+              (countryDropdown)="countryChange($event)"
+              (countryCodeEmit)="countryCodeChange($event)"
+            ></app-new-phone-input>
+            <app-control-message
+              [control]="userForm.controls.phoneNumber"
+            ></app-control-message>
+          </div>
+        }
+      </div>
+      <div class="grid items-start justify-items-center pt-8 text-sm text_grey">
+        @if (showTimer && emailOTPAlreadySent) {
+          <p class="text_red">Retry After {{ displayEmailTimer }}</p>
+        }
+        @if (showTimer && phoneOTPAlreadySent) {
+          <p class="text_red">Retry After {{ displayPhoneTimer }}</p>
+        }
+      </div>
+      <div class="grid w-11/12 mt-6">
+        <app-common-button-v35
+          width="100%"
+          [type]="{ style: 'filled', name: 'main' }"
+          [text]="emailVerified ? 'Verify Phone Number' : 'Verify Email'"
+          (clickEvent)="
+            emailVerified
+              ? onRequestPhoneVerificationOTP()
+              : onRequestEmailVerificationOTP()
+          "
+          [loading]="btnDisable1"
+          [disabled]="btnDisable1 || showTimer"
+        ></app-common-button-v35>
+      </div>
+    </div>
+  </form>
+</ng-template>
+
+<ng-template #OTPTemplate>
+  <form [formGroup]="requestOtp">
+    <div class="grid grid-rows-[14vh_7vh_14vh_7vh] justify-items-center">
+      <p class="grid items-end justify-items-center pb-8 text-xs text_grey">
+        Enter OTP Here
+      </p>
+      <div class="grid grid-cols-5 items-center justify-items-center gap-2">
+        <input
+          id="inp1"
+          type="text"
+          class="w-14 h-12 border-2 border-input-border-color text-center rounded otp-box"
+          #txt1
+          maxlength="1"
+          (paste)="onPaste($event)"
+          (keyup)="cursorFocusChange($event, null, txt1, txt2)"
+          (focusout)="otpInputCheck(1)"
+          [disabled]="txt2.value !== ''"
+        />
+        <input
+          id="inp2"
+          type="text"
+          class="w-14 h-12 border-2 border-input-border-color text-center rounded otp-box"
+          #txt2
+          maxlength="1"
+          (paste)="onPaste($event)"
+          (keyup)="cursorFocusChange($event, txt1, txt2, txt3)"
+          (focusout)="otpInputCheck(2)"
+          [disabled]="txt3.value !== ''"
+        />
+        <input
+          id="inp3"
+          type="text"
+          class="w-14 h-12 border-2 border-input-border-color text-center rounded otp-box"
+          #txt3
+          maxlength="1"
+          (paste)="onPaste($event)"
+          (keyup)="cursorFocusChange($event, txt2, txt3, txt4)"
+          (focusout)="otpInputCheck(3)"
+          [disabled]="txt4.value !== ''"
+        />
+        <input
+          id="inp4"
+          type="text"
+          class="w-14 h-12 border-2 border-input-border-color text-center rounded otp-box"
+          #txt4
+          maxlength="1"
+          (paste)="onPaste($event)"
+          (keyup)="cursorFocusChange($event, txt3, txt4, txt5)"
+          (focusout)="otpInputCheck(4)"
+          [disabled]="txt5.value !== ''"
+        />
+        <input
+          id="inp5"
+          type="text"
+          class="w-14 h-12 border-2 border-input-border-color text-center rounded otp-box"
+          #txt5
+          maxlength="1"
+          (paste)="onPaste($event)"
+          (keyup)="cursorFocusChange($event, txt4, txt5, null); otpInputCheck()"
+          (focusout)="otpInputCheck()"
+        />
+        <div class="grid col-span-5 text-sm text_red pt-2">
+          {{ requiredMessage }}
+        </div>
+      </div>
+      <div class="grid items-start justify-items-center mt-8 text-sm text_grey">
+        @if (showTimer && emailOTPSent && !phoneOTPSent) {
+          <p class="text_red">
+            {{ displayEmailTimer }}
+          </p>
+        }
+        @if (showTimer && phoneOTPSent) {
+          <p class="text_red">
+            {{ displayPhoneTimer }}
+          </p>
+        }
+        <p>
+          Didn't Receive the OTP?
+          <span class="font-semibold text_blue cursor-pointer">
+            <button
+              class="cursor-pointer"
+              (click)="
+                emailVerified && !phoneVerified && phoneOTPSent
+                  ? onRequestPhoneVerificationOTP()
+                  : onRequestEmailVerificationOTP()
+              "
+              [disabled]="btnDisable"
+            >
+              Resend
+            </button>
+          </span>
+        </p>
+      </div>
+      <div class="grid w-11/12 mt-6">
+        <app-common-button-v35
+          width="100%"
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Verify"
+          (clickEvent)="
+            emailVerified && !phoneVerified && phoneOTPSent
+              ? submitMobileOtp()
+              : submitEmailOtp()
+          "
+          [loading]="btnDisable2"
+          [disabled]="btnDisable2"
+        ></app-common-button-v35>
+      </div>
+    </div>
+    @if (!emailVerified) {
+      <p class="grid place-content-center text-center text-xs pt-10 text_grey">
+        Please check your inbox (or spam folder) for an email from
+        {{ staticWhiteLabelConditions.customerSupportEmail }}
+      </p>
+    }
+  </form>
+</ng-template>

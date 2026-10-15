@@ -1,0 +1,587 @@
+@if (selectedApp && !noSearchResult) {
+  <div class="h-full flex flex-col overflow-y-auto thin-scroll px-3 md:px-6">
+    <div class="border-b h-12 flex justify-between items-center v3-border-b">
+      <div
+        class="h-full flex-1 flex items-center font-semibold justify-between"
+      >
+        <div class="v35-tabs w-auto">
+          @for (item of [selectedApp.name, "Transactions"]; track $index) {
+            <div
+              role="presentation"
+              class="p-3 text-sm"
+              [ngClass]="{
+                'border-b-4 border-common-blue-color pointer-events-none':
+                  (item === selectedApp.name && isAccountDetails === true) ||
+                  (item === 'Transactions' && isAccountDetails === false),
+                disable: item.id === 'check'
+              }"
+              (click)="toggleAccountDetails(item === selectedApp.name)"
+            >
+              <h1>
+                {{ item }}
+              </h1>
+            </div>
+          }
+        </div>
+        <div>
+          <app-demo-video slug="payroll_by_creditcard" />
+        </div>
+      </div>
+    </div>
+    @if (isAccountDetails) {
+      <div>
+        <div class="flex w-full gap-1.5 py-5">
+          <div
+            class="bg-secondary-background-color p-3 md:p-5 flex-1 rounded relative"
+            [ngClass]="isLoading || isSyncing ? 'skelton' : ''"
+          >
+            <!-- @if (kycCompleted !== 3 &&  (kybStatus === null || kybStatus === undefined)) { -->
+            @if (kycCompleted !== 3 &&  kybStatus !== 3) {
+              <div class="flex gap-3 flex-wrap items-center">
+                <div
+                  class="flex flex-col flex-wrap md:flex-row gap-3"
+                  [ngClass]="{ 'opacity-0': isLoading || isSyncing }"
+                >
+                  @if (
+                    !kycCompleted && kycCompleted !== 0 && !isKycKybBypassed && 
+                    (kybStatus === null || kybStatus === undefined)
+                  ) {
+                    <div
+                      class="flex flex-col bg-common-secondary-blue-color border border-common-blue-color rounded-md p-3 max-w-fit items-center gap-1"
+                    >
+                      <span
+                        class="text-sm font-medium text-secondary-text-color w-fit"
+                      >
+                        Complete verification steps to process payment
+                      </span>
+                      <app-common-button-v35
+                        class="h-7 text-sm"
+                        text="Complete Verification"
+                        type="list"
+                        (clickEvent)="getUserData()"
+                      />
+                    </div>
+                  }
+                  <div class="flex flex-col">
+                    @if (!isBankLoaded) {
+                      <div class="w-full md:w-72 laptop:w-80 flex flex-col gap-2">
+                        <div class="skelton h-4 w-40 rounded"></div>
+                        <div class="skelton h-10 w-full rounded"></div>
+                      </div>
+                    } @else if (!hasBank) {
+                      <div class="w-full md:w-72 laptop:w-80 flex flex-col">
+                        <span
+                          class="block text-sm font-medium text-secondary-text-color pb-3"
+                          >Select a bank account to deposit</span
+                        >
+                        <app-common-button-v35
+                          text="Bank Account"
+                          [isAddIcon]="true"
+                          [type]="{ style: 'blue', name: 'action' }"
+                          width="100%"
+                          (clickEvent)="addbankAc()"
+                        ></app-common-button-v35>
+                      </div>
+                    } @else {
+                      <div class="flex flex-col">
+                        <span
+                          class="block text-sm font-medium pb-2 text-secondary-text-color"
+                          >Select a bank account to deposit</span
+                        >
+                        <div class="text-sm w-full md:w-72 laptop:w-80">
+                          <app-bank-ac-dropdown-v3
+                            #bankDropDown
+                            [(ngModel)]="bankAccountChange"
+                            (ngModelChange)="changeBankAccount($event)"
+                            append=""
+                            permissionContext="forPayment"
+                          ></app-bank-ac-dropdown-v3>
+                        </div>
+                        @if (selectedBankItem) {
+                          <ng-container>
+                            @if (notVerified) {
+                              <button
+                                class="flex items-center mt-2 w-1/3"
+                                (click)="openBankVerify()"
+                              >
+                                <fa-icon
+                                  class="text-common-yellow-color text-xs"
+                                  [icon]="faCircleInfo"
+                                ></fa-icon>
+                                <p
+                                  class="ml-2 font-sm change-method text-xs text-common-blue-color cursor-pointer"
+                                >
+                                  Verify Account
+                                </p>
+                              </button>
+                            }
+                            @if (confirmMicroDeposit) {
+                              <button
+                                class="flex items-center mt-2 w-1/3"
+                                (click)="microDeposit()"
+                              >
+                                <fa-icon
+                                  class="text-common-yellow-color text-xs"
+                                  [icon]="faCircleInfo"
+                                ></fa-icon>
+                                <p
+                                  class="ml-2 font-sm change-method text-xs text-common-blue-color cursor-pointer"
+                                >
+                                  Confirm MD
+                                </p>
+                              </button>
+                            }
+                            @if (verificationPending) {
+                              <div
+                                class="flex items-center mt-2 approval-pending w-1/3"
+                                matTooltip="Requested for bank account verification"
+                              >
+                                <fa-icon
+                                  class="text-common-yellow-color text-xs pr-1"
+                                  [icon]="faCircleInfo"
+                                ></fa-icon>
+                                <p
+                                  class="font-sm text-xs text-common-yellow-color"
+                                >
+                                  Pending
+                                </p>
+                              </div>
+                            }
+                            @if (rejectedVerificationWithVerifyInstantly) {
+                              <div class="flex items-center mt-2 w-full">
+                                <span
+                                  class="flex items-center gap-1 text-common-red-color"
+                                >
+                                  <fa-icon
+                                    [icon]="faCircleInfo"
+                                    class="!text-common-red-color text-xs"
+                                  ></fa-icon>
+                                  <p class="font-semibold text-sm">Rejected</p>
+                                </span>
+                                <button
+                                  class="ml-2 font-sm change-method text-xs text-common-blue-color hover:underline"
+                                  (click)="verifyInstantly()"
+                                >
+                                  Verify Instantly
+                                </button>
+                              </div>
+                            }
+                            @if (rejectedVerification) {
+                              <div class="flex items-center mt-2 w-full">
+                                <span
+                                  class="flex items-center gap-1 text-common-red-color"
+                                >
+                                  <fa-icon
+                                    [icon]="faCircleInfo"
+                                    class="!text-common-red-color text-xs"
+                                  ></fa-icon>
+                                  <p class="font-semibold text-sm">Rejected</p>
+                                </span>
+                                <button
+                                  class="mx-2 flex items-center"
+                                  (click)="openBankVerify()"
+                                >
+                                  <p
+                                    class="ml-1 font-sm change-method text-xs text-common-blue-color hover:underline"
+                                  >
+                                    Verify Account
+                                  </p>
+                                </button>
+                              </div>
+                            }
+                            @if (failedVerification) {
+                              <div class="flex items-center mt-2 w-full">
+                                <span
+                                  class="flex items-center gap-1 text-common-red-color"
+                                >
+                                  <fa-icon
+                                    [icon]="faCircleInfo"
+                                    class="!text-common-red-color text-xs"
+                                  ></fa-icon>
+                                  <p class="font-semibold text-sm">Failed</p>
+                                </span>
+                                <button
+                                  class="ml-2 font-sm change-method text-xs text-common-blue-color hover:underline"
+                                  (click)="verifyInstantly()"
+                                >
+                                  Verify Instantly
+                                </button>
+                              </div>
+                            }
+                            @if (
+                              !isRtpAllowed() &&
+                              selectedMethodId() === 12 &&
+                              !notVerified &&
+                              !confirmMicroDeposit &&
+                              !verificationPending &&
+                              !rejectedVerificationWithVerifyInstantly &&
+                              !rejectedVerification &&
+                              !failedVerification
+                            ) {
+                              <div class="flex items-center mt-2 w-full">
+                                <span
+                                  class="flex items-center gap-1 text-common-red-color"
+                                >
+                                  <fa-icon
+                                    [icon]="faCircleInfo"
+                                    class="!text-common-red-color text-xs"
+                                  ></fa-icon>
+                                  <p class="font-medium text-[13px] font-inter">
+                                    RTP not supported for this bank account.
+                                  </p>
+                                </span>
+                              </div>
+                            }
+                          </ng-container>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  @if (!isCardsLoaded) {
+                    <div class="w-full md:w-72 laptop:w-80 flex flex-col gap-2">
+                      <div class="skelton h-4 w-32 rounded"></div>
+                      <div class="skelton h-10 w-full rounded"></div>
+                    </div>
+                  } @else if (!hasCreditCard) {
+                    <div class="w-full md:w-72 laptop:w-80 flex flex-col">
+                      <span
+                        class="block font-medium text-sm text-secondary-text-color pb-3"
+                        >Select Credit Card</span
+                      >
+                      <app-common-button-v35
+                        text="Add Card"
+                        [isAddIcon]="true"
+                        [type]="{ style: 'blue', name: 'action' }"
+                        width="100%"
+                        (clickEvent)="addCard()"
+                      ></app-common-button-v35>
+                    </div>
+                  } @else {
+                    <div class="">
+                      <span
+                        class="block font-medium pb-2 text-sm text-secondary-text-color"
+                        >Select Credit Card</span
+                      >
+                      <div class="text-sm w-full md:w-72 laptop:w-80">
+                        <app-cards-dropdown-v3
+                          #cardDropDown
+                          [(ngModel)]="cardChange"
+                          append=""
+                          [showAllCards]="true"
+                          [gatewayType]="gatewayType"
+                          [isPayroll]="true"
+                        ></app-cards-dropdown-v3>
+                      </div>
+                    </div>
+                  }
+                  <div class="bank-selct">
+                    <span
+                      class="block font-medium pb-2 text-sm text-secondary-text-color"
+                      >Select Payment Method</span
+                    >
+                    <div class="text-sm">
+                      <div class="text-sm w-full md:w-72 laptop:w-80">
+                        <div
+                          class="angular-ocw-v35-ng-select-dropdown relative"
+                        >
+                          <div class="height-2 absolute top-0 z-[1002]">
+                            <div
+                              class="flex justify-center items-center v35-dropdown-labeled-icon border-r border-input-border-color"
+                            >
+                              <fa-icon
+                                class="text-common-blue-color"
+                                [icon]="
+                                  selectedPaymentMethod === 1
+                                    ? faBank
+                                    : selectedPaymentMethod === 12
+                                      ? faDollar
+                                      : faGlobe
+                                "
+                              ></fa-icon>
+                            </div>
+                          </div>
+                          <ng-select
+                            class="ng-dropdown-panel-v35 text-sm w-auto height-2"
+                            placeholder="Select Payment Method"
+                            [searchable]="false"
+                            [clearable]="false"
+                            (change)="onPaymentTypeChange()"
+                            [(ngModel)]="selectedPaymentMethod"
+                            (ngModelChange)="changePaymentMethod($event)"
+                            [items]="paymentOptions"
+                            bindLabel="name"
+                            bindValue="value"
+                          >
+                            <ng-template
+                              ng-label-tmp
+                              let-item="item"
+                              let-index="index"
+                            >
+                              <span>{{ item.name }}</span>
+                            </ng-template>
+                            <ng-template
+                              ng-option-tmp
+                              let-item="item"
+                              let-index="index"
+                            >
+                              <div>
+                                <fa-icon
+                                  class="pr-2"
+                                  [icon]="['fas', item.icon]"
+                                ></fa-icon>
+                              </div>
+                              <span>{{ item.name }}</span>
+                            </ng-template>
+                          </ng-select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  @if (showExtension()) {
+                    <div class="absolute top-0 right-0">
+                      <div class="py-2 px-6">
+                        <p class="v35-labels hover:underline">
+                          Download Extension
+                        </p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="flex gap-1 pt-5 justify-between flex-wrap">
+                <div
+                  class="flex items-center text-sm text-secondary-text-color"
+                >
+                  <fa-icon
+                    class="text-secondary-text-color"
+                    [icon]="faCircleInfo"
+                  ></fa-icon>
+                  <p class="ml-2">
+                    To ensure timely crediting of funds in account, kindly
+                    proceed with the payment at least one day prior to the
+                    payroll date.
+                  </p>
+                </div>
+                @if (showExtension()) {
+                  <div>
+                    <div
+                      class="rounded-2xl border border-input-border-color bg-main-background-color py-1 px-2 gap-7 flex items-center fill-animation-container"
+                      [ngClass]="{
+                        'fill-animation': true,
+                        'active !text-main-background-color':
+                          extensionMode === 'generate' && generatedKey,
+                        '!bg-common-blue-color !text-main-background-color':
+                          extensionMode === 'get' && generatedKey,
+                        skelton: extensionMode === 'get' && isGenerate
+                      }"
+                    >
+                      @if (generatedKey) {
+                        <span
+                          class="font-inter font-normal text-sm"
+                          matTooltip="Chrome extension key"
+                          >{{ generatedKey }}</span
+                        >
+                        <div
+                          role="presentation"
+                          class="flex justify-center items-center w-6 cursor-pointer"
+                          matTooltip="Copy Key"
+                          #tooltip="matTooltip"
+                          (click)="copyKey(generatedKey)"
+                        >
+                          <fa-icon [icon]="faCopy"></fa-icon>
+                        </div>
+                      } @else {
+                        <span
+                          class="font-inter font-normal text-main-text-color text-sm"
+                          >Generate chrome extension key</span
+                        >
+                        <div
+                          role="presentation"
+                          class="flex justify-center items-center bg-common-blue-color text-main-background-color rounded-[50%] w-6 cursor-pointer"
+                          [matTooltip]="
+                            isGenerate ? 'Generating...' : 'Generate key'
+                          "
+                          (click)="getChromeExtensionKey('generate')"
+                        >
+                          @if (isGenerate) {
+                            <fa-icon
+                              [icon]="faSpinn"
+                              [animation]="'spin'"
+                            ></fa-icon>
+                          } @else {
+                            <fa-icon [icon]="faArrowRight"></fa-icon>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="h-full w-full flex items-center justify-center">
+                <span class="text-common-red-color">{{
+                  "Your KYC verification has been rejected"
+                }}</span>
+              </div>
+            }
+          </div>
+
+          <div
+            class="bg-secondary-background-color text-secondary-text-color w-14 p-2 rounded flex flex-col"
+          >
+            <div class="text-sm font-semibold pb-1">HELP</div>
+
+            <div class="flex justify-around flex-col flex-1">
+              <button
+                (click)="goToLiveChat()"
+                class="flex justify-center relative cursor-pointer group"
+              >
+                <fa-icon
+                  class="text-secondary-text-color group-hover:text-common-blue-color"
+                  [icon]="faMessage"
+                ></fa-icon>
+                <div
+                  class="absolute right-[150%] -top-1 bg-main-background-color text-common-blue-color py-2 px-3 text-sm rounded invisible whitespace-nowrap group-hover:visible"
+                >
+                  Live Chat
+                </div>
+              </button>
+
+              <a
+                [href]="
+                  'mailto:' + staticWhiteLabelConditions.customerSupportEmail
+                "
+                class="flex justify-center relative cursor-pointer group"
+              >
+                <fa-icon
+                  class="text-secondary-text-color group-hover:text-common-blue-color"
+                  [icon]="faEnvelope"
+                ></fa-icon>
+                <div
+                  class="absolute right-[150%] -top-1 bg-main-background-color text-common-blue-color py-2 px-3 text-sm rounded invisible whitespace-nowrap group-hover:visible"
+                >
+                  {{ staticWhiteLabelConditions.customerSupportEmail }}
+                </div>
+              </a>
+
+              @if (staticWhiteLabelConditions.customerSupportNo) {
+                <ng-container>
+                  <a
+                    [href]="
+                      'tel:' + staticWhiteLabelConditions.customerSupportNo
+                    "
+                    class="flex justify-center relative cursor-pointer group"
+                  >
+                    <fa-icon
+                      class="text-secondary-text-color group-hover:text-common-blue-color"
+                      [icon]="faHeadset"
+                    ></fa-icon>
+                    <div
+                      class="absolute right-[150%] -top-1 bg-main-background-color text-common-blue-color py-2 px-3 text-sm rounded invisible whitespace-nowrap group-hover:visible"
+                    >
+                      Call at {{ staticWhiteLabelConditions.customerSupportNo }}
+                    </div>
+                  </a>
+                </ng-container>
+              } @else {
+                <ng-template>
+                  <a
+                    [href]="staticWhiteLabelConditions.helpWebsite"
+                    class="flex justify-center relative cursor-pointer group"
+                  >
+                    <fa-icon
+                      class="text-secondary-text-color group-hover:text-common-blue-color"
+                      [icon]="faHeadset"
+                    ></fa-icon>
+                    <div
+                      class="absolute right-[150%] -top-1 bg-main-background-color text-common-blue-color py-2 px-3 text-sm rounded invisible whitespace-nowrap group-hover:visible"
+                    >
+                      Contact Us {{ staticWhiteLabelConditions.helpWebsite }}
+                    </div>
+                  </a>
+                </ng-template>
+              }
+            </div>
+          </div>
+        </div>
+        @if (tableReady) {
+          <div class="flex-1">
+            @if(isLoading){
+              <div class="mt-12 data_spinner"></div>
+            } @else {
+              <div class="flex justify-between">
+                <div
+                  class="table-header flex flex-col text-main-text-color font-semibold text-sm !font-inter mt-1.5"
+                >
+                  Payroll Details
+                  @if (isManual) {
+                    <app-common-button-v35
+                      class="mt-2"
+                      text="New"
+                      [isAddIcon]="true"
+                      type="list"
+                      (clickEvent)="openAddPayrollModal()"
+                    ></app-common-button-v35>
+                  }
+                </div>
+                <div class="flex gap-3">
+                  @if (!isManual) {
+                    <app-common-button-v35
+                      class="h-7 px-3 text-sm mr-[157px]"
+                      text="Sync Payroll Data"
+                      [type]="'list'"
+                      [toolTip]="!isManual ? '' : !isSync ? 'Syncing..' : ''"
+                      (clickEvent)="syncData()"
+                      [loading]="(!isSync ? true : false) || isSyncing"
+                    >
+                    </app-common-button-v35>
+                  }
+                </div>
+              </div>
+            <div class="-mt-7">
+              <app-payroll-transactions-table
+                [selectedApp]="selectedApp"
+                [paymentMethodChanged]="paymentMethodChanged()"
+                [selectedPaymentMethod]="selectedPaymentMethod"
+              ></app-payroll-transactions-table>
+            </div>
+            }
+          </div>
+        }
+      </div>
+    }
+    @if (!isAccountDetails) {
+      <div>
+        <div class="flex mr-12 justify-between mb-2 mt-4">
+          <div
+            class="table-header text-main-text-color !text-[14px] font font-inter font-semibold !mt-2"
+          >
+            Transactions
+          </div>
+        </div>
+        <div class="-mt-10">
+          <app-payroll-data-table
+            [selectedApp]="selectedApp"
+          ></app-payroll-data-table>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@if (selectedApp && noSearchResult) {
+  <div class="w-full h-full flex justify-center px-5">
+    <div class="h-full flex flex-col justify-center items-center">
+      <img
+        width="119"
+        height="97"
+        ngSrc="assets/images/warning/empty-activity.svg"
+        alt="Data not found"
+        width="120"
+        height="100"
+      />
+      <div class="text-lg font-normal">Sorry! no results found.</div>
+    </div>
+  </div>
+}

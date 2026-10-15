@@ -1,0 +1,211 @@
+<div class="ocw_man_modal_wrapper p-3 overflow-clip">
+  <div class="ocw_modal_header !border-none hi">
+    <div class="ocw_modal_title">Add Remittance</div>
+    <div class="close_btn" (click)="close()">
+      <img
+        src="./../../../../assets/icon/close-icon.svg"
+        type="image/svg+xml"
+        alt="Close Icon"
+      />
+    </div>
+  </div>
+
+  <div class="ocw_modal_body my-12 gap-2" [formGroup]="checkForm">
+    <button
+      *ngIf="!hideSwitchFormat"
+      class="pb-1 text-common-blue-color"
+      (click)="switchFormat()"
+    >
+      Switch To {{ !newFormat ? "New" : "Old" }} Format
+      <fa-icon [icon]="['fas', 'arrows-repeat']"></fa-icon>
+    </button>
+    <div
+      class="w-full flex gap-2 py-2 mb-4 border-y-2 border-tertiary-background-color"
+    >
+      <div class="w-[19%] h-full" *ngIf="newFormat">Invoice Date</div>
+      <div class="w-[14%] h-full" [ngClass]="newFormat ? 'w-[14%]' : 'w-19%'">
+        Invoice #
+      </div>
+      <div class="w-[19%] h-full" *ngIf="!newFormat">Item</div>
+      <div class="w-[19%] h-full">Description</div>
+      <div class="w-[13%] h-full" *ngIf="!newFormat">Quantity</div>
+      <div class="w-[13%] h-full" *ngIf="!newFormat">Unit Cost</div>
+      <div class="w-[13%] h-full" *ngIf="!newFormat">Total</div>
+      <div class="w-[11%] h-full" *ngIf="newFormat">Gross</div>
+      <div class="w-[11%] h-full" *ngIf="newFormat">Discount</div>
+      <div class="w-[11%] h-full" *ngIf="newFormat">Net</div>
+      <div class="w-[11%] h-full" *ngIf="newFormat">This Payment</div>
+      <div class="w-[4%]"></div>
+    </div>
+    <div formArrayName="remittance">
+      <div
+        class="w-full flex gap-2 my-2 mb-2"
+        *ngFor="
+          let data of getRemittanceFormControl()['controls'];
+          let i = index
+        "
+        [formGroupName]="i"
+      >
+        <div
+          (click)="picker.open()"
+          class="ocw_date_input single_input input_date relative cursor-pointer"
+          *ngIf="newFormat"
+        >
+          <input
+            [matDatepicker]="picker"
+            (keypress)="utils.numberOnly()"
+            [dateInputFormat]="'yyyy/MM/dd'"
+            formControlName="invoiceDate"
+            placeholder="Choose a date"
+            autocomplete="off"
+            class="input_style date_field cursor-pointer"
+          />
+          <fa-icon
+            [icon]="['fas', 'calendar']"
+            class="absolute top-2.5 right-2.5"
+          ></fa-icon>
+          <mat-datepicker #picker></mat-datepicker>
+        </div>
+        <div
+          class="single_input w-[14%] rounded"
+          [ngClass]="newFormat ? 'w-[14%]' : 'w-19%'"
+        >
+          <input
+            type="text"
+            class="input_style"
+            formControlName="invoiceNumber"
+          />
+        </div>
+        <div class="w-[19%] rounded" *ngIf="!newFormat">
+          <ng-select
+            [appendTo]="'body'"
+            class="overflow-visible"
+            formControlName="itemName"
+            placeholder="Select items"
+            (scrollToEnd)="onScrollItems()"
+            addTag="true"
+            bindValue="remittanceItem"
+            bindLabel="remittanceItem"
+          >
+            <ng-option
+              class="z-50"
+              *ngFor="let item of remittanceItem"
+              [value]="item"
+              (scrollToEnd)="onScrollItems()"
+              (keyup)="onSearchItems($event)"
+              appendTo="ng-select"
+              >{{ item }}</ng-option
+            >
+          </ng-select>
+        </div>
+        <div class="single_input w-[19%] rounded">
+          <input
+            type="text"
+            class="input_style"
+            formControlName="itemDescription"
+            maxlength="45"
+          />
+        </div>
+        <div class="single_input w-[13%] rounded" *ngIf="!newFormat">
+          <input
+            type="text"
+            class="input_style"
+            formControlName="itemQuantity"
+            maxlength="10"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+            thousandSeparator=","
+            (keyup)="total(i)"
+          />
+        </div>
+        <div class="single_input w-[13%] rounded" *ngIf="!newFormat">
+          <app-amount-input
+            formControlName="itemUnitCost"
+            (keyup)="total(i)"
+          ></app-amount-input>
+        </div>
+        <div class="single_input w-[13%] rounded" *ngIf="!newFormat">
+          <app-amount-input
+            formControlName="totalSingleRow"
+            [isReadOnly]="true"
+          ></app-amount-input>
+        </div>
+        <div class="single_input w-[11%] rounded" *ngIf="newFormat">
+          <app-amount-input
+            formControlName="grossAmount"
+            (keyup)="total(i)"
+          ></app-amount-input>
+        </div>
+        <div class="single_input w-[11%] rounded" *ngIf="newFormat">
+          <app-amount-input
+            formControlName="discountAmount"
+            (keyup)="total(i)"
+          ></app-amount-input>
+        </div>
+        <div class="single_input w-[11%] rounded" *ngIf="newFormat">
+          <app-amount-input
+            [isReadOnly]="true"
+            formControlName="netAmount"
+          ></app-amount-input>
+        </div>
+        <div class="single_input w-[11%] rounded" *ngIf="newFormat">
+          <app-amount-input formControlName="thisPayment"></app-amount-input>
+        </div>
+        <button
+          title="Remove"
+          class="single_input w-[4%] h-full flex justify-center"
+          (click)="removeSelectedRow(i)"
+        >
+          <fa-icon
+            [icon]="['fas', 'trash']"
+            class="text-secondary-text-color text-2xl cursor-pointer hover:text-common-red-color"
+          ></fa-icon>
+        </button>
+      </div>
+    </div>
+    <div class="w-full flex">
+      <div class="w-1/2 p-2 flex items-center">
+        <fa-icon
+          [icon]="['fas', 'plus']"
+          class="text-xl cursor-pointer pr-2 !text-secondary-text-color"
+          (click)="addRow()"
+          *ngIf="!disableRemittanceAddBtn"
+        ></fa-icon>
+        <button class="text-common-blue-color pl-3" (click)="clearAllRow()">
+          Clear
+        </button>
+      </div>
+      <div class="w-1/2 flex justify-end">
+        <div class="flex">
+          <span class="pr-5">
+            <input
+              type="checkbox"
+              [checked]="insertToCheck"
+              (change)="insertIntoCheck($event)"
+            />
+            {{ isNotCheck ? "Insert into payment" : "Insert into checks" }}
+          </span>
+
+          <span class="px-4 font-semibold" *ngIf="!newFormat">
+            Total: $ {{ grandTotal ? grandTotal?.toFixed(2) : "0.00" }}
+          </span>
+          <span class="px-4 font-semibold" *ngIf="newFormat">
+            Total: $ {{ paymentTotal ? paymentTotal?.toFixed(2) : "0.00" }}
+          </span>
+          <br />
+        </div>
+      </div>
+    </div>
+
+    <div class="ocw_modal_footer !border-none">
+      <mat-dialog-actions align="end">
+        <button
+          type="submit"
+          class="ocw-btn ocw-btn-modal-blue add_btn"
+          (click)="submit()"
+        >
+          <span class="px-2">Save</span>
+        </button>
+      </mat-dialog-actions>
+    </div>
+  </div>
+</div>

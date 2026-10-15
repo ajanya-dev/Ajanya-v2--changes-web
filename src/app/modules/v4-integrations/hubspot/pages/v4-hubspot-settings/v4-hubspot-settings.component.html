@@ -1,0 +1,351 @@
+<div class="space-y-6 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  }
+
+  @if (!loading().dataLoading) {
+    @if (isConnected()) {
+      <!-- Status banner -->
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl border border-v4-badge-success-text-color bg-v4-badge-success-bg-color"
+      >
+        <lucide-icon
+          name="circle-check"
+          [size]="24"
+          class="flex-shrink-0 text-v4-badge-success-text-color"
+        ></lucide-icon>
+        <div>
+          <p class="font-semibold text-v4-badge-success-text-color">
+            Connected
+          </p>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          Connection Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Manage your HubSpot integration settings.
+        </p>
+      </div>
+
+      <!-- Actions row -->
+      <div class="grid grid-cols-2 gap-2">
+        <app-common-button-v4
+          [type]="{ style: 'destructive', name: 'main' }"
+          text="Disconnect"
+          [width]="'100%'"
+          [loading]="loading().disconnecting"
+          [disabled]="loading().disconnecting"
+          (clickEvent)="onDisconnect()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Add Company"
+          [width]="'100%'"
+          [isAddIcon]="true"
+          [icon]="['fas', 'plus']"
+          [loading]="loading().addingCompany || loading().connecting"
+          [disabled]="loading().addingCompany || loading().connecting"
+          (clickEvent)="onConnect()"
+        />
+      </div>
+
+      <!-- Connected Accounts -->
+      @if (connectedAccounts().length) {
+        <div>
+          <h3 class="text-lg font-bold text-v4-main-text-color mb-3 font-funnel">
+            Connected Accounts
+          </h3>
+          <div
+            class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color divide-y divide-v4-input-border-color overflow-hidden"
+          >
+            @for (
+              account of connectedAccounts();
+              track account.companyId;
+              let i = $index
+            ) {
+              <div
+                class="flex items-center justify-between p-4 hover:bg-v4-secondary-background-color transition-colors cursor-pointer"
+                [ngClass]="{
+                  'bg-v4-secondary-background-color':
+                    selectedCompany()?.companyId === account.companyId
+                }"
+                (click)="selectCompany(account)"
+                (keydown.enter)="selectCompany(account)"
+                (keydown.space)="
+                  $event.preventDefault(); selectCompany(account)
+                "
+                tabindex="0"
+                role="button"
+              >
+                <div class="flex-1 min-w-0">
+                  <p
+                    class="text-sm font-semibold text-v4-main-text-color truncate"
+                  >
+                    {{ account.companyName }}
+                  </p>
+                  <p class="text-xs text-v4-tertiary-text-color mt-0.5">
+                    Last updated: {{ account.lastUpdated || "N/A" }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                  <span
+                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                    [ngClass]="{
+                      'text-v4-badge-success-text-color bg-v4-badge-success-bg-color':
+                        account.status,
+                      'text-v4-badge-error-text-color bg-v4-badge-error-bg-color':
+                        !account.status
+                    }"
+                  >
+                    {{ account.status ? "Connected" : "Disconnected" }}
+                  </span>
+                  <app-common-button-v4
+                    [type]="{ style: 'destructive', name: 'main' }"
+                    text="Disconnect"
+                    [loading]="loading().singleDisconnectIndex === i"
+                    [disabled]="loading().singleDisconnectIndex === i"
+                    (clickEvent)="
+                      $event.stopPropagation();
+                      disconnectWorkspace(account.companyId, i)
+                    "
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- HubSpot Companies Data Table -->
+      @if (connectedAccounts().length) {
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3
+              class="text-lg font-bold text-v4-main-text-color flex items-center gap-2 font-funnel"
+            >
+              <lucide-icon
+                name="building-2"
+                [size]="20"
+                class="text-v4-primary-brand-color"
+              ></lucide-icon>
+              HubSpot Companies
+            </h3>
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              text="Import Companies"
+              [loading]="loading().syncingData"
+              [disabled]="loading().syncingData"
+              [isAddIcon]="true"
+              [icon]="['fas', 'arrow-down']"
+              (clickEvent)="onSyncData()"
+            />
+          </div>
+
+          <!-- Loading -->
+          @if (loading().companiesLoading) {
+            <div class="flex justify-center py-8">
+              <lucide-icon
+                name="loader-circle"
+                [size]="24"
+                class="text-v4-primary-brand-color animate-spin"
+              ></lucide-icon>
+            </div>
+          }
+
+          <!-- Companies Table -->
+          @if (!loading().companiesLoading && hubspotCompanies().length > 0) {
+            <div
+              class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color overflow-hidden"
+            >
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr
+                      class="border-b border-v4-input-border-color bg-v4-secondary-background-color"
+                    >
+                      <th
+                        class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider"
+                      >
+                        Company Name
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider"
+                      >
+                        Domain
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider"
+                      >
+                        Industry
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider"
+                      >
+                        Location
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider"
+                      >
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-v4-input-border-color">
+                    @for (company of hubspotCompanies(); track company.id) {
+                      <tr
+                        class="hover:bg-v4-secondary-background-color transition-colors"
+                      >
+                        <td
+                          class="px-4 py-3 font-medium text-v4-main-text-color"
+                        >
+                          {{ company.name }}
+                        </td>
+                        <td class="px-4 py-3">
+                          @if (company.domain || company.website) {
+                            <a
+                              [href]="
+                                company.website || 'https://' + company.domain
+                              "
+                              target="_blank"
+                              class="text-v4-primary-brand-bold-color hover:underline flex items-center gap-1"
+                            >
+                              {{ company.domain || company.website }}
+                              <lucide-icon
+                                name="external-link"
+                                [size]="12"
+                              ></lucide-icon>
+                            </a>
+                          } @else {
+                            <span class="text-v4-tertiary-text-color">-</span>
+                          }
+                        </td>
+                        <td class="px-4 py-3 text-v4-secondary-text-color">
+                          {{ company.industry || "-" }}
+                        </td>
+                        <td class="px-4 py-3 text-v4-secondary-text-color">
+                          {{ company.fullAddress || "-" }}
+                        </td>
+                        <td class="px-4 py-3">
+                          <span
+                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                            [ngClass]="{
+                              'text-v4-badge-success-text-color bg-v4-badge-success-bg-color':
+                                company.isActive,
+                              'text-v4-badge-error-text-color bg-v4-badge-error-bg-color':
+                                !company.isActive
+                            }"
+                          >
+                            {{ company.isActive ? "Active" : "Inactive" }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination -->
+              @if (currentPagination().lastPage > 1) {
+                <div
+                  class="flex items-center justify-between px-4 py-3 border-t border-v4-input-border-color"
+                >
+                  <p class="text-xs text-v4-tertiary-text-color">
+                    Showing
+                    {{
+                      (currentPagination().currentPage - 1) *
+                        currentPagination().perPage +
+                        1
+                    }}
+                    -
+                    {{
+                      currentPagination().currentPage *
+                        currentPagination().perPage >
+                      currentPagination().total
+                        ? currentPagination().total
+                        : currentPagination().currentPage *
+                          currentPagination().perPage
+                    }}
+                    of {{ currentPagination().total }} companies
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'compact' }"
+                      text="Previous"
+                      [width]="'90px'"
+                      customHeight="32px"
+                      [disabled]="currentPagination().currentPage <= 1"
+                      (clickEvent)="onPrevPage()"
+                    />
+                    <span class="text-xs text-v4-tertiary-text-color px-2">
+                      Page {{ currentPagination().currentPage }} of
+                      {{ currentPagination().lastPage }}
+                    </span>
+                    <app-common-button-v4
+                      [type]="{ style: 'outline', name: 'compact' }"
+                      text="Next"
+                      [width]="'90px'"
+                      customHeight="32px"
+                      [disabled]="
+                        currentPagination().currentPage >=
+                        currentPagination().lastPage
+                      "
+                      (clickEvent)="onNextPage()"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- No Data -->
+          @if (!loading().companiesLoading && hubspotCompanies().length === 0) {
+            <div
+              class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color p-8 text-center"
+            >
+              <lucide-icon
+                name="building-2"
+                [size]="32"
+                class="text-v4-tertiary-text-color mx-auto mb-3"
+              ></lucide-icon>
+              <p class="text-sm text-v4-tertiary-text-color">
+                No companies found. Click "Import Companies" to sync data from
+                HubSpot.
+              </p>
+            </div>
+          }
+        </div>
+      }
+    } @else {
+      <!-- Disconnected state -->
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl"
+        style="background-color: var(--v4-badge-error-bg-color)"
+      >
+        <lucide-icon
+          name="x-circle"
+          [size]="20"
+          [color]="'var(--v4-badge-error-text-color)'"
+        ></lucide-icon>
+        <span
+          class="text-sm font-semibold"
+          style="color: var(--v4-badge-error-text-color)"
+        >
+          Status: <span class="font-bold">Disconnected</span>
+        </span>
+      </div>
+      <p class="text-sm text-v4-tertiary-text-color">
+        Connect to HubSpot from the Overview tab to start syncing your CRM data.
+      </p>
+    }
+  }
+</div>

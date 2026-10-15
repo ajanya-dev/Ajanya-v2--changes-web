@@ -71,6 +71,7 @@ import { SpFocusAnchorDirective } from './field-focus/sp-focus-anchor.directive'
 import { SpShakeOnDirective } from './field-focus/sp-shake-on.directive';
 import { FieldFocusRegistry } from './field-focus/field-focus.registry';
 import { focusField, shakeElement } from './field-focus/shake';
+import { firstInDocumentOrder } from './field-focus/invalid-fields';
 import { SpPayeeDropdownComponent } from './dropdowns/sp-payee-dropdown/sp-payee-dropdown.component';
 import { SpCardsDropdownComponent } from './dropdowns/sp-cards-dropdown/sp-cards-dropdown.component';
 import { SpBankAcDropdownComponent } from './dropdowns/sp-bank-ac-dropdown/sp-bank-ac-dropdown.component';
@@ -165,6 +166,25 @@ const CHECK_KEY_ANCHORS = new Map<string, string>([
  * the message belongs to a control the user cannot see.
  */
 const CHECK_MODAL_KEYS = new Set(['checkNumber', 'issueDate']);
+
+/**
+ * Details controls with no field of their own. The purpose category is derived
+ * from the chosen purpose, so a block on it points at the purpose field.
+ */
+const DETAIL_KEY_ANCHORS = new Map<string, string>([
+  ['purposeCategory', 'purpose']
+]);
+
+/** The anchor a refused control is shown at; most controls are their own anchor. */
+function anchorKeyFor(key: string): string {
+  if (ACCOUNT_KEYS.has(key)) {
+    return 'account';
+  }
+  if (PAYEE_KEYS.has(key)) {
+    return 'payee';
+  }
+  return CHECK_KEY_ANCHORS.get(key) ?? DETAIL_KEY_ANCHORS.get(key) ?? key;
+}
 
 @Component({
   selector: 'app-send',
@@ -290,6 +310,14 @@ export class SendComponent implements OnInit {
    */
   readonly visibleMissingPayeeFields = this.missingPayeeFields;
 
+  /** "email address and address details": every gap, as the nudge reads it. */
+  readonly missingPayeeSummary = computed(() => {
+    const labels = this.visibleMissingPayeeFields().map((f) => f.label.toLowerCase());
+    return labels.length > 1
+      ? `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`
+      : labels[0] ?? '';
+  });
+
   /** Joined so spShakeOn sees a changed value; a bare array never compares equal. */
   readonly missingPayeeKey = computed(() =>
     this.visibleMissingPayeeFields()
@@ -328,12 +356,12 @@ export class SendComponent implements OnInit {
    * the row as it was — a payee whose email had just been added still showed up
    * in the list with no email under its name.
    */
-  openPayeeFieldEditor(modalType = 'payeeEmail'): void {
+  openPayeeFieldEditor(modalType = 'payeeEmail', fromPrompt = false): void {
     const payee = this.coreForm.controls.payee.value;
     if (!payee?.id) {
       return;
     }
-    this.openPayeeEditModal(payee.id, PAYEE_EDIT_PAGES[modalType]);
+    this.openPayeeEditModal(payee.id, PAYEE_EDIT_PAGES[modalType], fromPrompt);
   }
 
   readonly deliveryError = this.sendStateService.deliveryError;
@@ -613,7 +641,22 @@ export class SendComponent implements OnInit {
     this.watchInternationalMethod();
     this.watchPayeeDisable();
     this.watchUnavailableDelivery();
+    this.watchEditorRequests();
     this.destroyRef.onDestroy(() => this.paymentsService.hasAmount.set(false));
+  }
+
+  /** The submit gates ask for the payee editor; open it on the section they name. */
+  private watchEditorRequests(): void {
+    effect(
+      () => {
+        const request = this.sendStateService.editorRequest();
+        if (!request) {
+          return;
+        }
+        untracked(() => this.openPayeeFieldEditor(request.modalType, true));
+      },
+      { injector: this.injector }
+    );
   }
 
   private watchFocusRequests(): void {
@@ -623,7 +666,7 @@ export class SendComponent implements OnInit {
         if (!request) {
           return;
         }
-        afterNextRender(() => this.revealField(request.key), {
+        afterNextRender(() => this.revealField(request.keys), {
           injector: this.injector
         });
       },
@@ -631,25 +674,23 @@ export class SendComponent implements OnInit {
     );
   }
 
-  private revealField(key: string): void {
+  private revealField(keys: readonly string[]): void {
     // Open the check on the field that refused. The submit has already marked
     // the whole details form touched, so the modal renders the inline message
     // against the control the moment it appears.
-    if (CHECK_MODAL_KEYS.has(key) && this.isBankCheck()) {
+    if (this.isBankCheck() && keys.some((key) => CHECK_MODAL_KEYS.has(key))) {
       this.bankCheckService.checkModalRequest.update((n) => n + 1);
       return;
     }
 
-    const anchor = ACCOUNT_KEYS.has(key)
-      ? 'account'
-      : PAYEE_KEYS.has(key)
-        ? 'payee'
-        : (CHECK_KEY_ANCHORS.get(key) ?? key);
     const host = this.hostEl.nativeElement as HTMLElement;
-    const el =
-      this.fieldFocus.resolve(anchor) ??
-      host.querySelector<HTMLElement>(`[data-field="${anchor}"]`) ??
-      host.querySelector<HTMLElement>(`[formcontrolname="${key}"]`);
+    const resolved = keys
+      .map((key) => ({ key, el: this.resolveFieldElement(host, key) }))
+      .filter((item): item is { key: string; el: HTMLElement } => !!item.el);
+    // Several fields refused at once: land on the top-most one, so the user
+    // works down the page instead of being sent to whichever control happened
+    // to be declared first in the form.
+    const el = firstInDocumentOrder(resolved)?.el;
     if (!el) {
       // Nothing renders this control. Falling back on the payee row is wrong,
       // but silence is worse: the user gets no signal at all that the submit
@@ -668,6 +709,19 @@ export class SendComponent implements OnInit {
     // whole section, and that is the one field where a row-sized shake reads
     // as nothing, because the field is already the largest thing on screen.
     shakeElement(el);
+  }
+
+  private resolveFieldElement(
+    host: HTMLElement,
+    key: string
+  ): HTMLElement | undefined {
+    const anchor = anchorKeyFor(key);
+    return (
+      this.fieldFocus.resolve(anchor) ??
+      host.querySelector<HTMLElement>(`[data-field="${anchor}"]`) ??
+      host.querySelector<HTMLElement>(`[formcontrolname="${key}"]`) ??
+      undefined
+    );
   }
 
   ngOnInit(): void {
@@ -1219,7 +1273,11 @@ export class SendComponent implements OnInit {
     this.paymentActivityService.clear();
   }
 
-  private openPayeeEditModal(payeeId: string, page?: PayeeEditPage): void {
+  private openPayeeEditModal(
+    payeeId: string,
+    page?: PayeeEditPage,
+    fromPrompt = false
+  ): void {
     this.payeeModalService
       .openEditPayee(
         payeeId,
@@ -1237,6 +1295,9 @@ export class SendComponent implements OnInit {
           if (!result) {
             return;
           }
+          // Saved from the missing-details prompt: once the payee is read back,
+          // ask for whatever is still missing.
+          this.sendStateService.repromptAfterPayeeLoad = fromPrompt;
           if ('name' in result) {
             this.reselectEditedPayee(result);
             return;

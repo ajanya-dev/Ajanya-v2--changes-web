@@ -1,0 +1,108 @@
+<div class="">
+  <!-- modal header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Account Verification Failed
+      </h1>
+    </div>
+    <div
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      (click)="cancel()"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body -->
+  <div class="p-6 bg-v4-tertiary-background-color flex flex-col gap-4">
+    <!-- Action Required Banner -->
+    <div
+      class="rounded-lg px-4 py-3 bg-v4-surface-warning border border-v4-border-warning-subtle text-v4-text-warning"
+    >
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="TriangleAlertIcon" [size]="18" class="shrink-0" />
+        <p class="text-sm font-semibold m-0">Action Required</p>
+      </div>
+      <p class="text-xs text-v4-secondary-text-color m-0 mt-1">
+        We couldn't verify your original bank account number. It looks like the
+        number you entered may be incorrect. If you believe the AC number is
+        correct, you can click below to upload the first page of your bank
+        statement for manual verification.
+      </p>
+    </div>
+
+    <!-- File Upload -->
+    <form [formGroup]="uploadForm">
+      <div
+        class="upload-area flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-v4-border-color bg-v4-main-background-color px-6 py-8 cursor-pointer transition-colors"
+        [class.border-v4-primary-brand-color]="isDragOver"
+        [class.bg-v4-secondary-background-color]="isDragOver"
+        (dragover)="handleDragOver($event)"
+        (dragleave)="handleDragLeave($event)"
+        (drop)="handleDrop($event)"
+        (click)="!selectedFile && fileInput.click()"
+      >
+        @if (!selectedFile) {
+          <div class="w-12 h-12 rounded-full bg-v4-secondary-background-color flex items-center justify-center">
+            <lucide-icon [img]="UploadCloudIcon" class="text-v4-primary-brand-bold-color" [size]="22" />
+          </div>
+          <div class="text-center">
+            <p class="text-sm font-semibold text-v4-main-text-color font-funnel m-0">
+              Upload Banking Statement
+            </p>
+            <p class="text-xs text-v4-subtle-text-color font-funnel mt-1 m-0">
+              Drag & drop or click to choose a file
+            </p>
+            <p class="text-xs text-v4-subtle-text-color font-funnel mt-1 m-0">
+              PDF, CSV, XLSX, DOCX, TXT, JPG, PNG — max 10MB
+            </p>
+          </div>
+        } @else {
+          <div class="w-full flex items-center justify-between gap-3 px-2">
+            <div class="flex items-center gap-3 min-w-0">
+              <lucide-icon [img]="CircleCheckIcon" class="text-v4-common-green-color shrink-0" [size]="20" />
+              <span class="text-sm font-medium text-v4-main-text-color font-funnel truncate">
+                {{ selectedFile.name }}
+              </span>
+            </div>
+            <div
+              class="w-8 h-8 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+              (click)="removeFile(); $event.stopPropagation()"
+            >
+              <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" [size]="16" />
+            </div>
+          </div>
+        }
+      </div>
+
+      <input
+        #fileInput
+        type="file"
+        class="hidden"
+        [accept]="acceptedFileTypes.join(',')"
+        (change)="onFileSelected($event)"
+      />
+
+      <app-control-message-v4
+        [control]="uploadForm.controls['bankStatement']"
+      />
+    </form>
+  </div>
+
+  <!-- modal footer -->
+  <div class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color">
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="cancel()"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Upload"
+      [disabled]="!uploadForm.valid || isLoading()"
+      [loading]="isLoading()"
+      (clickEvent)="continue()"
+    />
+  </div>
+</div>

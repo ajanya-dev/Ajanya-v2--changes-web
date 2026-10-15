@@ -1,0 +1,314 @@
+<div class="">
+  <!-- modal header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Verify Bank Account - Micro Deposits
+      </h1>
+    </div>
+    <button
+      (click)="close()"
+      [disabled]="isSubmitting()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center disabled:opacity-50"
+    >
+      <lucide-icon [img]="X" class="text-v4-subtle-text-color" />
+    </button>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color font-peridot">
+    @if (isLoading()) {
+      <div class="flex items-center justify-center py-10">
+        <lucide-icon [img]="Loader2" [size]="32" class="text-v4-primary-brand-color animate-spin" />
+      </div>
+    } @else {
+      <form [formGroup]="microDepositForm" class="flex flex-col gap-4">
+        <!-- Bank Name -->
+        <app-common-input-v4
+          placeholder="Bank Name"
+          fieldLabel="Bank Name"
+          [isFieldRequired]="true"
+          [readOnly]="true"
+          [inputWidth]="'100%'"
+          formControlName="bankName"
+          [control]="microDepositForm.controls['bankName']"
+        />
+
+        <!-- Bank Account Name -->
+        <app-common-input-v4
+          placeholder="Bank Account Name"
+          fieldLabel="Bank Account Name"
+          [isFieldRequired]="true"
+          [readOnly]="true"
+          [inputWidth]="'100%'"
+          formControlName="bankAccName"
+          [control]="microDepositForm.controls['bankAccName']"
+        />
+
+        <!-- Account Number + Routing Number side by side -->
+        <div class="grid grid-cols-2 gap-3">
+          <app-common-input-v4
+            placeholder="Account Number"
+            fieldLabel="Account Number"
+            [isFieldRequired]="true"
+            [readOnly]="true"
+            [inputWidth]="'100%'"
+            formControlName="bankAccNumber"
+            [control]="microDepositForm.controls['bankAccNumber']"
+          />
+          <app-common-input-v4
+            placeholder="Routing Number"
+            fieldLabel="Routing Number"
+            [isFieldRequired]="true"
+            [readOnly]="true"
+            [inputWidth]="'100%'"
+            formControlName="routingNumber"
+            [control]="microDepositForm.controls['routingNumber']"
+          />
+        </div>
+
+        @if (!isADPMarketPlaceUser) {
+          <!-- Uploaded from phone success items -->
+          @for (item of uploadFromPhoneItems; track item.key) {
+            @if (item.entry) {
+              <div
+                class="flex items-center justify-between px-4 py-2.5 bg-v4-badge-success-bg-color border border-v4-badge-success-text-color rounded-xl text-sm"
+              >
+                <span class="font-medium text-v4-badge-success-text-color">{{ item.label }}</span>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-xs text-v4-subtle-text-color truncate max-w-[140px]">{{ item.entry.document_name }}</span>
+                  <lucide-icon [img]="CheckCircle2" [size]="14" class="text-v4-badge-success-text-color flex-shrink-0" />
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Business Dropdown (KYB) -->
+          @if (businessList().length > 0) {
+            <div>
+              <p class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide m-0">
+                Select Your Business
+              </p>
+              <app-v4-common-dropdown
+                [config]="{
+                  placeholder: 'Select Your Business',
+                  displayField: 'business_name',
+                  outputField: 'enc_id'
+                }"
+                [listData]="businessList()"
+                [clearable]="false"
+                [appendTo]="'body'"
+                [ngModel]="selectedBusiness"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="getSelectedBusiness($event)"
+              />
+            </div>
+          }
+
+          <!-- Upload Gov ID -->
+          @if (!phoneResponse() && !isKycVerified()) {
+            <div>
+              <div
+                role="button"
+                tabindex="0"
+                class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-v4-input-background-color border border-v4-input-border-color rounded-xl cursor-pointer hover:bg-v4-tertiary-background-color transition-colors"
+                (click)="govIdInput.click()"
+                (keydown.enter)="govIdInput.click()"
+              >
+                <lucide-icon [img]="Upload" [size]="15" class="text-v4-secondary-text-color flex-shrink-0" />
+                <span class="text-sm font-medium text-v4-secondary-text-color">
+                  {{ govIdName() || "Upload Gov ID" }}
+                  @if (!govIdName()) {
+                    <span class="text-v4-common-red-color">*</span>
+                  }
+                </span>
+                @if (govIdName()) {
+                  <lucide-icon [img]="CheckCircle2" [size]="14" class="text-v4-badge-success-text-color flex-shrink-0" />
+                  <button
+                    type="button"
+                    (click)="$event.stopPropagation(); removeFile('govId', govIdInput)"
+                    class="ml-1 flex-shrink-0 text-v4-subtle-text-color hover:text-v4-common-red-color transition-colors"
+                  >
+                    <lucide-icon [img]="X" [size]="14" />
+                  </button>
+                }
+              </div>
+              <input
+                #govIdInput
+                type="file"
+                class="hidden"
+                accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+                (change)="fileInput($event, 'govId')"
+              />
+              <app-control-message-v4 [control]="microDepositForm.controls['govId']" />
+            </div>
+          }
+
+          <!-- Upload Banking Statement -->
+          @if (!phoneResponse()) {
+            <div>
+              <div
+                role="button"
+                tabindex="0"
+                class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-v4-input-background-color border border-v4-input-border-color rounded-xl cursor-pointer hover:bg-v4-tertiary-background-color transition-colors"
+                (click)="bankStatementInput.click()"
+                (keydown.enter)="bankStatementInput.click()"
+              >
+                <lucide-icon [img]="Upload" [size]="15" class="text-v4-secondary-text-color flex-shrink-0" />
+                <span class="text-sm font-medium text-v4-secondary-text-color">
+                  {{ bankStatementName() || "Upload Banking Statement" }}
+                  @if (!bankStatementName()) {
+                    <span class="text-v4-common-red-color">*</span>
+                  }
+                </span>
+                @if (bankStatementName()) {
+                  <lucide-icon [img]="CheckCircle2" [size]="14" class="text-v4-badge-success-text-color flex-shrink-0" />
+                  <button
+                    type="button"
+                    (click)="$event.stopPropagation(); removeFile('bankingStatement', bankStatementInput)"
+                    class="ml-1 flex-shrink-0 text-v4-subtle-text-color hover:text-v4-common-red-color transition-colors"
+                  >
+                    <lucide-icon [img]="X" [size]="14" />
+                  </button>
+                }
+              </div>
+              <input
+                #bankStatementInput
+                type="file"
+                class="hidden"
+                accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+                (change)="fileInput($event, 'bankingStatement')"
+              />
+              <app-control-message-v4 [control]="microDepositForm.controls['bankStatement']" />
+            </div>
+          }
+
+          <!-- Any Business Info + Any Other Info -->
+          @if (!phoneResponse() && !businessList().length) {
+            <div
+              role="button"
+              tabindex="0"
+              class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-v4-input-background-color border border-v4-input-border-color rounded-xl cursor-pointer hover:bg-v4-tertiary-background-color transition-colors"
+              (click)="businessInfoInput.click()"
+              (keydown.enter)="businessInfoInput.click()"
+            >
+              <lucide-icon [img]="ChevronDown" [size]="15" class="text-v4-secondary-text-color flex-shrink-0" />
+              <span class="text-sm font-medium text-v4-secondary-text-color">
+                {{ businessInfoName() || "Any Business Info" }}
+              </span>
+              @if (businessInfoName()) {
+                <lucide-icon [img]="CheckCircle2" [size]="14" class="text-v4-badge-success-text-color flex-shrink-0" />
+                <button
+                  type="button"
+                  (click)="$event.stopPropagation(); removeFile('bankingInfo', businessInfoInput)"
+                  class="ml-1 flex-shrink-0 text-v4-subtle-text-color hover:text-v4-common-red-color transition-colors"
+                >
+                  <lucide-icon [img]="X" [size]="14" />
+                </button>
+              }
+            </div>
+            <input
+              #businessInfoInput
+              type="file"
+              class="hidden"
+              accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+              (change)="fileInput($event, 'bankingInfo')"
+            />
+
+            <div
+              role="button"
+              tabindex="0"
+              class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-v4-input-background-color border border-v4-input-border-color rounded-xl cursor-pointer hover:bg-v4-tertiary-background-color transition-colors"
+              (click)="otherInfoInput.click()"
+              (keydown.enter)="otherInfoInput.click()"
+            >
+              <lucide-icon [img]="ChevronDown" [size]="15" class="text-v4-secondary-text-color flex-shrink-0" />
+              <span class="text-sm font-medium text-v4-secondary-text-color">
+                {{ otherInfoName() || "Any Other Info" }}
+              </span>
+              @if (otherInfoName()) {
+                <lucide-icon [img]="CheckCircle2" [size]="14" class="text-v4-badge-success-text-color flex-shrink-0" />
+                <button
+                  type="button"
+                  (click)="$event.stopPropagation(); removeFile('otherInfo', otherInfoInput)"
+                  class="ml-1 flex-shrink-0 text-v4-subtle-text-color hover:text-v4-common-red-color transition-colors"
+                >
+                  <lucide-icon [img]="X" [size]="14" />
+                </button>
+              }
+            </div>
+            <input
+              #otherInfoInput
+              type="file"
+              class="hidden"
+              accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+              (change)="fileInput($event, 'otherInfo')"
+            />
+          }
+
+          <!-- Send Link + QR Code -->
+          <div class="grid grid-cols-2 gap-3">
+            <app-common-button-v4
+              [type]="{ style: 'primary', name: 'main' }"
+              [text]="
+                timerExist()
+                  ? 'Resend (' + displayTimer() + ')'
+                  : sentSms()
+                    ? 'Resend Link'
+                    : 'Send Link'
+              "
+              [width]="'100%'"
+              [loading]="smsLoading()"
+              [disabled]="timerExist() || !bankAccId"
+              [isAddIcon]="true"
+              [icon]="faPaperPlane"
+              (clickEvent)="uploadFromPhoneAction('sms')"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'outline', name: 'main' }"
+              [text]="'QR Code'"
+              [width]="'100%'"
+              [loading]="qrLoading()"
+              [isAddIcon]="true"
+              [icon]="faQrcode"
+              (clickEvent)="openQrCodeModal()"
+            />
+          </div>
+
+          <!-- SMS sent confirmation -->
+          @if (sentSms()) {
+            <p class="text-sm text-v4-badge-success-text-color flex items-center gap-1.5 m-0">
+              <lucide-icon [img]="CheckCircle2" [size]="14" class="flex-shrink-0" />
+              Link sent to {{ sentSms() }}
+            </p>
+          }
+        }
+
+        <!-- Info Box -->
+        <div
+          class="flex items-start gap-2.5 p-3 bg-v4-badge-success-bg-color rounded-xl border border-v4-secondary-brand-color"
+        >
+          <lucide-icon [img]="Info" [size]="15" class="text-v4-badge-success-text-color flex-shrink-0 mt-0.5" />
+          <p class="text-xs text-v4-badge-success-text-color m-0 leading-relaxed">
+            @if (!isADPMarketPlaceUser) {
+              Verification takes a few hours to 1 day.
+            }
+            We'll send 2 small deposits ($0.01–$0.99) to your account. Return here
+            to confirm them once received.
+          </p>
+        </div>
+
+        <!-- Confirm -->
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Confirm'"
+          [width]="'100%'"
+          [loading]="isSubmitting()"
+          [disabled]="isSubmitting()"
+          (clickEvent)="continue()"
+        />
+      </form>
+    }
+  </div>
+  <!-- modal body end -->
+</div>

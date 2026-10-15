@@ -1,0 +1,433 @@
+<div class="section-personal-verification flex flex-col justify-center w-full">
+  <form [formGroup]="personalForm" autocomplete="off">
+    <div
+      class="details_section"
+      *ngIf="currentStep === 'details' && currentIndex !== 2"
+    >
+      <div class="flex gap-4">
+        <div class="single_input">
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            autocomplete="new-firstName"
+            formControlName="firstName"
+          />
+          <span class="floating_label_field"
+            >First Name <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.firstName"
+          ></app-control-message>
+        </div>
+        <div class="single_input">
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            autocomplete="new-lastName"
+            formControlName="lastName"
+          />
+          <span class="floating_label_field"
+            >Last Name <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.lastName"
+          ></app-control-message>
+        </div>
+      </div>
+
+      <div class="single_input">
+        <input
+          type="text"
+          class="input_style"
+          placeholder=" "
+          autocomplete="new-address"
+          formControlName="address"
+          #address
+          (focus)="loadGoogleAddress(address)"
+        />
+        <span class="floating_label_field"
+          >Address <span class="required">*</span></span
+        >
+        <app-control-message
+          [control]="personalForm.controls.address"
+        ></app-control-message>
+      </div>
+
+      <div
+        *ngIf="personalForm.controls.address.value"
+        class="grid grid-cols-2 gap-x-[10px]"
+      >
+        <div class="single_input">
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            autocomplete="new-city"
+            formControlName="city"
+          />
+          <span class="floating_label_field"
+            >City <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.city"
+          ></app-control-message>
+        </div>
+
+        <div class="single_input">
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            autocomplete="new-state"
+            formControlName="state"
+          />
+          <span class="floating_label_field"
+            >State <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.state"
+          ></app-control-message>
+        </div>
+
+        <div class="single_input">
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            autocomplete="new-zip"
+            formControlName="zip"
+            maxlength="10"
+          />
+          <span class="floating_label_field"
+            >Zip <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.zip"
+          ></app-control-message>
+        </div>
+
+        <div class="single_input">
+          <small class="small_floating_label" #country
+            >Country<span class="required">*</span></small
+          >
+          <select
+            name=""
+            id=""
+            class="input_style"
+            formControlName="country"
+            (change)="selectCountry($event)"
+          >
+            <option value="" disabled selected>Country</option>
+            <option
+              [value]="item.key"
+              *ngFor="let item of allowedcountries | keyvalue"
+            >
+              {{ item.value }}
+            </option>
+          </select>
+          <app-control-message
+            [control]="personalForm.controls.country"
+          ></app-control-message>
+        </div>
+      </div>
+
+      <div class="single_input">
+        <input
+          type="date"
+          class="input_style"
+          placeholder=" "
+          formControlName="dateOfBirth"
+          [max]="todayDate"
+        />
+        <span class="floating_label_field"
+          >Date of Birth <span class="required">*</span></span
+        >
+        <app-control-message
+          [control]="personalForm.controls.dateOfBirth"
+        ></app-control-message>
+      </div>
+
+      <div class="flex justify-center p-[0.5rem] mt-[1rem] mb-[1rem]">
+        <h3 class="text-sm font-semibold">Select your ID type</h3>
+      </div>
+
+      <div class="v35-button-switch">
+        <div
+          role="presentation"
+          *ngFor="let item of ['ssn', 'passport']"
+          [ngClass]="{ selected: item === personalForm.controls.idType.value }"
+          (click)="personalForm.controls.idType.setValue(item)"
+        >
+          <h1 class="uppercase">
+            {{ item }}
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex gap-[10px]">
+        <div class="single_input">
+          <input
+            *ngIf="personalForm.controls.idType.value === 'ssn'"
+            type="text"
+            class="input_style"
+            placeholder=" "
+            formControlName="idNumber"
+            (focus)="onFocus(personalForm.controls.idType.value)"
+            (blur)="onBlur(personalForm.controls.idType.value)"
+            [mask]="idMask"
+            [patterns]="customPattern"
+            [hiddenInput]="true"
+            (copy)="(false)"
+            (cut)="(false)"
+          />
+          <input
+            *ngIf="personalForm.controls.idType.value === 'passport'"
+            type="text"
+            class="input_style"
+            placeholder=" "
+            formControlName="idNumber"
+            (focus)="onFocus(personalForm.controls.idType.value)"
+            (blur)="onBlur(personalForm.controls.idType.value)"
+            [mask]="maskPassport"
+            [patterns]="customPatternPassport"
+            [hiddenInput]="true"
+            (copy)="(false)"
+            (cut)="(false)"
+          />
+          <span class="floating_label_field"
+            >{{
+              personalForm.controls.idType.value === "ssn"
+                ? "Full digit of SSN"
+                : "Passport Number"
+            }}
+            <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.idNumber"
+          ></app-control-message>
+        </div>
+
+        <div
+          class="single_input"
+          *ngIf="personalForm.controls.idType.value === 'passport'"
+        >
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            formControlName="localPhone"
+            mask="(000) 000-0000"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+          />
+          <span class="floating_label_field"
+            >Local Phone Number <span class="required">*</span></span
+          >
+          <app-control-message
+            [control]="personalForm.controls.localPhone"
+          ></app-control-message>
+        </div>
+      </div>
+      <div
+        *ngIf="personalForm.controls.idType.value === 'passport'"
+        class="single_input"
+      >
+        <span
+          *ngIf="!personalForm.controls.nationality.value"
+          class="!text-common-red-color absolute top-2 entity-type ml-[88px]"
+          >*</span
+        >
+        <select class="input_style" formControlName="nationality">
+          <option value="" selected disabled>Nationality</option>
+          <option
+            [value]="item.key"
+            *ngFor="let item of allowedcountries | keyvalue"
+          >
+            {{ item.value }}
+          </option>
+        </select>
+        <span class="small_floating_label" #entity
+          >Nationality<span class="required">*</span>
+        </span>
+        <app-control-message
+          [control]="personalForm.controls.nationality"
+        ></app-control-message>
+      </div>
+      @if (personalForm.controls.idType.value === "passport") {
+        <div
+          [ngClass]="{ empty_file_input: !localNationalDocument?.name }"
+          class="w-full mt-5 rounded-[0.200rem]"
+        >
+          <app-common-upload-button-v35
+            [uploadedFile]="localNationalDocument"
+            buttonText="National Document"
+            buttonHeader="NationalDocument"
+            [acceptedFileTypes]="[
+              '.pdf',
+              '.xls',
+              '.xlsx',
+              '.rtf',
+              '.doc',
+              '.docx',
+              '.txt',
+              '.jpg',
+              '.png'
+            ]"
+            (selectedFileEvent)="filePicked($event)"
+          ></app-common-upload-button-v35>
+        </div>
+        @if (
+          personalForm.controls.idNumber.touched &&
+          personalForm.controls.idType.value === "passport" &&
+          !localNationalDocument?.name
+        ) {
+          <span class="error_msg"> This field is required </span>
+        }
+      }
+    </div>
+    @if (currentStep === "verify") {
+      <div class="verify_section flex flex-col gap-[2rem] mt-14">
+        <p class="text-sm">Prepare for this process before you get started</p>
+
+        <div class="flex flex-col gap-2 mt-3">
+          <div class="flex gap-4 items-center">
+            <div class="box"></div>
+            <span class="text-sm">Any Govt ID </span>
+          </div>
+
+          <div class="flex gap-4 items-center">
+            <div class="box"></div>
+            <span class="text-sm">Your Selfie</span>
+          </div>
+        </div>
+
+        <div class="info_box flex flex-col gap-2 items-center justify-center">
+          <span>How ?</span>
+          <span>Use webcam or phone camera</span>
+          <div class="flex gap-3">
+            <svg
+              width="15"
+              height="22"
+              viewBox="0 0 15 22"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2.76237 0.566406C1.29154 0.566406 0.0957031 1.74355 0.0957031 3.19141V18.9414C0.0957031 20.3893 1.29154 21.5664 2.76237 21.5664H12.0957C13.5665 21.5664 14.7624 20.3893 14.7624 18.9414V3.19141C14.7624 1.74355 13.5665 0.566406 12.0957 0.566406H2.76237ZM6.0957 18.2852H8.76237C9.12904 18.2852 9.42904 18.5805 9.42904 18.9414C9.42904 19.3023 9.12904 19.5977 8.76237 19.5977H6.0957C5.72904 19.5977 5.42904 19.3023 5.42904 18.9414C5.42904 18.5805 5.72904 18.2852 6.0957u 18.2852Z"
+                fill="#46587D"
+              />
+            </svg>
+
+            <svg
+              width="21"
+              height="23"
+              viewBox="0 0 21 23"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15.7137 17.8168C18.4994 16.1066 20.3477 13.1074 20.3477 9.69141C20.3477 4.37617 15.87 0.0664062 10.3477 0.0664062C4.82534 0.0664062 0.347656 4.37617 0.347656 9.69141C0.347656 13.1074 2.19587 16.1066 4.98159 17.8168L2.38337 19.5656C1.87444 19.9094 1.65123 20.5324 1.83873 21.1039C2.02623 21.6754 2.5798 22.0664 3.2048 22.0664H17.4905C18.1155 22.0664 18.6646 21.6754 18.8521 21.1039C19.0396 20.5324 18.8209 19.9094 18.3075 19.5656L15.7093 17.8168H15.7137ZM10.3477 15.1914C13.5039 15.1914 16.0619 12.7293 16.0619 9.69141C16.0619 6.65352 13.5039 4.19141 10.3477 4.19141C7.19141 4.19141 4.63337 6.65352 4.63337 9.69141C4.63337 12.7293 7.19141 15.1914 10.3477 15.1914ZM10.3477 16.5664C6.40123 16.5664 3.2048 13.4898 3.2048 9.69141C3.2048 5.89297 6.40123 2.81641 10.3477 2.81641C14.2941 2.81641 17.4905 5.89297 17.4905 9.69141C17.4905 13.4898 14.2941 16.5664 10.3477 16.5664ZM8.2048 9.69141C8.2048 10.0695 7.88337 10.3789 7.49051 10.3789C7.09766 10.3789 6.77623 10.0695 6.77623 9.69141C6.77623 7.79219 8.37444 6.25391 10.3477 6.25391C10.7405 6.25391 11.0619 6.56328 11.0619 6.94141C11.0619 7.31953 10.7405 7.62891 10.3477 7.62891C9.16462 7.62891 8.2048 8.55273 8.2048 9.69141Z"
+                fill="#46587D"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    }
+  </form>
+  @if (
+    currentStep === "have-a-business" ||
+    (currentIndex === 2 && currentStep === "details")
+  ) {
+    <div class="done_section">
+      <div class="green_check flex items-center gap-2 text-sm">
+        <img
+          height="25px"
+          width="25px"
+          src="../../../../../assets/images/kyc-kyb/green-check.png"
+          alt=""
+        />
+        <span>ID Verification Successfully Completed</span>
+      </div>
+      <div>
+        <div
+          class="text-2xl font-semibold mb-[1rem] mt-[3.5rem] font-overwrite"
+        >
+          Do you operate a business?
+        </div>
+        <p class="text-sm">
+          To improve your experience, can you share your business details with
+          us? This will enable us to provide you with relevant information and
+          additional features.
+        </p>
+        <img
+          class="mt-[3rem]"
+          width="80"
+          height="80"
+          src="../../../../../assets/images/kyc-kyb/briefcase.png"
+          alt="briefcase"
+        />
+      </div>
+    </div>
+  } @else if (currentStep === "completed") {
+    <div class="completed_section">
+      <img
+        width="60"
+        height="60"
+        src="../../../../assets/images/kyc-kyb/green-check.png"
+        alt="green-check"
+      />
+      <div class="mt-[4rem] font-light text-sm">
+        <span class="text-xl font-normal">Good Job, </span>Your Personal
+        Verification Completed
+      </div>
+    </div>
+  }
+
+  <div class="pt-5">
+    <app-common-button-v35
+      *ngIf="
+        currentStep !== 'have-a-business' &&
+        (currentIndex !== 2 || currentStep !== 'details')
+      "
+      class="ocw-btn next_button"
+      [disabled]="loading || statusLoading"
+      type="list"
+      class="w-full"
+      [type]="{ style: 'filled', name: 'main' }"
+      [text]="
+        currentStep === 'verify'
+          ? 'Start'
+          : currentStep === 'completed'
+            ? 'Done'
+            : 'Next'
+      "
+      width="100%"
+      [loading]="loading"
+      (clickEvent)="nextStep()"
+    ></app-common-button-v35>
+    <div
+      *ngIf="
+        currentStep === 'have-a-business' ||
+        (currentIndex === 2 && currentStep === 'details')
+      "
+      class="flex gap-[1rem]"
+    >
+      <button
+        class="back_button ocw-btn"
+        [disabled]="loading"
+        (click)="noBusiness()"
+      >
+        No, I don't
+      </button>
+      <button
+        class="next_button ocw-btn"
+        [disabled]="loading"
+        (click)="nextStep()"
+      >
+        Yes
+      </button>
+    </div>
+  </div>
+</div>

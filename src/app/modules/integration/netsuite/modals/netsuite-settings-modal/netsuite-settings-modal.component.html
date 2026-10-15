@@ -1,0 +1,318 @@
+<div class="p-1.5 min-w-[580px]">
+  <!-- Modal Header -->
+  <div
+    class="flex justify-between items-center pb-5 border-b border-input-border-color"
+  >
+    <div class="flex items-center gap-2">
+      <span class="font-inter font-semibold text-lg text-main-text-color">
+        NetSuite Settings
+      </span>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="cursor-pointer hover:opacity-70 transition-opacity"
+    >
+      <fa-icon
+        class="text-secondary-text-color text-lg"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  @if(env?.env_id !== 'compass'){
+    <div class="flex flex-col items-start justify-center gap-5 bg-secondary-background-color rounded-[10px] p-4 transition-shadow mt-5">
+      <div class="flex items-center gap-2">
+      <span class="font-inter font-semibold text-sm text-main-text-color">Default Subsidiary</span>
+      <fa-icon
+        [icon]="faInfo"
+        class="text-common-blue-color text-xs cursor-help"
+        matTooltip="Select your default subsidiary for importing data from NetSuite"
+      >
+      </fa-icon>
+      </div>
+      <ng-select
+        class="small-text-select"
+        [items]="subsidiaryList()"
+        bindValue="id"
+        bindLabel="name"
+        [ngModel]="defaultSubsidiaryId()"
+        (ngModelChange)="setSubsidiaryId($event)"
+        [ngModelOptions]="{standalone: true}"
+        [searchable]="true"
+        [clearable]="true"
+        [loading]="subsidiaryLoading()"
+        [placeholder]="'Select Subsidiary'"
+        (search)="onSubsidiarySearch($event)"
+        (clear)="onSubsidiarySearchClear()"
+        (scrollToEnd)="onSubsidiaryScrollToEnd()"
+      >
+      <ng-template ng-option-tmp let-item="item">
+        <div class="flex items-center justify-between py-1">
+          <span class="ml-2">{{ item.name }}</span>
+          @if(cachedDefaultSubsidiaryId() && item.id === cachedDefaultSubsidiaryId()) {
+            <span class="text-xs text-common-blue-color">Default</span>
+          }
+        </div>
+      </ng-template>
+      </ng-select>
+    </div>
+  }
+  <!-- Modal Body -->
+  <form [formGroup]="settingForm" class="pt-5">
+    <div class="flex flex-col gap-5">
+      <!-- Settings Cards Row -->
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Check Type Card -->
+        <div
+          class="bg-secondary-background-color rounded-[10px] p-4 transition-shadow"
+        >
+          <div
+            class="flex items-center gap-2 mb-3 pb-2.5 border-b border-input-border-color"
+          >
+            <span class="font-inter font-semibold text-sm text-main-text-color"
+              >Check Type</span
+            >
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help"
+              matTooltip="Choose your preferred check style for importing"
+              [icon]="faInfo"
+            ></fa-icon>
+          </div>
+          <div class="single_input flex auto-redirect-height items-center">
+            <mat-checkbox
+              class="example-margin ml-2 p-0"
+              checked="true"
+              disabled="true"
+            >
+              <span class="text-sm pb-1">Check</span>
+            </mat-checkbox>
+          </div>
+        </div>
+
+        <!-- Download Filter Card -->
+        <div
+          class="bg-secondary-background-color rounded-[10px] p-4 transition-shadow"
+        >
+          <div
+            class="flex items-center gap-2 mb-3 pb-2.5 border-b border-input-border-color"
+          >
+            <span class="font-inter font-semibold text-sm text-main-text-color"
+              >Download Filter</span
+            >
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help"
+              matTooltip="Set your default download filter to import."
+              [icon]="faInfo"
+            ></fa-icon>
+          </div>
+          <div class="pt-1">
+            <mat-radio-group
+              aria-labelledby="radio-label"
+              class="flex flex-col gap-2"
+              formControlName="downloadFilter"
+            >
+              @for (item of downloadFilters; track item) {
+                <mat-radio-button [value]="item.value">
+                  <span class="text-sm text-main-text-color cursor-pointer">{{
+                    item.name
+                  }}</span>
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+            <div
+              class="flex items-center gap-3 mt-3 pt-3 border-t border-input-border-color"
+            >
+              <label
+                class="text-sm text-secondary-text-color whitespace-nowrap"
+                for="customField"
+                >Custom Field</label
+              >
+              <input
+                id="customField"
+                class="flex-1 py-2 px-3 text-[13px] border border-input-border-color rounded-md bg-main-background-color text-main-text-color transition-all focus:outline-none focus:border-common-blue-color placeholder:text-secondary-text-color"
+                formControlName="customField"
+                placeholder="Enter custom field"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Settings Section -->
+      @if (!isLoadSettings) {
+        @if(isAllowExport){
+        <!-- Options Row -->
+        <div class="bg-secondary-background-color rounded-[10px] py-3.5 px-4">
+          <div class="flex items-center gap-6">
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                formControlName="pushBackEnable"
+                class="example-margin ml-2 p-0"
+                (change)="enablePushBack($event)"
+              >
+                <span class="text-sm pb-1">Enable Pushback</span>
+              </mat-checkbox>
+            </div>
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                formControlName="autoExportEnable"
+                class="example-margin ml-2 p-0"
+                (change)="enableAutoExport($event)"
+              >
+                <span class="text-sm pb-1">Auto Export</span>
+              </mat-checkbox>
+            </div>
+          </div>
+        </div>
+      }
+
+        <!-- Import Section -->
+        <div class="bg-secondary-background-color rounded-[10px] p-4">
+          <div class="mb-4">
+            <div class="flex items-center gap-2">
+              <fa-icon
+                [icon]="['fas', 'cloud-arrow-down']"
+                class="text-common-blue-color"
+              ></fa-icon>
+              <span
+                class="font-inter font-semibold text-sm text-main-text-color"
+                >Import Data from NetSuite</span
+              >
+            </div>
+            <span class="text-xs text-secondary-text-color"
+              >Click on any item below to sync from your NetSuite account</span
+            >
+          </div>
+          <div class="flex flex-wrap gap-2">
+            @if(!isCompass()){
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Subsidiary"
+              (clickEvent)="importSettings('subsidiaries')"
+              [loading]="isSubsidiaryimport"
+              [disabled]="isSubsidiaryimport"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              toolTip="Import Subsidiaries from NetSuite"
+            />
+            }
+            @if(isAllowExport){
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Bank"
+              (clickEvent)="importSettings('bank-accounts')"
+              [loading]="isBankImport"
+              [disabled]="isBankImport"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              toolTip="Import bank accounts from NetSuite"
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              [text]="whiteLabelName"
+              (clickEvent)="importSettings('payees')"
+              [loading]="isPayeeImport"
+              [disabled]="isPayeeImport"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              toolTip="Import payees from NetSuite"
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Class"
+              (clickEvent)="importSettings('classes')"
+              [loading]="isClassImport"
+              [disabled]="isClassImport"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              toolTip="Import classes from NetSuite"
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Expense Accounts"
+              (clickEvent)="importSettings('expense-accounts')"
+              [loading]="isExpenseImport"
+              [disabled]="
+                isExpenseImport || !settingForm.controls.pushBackEnable.value
+              "
+              [class.pointer-events-none]="
+                !settingForm.controls.pushBackEnable.value
+              "
+              [class.opacity-40]="!settingForm.controls.pushBackEnable.value"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              toolTip="Import Expense Accounts from NetSuite"
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Location"
+              (clickEvent)="importLocations()"
+              [loading]="isLocationImport"
+              [disabled]="isLocationImport"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              toolTip="Import Locations from NetSuite"
+            />
+          }
+          </div>
+        </div>
+      } @else if (isLoadSettings) {
+        <!-- Skeleton for Options Row -->
+        <div
+          class="bg-secondary-background-color rounded-[10px] py-3.5 px-4 animate-pulse"
+        >
+          <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 bg-gray-300 rounded"></div>
+              <div class="w-28 h-4 bg-gray-300 rounded"></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 bg-gray-300 rounded"></div>
+              <div class="w-20 h-4 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skeleton for Import Section -->
+        <div
+          class="bg-secondary-background-color rounded-[10px] p-4 animate-pulse"
+        >
+          <div class="mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-5 h-5 bg-gray-300 rounded"></div>
+              <div class="w-48 h-4 bg-gray-300 rounded"></div>
+            </div>
+            <div class="w-64 h-3 bg-gray-300 rounded"></div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <div class="w-20 h-9 bg-gray-300 rounded-md"></div>
+            <div class="w-20 h-9 bg-gray-300 rounded-md"></div>
+            <div class="w-20 h-9 bg-gray-300 rounded-md"></div>
+            <div class="w-32 h-9 bg-gray-300 rounded-md"></div>
+            <div class="w-24 h-9 bg-gray-300 rounded-md"></div>
+            <div class="w-24 h-9 bg-gray-300 rounded-md"></div>
+          </div>
+        </div>
+      }
+    </div>
+  </form>
+
+  <!-- Modal Footer -->
+  <div
+    class="flex justify-end gap-3 pt-6 mt-5 border-t border-input-border-color"
+  >
+    <app-common-button-v35
+      width="100px"
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+      [mat-dialog-close]="false"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      width="100px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Update"
+      [loading]="isUpdate"
+      [disabled]="isUpdate"
+      (clickEvent)="update()"
+    ></app-common-button-v35>
+  </div>
+</div>

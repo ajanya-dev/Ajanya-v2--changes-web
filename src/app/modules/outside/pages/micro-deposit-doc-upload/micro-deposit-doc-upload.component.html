@@ -1,0 +1,134 @@
+<div class="attachment_wrapper">
+  <div class="body_container">
+    <div class="main_header">
+      <div class="logo">
+        <img
+          [alt]="appConfig?.websiteTitle"
+          [src]="
+            (appConfig?.websiteTitle === 'OnlineCheckWriter'
+              ? 'https://onlinecheckwriter.com/wp-content/uploads/2022/11/OCW-powered-by-ZM-2.svg'
+              : appConfig?.websiteLogo) ||
+            'https://onlinecheckwriter.com/wp-content/uploads/2022/11/OCW-powered-by-ZM-2.svg'
+          "
+          [title]="appConfig?.websiteTitle"
+        />
+      </div>
+    </div>
+    @if (!linkExpired && !loading && !uploaded) {
+      <ng-container class="h-full overflow-auto">
+        <div class="main_body">
+          <div class="sub_heading">
+            <h3>
+              Please provide the necessary documents displayed below to verify
+              your bank account ending with;
+            </h3>
+          </div>
+
+          <div class="sub-body">
+            <div class="card-details">
+              <span>{{ metaData?.bankAccountNumber }}</span>
+            </div>
+
+            <img
+              ngSrc="assets/images/document-icon.svg"
+              width="120"
+              alt="{{ documentType ? documentType : 'Link Expired' }}"
+              height="120"
+            />
+            @for (doc of documentField; track $index) {
+              <div class="w-full">
+                <div
+                  class="upload-card w-full"
+                  [ngClass]="{ empty_file_input: !documentUploaded[doc.field] }"
+                >
+                  @if (!documentUploaded[doc.field]) {
+                    <div
+                      role="presentation"
+                      class="inner-empty"
+                      (click)="chooseFile(documentInput)"
+                    >
+                    <fa-icon [icon]="faPlus" />
+                      <span>Upload {{ doc.name }}</span>
+                    </div>
+                  }
+                  @if (documentUploaded[doc.field]) {
+                    <div class="inner-populated">
+                      <fa-icon
+                        [icon]="faCircleCheck"
+                        class="text-common-green-color"
+                      ></fa-icon>
+                      <div class="left-div">
+                        <span>{{ doc.name }} : </span
+                        >{{ documentUploaded[doc.field]?.name | truncate: 20 }}
+                      </div>
+                      <fa-icon
+                        [icon]="faXmark"
+                        class="cursor-pointer"
+                        (click)="removeFile(documentInput, doc.field)"
+                      ></fa-icon>
+                    </div>
+                  }
+                  <input
+                    class="hidden"
+                    accept=".heif, .jpg, .png, .webp, .heic, .pdf"
+                    (change)="filePicked($event, doc.field)"
+                    type="file"
+                    #documentInput
+                  />
+                </div>
+                @if (showError[doc.field]) {
+                  <span class="error_msg"
+                    >{{ doc.name }} document is required</span
+                  >
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="footer">
+          <button class="ocw-btn" (click)="uploadFile()">
+            <span>{{ uploading ? "Uploading..." : "Upload" }}</span>
+            @if (uploading) {
+              <span class="loadingSpinner"></span>
+            }
+          </button>
+        </div>
+      </ng-container>
+    }
+
+    @if (linkExpired && !loading) {
+      <ng-container>
+        <div class="link_expired">
+          <p>
+            @if (linkExpired) {
+              <img ngSrc="assets/images/link-expired.svg" alt="Link Expired" width="85" height="85" />
+            }
+            @if (uploaded) {
+              <fa-icon
+                [icon]="faCircleCheck"
+                class="text-common-green-color text-[90px]"
+              ></fa-icon>
+            }
+          </p>
+          <p>{{ linkExpired ? "Link Expired!" : "Verified!" }}</p>
+        </div>
+      </ng-container>
+    }
+    @if (uploaded) {
+      <ng-container>
+        <div class="link_expired">
+          <p>
+            <fa-icon
+              [icon]="faCircleCheck"
+              class="text-common-green-color text-[90px]"
+            ></fa-icon>
+          </p>
+          <p>Uploaded!</p>
+        </div>
+      </ng-container>
+    }
+  </div>
+</div>
+@if (loading) {
+  <div class="data_spinner"></div>
+}

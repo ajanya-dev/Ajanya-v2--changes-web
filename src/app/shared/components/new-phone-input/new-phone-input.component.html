@@ -1,0 +1,120 @@
+<div
+  class="input_style phone_input"
+  [ngStyle]="{ 
+    'border-radius': inputBorderRadius, 
+    'height': isTableField() ? fieldHeight() : null 
+  }"
+  *ngIf="showCountryFlag"
+  [ngClass]="{ 'skelton phone-input-skeleton': isPhoneValueLoading }"
+>
+  <div
+    class="bg-main-background-color profile-phone-input-bg"
+    role="presentation"
+    (click)="toggleDropDown()"
+    cdkOverlayOrigin #trigger="cdkOverlayOrigin"
+  >
+    <img
+      *ngIf="currentCountryURL === undefined"
+      [src]="selectedCountry?.flage_url"
+      alt=""
+      [ngClass]="{'!w-[22px] !h-[22px]': isTableField()}"
+    />
+    <img *ngIf="currentCountryURL" [src]="currentCountryURL" alt="" [ngClass]="{'!w-[22px] !h-[22px]': isTableField()}" />
+    <i class="fa-solid fa-caret-{{ showDropDown ? 'up' : 'down' }}"></i>
+  </div>
+
+  <div class="single_input bg-main-background-color profile-phone-input-bg">
+    <input
+      class="input_style"
+      [ngStyle]="isTableField() ? {'height': inputHeight} : {}"
+      type="tel"
+      autocomplete="off"
+      id="phone"
+      name="phone"
+      [mask]="currentCountryMask"
+      placeholder=" "
+      (paste)="onPaste($event)"
+      [(ngModel)]="phoneNumber"
+      (ngModelChange)="onInput()"
+      [readOnly]="isReadOnly"
+      (keypress)="preventInvalidInput($event)"
+      (blur)="onTouched()"
+    />
+    @if(!isTableField()){
+      <span
+        class="floating_label_field !bg-main-background-color profile-phone-input-bg"
+        >{{ placeholder ? placeholder : "Phone" }}
+        @if (isRequiredField) {
+          <span class="required">*</span>
+        }
+      </span>
+    }
+  </div>
+
+   <ng-template
+   cdkConnectedOverlay
+   [cdkConnectedOverlayOrigin]="trigger"
+   [cdkConnectedOverlayOpen]="showDropDown"
+   >
+     <div
+       class="list_container bg-main-background-color profile-phone-input-bg"
+       [ngStyle]="{ 
+                   width: dropdownWidth, height: dropDownHeight ?? '220px',
+                   top: dropdownPosition === 'top' ? 'auto' : '100%',
+                   bottom: dropdownPosition === 'top' ? '100%' : 'auto'
+                  }"
+     >
+       <input
+         type="search"
+         class="input_style"
+         name="search"
+         id="search"
+         #searchInputRef
+         [(ngModel)]="searchInput"
+         placeholder="Search.."
+       />
+ 
+       <div class="country_list">
+         @for (
+           country of countryList | searchFilter: searchInput;
+           track country
+         ) {
+           <div
+             role="presentation"
+             class="item common-box-shadow"
+             (click)="selectCountry(country)"
+           >
+             <img [src]="country.flage_url" alt="" />
+ 
+             <span class="text-wrap"
+               >{{ country.name }} {{ country.dial_code }}</span
+             >
+           </div>
+         }
+       </div>
+     </div>
+   </ng-template>
+</div>
+
+@if (showDropDown) {
+  <div class="overlay" role="presentation" (click)="toggleDropDown()"></div>
+}
+@if (!showCountryFlag) {
+  <input
+    class="input_style"
+    [ngStyle]="{
+      height: inputHeight,
+      width: inputWidth,
+      padding: inputPadding,
+      'font-size': inputFontSize
+    }"
+    type="tel"
+    autocomplete="off"
+    id="phone"
+    name="phone"
+    mask="(000) 000-0000"
+    placeholder=" "
+    [(ngModel)]="phoneNumber"
+    (ngModelChange)="onInput()"
+  />
+}

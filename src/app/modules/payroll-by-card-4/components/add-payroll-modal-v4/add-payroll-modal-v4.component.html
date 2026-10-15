@@ -1,0 +1,161 @@
+<div class="font-funnel">
+  <!-- modal header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-popup-header-footer-color border-b border-v4-input-border-color"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      Enter Payroll Details
+    </h1>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg border border-v4-input-border-color hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon
+        [img]="XIcon"
+        class="text-v4-subtle-text-color"
+      ></lucide-icon>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <form [formGroup]="payrollForm" (ngSubmit)="submit()">
+    <div class="p-6 bg-v4-tertiary-background-color">
+      <!-- Payroll Amount -->
+      <div class="mb-5">
+        <app-common-input-v4
+          fieldLabel="Payroll Amount"
+          placeholder="$ 0.00"
+          [customMask]="'separator.2'"
+          [maxLength]="15"
+          [control]="payrollForm.controls.grossPay"
+          formControlName="grossPay"
+        />
+      </div>
+
+      <!-- Payroll Check Date -->
+      <div class="mb-5">
+        <app-v4-date-picker
+          fieldLabel="Payroll Check Date"
+          placeholder="Select date"
+          [minDate]="minDate"
+          [control]="payrollForm.controls.checkDate"
+          formControlName="checkDate"
+        />
+      </div>
+
+      <!-- Upload Section -->
+      <div class="bg-v4-insight-card-background-blue rounded-xl p-4 mb-5">
+        <div class="flex items-center gap-2 mb-3">
+          <lucide-icon
+            [img]="UploadCloudIcon"
+            [size]="18"
+            class="text-v4-primary-brand-bold-color"
+          ></lucide-icon>
+          <span class="text-sm font-medium font-funnel text-v4-main-text-color">
+            Upload your payroll summary
+          </span>
+        </div>
+        <app-common-upload-button-v4
+          buttonText="Choose File"
+          [acceptedFileTypes]="acceptedFileTypes"
+          [uploadedFile]="payrollStatement"
+          (selectedFileEvent)="filePicked($event)"
+        />
+        @if (showError) {
+          <span class="text-v4-common-red-color text-xs font-funnel block mt-1">
+            Payroll Statement is Required
+          </span>
+        }
+        <p class="text-xs font-funnel text-v4-primary-brand-bold-color mt-2">
+          Supported: PDF from Gusto, ADP, Paychex, QuickBooks
+        </p>
+      </div>
+
+      <!-- Sample Files -->
+      <div>
+        <p
+          class="text-sm font-semibold font-funnel text-v4-main-text-color mb-2"
+        >
+          Payroll summary sample files
+        </p>
+        <div class="flex items-center gap-2">
+          @for (sample of samplePayrollDetails; track sample.name) {
+            <div class="inline-flex items-center gap-1">
+              @if (!loading && sample.samplePdf) {
+                <a
+                  [href]="sample.samplePdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-v4-input-border-color rounded-md text-xs font-funnel text-v4-main-text-color hover:bg-v4-popup-header-footer-color transition-colors"
+                >
+                  @if (providerIcons[sample.name]) {
+                    <img
+                      [src]="providerIcons[sample.name]"
+                      [alt]="providerNames[sample.name]"
+                      class="w-4 h-4 object-contain"
+                    />
+                  } @else {
+                    <lucide-icon
+                      [img]="FileIcon"
+                      [size]="12"
+                      class="text-v4-subtle-text-color"
+                    ></lucide-icon>
+                  }
+                  {{ providerNames[sample.name] || sample.name }}
+                </a>
+              } @else {
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-v4-input-border-color rounded-md text-xs font-funnel text-v4-subtle-text-color"
+                >
+                  @if (providerIcons[sample.name]) {
+                    <img
+                      [src]="providerIcons[sample.name]"
+                      [alt]="providerNames[sample.name]"
+                      class="w-4 h-4 object-contain opacity-50"
+                    />
+                  } @else {
+                    <lucide-icon [img]="FileIcon" [size]="12"></lucide-icon>
+                  }
+                  {{ providerNames[sample.name] || sample.name }}
+                </span>
+              }
+              @if (sample.helpVideo) {
+                <a
+                  [href]="sample.helpVideo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center"
+                >
+                  <img
+                    class="cursor-pointer h-[18px]"
+                    src="/assets/images/youtube.svg"
+                    alt="youtube"
+                  />
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <!-- modal body end -->
+
+    <!-- modal footer -->
+    <div
+      class="modal-footer-btn flex justify-end gap-3 p-6 bg-v4-popup-header-footer-color border-t border-v4-input-border-color"
+    >
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="close()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'neon', name: 'main' }"
+        text="Add"
+        btnType="submit"
+        [loading]="btnDisable"
+        [disabled]="btnDisable"
+      />
+    </div>
+  </form>
+</div>

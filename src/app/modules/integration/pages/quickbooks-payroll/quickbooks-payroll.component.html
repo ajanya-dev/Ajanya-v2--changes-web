@@ -1,0 +1,246 @@
+<!-------- main_common_module start -------->
+<section class="main_common_module">
+  <!--------left section start -------->
+  <div class="main_left_wrapper">
+    <!--------top section start -------->
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title flex items-center gap-2">
+          <app-ocw-back-button backUrl="manage/thirdparty_app/index">
+          </app-ocw-back-button>
+
+          <h3>Third Party Integration</h3>
+        </div>
+
+        @if (isConnected) {
+          <div class="button-left" (click)="onMapCompany()">
+            <button type="button" class="ocw-btn ocw-btn-cloud single_btn">
+              Bank Account Mapping
+            </button>
+          </div>
+        }
+      </div>
+      <div class="module_main_body">
+        <!-------- top-box start -------->
+        <div class="back-img">
+          <img
+            ngSrc="/assets/images/Frame_30.svg"
+            alt=""
+            width="253"
+            height="129"
+          />
+          <section
+            class="top-box mt-6 border-solid border-2 border-input-border-color relative"
+          >
+            <div class="logo-bg"></div>
+            <div class="top-twobox">
+              <div class="line"></div>
+              <div class="top-box-centr">
+                <p class="main-p">QuickBooks Online Payroll</p>
+                <div class="status-color">
+                  @if (status) {
+                    @if (isConnected) {
+                      <p class="connect">
+                        <span class="green-clr">{{ status }}</span>
+                      </p>
+                    } @else {
+                      <p class="disconnect">
+                        <span>{{ status }}</span>
+                      </p>
+                    }
+                  }
+                </div>
+              </div>
+              <div class="top-box-right buton-desk">
+                @if (!isConnected) {
+                  <button
+                    type="button"
+                    class="ocw-btn ocw-btn-dark single_btn"
+                    [disabled]="connecting"
+                    (click)="onConnect()"
+                  >
+                    <span>{{ connecting ? "Connecting..." : "Connect" }}</span>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="ocw-btn ocw-btn-dark single_btn disconnect_btn"
+                    (click)="onDisconnect()"
+                  >
+                    <span>Disconnect</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="ocw-btn ocw-btn-dark-green single_btn"
+                    [disabled]="connecting"
+                    (click)="onConnect()"
+                  >
+                    <span>{{
+                      connecting ? "Connecting..." : "Connect New Company"
+                    }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="logo-sec">
+              <img
+                alt="quickbooks payroll"
+                ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+                width="477"
+                height="146"
+              />
+            </div>
+          </section>
+        </div>
+        <div class="top-box-right main-bx-padding mr-8 buton-mobile">
+          @if (!isConnected) {
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green single_btn mr-4"
+              [disabled]="connecting"
+              (click)="onConnect()"
+            >
+              <span>{{ connecting ? "Connecting..." : "Connect" }}</span>
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green single_btn mr-4 disconnect_btn"
+              (click)="onDisconnect()"
+            >
+              <span>Disconnect</span>
+            </button>
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green single_btn"
+              [disabled]="connecting"
+              (click)="onConnect()"
+            >
+              <span>{{
+                connecting ? "Connecting..." : "Connect New Company"
+              }}</span>
+            </button>
+          }
+        </div>
+        <!-------- table-main-sec start -------->
+        @if (isConnected && !showPayrollList) {
+          <div class="table-main-sec">
+            <div class="overflow-x-auto mt-10 mb-10">
+              <table class="table-auto w-full">
+                @if (companies.length) {
+                  <thead
+                    class="text-xs font-semibold uppercase ocw-table-light"
+                  >
+                    <tr>
+                      <th class="whitespace-nowrap">
+                        <h3 class="main-h4 text-left">Company Name</h3>
+                      </th>
+                      <th class="p-2 whitespace-nowrap">
+                        <h3 class="main-h4 text-left">LAST RUN</h3>
+                      </th>
+                      <th class="p-2 whitespace-nowrap">
+                        <h3 class="main-h4">action</h3>
+                      </th>
+                    </tr>
+                  </thead>
+                }
+                <tbody class="text-sm">
+                  @for (item of companies; track item.companyId) {
+                    <tr class="under-line">
+                      <td class="whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="font-medium text-gray-800 !truncate">
+                            <h4 class="main-h4 text-left">
+                              {{ item.companyName }}
+                            </h4>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="p-2 whitespace-nowrap">
+                        <h4 class="main-h4 !text-start">
+                          {{ item.lastUpdated || "-" }}
+                        </h4>
+                      </td>
+                      <td class="p-2 whitespace-nowrap">
+                        <div class="action_buttons !pt-2">
+                          <button
+                            type="button"
+                            class="!h-10 !p-2 ocw-btn ocw-btn-light-dark single_btn"
+                            (click)="goToPayrollList(item)"
+                          >
+                            <span>Payroll Checks</span>
+                          </button>
+                          <div class="delete_company">
+                            <fa-icon
+                              (click)="deleteCompany(item)"
+                              [icon]="faTrash"
+                              class="text-common-red-color cursor-pointer"
+                            ></fa-icon>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+        <!-------- payroll list start -------->
+        @if (showPayrollList) {
+          <app-quickbooks-payroll-list
+            [companyName]="selectedCompany?.companyName ?? ''"
+            [companyId]="selectedCompany?.companyId ?? ''"
+            (backButtonPressed)="onPayrollListBack()"
+          >
+          </app-quickbooks-payroll-list>
+        }
+      </div>
+    </div>
+  </div>
+  <!-------- right section start -------->
+  <div class="main_right_section">
+    <div class="module_top_section">
+      <div class="main__header">
+        <div class="left">
+          <p class="sub_head">Instructions</p>
+        </div>
+      </div>
+      <!-------- module_body start -------->
+      <div class="module_body">
+        <div class="p-arrow">
+          @for (item of instructions; track item) {
+            <div class="p-arrow-text">
+              <span>
+                <p>{{ item }}</p>
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <!-------- module_bottom_section start -------->
+    <div class="module_bottom_section">
+      <app-customer-support></app-customer-support>
+    </div>
+    <div class="module_bottom_section flex justify-between px-4">
+      <div>
+        <h3 class="text-common-red-color font-inter font-bold">
+          Short on Cash?
+        </h3>
+        <p class="text-main-text-color text-[13px] font-inter">
+          Fund your payroll account with credit card.
+        </p>
+      </div>
+      <div>
+        <app-common-button-v35
+          class="flex-1"
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Add Fund"
+          width="100%"
+        ></app-common-button-v35>
+      </div>
+    </div>
+  </div>
+</section>
+<!-------- main_common_module end -------->

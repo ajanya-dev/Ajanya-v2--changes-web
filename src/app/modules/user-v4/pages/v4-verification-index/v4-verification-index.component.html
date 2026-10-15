@@ -1,0 +1,180 @@
+<div class="w-full min-h-full bg-v4-main-background-color font-peridot">
+  <div
+    class="flex gap-6 w-full max-w-[1200px] mx-auto"
+  >
+    <!-- Main Content -->
+    <div class="flex-1">
+      <!-- Heading with Back Button -->
+      <div class="mb-6 flex items-start gap-3">
+        <!-- Back Arrow -->
+        @if (!loading && !disableBackButton()) {
+          <button
+            class="flex items-center justify-center mt-1 text-v4-secondary-text-color hover:text-v4-main-text-color cursor-pointer transition-colors shrink-0"
+            (click)="prevStep()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        }
+
+        <!-- Title & Subtitle -->
+        <div>
+          <h1
+            class="text-2xl font-bold text-v4-main-text-color font-funnel"
+            [class.animate-pulse]="loading"
+            [class.bg-v4-border-color]="loading"
+            [class.rounded]="loading"
+            [class.w-60]="loading"
+            [class.h-8]="loading"
+          >
+            @if (!loading) {
+              <span>
+                {{
+                  currentIndex > 2
+                    ? "Business Verification"
+                    : "Personal Verification"
+                }}
+              </span>
+            }
+          </h1>
+          @if (currentIndex !== 2) {
+            <p
+              class="text-sm text-v4-main-text-color font-peridot mt-1"
+              [class.animate-pulse]="loading"
+              [class.bg-v4-border-color]="loading"
+              [class.rounded]="loading"
+              [class.w-40]="loading"
+              [class.h-4]="loading"
+              [class.mt-2]="loading"
+            >
+              @if (!loading) {
+                <span>
+                  {{
+                    currentIndex > 2
+                      ? currentBusinessStep === "doc"
+                        ? "Business Documents"
+                        : "Business Details"
+                      : "Personal Details"
+                  }}
+                </span>
+              }
+            </p>
+          }
+          @if (currentIndex === 2 && !loading) {
+            <div
+              class="text-sm flex items-center gap-2 text-v4-secondary-brand-color mt-1"
+            >
+              <span>Your ID Verification Successfully completed</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Stepper -->
+      <div class="mb-8" [class.animate-pulse]="loading">
+        <!-- Progress Bars -->
+        <div class="flex gap-1 mb-2">
+          @for (step of verificationSteps(); track step; let i = $index) {
+            <div class="flex-1">
+              <div
+                class="w-full h-2 rounded-full"
+                [class.bg-v4-secondary-brand-color]="
+                  i <=
+                  ((currentIndex === 5 ? 3 : null) ??
+                    (hasBusiness ? currentIndex - 3 : currentIndex))
+                "
+                [class.bg-v4-border-color]="
+                  i >
+                  ((currentIndex === 5 ? 3 : null) ??
+                    (hasBusiness ? currentIndex - 3 : currentIndex))
+                "
+              ></div>
+            </div>
+          }
+        </div>
+        <!-- Labels -->
+        <div class="flex gap-1">
+          @for (step of verificationSteps(); track step; let i = $index) {
+            <div class="flex-1">
+              <span
+                class="text-sm font-peridot"
+                [class.text-v4-main-text-color]="
+                  i ===
+                  ((currentIndex === 5 ? 3 : null) ??
+                    (hasBusiness ? currentIndex - 3 : currentIndex))
+                "
+                [class.font-semibold]="
+                  i ===
+                  ((currentIndex === 5 ? 3 : null) ??
+                    (hasBusiness ? currentIndex - 3 : currentIndex))
+                "
+                [class.text-v4-secondary-text-color]="
+                  i !==
+                  ((currentIndex === 5 ? 3 : null) ??
+                    (hasBusiness ? currentIndex - 3 : currentIndex))
+                "
+              >
+                {{ step }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Main Body -->
+      <div>
+        <!-- Loading skeleton -->
+        @if (loading) {
+          <div
+            class="border border-v4-border-color rounded-2xl bg-v4-secondary-background-color p-8 animate-pulse"
+          >
+            <div class="flex flex-col gap-5">
+              <div class="h-10 bg-v4-border-color rounded-lg w-full"></div>
+              <div class="grid grid-cols-2 gap-5">
+                <div class="h-10 bg-v4-border-color rounded-lg"></div>
+                <div class="h-10 bg-v4-border-color rounded-lg"></div>
+              </div>
+              <div class="h-10 bg-v4-border-color rounded-lg w-full"></div>
+              <div class="grid grid-cols-2 gap-5">
+                <div class="h-10 bg-v4-border-color rounded-lg"></div>
+                <div class="h-10 bg-v4-border-color rounded-lg"></div>
+              </div>
+              <div class="h-10 bg-v4-border-color rounded-lg w-full"></div>
+            </div>
+          </div>
+        }
+
+        @if (!loading && currentIndex <= 2) {
+          <app-verify-user-id-ocw-v3
+            (loadingEvent)="onChildLoading($event)"
+            (stepChangeEvent)="personalVerificationStepChange($event)"
+            [prevStepObservable]="prevStepSubject.asObservable()"
+            [currentIndex]="currentIndex"
+            (nextEvent)="nextStep($event)"
+          >
+          </app-verify-user-id-ocw-v3>
+        }
+        @if (!loading && currentIndex > 2) {
+          <app-v4-business-verification
+            (loadingEvent)="onChildLoading($event)"
+            (stepChangeEvent)="businessVerficationStepChange($event)"
+            (nextEvent)="nextStep($event)"
+            [prevStepObservable]="prevStepSubject.asObservable()"
+            [currentIndex]="currentIndex"
+          ></app-v4-business-verification>
+        }
+      </div>
+    </div>
+  </div>
+</div>

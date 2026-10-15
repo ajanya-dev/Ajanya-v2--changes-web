@@ -1,0 +1,376 @@
+<div class="px-[6px] pb-[6px]">
+  <div class="flex justify-between pb-6">
+    <span
+      class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+    >
+      @if (step() === 2) {
+        <button (click)="back()">
+          <fa-icon class="cursor-pointer" [icon]="faArrowLeft" />
+        </button>
+      }
+      <span
+        class="font-inter font-semibold text-base pb-0.5"
+        [ngClass]="{ 'pl-3': step() === 2 }"
+      >
+        Import from Excel File
+      </span>
+    </span>
+    <fa-icon
+      [mat-dialog-close]="false"
+      class="text-secondary-text-color cursor-pointer"
+      [icon]="faXmark"
+    />
+  </div>
+
+  <div>
+    @if (step() === 1) {
+      <div class="mt-5">
+        <form [formGroup]="form">
+          <div class="flex flex-col gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2">
+              <label
+                class="font-inter font-semibold text-main-text-color text-sm"
+                for="file"
+              >
+                Select File:
+                <span class="required">*</span>
+              </label>
+              <div class="flex flex-col">
+                <app-common-upload-button-v35
+                  [uploadedFile]="form.controls.file.value"
+                  buttonText="BROWSE"
+                  [acceptedFileTypes]="fts"
+                  (selectedFileEvent)="onFileUpload($event)"
+                />
+                <app-control-message-v35
+                  [control]="form.controls.file"
+                  labelName="Please select a file"
+                />
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <app-common-button-v35
+                [type]="{ style: 'modal', name: 'main' }"
+                backGroundInput="var(--common-green-color)"
+                text="Import"
+                (clickEvent)="submit()"
+                [loading]="isImport()"
+                [disabled]="isImport()"
+                width="125px"
+              />
+            </div>
+          </div>
+        </form>
+
+        <div class="text-sm flex flex-col">
+          <span
+            class="mt-3 flex items-center gap-1 font-inter text-main-text-color font-normal"
+          >
+            <fa-icon class="text-common-blue-color" [icon]="faAngleRight" />
+            <span>We only support csv/xlsx file</span>
+          </span>
+
+          <a class="flex items-center gap-1 mt-3">
+            <span class="m-1 text-common-blue-color font-inter font-normal">
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                text="Download Sample File"
+                [type]="{ style: 'bordered', name: 'main' }"
+                [disableHoverEffect]="false"
+                [isAddIcon]="true"
+                [icon]="faArrowDownToLine"
+                [disabled]="fileDownloading()"
+                [loading]="fileDownloading()"
+                (click)="downloadSample()"
+              />
+            </span>
+          </a>
+        </div>
+      </div>
+    }
+    @if (step() === 2) {
+      @if (hasErrors()) {
+        <div class="mb-3 p-2 bg-common-secondary-red-color rounded">
+          <p class="font-medium text-sm text-common-red-color font-inter">
+            <fa-icon [icon]="faCircleInfo" /> Some fields are missing
+            information. Please complete them before proceeding.
+          </p>
+        </div>
+      }
+
+      <div class="overflow-x-auto">
+        <table class="new-table w-full min-w-[600px]">
+          <thead>
+            <tr>
+              @for (
+                head of [
+                  "First Name",
+                  "Last Name",
+                  "Amount",
+                  "Email Address",
+                  "Phone Number",
+                  "Issued Type",
+                  "Action"
+                ];
+                track $index
+              ) {
+                <th class="text-left p-2 text-sm">{{ head }}</th>
+              }
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of cardTransactions(); track item.id) {
+              <tr>
+                <!-- Name Column -->
+                <td
+                  [ngClass]="{
+                    'relative bg-common-secondary-red-color':
+                      hasError(item, 'firstname') && !item.isEditing
+                  }"
+                >
+                  @if (isFieldEditable(item, "firstname")) {
+                    <input
+                      type="text"
+                      [(ngModel)]="item.editData!.firstname"
+                      class="border border-input-border-color rounded px-2 py-1 w-full"
+                    />
+                  } @else {
+                    <span
+                      [class.text-common-red-color]="
+                        hasError(item, 'firstname')
+                      "
+                      >{{ item.firstname }}</span
+                    >
+                    @if (hasError(item, "firstname")) {
+                      <fa-icon
+                        [icon]="faCircleInfo"
+                        class="text-common-red-color ml-1"
+                        [matTooltip]="getErrorMessage(item, 'firstname')"
+                      />
+                    }
+                  }
+                </td>
+
+                <!-- Last Name Column -->
+                <td
+                  [ngClass]="{
+                    'relative bg-common-secondary-red-color':
+                      hasError(item, 'lastname') && !item.isEditing
+                  }"
+                >
+                  @if (isFieldEditable(item, "lastname")) {
+                    <input
+                      type="text"
+                      [(ngModel)]="item.editData!.lastname"
+                      class="border border-input-border-color rounded px-2 py-1 w-full"
+                    />
+                  } @else {
+                    <span
+                      [class.text-common-red-color]="hasError(item, 'lastname')"
+                      >{{ item.lastname }}</span
+                    >
+                    @if (hasError(item, "lastname")) {
+                      <fa-icon
+                        [icon]="faCircleInfo"
+                        class="text-common-red-color ml-1"
+                        [matTooltip]="getErrorMessage(item, 'lastname')"
+                      />
+                    }
+                  }
+                </td>
+
+                <!-- Amount Column -->
+                <td
+                  [ngClass]="{
+                    'relative bg-common-secondary-red-color':
+                      hasError(item, 'amount') && !item.isEditing
+                  }"
+                >
+                  @if (isFieldEditable(item, "amount")) {
+                    <input
+                      type="text"
+                      [(ngModel)]="item.editData!.amount"
+                      class="border border-input-border-color rounded px-2 py-1 w-20"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      (keypress)="utils.numberOnly($event, 'decimal')"
+                    />
+                  } @else {
+                    <span
+                      [class.text-common-red-color]="hasError(item, 'amount')"
+                      >{{ item.amount | currency }}</span
+                    >
+                    @if (hasError(item, "amount")) {
+                      <fa-icon
+                        [icon]="faCircleInfo"
+                        class="text-common-red-color ml-1"
+                        [matTooltip]="getErrorMessage(item, 'amount')"
+                      />
+                    }
+                  }
+                </td>
+
+                <!-- Email Column -->
+                <td
+                  [ngClass]="{
+                    'relative bg-common-secondary-red-color':
+                      hasError(item, 'email') && !item.isEditing
+                  }"
+                >
+                  @if (isFieldEditable(item, "email")) {
+                    <input
+                      type="email"
+                      [(ngModel)]="item.editData!.email"
+                      class="border border-input-border-color rounded px-2 py-1 w-full"
+                    />
+                  } @else {
+                    <span
+                      [class.text-common-red-color]="hasError(item, 'email')"
+                      >{{ item.email }}</span
+                    >
+                    @if (hasError(item, "email")) {
+                      <fa-icon
+                        [icon]="faCircleInfo"
+                        class="text-common-red-color ml-1"
+                        [matTooltip]="getErrorMessage(item, 'email')"
+                      />
+                    }
+                  }
+                </td>
+
+                <!-- Phone Column -->
+                <td
+                  [ngClass]="{
+                    'relative bg-common-secondary-red-color':
+                      hasError(item, 'phone') && !item.isEditing
+                  }"
+                >
+                  @if (isFieldEditable(item, "phone")) {
+                    <app-new-phone-input
+                      [ngModel]="item.editData!.phone.toString()"
+                      (ngModelChange)="item.editData!.phone = $event"
+                      [inputHeight]="'28px'"
+                      [fieldHeight]="'30px'"
+                      [isTableField]="true"
+                    />
+                  } @else {
+                    <span
+                      [class.text-common-red-color]="hasError(item, 'phone')"
+                      >{{ item.phone }}</span
+                    >
+                    @if (hasError(item, "phone")) {
+                      <fa-icon
+                        [icon]="faCircleInfo"
+                        class="text-common-red-color ml-1"
+                        [matTooltip]="getErrorMessage(item, 'phone')"
+                      />
+                    }
+                  }
+                </td>
+
+                <!-- Type Column -->
+                <td
+                  [ngClass]="{
+                    'relative bg-common-secondary-red-color':
+                      hasError(item, 'type') && !item.isEditing
+                  }"
+                >
+                  @if (isFieldEditable(item, "type")) {
+                    <select
+                      [(ngModel)]="item.editData!.type"
+                      class="border border-input-border-color rounded px-2 py-1 w-full"
+                    >
+                      <option value="onetime">One Time</option>
+                      <option value="rechargeable">Rechargeable</option>
+                    </select>
+                  } @else {
+                    <span
+                      [class.text-common-red-color]="hasError(item, 'type')"
+                      class="badge"
+                      [ngClass]="{
+                        onetime: item.type === 'onetime',
+                        rechargeable: item.type === 'rechargeable'
+                      }"
+                    >
+                      {{
+                        item.type === "onetime"
+                          ? "One Time"
+                          : (item.type | titlecase)
+                      }}
+                    </span>
+                    @if (hasError(item, "type")) {
+                      <fa-icon
+                        [icon]="faCircleInfo"
+                        class="text-common-red-color ml-1"
+                        [matTooltip]="getErrorMessage(item, 'type')"
+                      />
+                    }
+                  }
+                </td>
+
+                <!-- Action Column -->
+                <td>
+                  <div class="flex gap-2">
+                    @if (item.isEditing) {
+                      <fa-icon
+                        (click)="saveTransaction(item)"
+                        [icon]="faCheck"
+                        matTooltip="Save"
+                        class="cursor-pointer text-common-blue-color"
+                        [class.opacity-50]="isEditing()"
+                        [class.cursor-not-allowed]="isEditing()"
+                        [animation]="
+                          processClicked() && item.isEditing ? 'beat' : ''
+                        "
+                      />
+                      <fa-icon
+                        (click)="cancelEdit(item)"
+                        [icon]="faXmark"
+                        matTooltip="Cancel"
+                        class="cursor-pointer text-common-red-color"
+                        [class.opacity-50]="isEditing()"
+                        [class.cursor-not-allowed]="isEditing()"
+                      />
+                    } @else {
+                      <fa-icon
+                        (click)="editTransaction(item)"
+                        [icon]="faEdit"
+                        class="cursor-pointer text-common-blue-color"
+                        [class.opacity-50]="isEditing() || isDeleting()"
+                        [class.cursor-not-allowed]="isEditing() || isDeleting()"
+                        matTooltip="Edit"
+                      />
+                      <fa-icon
+                        (click)="deleteTransaction(item)"
+                        [icon]="faDelete"
+                        class="cursor-pointer text-common-red-color"
+                        [class.opacity-50]="isEditing() || isDeleting()"
+                        [class.cursor-not-allowed]="isEditing() || isDeleting()"
+                        matTooltip="Delete"
+                      />
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-end pt-5">
+        <app-common-button-v35
+          [type]="{ style: 'modal', name: 'main' }"
+          backGroundInput="var(--common-green-color)"
+          text="Process"
+          (clickEvent)="submit()"
+          [loading]="submitting()"
+          [disabled]="
+            submitting() || hasErrors() || cardTransactions().length === 0
+          "
+          width="125px"
+        />
+      </div>
+    }
+  </div>
+</div>

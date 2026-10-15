@@ -1,0 +1,216 @@
+<section
+  class="main_common_module px-[10px] max-xl:flex-col max-xl:items-center"
+>
+  <div class="main_left_wrapper max-xl:!w-[70%] max-xl:!max-w-full">
+    <div
+      class="bg-main-background-color rounded-[5px] w-full p-[1px]"
+      [ngClass]="{ 'skelton h-[330px]': isLoading() }"
+    >
+      <div
+        class="m-2 p-2 bg-secondary-background-color rounded-tl-[5px] rounded-tr-[5px] border-b border-input-border-color flex justify-between items-center"
+      >
+        <div class="flex gap-3 items-center">
+          <app-ocw-back-button
+            [btnStyle]="{ bg: 'light' }"
+            [isRounded]="true"
+            (click)="goBack()"
+            type="takeEvent"
+          ></app-ocw-back-button>
+          <h3 class="text-main-text-color font-inter text-[15px] font-medium">
+            Check Draft Details
+          </h3>
+        </div>
+      </div>
+      <div class="w-full flex flex-col px-3 pt-3 pb-4 gap-3">
+        @for (field of fields; track field.key) {
+          <div class="flex items-center gap-8">
+            <div
+              class="font-inter text-secondary-text-color font-normal text-xs !w-36"
+            >
+              {{ field.label }}
+            </div>
+            <p
+              [matTooltip]="
+                viewData?.[field.key]?.length > 50 ? viewData?.[field.key] : ''
+              "
+              class="h-fit overflow-hidden text-wrap !break-words font-inter text-main-text-color font-medium text-xs"
+            >
+              @if (viewData && viewData[field.key] !== null) {
+                {{
+                  field.key === "check_date"
+                    ? formatedDate(viewData?.[field.key])
+                    : viewData?.[field.key]
+                }}
+              }
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="main_right_section max-xl:!w-[70%] max-xl:!max-w-full">
+    <div
+      class="module_top_section"
+      [ngClass]="{ 'skelton h-[330px]': isActivityLoading() }"
+    >
+      <div class="module_body">
+        <mat-tab-group animationDuration="0ms">
+          <mat-tab label="Check Activity Log">
+            @if (activityLogs?.length > 0 && !isActivityLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "Status", "By", "Device", "Notes"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+
+                <tbody class="!h-[204px]">
+                  @for (activity of activityLogs; track activity) {
+                    <tr>
+                      <td>{{ activity.formattedCreatedAt }}</td>
+                      <td>{{ activity.status }}</td>
+                      <td>{{ activity.userName }}</td>
+                      <td>{{ activity.ipAddress }}</td>
+                      <td class="break-all">{{ activity.note }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Data Found!!',
+                    isLoading: isActivityLoading()
+                  }
+                "
+              ></ng-container>
+            }
+          </mat-tab>
+
+          <mat-tab label="Attachments">
+            @if (attachmentsList?.length > 0 && !isAttachmentLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (head of ["Date", "User", "File"]; track $index) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="!h-[150px]">
+                  @for (attachment of attachmentsList; track attachment) {
+                    <tr>
+                      <td>{{ attachment.formated_date }}</td>
+                      <td>{{ attachment.user_name }}</td>
+                      <td class="break-all">
+                        <button
+                          type="button"
+                          name="view-attachment"
+                          (click)="viewAttachment(attachment.encrypted_id)"
+                          style="text-decoration: underline"
+                        >
+                          <fa-icon [icon]="['fas', 'external-link']"></fa-icon
+                          >{{ attachment.file_name.split("/")[2] }}
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Attachments Found!!',
+                    isLoading: isAttachmentLoading()
+                  }
+                "
+              ></ng-container>
+            }
+            <div class="flex justify-end my-2">
+              <app-common-button-v35
+                [type]="{ style: 'blue', name: 'money-action' }"
+                (clickEvent)="addAttachments()"
+                text="Add Attachments"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Comments">
+            @if (commentsList?.length > 0 && !isCommentLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (head of ["Date", "User", "Comment"]; track $index) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="!h-[150px]">
+                  @for (comment of commentsList; track comment) {
+                    <tr>
+                      <td>{{ comment.formated_date }}</td>
+                      <td>{{ comment.user_name }}</td>
+                      <td class="break-all">{{ comment.comments }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Comments Found!!',
+                    isLoading: isCommentLoading()
+                  }
+                "
+              ></ng-container>
+            }
+            <div class="flex justify-end my-2">
+              <app-common-button-v35
+                [type]="{ style: 'blue', name: 'money-action' }"
+                (clickEvent)="addcomments()"
+                text="Add Comments"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+</section>
+<ng-template #noDataTemplate let-message="message" let-isLoading="isLoading">
+  @if (isLoading) {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <fa-icon
+        [icon]="faSpinner"
+        animation="spin"
+        class="text-common-green-color"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <img
+        ngSrc="/assets/images/empty-box-v3.svg"
+        alt="No data"
+        width="120"
+        height="100"
+      />
+      <span class="font-roboto font-normal text-main-text-color text-sm">
+        {{ message }}
+      </span>
+    </div>
+  }
+</ng-template>

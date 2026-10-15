@@ -1,0 +1,97 @@
+<div class="dayforce-map-modal">
+  <!-- Header -->
+  <div class="flex justify-between items-center p-4">
+    <h3 class="text-base font-semibold text-main-text-color">Map Location</h3>
+    <button
+      mat-dialog-close
+      class="text-secondary-text-color hover:text-main-text-color"
+    >
+      <fa-icon [icon]="faXmark"></fa-icon>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="px-4">
+    <!-- Selected Location -->
+    <div class="mb-4 p-3 bg-secondary-background-color rounded-md">
+      <p class="text-xs text-secondary-text-color mb-1">Location</p>
+      <p class="text-sm font-semibold text-main-text-color">
+        {{ injectData.location.location_name }}
+      </p>
+    </div>
+
+    <form [formGroup]="mapForm">
+      @if (injectData.itsSubCompany) {
+        <div class="mb-4 p-3 bg-secondary-background-color rounded-md">
+          <p class="text-xs text-secondary-text-color mb-1">Company</p>
+          <p class="text-sm font-semibold text-main-text-color">
+            {{ injectData.location.company?.name }}
+          </p>
+        </div>
+        <div class="mb-4">
+          <label
+            class="block text-sm font-medium text-main-text-color mb-1"
+            for="dayforce-bank-ac"
+          >
+            Bank Account <span class="text-common-red-color">*</span>
+          </label>
+          <app-bank-ac-dropdown-v3
+            id="dayforce-bank-ac"
+            [enableAddNew]="false"
+            (changeEvent)="onBankAccountChange($event)"
+            (touch)="mapForm.get('bankAccountId')?.markAsTouched()"
+            (ready)="
+              autoPopulateDropdown($event, injectData.location.bank_account?.id)
+            "
+          />
+          <app-control-message-v35 [control]="mapForm.controls.bankAccountId" />
+        </div>
+      } @else {
+        @if (injectData.location.bank_account) {
+          <div class="mb-4 p-3 bg-secondary-background-color rounded-md">
+            <p class="text-xs text-secondary-text-color mb-1">Bank Account</p>
+            <p class="text-sm font-semibold text-main-text-color">
+              {{ injectData.location.bank_account?.name }}
+            </p>
+          </div>
+        }
+        <!-- Company Dropdown -->
+        <div class="mb-4">
+          <label
+            class="block text-sm font-medium text-main-text-color mb-1"
+            for="dayforce-company"
+          >
+            Company <span class="text-common-red-color">*</span>
+          </label>
+          <app-v35-common-dropdown
+            [config]="companyDropdownConfig"
+            [listData]="companyDropdownList"
+            [loading]="isLoading()"
+            formControlName="companyUserId"
+            [isRequired]="true"
+            [clearable]="false"
+            appendTo="body"
+          />
+        </div>
+      }
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-end gap-2 p-4">
+    <app-common-button-v35
+      width="120px"
+      mat-dialog-close
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v35
+      width="120px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Map"
+      [loading]="isMapping()"
+      [disabled]="isMapping()"
+      (clickEvent)="onMapNow()"
+    />
+  </div>
+</div>

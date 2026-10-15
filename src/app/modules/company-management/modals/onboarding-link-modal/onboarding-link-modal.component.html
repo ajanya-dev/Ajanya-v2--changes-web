@@ -1,0 +1,152 @@
+<div class="flex flex-col font-roboto max-h-[90vh]">
+  <!-- Header -->
+  <div
+    class="flex justify-between items-center gap-4 px-6 py-4 border-b border-input-border-color shrink-0"
+  >
+    <h1
+      id="onboarding-link-title"
+      class="font-inter font-semibold text-xl text-main-text-color"
+    >
+      Onboarding Link
+    </h1>
+    <button
+      type="button"
+      class="h-8 w-8 rounded flex items-center justify-center text-secondary-text-color hover:bg-secondary-background-color transition-colors shrink-0"
+      aria-label="Close"
+      [mat-dialog-close]="false"
+    >
+      <fa-icon [icon]="icons.faXmark"></fa-icon>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="flex flex-col gap-6 p-6 overflow-y-auto">
+    <!-- Share a link -->
+    <section class="flex flex-col gap-3" aria-labelledby="onboarding-share-title">
+      <div>
+        <h2
+          id="onboarding-share-title"
+          class="text-sm font-semibold text-main-text-color"
+        >
+          {{
+            link ? "Share your onboarding link" : "Generate an onboarding link"
+          }}
+        </h2>
+        <p class="text-xs text-secondary-text-color mt-1">
+          {{
+            link
+              ? "Copy this link and send it to your customer to begin onboarding."
+              : "Create a secure link that you can copy and share with your customer."
+          }}
+        </p>
+      </div>
+
+      @if (link) {
+        <div class="flex flex-col gap-1.5">
+          <div
+            class="flex items-center h-11 border border-input-border-color rounded-md overflow-hidden"
+          >
+            <input
+              type="text"
+              readonly
+              class="flex-1 min-w-0 h-full px-3 text-sm text-main-text-color bg-transparent text-ellipsis outline-none"
+              aria-label="Onboarding link"
+              [title]="link.onboardingUrl"
+              [value]="link.onboardingUrl"
+            />
+            <button
+              type="button"
+              aria-label="Copy onboarding link"
+              class="h-full px-4 flex items-center gap-1.5 text-sm font-semibold text-main-text-color border-l border-input-border-color hover:bg-secondary-background-color transition-colors shrink-0"
+              (click)="copyLink()"
+            >
+              <fa-icon [icon]="icons.faCopy"></fa-icon>
+              Copy
+            </button>
+          </div>
+          @if (link.expiresAt) {
+            <span class="text-xs text-secondary-text-color">
+              Expires {{ link.expiresAt | date: "MMM d, y, h:mm a" }}
+            </span>
+          }
+        </div>
+      }
+
+      <app-common-button-v35
+        [type]="{ style: 'bordered', name: 'main' }"
+        [isAddIcon]="!loading.generating"
+        [icon]="icons.faRotate"
+        [text]="
+          loading.generating
+            ? 'Generating link...'
+            : link
+              ? 'Regenerate link'
+              : 'Generate link'
+        "
+        width="100%"
+        customHeight="44px"
+        customClasses="!h-[44px]"
+        [loading]="loading.generating"
+        [disabled]="loading.generating || loading.sending"
+        (clickEvent)="generateLink()"
+      ></app-common-button-v35>
+    </section>
+
+    <!-- Divider -->
+    <div class="flex items-center gap-3" aria-hidden="true">
+      <span class="flex-1 h-px bg-input-border-color"></span>
+      <span class="text-xs font-medium text-secondary-text-color">OR</span>
+      <span class="flex-1 h-px bg-input-border-color"></span>
+    </div>
+
+    <!-- Send by email -->
+    <section class="flex flex-col gap-3" aria-labelledby="onboarding-email-title">
+      <div>
+        <h2
+          id="onboarding-email-title"
+          class="text-sm font-semibold text-main-text-color"
+        >
+          Send by email
+        </h2>
+        <p class="text-xs text-secondary-text-color mt-1">
+          Send the onboarding link directly to your customer.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="onboarding-email" class="text-xs text-secondary-text-color">
+          Customer email <span class="text-common-red-color">*</span>
+        </label>
+        <input
+          id="onboarding-email"
+          type="email"
+          maxlength="191"
+          placeholder="customer@example.com"
+          class="h-11 px-3 text-sm text-main-text-color bg-transparent border border-input-border-color rounded-md outline-none focus:border-common-blue-color"
+          [formControl]="email"
+        />
+        <app-control-message-v35
+          [control]="email"
+          [customMessages]="{
+            invalidEmailAddress: 'Enter a valid customer email address.'
+          }"
+          [isMarginTopEnabled]="false"
+          marginTopOverride="mt-0"
+        ></app-control-message-v35>
+      </div>
+
+      <app-common-button-v35
+        [type]="{ style: 'filled', name: 'main' }"
+        [isAddIcon]="!loading.sending"
+        [icon]="icons.faPaperPlane"
+        [text]="loading.sending ? 'Sending...' : 'Send onboarding link'"
+        width="100%"
+        customHeight="44px"
+        customClasses="!h-[44px]"
+        [loading]="loading.sending"
+        [disabled]="loading.generating || loading.sending"
+        (clickEvent)="sendLink()"
+      ></app-common-button-v35>
+    </section>
+  </div>
+</div>

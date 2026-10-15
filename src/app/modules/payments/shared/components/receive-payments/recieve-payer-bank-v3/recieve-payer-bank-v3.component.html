@@ -1,0 +1,167 @@
+<div class="main-container" [formGroup]="requestForm">
+  <div class="w-full flex items-center flex-col">
+    <app-amount-input
+      formControlName="amount"
+      [maxLength]="15"
+      customClass="amount-input-v3"
+    ></app-amount-input>
+    <app-control-message-v35
+      [control]="requestForm.controls.amount"
+      label="Amount is required"
+    ></app-control-message-v35>
+  </div>
+  <div class="h-3"></div>
+  <div class="w-full flex justify-center items-center mt-5">
+    <div class="custom-input-v3-wrapper flex grow shadow">
+      <app-payee-dropdown-v3
+        class="w-full z-[999]"
+        customHeight="3"
+        (ngModelChange)="payeeSelect($event)"
+        formControlName="payee"
+        (ready)="
+          autoPopulateDropdown(
+            $event,
+            paymentConfig?.paymentFormValue?.payee?.encryptedId
+          )
+        "
+        (clearEvent)="onRemovePayee()"
+      ></app-payee-dropdown-v3>
+    </div>
+    <div class="arrow-wrapper flex justify-center items-center">
+      <div class="arrow flex justify-center items-center">
+        <fa-icon [icon]="['fas', 'arrow-right-long']"></fa-icon>
+      </div>
+    </div>
+    <div class="custom-input-v3-wrapper flex grow shadow !max-w-[350px]">
+      <app-bank-ac-dropdown-v3
+        class="w-full"
+        permissionContext="forPayment"
+        (ngModelChange)="bankSelect($event)"
+        placeholder="Select Your Wallet"
+        formControlName="bank"
+        [icon]="faWallet"
+        (ready)="
+          autoPopulateDropdown(
+            $event,
+            paymentConfig?.paymentFormValue?.bankAc?.id
+          )
+        "
+        customHeight="3"
+        (clearEvent)="onRemoveBank($event)"
+      ></app-bank-ac-dropdown-v3>
+    </div>
+  </div>
+  <div class="flex">
+    <app-control-message-v35
+      [control]="requestForm.controls.payee"
+      class="w-full"
+    ></app-control-message-v35>
+    <app-control-message-v35
+      [control]="requestForm.controls.senderBankAccount"
+      class="w-full pl-7"
+    ></app-control-message-v35>
+  </div>
+  <div class="grid grid-cols-1 gap-5 mt-5">
+    <div class="single_input">
+      <input
+        type="text"
+        class="input_style"
+        placeholder=" "
+        id="invoiceNo"
+        formControlName="invoiceNumber"
+      />
+      <label for="invoiceNo" class="floating_label_field"
+        >Invoice Number<span class="error_msg">*</span></label
+      >
+      <fa-icon
+          [icon]="faCircleQuestion"
+          [matTooltip]="'• Enter number from your bill/invoice. \n• Leave blank if you don\'t have one. \n• Helps track your payment later.'"
+          [matTooltipPosition]="'right'"
+          [matTooltipShowDelay]="300"
+          matTooltipClass="dark-tooltip my-tooltip"
+          class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+      ></fa-icon>
+      <app-control-message-v35
+        [control]="requestForm.controls.invoiceNumber"
+      ></app-control-message-v35>
+    </div>
+    <div class="single_input">
+      <input
+        type="text"
+        class="input_style memo-input-with-icon"
+        placeholder=" "
+        id="memo"
+        formControlName="memo"
+      />
+      <label for="invoiceNo" class="floating_label_field"
+        >Memo<span class="error_msg">*</span></label
+      >
+      <fa-icon
+          [icon]="faCircleQuestion"
+          [matTooltip]="'• Brief note about this payment.\n• Example: \'Office rent\' or \'Supplies\'.'"
+          [matTooltipPosition]="'right'"
+          [matTooltipShowDelay]="300"
+          matTooltipClass="dark-tooltip my-tooltip"
+          class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+      ></fa-icon>
+      <app-control-message-v35
+        [control]="requestForm.controls.memo"
+        label="Please enter the memo"
+      ></app-control-message-v35>
+    </div>
+    <div class="single_input">
+      <input
+        type="date"
+        class="input_style memo-input-with-icon"
+        placeholder=" "
+        id="cheque_date"
+        formControlName="cheque_date"
+        [min]="today"
+      />
+      <label for="invoiceNo" class="floating_label_field"
+        >Date of Issue<span class="error_msg"></span></label
+      >
+      <fa-icon
+          [icon]="faCircleQuestion"
+          [matTooltip]="'• The selected date will be printed on the received check. By default, the check date is set to today\'s date when sending the request.'"
+          [matTooltipPosition]="'right'"
+          [matTooltipShowDelay]="300"
+          matTooltipClass="dark-tooltip my-tooltip"
+          class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+      ></fa-icon>
+    </div>
+  </div>
+  <section class="flex items-center text-secondary-text-color gap-5 mt-5">
+    <mat-checkbox class="flex items-center" formControlName="editable"
+      >Editable
+      <i
+        matTooltip="If you enable it, payer will be able to edit the Amount, Memo and Date Of Issue."
+        class="fa-sharp fa-solid fa-circle-question"
+      ></i
+    ></mat-checkbox>
+    <div class="flex items-center gap-2">
+      <mat-checkbox class="" formControlName="recurring"
+        >Recurring</mat-checkbox
+      >
+      @if (requestForm.controls.startDate?.value !== "") {
+        <fa-icon
+          [icon]="['fas', 'pen-to-square']"
+          class="cursor-pointer text-common-blue-color"
+          (click)="openRecurringDialog()"
+        ></fa-icon>
+      }
+    </div>
+  </section>
+  <div class="pt-6 flex gap-2 justify-between">
+    <app-common-button-v35
+      class="flex-1"
+      [type]="{ style: 'filled', name: 'main' }"
+      backGroundInput="var(--common-green-color)"
+      text="Request"
+      width="100%"
+      (clickEvent)="completeRequest()"
+      [loading]="loading"
+      [disabled]="loading"
+    ></app-common-button-v35>
+  </div>
+</div>

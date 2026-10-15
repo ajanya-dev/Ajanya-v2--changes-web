@@ -1,0 +1,127 @@
+<!-- Removed min-h-[calc(100vh-10vh)]: taller than the v4 page area, it forced a page scroll. -->
+<div class="flex flex-col h-full w-full">
+  <div class="main-container flex flex-col h-full w-full rounded">
+    <app-v4-page-header
+      [title]="'Payee Transaction History'"
+      [subtitle]="pageName"
+      [showBackButton]="true"
+      backButtonType="takeEvent"
+      (backEvent)="goBack()"
+    />
+
+    <div class="flex flex-1 flex-col min-h-0">
+      <div class="grid grid-cols-4 gap-4 mt-5 summary-cards">
+        <div class="border border-v4-border-color rounded-lg p-4 min-h-[100px]">
+          @if (payeeInfo) {
+            <div class="font-semibold text-sm text-v4-main-text-color mb-1">
+              {{ payeeInfo?.name }}
+            </div>
+            <div class="text-xs text-v4-secondary-text-color leading-relaxed">
+              <span>{{ payeeInfo?.addressLine1 }}</span>
+              @if (payeeInfo?.city) {
+                <br />{{ payeeInfo?.city }}
+                @if (payeeInfo?.zip) {
+                  , {{ payeeInfo?.zip }}
+                }
+              }
+            </div>
+          } @else {
+            <div class="animate-pulse space-y-2">
+              <div class="bg-v4-border-color rounded h-4 w-3/4"></div>
+              <div class="bg-v4-border-color rounded h-3 w-1/2"></div>
+            </div>
+          }
+        </div>
+
+        <div
+          class="border border-v4-border-color rounded-lg p-4 flex flex-col justify-center"
+        >
+          <span class="text-xs text-v4-secondary-text-color mb-2"
+            >Total Paid This Month</span
+          >
+          @if (!paidValLoading()) {
+            <span class="text-xl font-semibold text-v4-main-text-color">
+              {{ paidValues.inThisMonth }}
+            </span>
+          } @else {
+            <div
+              class="animate-pulse bg-v4-border-color rounded h-6 w-2/3"
+            ></div>
+          }
+        </div>
+
+        <div
+          class="border border-v4-border-color rounded-lg p-4 flex flex-col justify-center"
+        >
+          <span class="text-xs text-v4-secondary-text-color mb-2"
+            >Total Paid This Year</span
+          >
+          @if (!paidValLoading()) {
+            <span class="text-xl font-semibold text-v4-main-text-color">
+              {{ paidValues.inThisYear }}
+            </span>
+          } @else {
+            <div
+              class="animate-pulse bg-v4-border-color rounded h-6 w-2/3"
+            ></div>
+          }
+        </div>
+
+        <div
+          class="bg-v4-primary-brand-color rounded-lg p-4 flex flex-col justify-center"
+        >
+          <span class="text-xs text-white/80 mb-2">Total Paid (All-time)</span>
+          @if (!paidValLoading()) {
+            <span class="text-xl font-semibold text-v4-common-green-color">
+              {{ paidValues.totalPaid }}
+            </span>
+          } @else {
+            <div class="animate-pulse bg-white/20 rounded h-6 w-2/3"></div>
+          }
+        </div>
+      </div>
+
+      <div class="flex flex-1 flex-col min-h-0 mt-5">
+        <div
+          class="flex flex-col xl:flex-row xl:items-end xl:justify-between mb-1 gap-2 min-h-[35px] border-b border-v4-border-color"
+        >
+          <app-common-tab-v4
+            class="flex-1"
+            [tabs]="typeTabs"
+            [activeTab]="currentType()"
+            (tabChange)="onTypeChange($event)"
+            variant="underline"
+            size="xs"
+            [borderNone]="true"
+          />
+        </div>
+
+        @if (payeeId) {
+          @switch (currentType()) {
+            @case ("1") {
+              <app-v4-payee-summary-check-list-table [payeeId]="payeeId" />
+            }
+            @case ("2") {
+              <app-v4-payee-summary-cash-expense-table [payeeId]="payeeId" />
+            }
+            @case ("3") {
+              <app-v4-payee-summary-billing-table [payeeId]="payeeId" />
+            }
+            @case ("4") {
+              <app-v4-payee-summary-invoice-table [payeeId]="payeeId" />
+            }
+            @case ("5") {
+              <app-v4-payee-summary-wallet-table [payeeId]="payeeId" />
+            }
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-cash-expense-detail-panel-v4
+  [cashExpenseId]="cashExpenseState.selectedExpenseId()"
+  [isOpen]="cashExpenseState.isDetailPanelOpen()"
+  (closed)="cashExpenseState.closeDetail()"
+/>

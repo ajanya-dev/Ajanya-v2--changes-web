@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add Payee modal, every state (Zil Money v4, 14 Oct 2026)</title>
+<style>
+  /* ---- Tokens mirrored from src/assets/style_varients/_v4-light-theme.scss / _v4-dark-theme.scss ---- */
+  :root{
+    --p:#004a7c; --pb:#004a7c; --brand-border:#004a7c; --focus:#004a7c;
+    --red:#dc2626; --text:#111827; --text2:#374151; --text3:#4b5563; --subtle:#6b7280; --ph:#6b7280;
+    --page:#f2f7fb; --card:#ffffff; --tert:#fbfbfb; --popup:#fbfbfb;
+    --field:#d1d5db; --border:#e5e7eb; --hair:#f1f2f4;
+    --succ-surf:#ecfdf5; --succ-bd:#6ee7b7; --succ:#047857;
+    --tint:color-mix(in srgb,var(--p) 8%,var(--popup)); --tint-strong:color-mix(in srgb,var(--p) 20%,transparent);
+    --font-ui:"Funnel Sans","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --font-body:"Peridot","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  [data-theme="dark"]{
+    --p:#1d6aa5; --pb:#8ec5ec; --brand-border:#6fb1e3; --focus:#6fb1e3;
+    --red:#f87171; --text:#e2e8f0; --text2:#c9cfe0; --text3:#94a3b8; --subtle:#a8b4c8; --ph:#a8b4c8;
+    --page:#162034; --card:#1c293c; --tert:#1c293c; --popup:#1c293c;
+    --field:#6b7a90; --border:#3a3e47; --hair:#2b303b;
+    --succ-surf:#064e3b33; --succ-bd:#047857; --succ:#34d399;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.4}
+  /* ---- page chrome (not part of the modal) ---- */
+  .doc{max-width:1360px;margin:0 auto;padding:28px 24px 60px}
+  .doc h1{font-family:var(--font-ui);font-size:22px;margin:0 0 4px}
+  .doc .lead{color:var(--text3);margin:0 0 14px;font-size:13px}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:22px;font-size:13px}
+  .bar button{height:32px;padding:0 12px;border-radius:9999px;border:1px solid var(--field);background:var(--card);color:var(--text);font:600 13px var(--font-ui);cursor:pointer}
+  .bar button[aria-pressed="true"]{background:var(--p);border-color:var(--p);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(626px,1fr));gap:28px;align-items:start}
+  figure{margin:0}
+  figcaption{font-family:var(--font-ui);font-weight:600;font-size:13px;margin:0 0 8px;color:var(--text2)}
+  figcaption small{display:block;font-weight:400;color:var(--text3);font-family:var(--font-body)}
+  /* ---- the modal ---- */
+  .modal{width:626px;background:var(--popup);border-radius:16px;box-shadow:0 20px 50px -20px rgba(17,24,39,.35);overflow:hidden;border:1px solid var(--border)}
+  .m-head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 20px 12px}
+  .m-head h2{margin:0;font:700 20px var(--font-ui);color:var(--text)}
+  .m-head p{margin:2px 0 0;font-size:12px;color:var(--text3)}
+  .m-close{width:24px;height:24px;border:0;background:none;color:var(--text3);font-size:20px;line-height:1;cursor:pointer}
+  .tabs{display:flex;align-items:center;gap:10px;padding:0 20px 14px;border-bottom:1px solid var(--hair);font-size:12px;color:var(--text3)}
+  .tabs .set{display:inline-flex;background:var(--tert);border:1px solid var(--border);border-radius:9999px;padding:2px}
+  .tabs .t{height:26px;padding:0 12px;border-radius:9999px;display:inline-flex;align-items:center;font:600 12px var(--font-ui);color:var(--text2)}
+  .tabs .t.on{background:var(--p);color:#fff}
+  .m-body{padding:14px 20px 8px;display:flex;flex-direction:column;gap:12px}
+  .banner{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;padding:8px 10px;border:1px solid var(--brand-border);border-radius:10px;background:var(--tint);font-size:12px;color:var(--text2)}
+  .banner b{color:var(--pb)}
+  .banner .btn{margin-left:auto;flex-shrink:0}
+  .banner span.txt{flex:1;min-width:0}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 12px 14px}
+  .ctitle{font:600 11px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin:0 0 10px;display:inline-flex;align-items:center;gap:6px}
+  .info{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--text3);display:inline-grid;place-items:center;font:700 9px var(--font-ui);color:var(--text3);cursor:help}
+  .g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .full{grid-column:1/-1}
+  label{display:block;font:500 14px var(--font-body);color:var(--text2);margin-bottom:6px}
+  label .opt{font-size:12px;color:var(--text3)}
+  .req{color:var(--red)}
+  .in{height:40px;width:100%;border:1px solid var(--field);border-radius:8px;background:var(--card);padding:0 12px;display:flex;align-items:center;color:var(--ph);font-size:14px;gap:8px}
+  .in.v{color:var(--text)}
+  .in .ico{margin-left:auto;color:var(--text3);font-size:12px}
+  .in.err{border-color:var(--red)}
+  .sel::after{content:"";margin-left:auto;width:7px;height:7px;border-right:1.5px solid var(--text3);border-bottom:1.5px solid var(--text3);transform:rotate(45deg) translateY(-2px)}
+  .phone{display:flex;height:40px;border:1px solid var(--field);border-radius:8px;overflow:hidden;background:var(--card)}
+  .phone .cc{display:flex;align-items:center;gap:4px;padding:0 10px;border-right:1px solid var(--field);font-size:12px;color:var(--text3)}
+  .phone .cc i{width:18px;height:18px;border-radius:50%;background:linear-gradient(#b22234 0 33%,#fff 33% 66%,#3c3b6e 66%)}
+  .phone .num{display:flex;align-items:center;padding:0 12px;color:var(--ph)}
+  .msg{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;color:var(--red)}
+  .msg::before{content:"!";width:13px;height:13px;border-radius:50%;background:var(--red);color:#fff;font:700 9px var(--font-ui);display:inline-grid;place-items:center}
+  .entity-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .choice{display:inline-flex;gap:8px}
+  .opt-btn{height:36px;padding:0 14px;border-radius:9999px;border:1px solid var(--field);background:var(--popup);color:var(--text);font:600 13px var(--font-ui);display:inline-flex;align-items:center;gap:8px}
+  .opt-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+  .entity-fields{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+  .orow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 2px 0}
+  .olabel{font:600 12px var(--font-body);color:var(--text3)}
+  .chip{height:32px;padding:0 12px;border-radius:9999px;border:1px dashed color-mix(in srgb,var(--text2) 40%,var(--card));background:var(--card);color:var(--text);font:600 13px var(--font-ui);display:inline-flex;align-items:center;gap:6px}
+  .chip.on{border-style:solid;border-color:var(--p);background:color-mix(in srgb,var(--p) 10%,var(--card));color:var(--pb)}
+  .chip.done{border-style:solid;border-color:var(--succ-bd);color:var(--succ)}
+  .chip.has-error{border-style:solid;border-color:var(--red);color:var(--red)}
+  .chip .badge{font:600 11px var(--font-body)}
+  .panel{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:12px}
+  .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .phead h3{margin:0;font:600 14px var(--font-ui);display:inline-flex;align-items:center;gap:8px;color:var(--text)}
+  .phead h3 .hint{font:400 12px var(--font-body);color:var(--text3)}
+  .phead .x{color:var(--text3);font-size:16px}
+  .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+  .btn{height:36px;padding:0 16px;border-radius:9999px;font:600 13px var(--font-ui);display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--field);background:var(--card);color:var(--pb);min-width:100px;white-space:nowrap}
+  .btn.primary{background:var(--p);border-color:var(--p);color:#fff}
+  .btn.outline{border-color:var(--p);color:var(--pb)}
+  .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);padding:2px 2px 0}
+  .check i{width:16px;height:16px;border:1px solid var(--field);border-radius:4px;background:var(--card)}
+  .check i.on{background:var(--p);border-color:var(--p)}
+  .chrow{display:flex;align-items:center;gap:10px}
+  .chrow>.in,.chrow>.phone{flex:1}
+  .cb{width:16px;height:16px;flex:none;border:1px solid var(--field);border-radius:4px;background:var(--card)}
+  .cb.on{background:var(--p);border-color:var(--p)}
+  .chrow+.status{margin-left:26px}
+  .m-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px 18px;border-top:1px solid var(--hair);background:var(--popup)}
+  .m-foot .btn{height:38px;min-width:104px}
+  /* send a secure link view */
+  .back{height:32px;padding:0 12px 0 10px;border-radius:9999px;border:1px solid var(--field);background:var(--popup);color:var(--pb);font:600 13px var(--font-ui);display:inline-flex;align-items:center;gap:6px;align-self:flex-start}
+  .slcard{background:var(--popup);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px}
+  .slhead{display:flex;gap:12px;align-items:flex-start}
+  .slhead .ic{width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--p) 12%,var(--popup));color:var(--pb);display:grid;place-items:center;font-size:16px}
+  .slhead h3{margin:0;font:700 16px var(--font-ui)}
+  .slhead p{margin:2px 0 0;font-size:13px;color:var(--text3)}
+  .note{display:flex;gap:8px;align-items:flex-start;margin:-4px 0;padding:8px 10px;border-radius:8px;border-left:3px solid var(--p);background:color-mix(in srgb,var(--p) 8%,var(--popup));font-size:13px;color:var(--text)}
+  .note .info{border-color:var(--pb);color:var(--pb);margin-top:2px;flex-shrink:0}
+  .status{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font:600 12px var(--font-body);color:var(--succ)}
+  .share{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--card)}
+  .share h4{margin:0 0 8px;font:600 13px var(--font-ui)}
+  .share .row{display:flex;gap:8px}
+  .share .url{flex:1;height:40px;border:1px solid var(--field);border-radius:8px;display:flex;align-items:center;padding:0 12px;color:var(--pb);text-decoration:underline;font-size:13px;background:var(--tert)}
+  .share .btn{min-width:0}
+  .share .btn.sq{width:40px;padding:0}
+  .skel{height:12px;flex:1;border-radius:6px;background:var(--border)}
+  /* ---- print / hand-off mode: ?print=1&type=customer&states=2,3,5,7,8 ---- */
+  @page{size:A4;margin:12mm}
+  body.print{background:#fff}
+  body.print .doc{max-width:none;padding:0}
+  body.print .bar,body.print .doc>h1,body.print .doc>.lead{display:none}
+  body.print .grid{display:block}
+  body.print figure{break-after:page;page-break-after:always;margin:0 0 24px;width:626px;zoom:.8}
+  body.print figure:last-child{break-after:auto;page-break-after:auto}
+  body.print .modal{box-shadow:none}
+  .cover{display:none}
+  body.print .cover{display:block;padding:40px 0;break-after:page;page-break-after:always}
+  .cover h1{font:700 26px var(--font-ui);margin:0 0 6px}
+  .cover p{margin:0 0 4px;color:var(--text3)}
+  .cover ol{margin:14px 0 0 18px;padding:0;color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="doc">
+  <h1>Add Payee modal, every state</h1>
+  <p class="lead">Zil Money / OCW v4, branch design/zilmoney-rebrand, 14 October 2026. Static HTML built from add-payee-modal-v4 and the live theme tokens. Field height 40px, field border #d1d5db (light), two-column grid, 626px wide.</p>
+  <div class="bar">
+    <span>Theme</span>
+    <button type="button" aria-pressed="true" data-set="light">Light</button>
+    <button type="button" aria-pressed="false" data-set="dark">Dark</button>
+    <span style="margin-left:12px">Payee type label</span>
+    <button type="button" aria-pressed="true" data-type="vendor">Vendor</button>
+    <button type="button" aria-pressed="false" data-type="customer">Customer</button>
+    <button type="button" aria-pressed="false" data-type="employee">Employee</button>
+  </div>
+  <div class="cover" id="cover"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const T = { vendor:{title:'Add vendor',sub:'Add a new vendor record',legal:'Vendor legal name',tab:'Vendor',word:'vendor'},
+            customer:{title:'Add customer',sub:'Add a new customer record',legal:'Customer legal name',tab:'Customer/Anyone',word:'customer'},
+            employee:{title:'Add employee',sub:'Add a new employee record',legal:'Employee legal name',tab:'Employee',word:'employee'} };
+const Q = new URLSearchParams(location.search);
+let type = T[Q.get('type')] ? Q.get('type') : 'vendor';
+const ONLY = (Q.get('states') || '').split(',').map(Number).filter(Boolean);
+if (Q.get('print')) { document.body.classList.add('print'); document.documentElement.dataset.theme = Q.get('theme') === 'dark' ? 'dark' : 'light'; }
+
+const field = (label, ph, o={}) => `
+  <div class="${o.full?'full':''}">
+    <label>${label}${o.req?' <span class="req">*</span>':''}${o.opt?' <span class="opt">(optional)</span>':''}</label>
+    <div class="in ${o.val?'v':''} ${o.err?'err':''} ${o.sel?'sel':''}">${o.val||ph}${o.icon?'<span class="ico">&#9432;</span>':''}</div>
+    ${o.err?`<div class="msg">${o.err}</div>`:''}
+  </div>`;
+
+const basic = (t, o={}) => `
+  <div class="card">
+    <p class="ctitle">Basic information</p>
+    <div class="g2">
+      ${field(t.legal, t.legal, {req:true, err:o.errors?`${t.legal} is required`:''})}
+      ${field('Nickname','Nickname',{req:true, err:o.errors?'Nickname is required':''})}
+      ${field('Email (optional)','Email')}
+      <div><label>Phone (optional)</label><div class="phone"><span class="cc"><i></i>&#8964;</span><span class="num">Phone</span></div></div>
+    </div>
+  </div>`;
+
+const address = (o={}) => `
+  ${field('Address Line 1','Address Line 1',{full:true, req:o.req, err:o.errors?'This field is required':''})}
+  ${field('Address Line 2','Address Line 2',{full:true})}
+  ${field('City','City',{req:o.req})}
+  ${field('State','State',{req:o.req, sel:true})}
+  ${field('Zip','Zip',{req:o.req})}
+  ${field('Country','Country',{req:o.req, sel:true})}`;
+
+const entity = (t, mode, o={}) => {
+  const hint = mode==='business' ? 'A company or organisation. Company name and address are required.' : mode==='individual' ? 'A person, paid under their own name.' : `Who is this ${t.word}? Pick Individual for a person or Business for a company or organisation.`;
+  return `
+  <div class="card">
+    <div class="entity-row">
+      <p class="ctitle" style="margin:0">Entity <span class="info" title="${hint}">i</span></p>
+      <div class="choice">
+        <span class="opt-btn ${mode==='individual'?'on':''}">&#128100; Individual</span>
+        <span class="opt-btn ${mode==='business'?'on':''}">&#127970; Business</span>
+      </div>
+    </div>
+    ${mode ? `<div class="entity-fields g2">
+      ${field('Company Name','Company Name',{req:mode==='business', opt:mode==='individual', icon:true, err:(o.errors&&mode==='business')?'This field is required':''})}
+      ${field('Payee ID/Acc Number','Payee ID/Acc Number',{opt:true})}
+      ${mode==='business' ? address({req:true, errors:o.errors}) : ''}
+    </div>` : ''}
+  </div>`;
+};
+
+const chips = (mode, o={}) => `
+  <div class="orow">
+    <span class="olabel">Add optional details</span>
+    ${mode!=='business' ? `<span class="chip ${o.addr||''}">&#128205; Address ${o.addr==='done'?'&#10004;':''}${o.addr==='has-error'?'<span class="badge">Required</span>':''}</span>` : ''}
+    <span class="chip ${o.bank||''}">&#127974; Bank account ${o.bank==='done'?'&#10004;':''}</span>
+    <span class="chip ${o.more||''}">&#128196; More info</span>
+  </div>`;
+
+const panel = (title, hint, body) => `
+  <div class="panel">
+    <div class="phead"><h3>${title} <span class="hint">${hint}</span></h3><span class="x">&#10005;</span></div>
+    ${body}
+  </div>`;
+
+const requestRow = (t) => `<div class="check"><i></i> Request ${t.word} to add bank account <span class="info">i</span></div>`;
+
+function modal(t, caption, note, bodyHtml, footHtml){
+  return `<figure><figcaption>${caption}<small>${note}</small></figcaption>
+  <div class="modal">
+    <div class="m-head"><div><h2>${t.title}</h2><p>${t.sub}</p></div><button class="m-close" aria-label="Close">&times;</button></div>
+    <div class="tabs">Payee type <span class="set"><span class="t ${type==='vendor'?'on':''}">Vendor</span><span class="t ${type==='employee'?'on':''}">Employee</span><span class="t ${type==='customer'?'on':''}">Customer/Anyone</span></span></div>
+    <div class="m-body">${bodyHtml}</div>
+    <div class="m-foot">${footHtml}</div>
+  </div></figure>`;
+}
+
+function render(){
+  const t = T[type];
+  const banner = `<div class="banner">&#128279; <span class="txt"><b>Don't know the payee's details?</b> Send them a secure link and they fill everything in themselves.</span> <span class="btn outline" style="height:32px;min-width:0">Send a link</span></div>`;
+  const foot = `<span class="btn outline">Cancel</span><span class="btn primary">Save</span>`;
+  const states = [
+    modal(t,'1. Default, nothing chosen','Entity explanation lives in the tooltip on the info icon. Address, Bank account and More info are optional chips.',
+      banner+basic(t)+entity(t,null)+chips(null)+requestRow(t), foot),
+    modal(t,'2. Individual selected','Company Name is labelled (optional). Payee ID/Acc Number sits beside it. No subtitle under Entity.',
+      banner+basic(t)+entity(t,'individual')+chips('individual')+requestRow(t), foot),
+    modal(t,'3. Business selected','Address renders inside the Entity card, every part required (State and Country carry the asterisk). The Address chip leaves the optional row.',
+      banner+basic(t)+entity(t,'business')+chips('business')+requestRow(t), foot),
+    modal(t,'4. Save pressed with gaps (Business)','Inline errors in the error colour under each required field. The page scrolls to the first invalid section.',
+      banner+basic(t,{errors:true})+entity(t,'business',{errors:true})+chips('business')+requestRow(t), foot),
+    modal(t,'5. Individual, Address panel open','One optional panel open at a time. Cancel restores the previous values; Add closes the panel and ticks the chip.',
+      banner+basic(t)+entity(t,'individual')+chips('individual',{addr:'on'})+panel('&#128205; Address','Optional',`<div class="g2">${address({req:false})}</div><div class="actions"><span class="btn outline">Cancel</span><span class="btn primary">Add</span></div>`)+requestRow(t), foot),
+    modal(t,'6. Individual, address added / partly typed','Left: chip with the green tick once the address is complete. Right: a partly typed address makes the rest required, so the chip reads Required.',
+      banner+basic(t)+entity(t,'individual')+chips('individual',{addr:'done'})+`<div style="height:6px"></div>`+chips('individual',{addr:'has-error'})+requestRow(t), foot),
+    modal(t,'7. Bank account panel open','Domestic bank details (international is a tab inside the same panel). Fields at 40px like the rest of the modal.',
+      banner+basic(t)+entity(t,'individual')+chips('individual',{bank:'on'})+panel('&#127974; Bank account','Optional',`<div class="g2">${field('Account type','Select account type',{sel:true})}${field('Bank name','Bank name')}${field('Routing number','Routing number')}${field('Account number','Account number')}</div><div class="actions"><span class="btn outline">Cancel</span><span class="btn primary">Add</span></div>`)+requestRow(t), foot),
+    modal(t,'8. More info panel open','Defaults and record fields. Payee ID/Acc Number no longer lives here; it moved to the Entity card.',
+      banner+basic(t)+entity(t,'individual')+chips('individual',{more:'on'})+panel('&#128196; More info','Optional',`<div class="g2">${field('Default Pay from Bank A/C','Select Bank Account',{sel:true})}${field('Default Pay Category','Category',{sel:true})}${field('Default Pay Method','Select Pay Method',{sel:true})}${field('First Name','First Name')}${field('Last Name','Last Name')}${field('Customer Type','Select Type',{sel:true})}${field('Business Website','Business Website',{full:true})}</div>`)+requestRow(t), foot),
+    modal(t,'9. Send a secure link','Reached from the banner. Note in the brand tint with the info icon; Back to manual entry is an outline pill. Statuses appear once a channel is filled.',
+      `<span class="back">&#8592; Back to manual entry</span>
+       <div class="slcard">
+         <div class="slhead"><span class="ic">&#128279;</span><div><h3>Send a secure link</h3><p>send a link for payee to submit their info.</p></div></div>
+         <div class="note"><span class="info">i</span><span>Fill in an email address, a mobile number, or both &mdash; we&rsquo;ll send the link wherever you choose.</span></div>
+         <div class="g2">
+           <div class="full"><label>Email</label><div class="chrow"><i class="cb on"></i><div class="in v">ajanyazilmoney@gmail.com</div></div><div class="status">&#10004; Link will be emailed</div></div>
+           <div class="full"><label>Mobile number</label><div class="chrow"><i class="cb on"></i><div class="phone"><span class="cc"><i></i>&#8964;</span><span class="num" style="color:var(--text)">80866 73212</span></div></div><div class="status">&#10004; Link will be texted</div></div>
+         </div>
+         <div class="check"><i class="on"></i> Request ${t.word} to add bank account <span class="info">i</span></div>
+         <div class="share"><h4>Share Link</h4><div class="row"><span class="url">&#128279; https://staging.api.ocw.sebipay.com/s/pf/qtNdlh</span><span class="btn primary">&#10697; Copy</span><span class="btn outline sq">&#8599;</span></div></div>
+       </div>`,
+      `<span class="btn outline">Cancel</span><span class="btn primary">Send Link</span>`),
+    modal(t,'10. Send a secure link, empty','Before any channel is filled: link skeleton in the Share box, no statuses.',
+      `<span class="back">&#8592; Back to manual entry</span>
+       <div class="slcard">
+         <div class="slhead"><span class="ic">&#128279;</span><div><h3>Send a secure link</h3><p>send a link for payee to submit their info.</p></div></div>
+         <div class="note"><span class="info">i</span><span>Fill in an email address, a mobile number, or both &mdash; we&rsquo;ll send the link wherever you choose.</span></div>
+         <div class="g2">
+           <div class="full"><label>Email</label><div class="chrow"><i class="cb on"></i><div class="in">name@company.com</div></div></div>
+           <div class="full"><label>Mobile number</label><div class="chrow"><i class="cb on"></i><div class="phone"><span class="cc"><i></i>&#8964;</span><span class="num">Phone</span></div></div></div>
+         </div>
+         <div class="check"><i class="on"></i> Request ${t.word} to add bank account <span class="info">i</span></div>
+         <div class="share"><h4>Share Link</h4><div class="row"><span class="url"><span class="skel"></span></span><span class="btn primary">&#10697; Copy</span><span class="btn outline sq">&#8599;</span></div></div>
+       </div>`,
+      `<span class="btn outline">Cancel</span><span class="btn primary">Send Link</span>`)
+  ];
+  const picked = ONLY.length ? states.filter((_, i) => ONLY.includes(i + 1)) : states;
+  document.getElementById('grid').innerHTML = picked.join('');
+  if (ONLY.length) document.querySelectorAll('figcaption').forEach((c, i) => { c.firstChild.textContent = c.firstChild.textContent.replace(/^s*d+./, (i + 1) + '.'); });
+  const titles = [...document.querySelectorAll('figcaption')].map((c) => c.firstChild.textContent.trim().replace(/^\d+\.\s*/, ''));
+  document.getElementById('cover').innerHTML = '<h1>' + t.title + ' modal: states</h1><p>Zil Money / OCW v4, design/zilmoney-rebrand, 14 October 2026.</p><p>Field height 40px, field border #d1d5db, 626px modal. One state per page.</p><ol>' + titles.map((x) => '<li>' + x + '</li>').join('') + '</ol>';
+}
+document.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{document.documentElement.dataset.theme=b.dataset.set;document.querySelectorAll('[data-set]').forEach(x=>x.setAttribute('aria-pressed',x===b));}));
+document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',()=>{type=b.dataset.type;document.querySelectorAll('[data-type]').forEach(x=>x.setAttribute('aria-pressed',x===b));render();}));
+render();
+</script>
+</body>
+</html>

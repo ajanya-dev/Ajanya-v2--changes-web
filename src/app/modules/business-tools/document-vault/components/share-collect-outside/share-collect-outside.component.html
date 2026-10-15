@@ -1,0 +1,324 @@
+<div
+  class="min-h-screen bg-main-background-color flex items-center justify-center p-4"
+>
+  @if (pageLoading) {
+    <div class="text-center">
+      <p class="text-secondary-text-color">Loading...</p>
+    </div>
+  } @else if (isExpired) {
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <h2 class="text-2xl font-semibold text-main-text-color mb-4">
+        Link Expired
+      </h2>
+      <p class="text-secondary-text-color">
+        This upload link has expired and is no longer accepting files.
+      </p>
+    </div>
+  } @else if (isLimitReached) {
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <h2 class="text-2xl font-semibold text-main-text-color mb-4">
+        Upload Limit Reached
+      </h2>
+      <p class="text-secondary-text-color">
+        This upload link has reached its maximum file limit.
+      </p>
+    </div>
+  } @else if (submitSuccess) {
+    <div
+      class="max-w-2xl w-full bg-main-background-color rounded-lg shadow-lg p-12 text-center flex flex-col items-center justify-center min-h-[500px]"
+    >
+      <!-- Success Icon -->
+      <div class="mb-8">
+        <fa-icon
+          [icon]="faCircleCheck"
+          class="text-[80px] text-common-green-color"
+        ></fa-icon>
+      </div>
+
+      <!-- Success Message -->
+      <h2 class="text-3xl font-semibold text-main-text-color mb-4">
+        Files Uploaded Successfully
+      </h2>
+      <p class="text-secondary-text-color text-base mb-12">
+        Your documents have been securely processed and uploaded. All files are
+        encrypted and safely stored in our system.
+      </p>
+
+      <!-- Brand Logos -->
+      <div class="flex items-center justify-center gap-6 mt-auto">
+        @if (isArcharina) {
+          <img
+            [ngSrc]="'assets/white_label/archarina.io/assets/app_logo.png'"
+            alt="Brand Logo"
+            class="h-10"
+            width="160"
+            height="40"
+          />
+        } @else {
+          <img
+            src="https://onlinecheckwriter.com/wp-content/uploads/2025/05/ocw-pwd-by-zm-new.svg"
+            alt="CheckWriter Logo"
+            class="h-16"
+          />
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="max-w-4xl w-full bg-white rounded-lg shadow-lg p-6">
+      <!-- Header -->
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex items-center gap-4">
+          <!-- Company Logo or Initial -->
+          @if (shareData?.logo_url) {
+            <div
+              class="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center border-2 border-input-border-color"
+            >
+              <img
+                [src]="shareData.logo_url"
+                alt="Company Logo"
+                class="w-full h-full object-cover"
+              />
+            </div>
+          } @else {
+            <div
+              class="w-16 h-16 rounded-lg bg-common-blue-color flex items-center justify-center text-white font-bold text-2xl"
+            >
+              {{ companyInitial }}
+            </div>
+          }
+
+          <div>
+            <h1 class="text-xl font-semibold text-main-text-color">
+              {{ shareData?.company_name || "Company Name" }}
+            </h1>
+            <p class="text-sm text-secondary-text-color">Secure File Upload</p>
+          </div>
+        </div>
+
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-2">
+          @if (isArcharina) {
+            <img
+              [ngSrc]="'assets/white_label/archarina.io/assets/app_logo.png'"
+              alt="Powered by"
+              class="h-16"
+              width="128"
+              height="32"
+            />
+          } @else {
+            <img
+              [ngSrc]="
+                'https://onlinecheckwriter.com/wp-content/uploads/2025/05/ocw-pwd-by-zm-new.svg'
+              "
+              alt="Powered by"
+              class="h-16"
+              width="128"
+              height="32"
+            />
+          }
+        </div>
+      </div>
+
+      <!-- Message -->
+      @if (shareData?.message) {
+        <div
+          class="mb-6 p-4 bg-main-background-color border border-input-border-color rounded max-h-48 overflow-y-auto"
+        >
+          <p class="text-sm text-main-text-color whitespace-pre-wrap break-words">
+            {{ shareData.message }}
+          </p>
+        </div>
+      }
+
+      <form [formGroup]="uploadForm">
+        <!-- Upload Files Section -->
+        <div class="mb-6">
+          <h2 class="text-base font-semibold text-main-text-color mb-4">
+            Upload Files
+            @if (shareData?.upload_limit && shareData?.max_files) {
+              <span class="text-sm font-normal text-secondary-text-color">
+                (Max {{ shareData.max_files }} files, 25MB each)
+              </span>
+            } @else {
+              <span class="text-sm font-normal text-secondary-text-color"
+                >(25MB each)</span
+              >
+            }
+          </h2>
+
+          <!-- Selected Files List (Above Drop Zone) -->
+          @if (selectedFiles.length > 0) {
+            <div class="mb-4 space-y-3">
+              @for (file of selectedFiles; track $index) {
+                <div
+                  class="flex items-center gap-3 p-3 border-b border-input-border-color"
+                >
+                  <div
+                    class="flex items-center justify-center w-10 h-10 bg-secondary-background-color rounded"
+                  >
+                    <fa-icon
+                      [icon]="faFile"
+                      class="text-secondary-text-color text-xl"
+                    ></fa-icon>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-main-text-color">
+                      {{ file.name }}
+                    </p>
+                    <p class="text-xs text-secondary-text-color">
+                      {{ getFileSize(file.size) }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="removeFile($index)"
+                    class="text-secondary-text-color hover:text-main-text-color transition-colors"
+                  >
+                    <fa-icon [icon]="faXmark" class="text-xl"></fa-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- File Drop Zone -->
+          <div
+            class="border-2 border-dashed border-input-border-color rounded-lg p-8 transition-colors flex"
+            [ngClass]="{
+              'flex-row': selectedFiles.length > 0,
+              'justify-between': selectedFiles.length > 0,
+              'items-center': selectedFiles.length > 0,
+              'flex-col': selectedFiles.length === 0,
+              'text-center': selectedFiles.length === 0,
+              'cursor-pointer hover:border-common-blue-color':
+                canAddMoreFiles(),
+              'cursor-not-allowed opacity-50': !canAddMoreFiles()
+            }"
+            [tabindex]="canAddMoreFiles() ? 0 : -1"
+            role="button"
+            [attr.aria-label]="'File upload drop zone'"
+            (dragover)="canAddMoreFiles() ? onDragOver($event) : null"
+            (drop)="canAddMoreFiles() ? onDrop($event) : null"
+            (click)="openFileBrowser()"
+            (keydown)="onKeyDown($event)"
+          >
+            <div
+              class="flex items-center gap-3"
+              [ngClass]="{ 'flex-col': selectedFiles.length === 0 }"
+            >
+              <fa-icon
+                [icon]="faCloudArrowUp"
+                class="text-secondary-text-color text-3xl"
+                [ngClass]="{ 'mb-3': selectedFiles.length === 0 }"
+              ></fa-icon>
+              <p
+                class="text-secondary-text-color"
+                [ngClass]="{ 'mb-4': selectedFiles.length === 0 }"
+              >
+                Drag and drop files here, or click to browse
+              </p>
+            </div>
+            @if (canAddMoreFiles()) {
+              <div class="flex justify-center">
+                <app-common-button-v35
+                  [type]="{ style: 'filled-blue', name: 'action' }"
+                  [text]="
+                    selectedFiles.length > 0 ? 'Add More Files' : 'Browse Files'
+                  "
+                  (click)="openFileBrowser(); $event.stopPropagation()"
+                ></app-common-button-v35>
+              </div>
+            }
+          </div>
+
+          <input
+            type="file"
+            #fileInput
+            class="hidden"
+            multiple
+            (change)="onFileSelected($event)"
+          />
+        </div>
+
+        <!-- Add a Comment -->
+        <div class="mb-6">
+          <label
+            for="comment-textarea"
+            class="text-base font-semibold text-main-text-color mb-2 block"
+          >
+            Add a Comment
+            <span class="text-sm font-normal text-secondary-text-color"
+              >(Optional)</span
+            >
+          </label>
+          <textarea
+            id="comment-textarea"
+            formControlName="comment"
+            rows="4"
+            placeholder="Add any additional information or context for these files..."
+            maxlength="200"
+            class="w-full px-3 py-2 border border-input-border-color rounded focus:outline-none focus:ring-1 focus:ring-common-blue-color text-sm text-main-text-color"
+          ></textarea>
+        </div>
+
+        <!-- Enter PIN -->
+        @if (shareData?.pin_enabled) {
+          <div class="mb-6">
+            <label
+              for="pin-input"
+              class="text-base font-semibold text-main-text-color mb-2 block"
+            >
+              Enter PIN
+              <span class="text-sm font-normal text-secondary-text-color"
+                >(If provided by sender)</span
+              >
+            </label>
+            <input
+              id="pin-input"
+              type="text"
+              formControlName="pin"
+              placeholder="Enter PIN (4 or 6 digits)"
+              maxlength="6"
+              class="w-full px-3 py-2 border border-input-border-color rounded focus:outline-none focus:ring-1 focus:ring-common-blue-color text-sm text-main-text-color"
+            />
+            <app-control-message-v35
+              [control]="uploadForm.get('pin')"
+              [customMessages]="{
+                required: 'PIN is required',
+                pattern: 'PIN must be 4 or 6 digits'
+              }"
+            ></app-control-message-v35>
+          </div>
+        }
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4">
+          <app-common-button-v35
+            [type]="{ style: 'bordered', name: 'main' }"
+            text="Cancel"
+            [disabled]="loading"
+            (click)="cancel()"
+            width="140px"
+          ></app-common-button-v35>
+
+          <app-common-button-v35
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Submit"
+            [loading]="loading"
+            [disabled]="loading"
+            (click)="submitFiles()"
+            width="140px"
+          ></app-common-button-v35>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="mt-6 pt-4 border-t border-input-border-color">
+          <p class="text-xs text-center text-secondary-text-color">
+            Your files are encrypted during upload and securely stored. This
+            link uses industry-standard security protocols.
+          </p>
+        </div>
+      </form>
+    </div>
+  }
+</div>

@@ -1,0 +1,160 @@
+<!-------- ocw_man_modal_wrapper start -------->
+<div class="ocw_man_modal_wrapper">
+  <!-------- ocw_modal_header start -------->
+  <div class="ocw_modal_header">
+    <div class="ocw_modal_title">
+      {{ _data.header ? _data.header : "Payment Settings" }}
+    </div>
+    <div class="close_btn" [mat-dialog-close]="false">
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        data-prefix="fal"
+        data-icon="times"
+        class="svg-inline--fa fa-times fa-w-10"
+        role="img"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 320 512"
+      >
+        <path
+          fill="currentColor"
+          d="M193.94 256L296.5 153.44l21.15-21.15c3.12-3.12 3.12-8.19 0-11.31l-22.63-22.63c-3.12-3.12-8.19-3.12-11.31 0L160 222.06 36.29 98.34c-3.12-3.12-8.19-3.12-11.31 0L2.34 120.97c-3.12 3.12-3.12 8.19 0 11.31L126.06 256 2.34 379.71c-3.12 3.12-3.12 8.19 0 11.31l22.63 22.63c3.12 3.12 8.19 3.12 11.31 0L160 289.94 262.56 392.5l21.15 21.15c3.12 3.12 8.19 3.12 11.31 0l22.63-22.63c3.12-3.12 3.12-8.19 0-11.31L193.94 256z"
+        ></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-------- ocw_modal_body start -------->
+  <div class="ocw_modal_body">
+    <div class="select_exist_account" *ngIf="_data.isExcistData">
+      <h5 class="sub-head" id="this-modal-label2">Select Existing Account</h5>
+      <div id="form_select_payment_settings">
+        <div id="user_payment_settings" class="extra-radio">
+          <mat-radio-group
+            *ngIf="paymentOptions"
+            class="example-radio-group display-grid"
+            [(ngModel)]="selectedUuid"
+            [value]="selectedUuid"
+          >
+            <mat-radio-button
+              *ngFor="let item of paymentOptions[_data?.type]"
+              [value]="item.uuid"
+              class="example-radio-button"
+            >
+              {{ item.nickName }}
+            </mat-radio-button>
+          </mat-radio-group>
+        </div>
+      </div>
+    </div>
+
+    <!-------- radio-twoside start -------->
+    <div *ngIf="!_data.isExcistData">
+      <mat-radio-group
+        aria-labelledby="example-radio-group-label"
+        [value]="paymentType"
+        (change)="getPaymentType($event)"
+        class="example-radio-group radio-twoside extra-radio"
+      >
+        <mat-radio-button
+          value="live"
+          class="example-radio-button form-check-input"
+          checked
+        >
+          Live
+        </mat-radio-button>
+        <mat-radio-button
+          value="sandbox"
+          class="example-radio-button form-check-input"
+        >
+          Sandbox
+        </mat-radio-button>
+      </mat-radio-group>
+      <select
+        *ngIf="!_data.typeId"
+        name="payment_type"
+        id="payment_type"
+        [value]="selectedId"
+        (change)="getPaymentOption($event)"
+        class="input_style floating_input_field selct-bank-account selct-for-margin"
+      >
+        <option value="1">Stripe</option>
+        <option value="2">PayPal</option>
+        <!-- <option value="3">bitpay</option> -->
+        <option value="4">Stripe Checkout</option>
+      </select>
+
+      <div class="single_input no_modal_btn">
+        <input
+          type="text"
+          class="input_style"
+          (keyup)="getNickName($event.target.value)"
+          [value]="nickName"
+          placeholder=" "
+          required
+        />
+        <label class="floating_label_field"
+          >Nick Name
+          <span class="required">*</span>
+        </label>
+        <span *ngIf="isnickName" class="error_msg">Please enter nick name</span>
+      </div>
+
+      <div
+        *ngFor="let item of elements[selectedId]; let i = index"
+        class="single_input no_modal_btn"
+      >
+        <input
+          type="text"
+          class="input_style"
+          (keyup)="getValues($event.target.value, i)"
+          placeholder=" "
+          [value]="item.value"
+          required
+        />
+        <label class="floating_label_field"
+          >{{ item.name }}
+          <span class="required">*</span>
+        </label>
+        <span *ngIf="elements[selectedId][i].status == 1" class="error_msg">{{
+          "Please enter " + item.name
+        }}</span>
+      </div>
+
+      <!-- <div class="single_input no_modal_btn">
+      <input type="text" class="input_style" placeholder=" " required formControlName="check_no">
+      <label class="floating_label_field">Stripe Publishable Key
+        <span class="required">*</span>
+      </label>
+    </div>
+    <div class="single_input no_modal_btn">
+      <input type="text" class="input_style" placeholder=" " required formControlName="check_no">
+      <label class="floating_label_field">Stripe Secret Key
+        <span class="required">*</span>
+      </label>
+    </div> -->
+    </div>
+  </div>
+  <!-------- ocw_modal_footer start -------->
+  <div class="ocw_modal_footer">
+    <mat-dialog-actions align="end">
+      <button
+        *ngIf="_data.isExcistData"
+        type="submit"
+        class="ocw-btn ocw-btn-dark-blue add_btn"
+        [ngClass]="{ 'loadingSpinner spinner-gap': isRefresh }"
+        (click)="attachPaymentOption()"
+      >
+        <span>Save</span>
+      </button>
+      <button
+        type="submit"
+        class="ocw-btn ocw-btn-modal-blue add_btn"
+        [ngClass]="{ 'loadingSpinner spinner-gap': isRefresh }"
+        (click)="save()"
+      >
+        <span>{{ _data.isExcistData ? "Add New" : "Save" }}</span>
+      </button>
+    </mat-dialog-actions>
+  </div>
+</div>

@@ -1,0 +1,354 @@
+
+<div class="ocw_one_side_body">
+  <div class="ocw_header">
+    <div class="title">
+      <h3>Bank Data</h3>
+    </div>
+    <div class="flex gap-2 btn_group">
+      <!-- View Toggle Button -->
+       @if(showModernUi()) {
+         <div class="view-toggle-container">
+           <button 
+             class="ocw-btn" 
+             [ngClass]="switchToIframe() ? 'ocw-btn-primary' : 'ocw-btn-secondary'"
+             (click)="toggleView()"
+           >
+             {{ switchToIframe() ? 'Classic View' : 'Modern View' }}
+           </button>
+         </div>
+       }
+      @if(!switchToIframe()) {
+      <a [routerLink]="['list-rules']">
+        <button class="ocw-btn ocw-btn-warning">My Rules</button>
+      </a>
+      <a [routerLink]="['list-categories']">
+        <button class="ocw-btn ocw-btn-warning">My Categories</button>
+      </a>
+      }
+    </div>
+  </div>
+  <hr class="header_border" />
+  @if(!switchToIframe()) {
+  <!-- main body -->
+  <div class="ocw_body">
+    <div class="module_main_body" [ngClass]="{ invisible: !indexLoaded }">
+      <!-- LEFT SECTION START -->
+      <div class="main_left_wrapper">
+        <div class="p-3 font-medium text-brand border-b-brand start_sec">
+          <label class="flex items-center">
+            <input
+              type="checkbox"
+              (change)="allAccountToggle($event.target.checked)"
+            />
+            My Accounts
+          </label>
+        </div>
+
+        <!-- accordion START -->
+        <mat-accordion multi="true">
+          @for (provider of providerAccounts; track provider; let i = $index) {
+            <mat-expansion-panel
+              class="border-b-brand"
+              [expanded]="true"
+              hideToggle
+            >
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <div class="flex items-center">
+                    <input
+                      (click)="$event.stopPropagation()"
+                      type="checkbox"
+                      (change)="
+                        providerCheckToggle(provider, $event.target.checked)
+                      "
+                      [(ngModel)]="provider.checked"
+                    />
+                    <span>{{ provider.providerName }}</span>
+                  </div>
+
+                  <div class="action flex items-center gap-2">
+                    <!-- WARNING ICON -->
+                    @if (reAuthProvider[provider.providerId]) {
+                      <fa-icon
+                        (click)="
+                          openPlaidModal(provider.providerId);
+                          $event.stopPropagation()
+                        "
+                        matTooltip="{{
+                          reAuthProvider[provider.providerId]?.status
+                        }}
+                            {{ reAuthProvider[provider.providerId]?.statusMsg }}
+                            "
+                        matTooltipPosition="above"
+                        [icon]="['fas', 'triangle-exclamation']"
+                        class="!text-common-yellow-color text-[16px]"
+                      ></fa-icon>
+                    } @else {
+                      @if (showRefresh) {
+                        <fa-icon
+                          (click)="
+                            syncTransaction(provider.providerId);
+                            $event.stopPropagation()
+                          "
+                          [icon]="['fas', 'refresh']"
+                          [animation]="
+                            isSyncing()[provider.providerId] ? 'spin' : ''
+                          "
+                          class="text-[16px]"
+                          matTooltip="Sync Transaction"
+                        ></fa-icon>
+                      }
+                    }
+                    <!-- DELETE ICON -->
+                    <fa-icon
+                      (click)="
+                        deleteProvider(provider.providerId, i);
+                        $event.stopPropagation()
+                      "
+                      [icon]="['fas', 'trash']"
+                      class="text-[16px]"
+                    ></fa-icon>
+
+                    <!-- EDIT ICON -->
+                    <fa-icon
+                      (click)="editProvider(provider); $event.stopPropagation()"
+                      [icon]="['fas', 'pen']"
+                      class="text-[16px]"
+                    ></fa-icon>
+                  </div>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              @for (
+                account of provider.accounts;
+                track account;
+                let j = $index
+              ) {
+                <div class="sub_item flex justify-between items-center">
+                  <div [ngClass]="{ disbaled_account: !account.status }">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="account.checked"
+                      (change)="accountCheckToggle()"
+                    />
+
+                    <span
+                      matTooltip="{{ account.short_name }}
+                              Nick Name: {{ account.nick_name }}
+                              Short Name: {{ account.short_name }}
+                              Currrent Balance: {{ account.current_balance }}
+                              Available Balance: {{
+                        account.available_balance_amount
+                      }}
+                              Last Updated: {{ account.last_updated }}
+                              "
+                      >{{ account.name }}
+                    </span>
+                  </div>
+
+                  <!-- ELLIPSIS ICON -->
+                  <fa-icon
+                    [matMenuTriggerFor]="menu"
+                    [icon]="['fas', 'ellipsis-h']"
+                    class="text-[16px] cursor-pointer"
+                  ></fa-icon>
+                  <!-- MAT MENU START-->
+                  <mat-menu #menu="matMenu">
+                    <div class="flex justify-center items-center gap-5">
+                      <!-- DELETE ICON -->
+                      <fa-icon
+                        (click)="deleteBankAccount(account.id, provider, j)"
+                        [icon]="['fas', 'trash']"
+                        class="text-[16px] cursor-pointer"
+                      ></fa-icon>
+                      <!-- EDIT ICON -->
+                      <fa-icon
+                        (click)="openEditAccount(account, provider)"
+                        [icon]="['fas', 'pen']"
+                        class="text-[16px] cursor-pointer"
+                      ></fa-icon>
+
+                      <!-- MINUS CIRCLE ICON -->
+                      @if (account.status) {
+                        <fa-icon
+                          (click)="deactivateAccount(account.id, provider, j)"
+                          [icon]="['fas', 'minus-circle']"
+                          class="text-[16px] cursor-pointer"
+                        ></fa-icon>
+                      } @else {
+                        <fa-icon
+                          (click)="activateAccount(account.id, provider, j)"
+                          [icon]="['fas', 'circle-plus']"
+                          class="text-[16px] cursor-pointer"
+                        ></fa-icon>
+                      }
+                    </div>
+                  </mat-menu>
+                  <!-- MAT MENU END-->
+                </div>
+              }
+            </mat-expansion-panel>
+          }
+        </mat-accordion>
+        <!-- accordion END -->
+
+        <!-- MY COMPANIES START -->
+        <div class="mt-3">
+          <div
+            class="flex justify-between items-center p-3 font-medium text-brand border-b-brand"
+          >
+            <span> My Companies </span>
+
+            <button
+              (click)="openAddCompanyModal('new')"
+              class="ocw-btn ocw-btn-light-green"
+            >
+              Add Company
+            </button>
+          </div>
+          @for (company of companies; track company; let i = $index) {
+            <div class="action_btns flex justify-between items-center ml-2 p-2 gap-2">
+              <label class="flex items-start gap-1 min-w-0">
+                <input type="checkbox" class="shrink-0 mt-1" />
+                <span class="break-all">{{ company.name }}</span>
+              </label>
+
+              <div
+                class="action_btns flex items-center gap-2 light-black shrink-0"
+              >
+                <!-- DELETE ICON -->
+                <fa-icon
+                  (click)="deleteCompany(company.id, i)"
+                  [icon]="['fas', 'trash']"
+                  class="text-[16px]"
+                ></fa-icon>
+                <!-- EDIT ICON -->
+                <fa-icon
+                  (click)="openAddCompanyModal('edit', company)"
+                  [icon]="['fas', 'pen']"
+                  class="text-[16px]"
+                ></fa-icon>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- MY COMPANIES END -->
+      </div>
+      <!-- LEFT SECTION END -->
+
+      <!-- RIGHT SECTION START -->
+      <div class="main_right_wrapper">
+        <!-- 1st row start -->
+        <div class="start_sec p-2">
+          <div class="flex justify-betweem items-start gap-2">
+            <div class="single_input no_modal_btn">
+              <ng-select
+                bindLabel="name"
+                placeholder="Select Company"
+                (change)="companyChange($event)"
+              >
+                @for (item of companies; track item) {
+                  <ng-option [value]="item.id">
+                    {{ item.name }}
+                  </ng-option>
+                }
+              </ng-select>
+            </div>
+
+            <app-date-range-main
+              (selectedRange)="selectedCheckDateRange($event)"
+            ></app-date-range-main>
+          </div>
+
+          <button
+            (click)="openAddNewRuleModal()"
+            class="ocw-btn ocw-btn-dark-green"
+          >
+            Add New Rule
+          </button>
+        </div>
+        <!-- 1st row end -->
+
+        <!-- FILTERS -->
+        @if (filters?.length) {
+          <div class="flex gap-1 start_info_sec">
+            <span>Filtered by</span>
+            @for (filter of filters; track filter) {
+              <ng-container>
+                <span class="font-medium">{{ filter.name }}</span>
+                @if (filter.type) {
+                  <span>{{ filter.type }}</span>
+                }
+                <span class="tag">
+                  <fa-icon
+                    class="text-common-red-color cursor-pointer"
+                    [icon]="['fas', 'xmark']"
+                  ></fa-icon>
+                  {{ filter.value }}
+                </span>
+              </ng-container>
+            }
+            <span (click)="clearAllFilters()" class="tag cursor-pointer">
+              <fa-icon
+                class="text-common-red-color cursor-pointer"
+                [icon]="['fas', 'xmark']"
+              ></fa-icon>
+              clear all
+            </span>
+          </div>
+        }
+
+        <div
+          class="start_info_sec font-medium flex flex-wrap justify-end gap-2"
+        >
+          <span
+            >Total Amount :
+            <span class="text-primary">
+              {{ transactionTotal?.total | currency }}
+            </span>
+          </span>
+
+          <span
+            >Total Credit :
+            <span class="text-green">
+              {{ transactionTotal?.credit | currency }}
+            </span>
+          </span>
+
+          <span
+            >Total Debit :
+            <span class="text-danger">
+              {{ transactionTotal?.debit | currency }}
+            </span>
+          </span>
+
+          <span
+            >Total Transactions :
+            <span class="text-peacock">
+              {{ transactionTotal?.count }}
+            </span>
+          </span>
+        </div>
+        <app-v3-data-table
+          class="mx-2"
+          [columnDefs]="columnDefs"
+          [tableId]="tableId"
+          [defaultColumnFields]="columnFields"
+          [frameworkComponents]="frameworkComponents"
+        >
+        </app-v3-data-table>
+      </div>
+      <!-- RIGHT SECTION END -->
+    </div>
+  </div>
+  @if (!indexLoaded) {
+    <div class="data_spinner"></div>
+  }
+}
+
+@if(switchToIframe()) {
+  <div >
+    <app-bank-data-landing></app-bank-data-landing>
+  </div>
+}
+</div>

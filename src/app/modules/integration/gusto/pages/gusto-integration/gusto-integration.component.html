@@ -1,0 +1,378 @@
+<!-------- main_common_module start -------->
+<section class="main_common_module">
+  <!--------left section start -------->
+  <div class="main_left_wrapper">
+    <!--------top section start -------->
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title flex items-center gap-2">
+          <app-ocw-back-button backUrl="manage/thirdparty_app/index">
+          </app-ocw-back-button>
+
+          <h3>Third Party Integration</h3>
+          <div class="help_video">
+            <app-demo-video slug="gusto"></app-demo-video>
+          </div>
+        </div>
+
+        <div class="button-left" (click)="onMapCompany()">
+          <button type="button" class="ocw-btn ocw-btn-cloud single_btn">
+            Bank Account Mapping
+          </button>
+        </div>
+      </div>
+      <div
+        class="module_main_body"
+        [ngStyle]="{
+          'pointer-events': loading.globalLoading ? 'none' : 'auto'
+        }"
+      >
+        <!-------- top-box start -------->
+        <section
+          class="top-box mt-6 border-solid border-2 border-input-border-color relative"
+        >
+          <div class="logo-bg"></div>
+          <div class="top-twobox">
+            <div class="top-box-centr main-bx-padding">
+              <p class="main-p">Gusto</p>
+              <div class="status-color">
+                <p>
+                  <span>Status:</span>
+                  @if (isConnected !== undefined) {
+                    <span class="green-clr">{{
+                      isConnected ? "Connected" : "Disconnected"
+                    }}</span>
+                  }
+                </p>
+              </div>
+            </div>
+            <div class="top-box-right main-bx-padding mr-8 buton-desk">
+              @if (!isConnected && isConnected !== undefined) {
+                <button
+                  type="button"
+                  class="ocw-btn ocw-btn-dark single_btn"
+                  (click)="onConnectToGusto()"
+                >
+                  <span>{{
+                    loading.connecting === 1 ? "processing.." : "Connect"
+                  }}</span>
+                </button>
+              }
+              @if (isConnected && isConnected !== undefined) {
+                <button
+                  type="button"
+                  class="ocw-btn ocw-btn-dark single_btn disconnect_btn"
+                  (click)="onDisConnectToGusto()"
+                >
+                  <span>{{
+                    loading.connecting === 0 ? "processing.." : "Disconnect"
+                  }}</span>
+                </button>
+              }
+              @if (isConnected && isConnected !== undefined) {
+                <button
+                  type="button"
+                  [ngClass]="{ disable: !getCompaniesBtnVisible }"
+                  class="ocw-btn ocw-btn-dark-green single_btn"
+                  (click)="onConnectToGusto()"
+                >
+                  <span>Connect New Company</span>
+                </button>
+              }
+            </div>
+          </div>
+          <div class="top-box-img"></div>
+          <div class="top-box-img-2"></div>
+          <div class="logo-sec">
+            <img
+              alt="gusto"
+              width="200"
+              height="200"
+              ngSrc="../../../../assets/images/logos/gusto-logo.png"
+            />
+          </div>
+        </section>
+        <div class="top-box-right main-bx-padding mr-8 buton-mobile">
+          @if (!isConnected && isConnected !== undefined) {
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green single_btn mr-4"
+              (click)="onConnectToGusto()"
+            >
+              <span>{{
+                loading.connecting === 1 ? "processing.." : "Connect"
+              }}</span>
+            </button>
+          }
+          @if (!isConnected && isConnected !== undefined) {
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green single_btn mr-4 disconnect_btn"
+              (click)="onDisConnectToGusto()"
+            >
+              <span>{{
+                loading.connecting === 0 ? "processing.." : "Disconnect"
+              }}</span>
+            </button>
+          }
+          @if (isConnected && isConnected !== undefined) {
+            <button
+              type="button"
+              [ngClass]="{ disable: !getCompaniesBtnVisible }"
+              class="ocw-btn ocw-btn-dark-green single_btn"
+              (click)="onConnectToGusto()"
+            >
+              <span>Connect New Company</span>
+            </button>
+          }
+        </div>
+        <!-------- table-main-sec start -------->
+        @if (
+          !getPayrollList &&
+          !getOffCycleList &&
+          !getPayrollView &&
+          !getPayrollDetailedView &&
+          !getPaymentList &&
+          !getPaymentDetailedView
+        ) {
+          <div class="table-main-sec">
+            <div class="overflow-x-auto mt-10 mb-10">
+              <table class="table-auto w-full">
+                @if (gustoData?.companies?.length) {
+                  <thead
+                    class="text-xs font-semibold uppercase ocw-table-light"
+                  >
+                    <tr>
+                      <th class="whitespace-nowrap">
+                        <h3 class="main-h4 text-left">Company Name</h3>
+                      </th>
+                      <th class="p-2 whitespace-nowrap">
+                        <h3 class="main-h4 text-left">LAST RUN</h3>
+                      </th>
+                      <th class="p-2 whitespace-nowrap">
+                        <h3 class="main-h4 text-left">action</h3>
+                      </th>
+                    </tr>
+                  </thead>
+                }
+                <tbody class="text-sm">
+                  <!----------------------------------------   IMPORTED START   ----------------------------------------->
+                  @for (
+                    item of gustoData?.companies;
+                    track item;
+                    let i = $index
+                  ) {
+                    <ng-container>
+                      <tr class="under-line">
+                        <td class="whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="font-medium text-gray-800 !truncate">
+                              <h4 class="main-h4 text-left">
+                                {{ item.companyName | truncate: 30 }}
+                              </h4>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="p-2 whitespace-nowrap">
+                          <h4 class="main-h4 !text-start">
+                            {{ item.lastUpdated }}
+                          </h4>
+                        </td>
+
+                        <td class="p-2 whitespace-nowrap">
+                          <div class="action_buttons !pt-2">
+                            <!-- View button start -->
+                            <button
+                              type="button"
+                              class="!h-10 !p-2.5 ocw-btn ocw-btn-peacock single_btn"
+                              matTooltip="View the company details"
+                              (click)="goToViewPage(item.companyId, 'imported')"
+                            >
+                              <span>View</span>
+                            </button>
+                            <!-- View button end -->
+
+                            <!-- Get payroll start -->
+                            <button
+                              type="button"
+                              class="!h-10 !p-2 ocw-btn ocw-btn-light-dark single_btn"
+                              (click)="goToPayrollList(item.companyId, item.companyName)"
+                            >
+                              <span>Payroll Checks</span>
+                            </button>
+                            <button
+                              type="button"
+                              class="!h-10 !p-2 ocw-btn ocw-btn-dark-violet single_btn"
+                              (click)="goToOffCycleList(item.companyId, item.companyName)"
+                            >
+                              <span> Off-Cycle</span>
+                            </button>
+                            <button
+                              type="button"
+                              class="!h-10 !p-2 ocw-btn ocw-btn-cloud single_btn"
+                              (click)="
+                                goToPaymentList(
+                                  item.companyId,
+                                  item.companyName
+                                )
+                              "
+                            >
+                              <span>Contractor Checks</span>
+                            </button>
+                            <!-- Get payroll end -->
+
+                            <!-- Delete Company start -->
+                            <div class="delete_company">
+                              <fa-icon
+                                (click)="deleteCompany(item, i)"
+                                [icon]="faTrash"
+                                class="text-common-red-color cursor-pointer"
+                              ></fa-icon>
+                            </div>
+                            <!-- Delete Company end -->
+                          </div>
+                        </td>
+                      </tr>
+                    </ng-container>
+                  }
+                  <!---------------------------------- IMPORTED END  ---------------------------------->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- defalut loader -->
+            <div
+              class="data_spinner"
+              [ngClass]="{ data_fetched: !loading.defaultLoading }"
+            ></div>
+          </div>
+        }
+        <!-- payroll list start -->
+        @if (getPayrollList) {
+          <app-gusto-payroll-list
+            [selectedCompany]="selectedCompany"
+            [OffCycleList]="false"
+            [allCompanies]="allCompanies"
+            (backButtonPressed)="backButtonPressed($event)"
+            (gotoPayrollDetails)="gotoPayrollDetails($event)"
+          >
+          </app-gusto-payroll-list>
+        }
+
+        @if (getOffCycleList) {
+          <app-gusto-payroll-list
+            [selectedCompany]="selectedCompany"
+            [OffCycleList]="true"
+            [allCompanies]="allCompanies"
+            (backButtonPressed)="backButtonPressed($event)"
+            (gotoPayrollDetails)="gotoOffCycleDetails($event)"
+          >
+          </app-gusto-payroll-list>
+        }
+
+        <!-- payroll list end -->
+
+        <!-- view payroll start -->
+        @if (getPayrollView) {
+          <app-view-gusto-payroll
+            [selectedCompany]="selectedCompany"
+            (backButtonPressed)="backButtonPressed($event)"
+            (gotoPayrollList)="onGotoPayrollList($event)"
+          >
+          </app-view-gusto-payroll>
+        }
+        <!--  view payroll end -->
+
+        <!-- view Details payroll start -->
+        @if (getPayrollDetailedView) {
+          <app-view-detailed-gusto-payroll
+            [allCompanies]="allCompanies"
+            [selectedCompany]="selectedCompany"
+            [selectedPayrollId]="selectedPayrollId"
+            [isOffCycle]="isOffCyclePayRoll"
+            (gotoPayrollList)="onGotoPayrollList($event)"
+            (backButtonPressed)="backButtonPressed($event)"
+          >
+          </app-view-detailed-gusto-payroll>
+        }
+        <!--  view  Detailed payroll end -->
+
+        @if (
+          getPaymentList &&
+          !getPayrollDetailedView &&
+          !getPayrollView &&
+          !getPayrollList &&
+          !getOffCycleList
+        ) {
+          <app-gusto-payment-list
+            [selectedCompany]="selectedCompany"
+            (backButtonPressed)="backButtonPressed($event)"
+            (gotoPaymentDetails)="onGotoPaymentDetails($event)"
+          >
+          </app-gusto-payment-list>
+        }
+
+        @if (
+          !getPaymentList &&
+          !getPayrollDetailedView &&
+          !getPayrollView &&
+          !getPayrollList &&
+          !getOffCycleList &&
+          getPaymentDetailedView
+        ) {
+          <app-gusto-payment-view-details
+            [selectedCompany]="selectedCompany"
+            (backButtonPressed)="backButtonPressed($event)"
+          >
+          </app-gusto-payment-view-details>
+        }
+      </div>
+    </div>
+  </div>
+  <!-------- right section start -------->
+  <div class="main_right_section">
+    <div class="module_top_section">
+      <div class="main__header">
+        <div class="left">
+          <p class="sub_head">Instructions</p>
+        </div>
+      </div>
+      <!-------- module_body start -------->
+      <div class="module_body">
+        <div class="p-arrow">
+          @for (item of instructions; track item) {
+            <div class="p-arrow-text">
+              <span>
+                <p>{{ item }}</p>
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <!-------- module_bottom_section start -------->
+    <div class="module_bottom_section">
+      <app-customer-support></app-customer-support>
+    </div>
+    <div class="module_bottom_section flex justify-between px-4">
+      <div>
+        <h3 class="text-common-red-color font-inter font-bold">
+          Short on Cash?
+        </h3>
+        <p class="text-main-text-color text-[13px] font-inter">
+          Fund your payroll account with credit card.
+        </p>
+      </div>
+      <div>
+        <app-common-button-v35
+          class="flex-1"
+          (clickEvent)="openGusto()"
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Add Fund"
+          width="100%"
+        ></app-common-button-v35>
+      </div>
+    </div>
+  </div>
+</section>
+<!-------- main_common_module end -------->

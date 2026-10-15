@@ -1,0 +1,50 @@
+export class Moengage {
+  static creditUnionPatterns = [
+    'credit union',
+    'federal credit',
+    'navy federal',
+    'becu',
+    'penfed',
+    'schoolsfirst',
+    'golden 1',
+    'alliant',
+    'state employees',
+    'suncoast'
+  ];
+
+  static majorPatterns = [
+    'chase',
+    'jpmorgan',
+    'bank of america',
+    'wells fargo',
+    'citibank',
+    'u.s. bank',
+    'us bank',
+    'capital one',
+    'pnc',
+    'truist',
+    'goldman sachs',
+    'td bank',
+    'charles schwab',
+    'morgan stanley',
+    'bmo',
+    'citizens',
+    'first citizens',
+    'fifth third',
+    'm&t bank',
+    'huntington',
+    'ally',
+    'keybank',
+    'hsbc',
+    'regions',
+    'discover',
+    'synchrony',
+    'american express',
+    'usaa',
+    'comerica',
+    'zions',
+    'webster',
+    'sofi',
+    'marcus'
+  ];
+}

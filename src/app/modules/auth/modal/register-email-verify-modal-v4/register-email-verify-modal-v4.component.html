@@ -1,0 +1,101 @@
+<div class="flex flex-col rounded-2xl overflow-hidden bg-v4-secondary-background-color">
+  <div class="px-6 pt-6 pb-5">
+    <h1 class="text-lg font-semibold text-v4-main-text-color font-funnel">
+      Verify your email
+    </h1>
+  </div>
+
+  <div class="px-6 pb-2 space-y-5">
+    <div
+      class="flex items-start gap-3 rounded-xl px-4 py-3 bg-v4-badge-info-bg-color"
+      [style.border]="'1px solid ' + infoBorderColor"
+    >
+      <div
+        class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center"
+        [style.background]="infoIconBgColor"
+      >
+        <lucide-icon
+          [img]="MailIcon"
+          [size]="18"
+          class="text-v4-badge-info-text-color"
+        />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-sm font-semibold text-v4-badge-info-text-color font-funnel">
+          OTP Sent
+        </p>
+        <p
+          class="text-xs leading-relaxed font-funnel"
+          [style.color]="infoDescriptionColor"
+        >
+          The verification code has been sent to your email
+          <span class="font-semibold text-v4-badge-info-text-color">{{ data.email }}</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <label class="text-sm font-medium text-v4-main-text-color font-funnel" for="otp">
+        Enter OTP
+      </label>
+      <div class="flex items-center justify-between gap-2">
+        @for (slot of otpSlots; track slot) {
+          <input
+            #otpBox
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            class="flex-1 min-w-0 h-[45px] text-center text-lg font-semibold font-funnel rounded-lg border border-v4-input-border-color bg-v4-input-background-color text-v4-main-text-color focus:outline-none focus:border-v4-primary-brand-color transition-colors"
+            (paste)="onOtpPaste($event)"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+            (keydown)="onOtpKeyDown($event, slot)"
+            (input)="onOtpInput(slot)"
+            (click)="otpBox.select()"
+          />
+        }
+      </div>
+      @if (otpError()) {
+        <p class="text-xs text-v4-common-red-color font-funnel">{{ otpError() }}</p>
+      }
+    </div>
+
+    <div class="flex justify-between items-center text-xs">
+      <button
+        type="button"
+        class="font-semibold font-funnel"
+        [class.text-v4-primary-brand-color]="!isResendDisabled() && !resending()"
+        [class.hover:underline]="!isResendDisabled() && !resending()"
+        [class.cursor-pointer]="!isResendDisabled() && !resending()"
+        [class.text-v4-subtle-text-color]="isResendDisabled() || resending()"
+        [class.cursor-not-allowed]="isResendDisabled() || resending()"
+        [disabled]="isResendDisabled() || resending()"
+        (click)="resendOtp()"
+      >
+        {{ resending() ? 'Sending...' : 'Resend Code' }}
+      </button>
+      <span class="inline-flex items-center gap-1 text-v4-subtle-text-color font-funnel">
+        <lucide-icon [img]="ClockIcon" [size]="14" />
+        Retry in {{ formattedTime() }}
+      </span>
+    </div>
+  </div>
+
+  <div class="flex flex-col items-center gap-2 px-6 pt-5 pb-6">
+    <app-common-button-v4
+      class="w-full"
+      width="100%"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Verify"
+      [disabled]="submitting()"
+      [loading]="submitting()"
+      (clickEvent)="submitOtp()"
+    />
+    <button
+      type="button"
+      [mat-dialog-close]="false"
+      class="text-sm text-v4-subtle-text-color hover:text-v4-main-text-color font-funnel py-2 cursor-pointer"
+    >
+      Cancel
+    </button>
+  </div>
+</div>

@@ -1,0 +1,113 @@
+<div class="flex flex-col flex-1">
+  @if (checkDraftAppStatus() === -1) {
+    <div class="flex flex-1 items-center justify-center min-h-[70vh]">
+      <div
+        class="h-10 w-10 animate-spin rounded-full border-4 border-v4-border-color border-t-v4-primary-brand-bold-color"
+      ></div>
+    </div>
+  } @else if (checkDraftAppStatus() === 1) {
+    <app-v4-data-table-empty-state
+      [icon]="'banknote'"
+      [title]="'Get started with Check Draft'"
+      [description]="'Apply for Check Draft to start creating check drafts'"
+      [buttonText]="emptyStateButtonText()"
+      [disabled]="applyLoading() || applying()"
+      (actionClick)="applyForCheckDraft()"
+    />
+  } @else if (checkDraftAppStatus() === 2) {
+    <div class="flex flex-col items-center w-full flex-1">
+      <div
+        class="flex flex-col items-center text-center px-6 py-8 max-w-[580px] w-full gap-5 flex-1 justify-center"
+      >
+        <div class="w-72">
+          <img
+            ngSrc="/assets/images/cloud-bank/application-review-v4.svg"
+            alt="Application Under Review"
+            width="480"
+            height="360"
+            class="w-full h-auto"
+          />
+        </div>
+        <h1 class="font-bold text-v4-main-text-color text-3xl">
+          Application Submitted
+        </h1>
+        <p
+          class="text-v4-secondary-text-color text-sm leading-relaxed max-w-[320px]"
+        >
+          We're reviewing your application. We'll notify you once the review is
+          complete.
+        </p>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Go to Dashboard"
+          lucideIcon="house"
+          [isAddIcon]="true"
+          [width]="'160px'"
+          (clickEvent)="goHome()"
+        />
+      </div>
+    </div>
+  } @else if (checkDraftAppStatus() === 3) {
+    <div class="flex flex-col items-center w-full flex-1">
+      <div
+        class="flex flex-col items-center text-center px-6 py-8 max-w-[580px] w-full gap-5 flex-1 justify-center"
+      >
+        <div class="w-72">
+          <img
+            ngSrc="/assets/images/cloud-bank/application-rejected-v4.svg"
+            alt="Application Rejected"
+            width="480"
+            height="360"
+            class="w-full h-auto"
+          />
+        </div>
+        <h1 class="font-bold text-v4-main-text-color text-3xl">
+          Application Rejected
+        </h1>
+        <p
+          class="text-v4-secondary-text-color text-sm leading-relaxed max-w-[320px]"
+        >
+          We couldn't approve your application this time You can reapply at any
+          time.
+        </p>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="reApplyButtonText()"
+          lucideIcon="rotate-ccw"
+          [isAddIcon]="true"
+          [disabled]="applyLoading() || applying()"
+          [width]="'160px'"
+          (clickEvent)="applyForCheckDraft()"
+        />
+      </div>
+    </div>
+  } @else if (checkDraftAppStatus() === 0) {
+    <app-v4-data-table
+      [(selectedPanelButton)]="selectedPanelButton"
+      [deselectedColumns]="deselectedColumns"
+      [defaultColumnFields]="defaultColumnFields"
+      [columnDefs]="columnDefs"
+      [tableId]="tableId"
+      [fieldsShownByDefault]="fieldsShownByDefault"
+      [frameworkComponents]="frameworkComponents"
+      [headerElements]="headerElements()"
+      [useCustomEmptyState]="true"
+      [emptyStateConfig]="appliedEmptyStateConfig"
+      (emptyStateActionClick)="onNew()"
+      (headerButtonEvent)="headerButtonClick($event)"
+      (cellRendererIdEvent)="cellRendererActionClick($event)"
+      (cellRendererViewEvent)="getViewAction($event)"
+      (rowSelected)="onRowSelected($event)"
+      [exportConfig]="exportConfig"
+      (checkDraftExportEvent)="onExportData($event)"
+    />
+  }
+
+  <app-v4-check-draft-detail-panel
+    [rowId]="panelSelectedRow()?.id ?? ''"
+    [row]="panelSelectedRow()"
+    [isOpen]="isPanelOpen()"
+    (closed)="closePanelAndReset()"
+    (actionButtonClicked)="onPanelAction($event)"
+  />
+</div>

@@ -1,0 +1,168 @@
+<div class="h-full w-full">
+  <!-- Active / Archived tabs — same pattern as cards-list-ocw-v35 (visible below laptop) -->
+  <div
+    class="flex laptop:hidden gap-1 overflow-x-auto whitespace-nowrap thin-scroll pb-1 mb-2 bg-secondary-background-color"
+  >
+    @for (item of tabItems; track item.value) {
+      <div
+        role="presentation"
+        class="px-1 cursor-pointer font-roboto font-semibold text-xs text-secondary-text-color"
+        [ngClass]="
+          selectedListTab() === item.value
+            ? 'text-main-text-color border-b-2 border-b-common-blue-color'
+            : ''
+        "
+        (click)="onTabClick(item.value)"
+      >
+        {{ item.name }}
+      </div>
+    }
+  </div>
+  <div
+    class="flex justify-between items-center gap-3 laptop:hidden w-full bg-secondary-background-color"
+  >
+    <div class="flex-1 bg-main-background-color">
+      <app-v35-common-dropdown
+        [config]="{
+          placeholder: 'Select Link',
+          displayField: 'name',
+          style: {
+            size: 3,
+            enableLabelIcon: true,
+            labelIconData: {
+              icon_fa: ['fas', 'address-book'],
+              color: 'common-blue-color'
+            }
+          },
+          enableAddNew: true
+        }"
+        [listData]="data()"
+        (ngModelChange)="selectLink($event)"
+        [clearable]="false"
+        [(ngModel)]="selectedLinkModel"
+        (buttonClick)="addNewLink()"
+        (scrollToEnd)="onScrollToEnd()"
+      >
+      </app-v35-common-dropdown>
+    </div>
+  </div>
+  <div class="h-full w-full hidden laptop:flex flex-col font-inter">
+    <app-list-header-v35
+      header="Payment Links"
+      [isSwitchOption]="false"
+      [isTabChangeOption]="true"
+      [loading]="loading()"
+      (searchEvent)="search($event)"
+      (addButtonClickEvent)="addNewLink()"
+      addButtonTextColor="white"
+      [tabsArray]="tabItems"
+      (tabClickEvent)="onTabClick($event)"
+      [selectedTab]="selectedListTab()"
+    />
+    <hr class="text-input-border-color" />
+    <div
+      appScrollToEnd
+      (scrollToEnd)="onScrollToEnd()"
+      class="flex flex-col h-full overflow-y-auto thin-scroll"
+    >
+      @if (loading() && !data().length) {
+        <div class="h-full flex items-center justify-center">Loading...</div>
+      } @else {
+        @for (item of data(); track item.id) {
+          <button
+            (click)="selectLink(item)"
+            [ngClass]="
+              selectedLink() && selectedLink()?.id === item.id
+                ? 'shadow-common-box-shadow bg-secondary-background-color border !border-common-blue-color rounded'
+                : 'border-input-border-color'
+            "
+            class="border-b hover:bg-secondary-background-color w-full"
+          >
+            <div class="pl-4 pr-3 py-2 flex gap-3 w-full">
+              <div class="flex items-center justify-center">
+                <div
+                  class="flex justify-center items-center h-7 w-7 bg-common-secondary-blue-color rounded-full"
+                >
+                  <fa-icon
+                    class="text-common-blue-color text-xs"
+                    [icon]="faLink"
+                  ></fa-icon>
+                </div>
+              </div>
+              <div class="w-full overflow-hidden">
+                <h1
+                  class="font-roboto text-xs font-medium text-main-text-color text-left"
+                >
+                  {{ (item.name | truncate: 15) ?? "_" }}
+                </h1>
+                @if (selectedListTab() === 'active') {
+                <div class="flex justify-between pt-1 w-full">
+                  <span
+                    class="font-roboto text-xs font-normal text-common-blue-color text-left w-full flex"
+                  >
+                    <fa-icon [icon]="faArrowUpRightFromSquare" />
+                    <a
+                      (click)="openLink(item.link)"
+                      class="hover:underline pl-1 max-w-full w-fit overflow-hidden text-ellipsis text-nowrap"
+                    >
+                      {{ item.shortUrl }}
+                    </a>
+                  </span>
+                </div>
+              }
+              </div>
+              <!-- expiry badge -->
+              @if (item.expiryStatus && item.expiryStatus === 'expired') {
+                <span class="text-xs text-common-red-color bg-common-red-color/10 rounded-full px-2 py-1">
+                  Expired
+                </span>
+              }
+              <button
+                class="flex justify-center items-center w-2.5"
+                matTooltip="Actions"
+                [matMenuTriggerFor]="menu"
+                aria-label="Example icon-button with a menu"
+              >
+                <fa-icon
+                  [icon]="faEllipsis"
+                  class="text-[15px] text-secondary-text-color"
+                ></fa-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                @if (selectedListTab() === 'active') {
+                <button (click)="editLink(item)" mat-menu-item>
+                  <div class="w-full settings">
+                    <fa-icon [icon]="faEdit" class="pr-3"></fa-icon>
+                    <span>Edit</span>
+                  </div>
+                </button>
+                <button (click)="archiveLink(item)" mat-menu-item>
+                  <div class="w-full settings">
+                    <fa-icon [icon]="faArchive" class="pr-3"></fa-icon>
+                    <span>Archive</span>
+                  </div>
+                </button>
+                } @else {
+                <button (click)="restoreLink(item)" mat-menu-item>
+                  <div class="w-full settings">
+                    <fa-icon [icon]="faRestore" class="pr-3"></fa-icon>
+                    <span>Restore</span>
+                  </div>
+                </button>
+                }
+                <button (click)="viewAuditTrail(item)" mat-menu-item>
+                  <div class="w-full settings">
+                    <fa-icon [icon]="faAuditTrail" class="pr-3"></fa-icon>
+                    <span>Audit Trail</span>
+                  </div>
+                </button>
+              </mat-menu>
+            </div>
+          </button>
+        } @empty {
+          <div class="h-full flex items-center justify-center">No items</div>
+        }
+      }
+    </div>
+  </div>
+</div>

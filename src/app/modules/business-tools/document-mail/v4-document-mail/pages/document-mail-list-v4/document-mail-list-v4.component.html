@@ -1,0 +1,184 @@
+<div class="bg-v4-main-background-color">
+  <div>
+    <div class="mb-5">
+      <app-v4-page-header
+        [title]="'Mail Documents'"
+        subtitle="Upload and send documents via mail"
+        [actions]="headerActions"
+        [showBackButton]="isFromMailDashboard"
+        [backButtonType]="'takeEvent'"
+        (actionClick)="onHeaderAction($event)"
+        (backEvent)="goBack()"
+      />
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <!-- Total Documents -->
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-5 py-4 flex items-center justify-between"
+      >
+        <div>
+          <p class="text-xs font-peridot text-v4-secondary-text-color">
+            Total Documents
+          </p>
+          <p
+            class="text-2xl font-bold text-v4-main-text-color mt-1 font-funnel"
+          >
+            {{ summaryCounts().total }}
+          </p>
+        </div>
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center"
+          [style.background-color]="'var(--v4-insight-card-background-blue)'"
+          [style.color]="'var(--v4-primary-brand-bold-color)'"
+        >
+          <lucide-icon name="file-text" [size]="20" />
+        </div>
+      </div>
+
+      <!-- New Documents -->
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-5 py-4 flex items-center justify-between"
+      >
+        <div>
+          <p class="text-xs font-peridot text-v4-secondary-text-color">
+            New Documents
+          </p>
+          <p
+            class="text-2xl font-bold text-v4-main-text-color mt-1 font-funnel"
+          >
+            {{ summaryCounts().new }}
+          </p>
+        </div>
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center"
+          [style.background-color]="'var(--v4-insight-card-background-blue)'"
+          [style.color]="'var(--v4-primary-brand-bold-color)'"
+        >
+          <lucide-icon name="file-text" [size]="20" />
+        </div>
+      </div>
+
+      <!-- Mailed Documents -->
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-5 py-4 flex items-center justify-between"
+      >
+        <div>
+          <p class="text-xs font-peridot text-v4-secondary-text-color">
+            Mailed Documents
+          </p>
+          <p
+            class="text-2xl font-bold text-v4-main-text-color mt-1 font-funnel"
+          >
+            {{ summaryCounts().mailed }}
+          </p>
+        </div>
+        <div
+          class="w-10 h-10 rounded-lg bg-v4-surface-success-bold flex items-center justify-center text-v4-text-success"
+        >
+          <lucide-icon name="send" [size]="20" />
+        </div>
+      </div>
+
+      <!-- Total Shipping Cost -->
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl px-5 py-4 flex items-center justify-between"
+      >
+        <div>
+          <p class="text-xs font-peridot text-v4-secondary-text-color">
+            Total Shipping Cost
+          </p>
+          <p
+            class="text-2xl font-bold text-v4-main-text-color mt-1 font-funnel"
+          >
+            {{ summaryCounts().shippingCost | currency }}
+          </p>
+        </div>
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center"
+          [style.background-color]="'var(--v4-insight-card-border-purple)'"
+          [style.color]="'var(--v4-accent-violet-color)'"
+        >
+          <lucide-icon name="mail" [size]="20" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <app-common-tab-v4
+      [tabs]="tabItems"
+      [activeTab]="selectedTab()"
+      [variant]="'underline'"
+      (tabChange)="onTabChange($event)"
+    />
+
+    <div class="mt-1">
+      <!-- Files Table -->
+      @if (selectedTab() === "files") {
+        <app-v4-data-table
+          [defaultColumnFields]="filesColumnFields"
+          [tableId]="filesTableId"
+          [headerElements]="filesHeaderElements()"
+          [frameworkComponents]="filesFrameworkComponents"
+          [useCustomEmptyState]="true"
+          [emptyStateConfig]="{
+            icon: 'file-text',
+            title: 'No documents yet',
+            description:
+              'Upload a document to store it here and get it ready for mailing',
+            buttonText: 'Upload Files',
+            buttonIcon: 'upload'
+          }"
+          (emptyStateActionClick)="onUpload()"
+          [fieldsShownByDefault]="[
+            'id',
+            'action',
+            'document_title',
+            'status',
+            'created_at'
+          ]"
+          (headerButtonEvent)="headerButtonClick($event)"
+        />
+      }
+
+      <!-- Mailed Table -->
+      @if (selectedTab() === "mail") {
+        <app-v4-data-table
+          [defaultColumnFields]="mailedColumnFields"
+          [tableId]="mailedTableId"
+          [headerElements]="mailedHeaderElements()"
+          [frameworkComponents]="mailedFrameworkComponents"
+          [useCustomEmptyState]="true"
+          [emptyStateConfig]="{
+            icon: 'send',
+            title: 'No mailed documents yet',
+            description:
+              'Documents you send by mail will appear here with their delivery status',
+            buttonText: 'Send',
+            buttonIcon: 'send'
+          }"
+          (emptyStateActionClick)="onSendMail()"
+          [fieldsShownByDefault]="[
+            'action',
+            'document_title',
+            'status',
+            'payee_name',
+            'mail_type'
+          ]"
+          (headerButtonEvent)="headerButtonClick($event)"
+        />
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Detail Side Panel -->
+@if (selectedDocumentId()) {
+  <app-document-mail-detail-panel-v4
+    [documentId]="selectedDocumentId()"
+    [isOpen]="isPanelOpen()"
+    [refreshTrigger]="panelRefresh()"
+    (closed)="closePanelAndReset()"
+  />
+}

@@ -1,0 +1,325 @@
+<!-- Removed h-screen: 100vh ignores the header, it forced a page scroll. flex-1 fills the host instead. -->
+<div
+  class="space-y-4 flex flex-col flex-1"
+  [ngClass]="{ '!h-full': selectedMethod === 'manual-entry' }"
+>
+  <!-- Page Header -->
+  <div class="w-full mb-3">
+    <div class="flex items-center gap-2 mb-1">
+<h1 class="m-0 text-xl leading-7 font-bold text-v4-main-text-color font-funnel whitespace-nowrap">
+        Bulk Payment Center
+      </h1>
+    </div>
+    <p class="text-sm text-v4-secondary-text-color">
+      Process multiple payments at once – manual entry, Excel import, or saved
+      templates
+    </p>
+  </div>
+
+  <!-- Tabs -->
+  <app-common-tab-v4
+    [tabs]="tabs"
+    [(activeTab)]="activeTab"
+    [variant]="'toggle'"
+    (tabChange)="onTabChange($event)"
+    [height]="'44px'"
+  />
+
+  <!-- CREATE Tab Content -->
+  @if (activeTab === "create") {
+    @if (!selectedMethod) {
+      <!-- Method Selection -->
+      <div
+        class="mt-6 flex-1 bg-v4-secondary-background-color rounded-2xl p-8 border border-v4-border-color"
+      >
+        <h2 class="text-lg font-bold text-v4-main-text-color mb-1">
+          How do you want to create payments?
+        </h2>
+        <p class="text-sm text-v4-tertiary-text-color mb-6">
+          Choose your preferred method to add payments to this batch
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          @for (m of methods; track $index) {
+            <div
+              role="presentation"
+              class="method-card group p-5 rounded-xl border-[2px] border-v4-border-color hover:border-v4-primary-brand-bold-color transition-all cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:scale-[1.02]"
+              (click)="selectMethod(m.value)"
+            >
+              <div>
+                <div
+                  [ngClass]="[
+                    'w-10',
+                    'h-10',
+                    'rounded-lg',
+                    'flex',
+                    'items-center',
+                    'justify-center',
+                    'mb-4',
+                    m.badgeBg,
+                    m.badgeHoverBg
+                  ]"
+                >
+                  <lucide-icon
+                    [img]="m.icon"
+                    [size]="20"
+                    [ngClass]="[m.iconColor, m.iconHoverColor]"
+                  ></lucide-icon>
+                </div>
+
+                <h3 class="text-base font-bold text-v4-main-text-color mb-1">
+                  {{ m.title }}
+                </h3>
+                <p class="text-sm text-v4-tertiary-text-color">
+                  {{ m.subtitle }}
+                </p>
+              </div>
+
+              <div class="mt-4">
+                <a
+                  [ngClass]="[
+                    'inline-flex',
+                    'items-center',
+                    'gap-1',
+                    'text-sm',
+                    'font-semibold',
+                    'hover:opacity-80',
+                    'transition-opacity',
+                    m.ctaColor
+                  ]"
+                >
+                  {{ m.ctaText }}
+                  <lucide-icon [img]="m.ctaIcon" [size]="16"></lucide-icon>
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Manual Entry View -->
+    @if (selectedMethod === "manual-entry") {
+      <app-v4-group-payment
+        (changeInputMethod)="onChangeInputMethod()"
+        [groupId]="selectedGroupId()"
+        [billBulkData]="billBulkData()"
+      />
+    }
+
+    <!-- Import Excel View -->
+    @if (selectedMethod === "import-excel" && importedExcelData) {
+      <app-v4-group-payment
+        [importedExcelData]="importedExcelData"
+        (changeInputMethod)="onChangeInputMethod()"
+      />
+    } @else if (selectedMethod === "load-group") {
+      <ng-container
+        *ngTemplateOutlet="createGroupModal; context: { type: 'load-group' }"
+      ></ng-container>
+    } @else if (selectedMethod === "api-integration") {
+      <!-- API Integration View -->
+      <div
+        class="mt-6 bg-v4-secondary-background-color rounded-2xl p-8 border border-v4-border-color flex flex-col gap-8 flex-1"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <a
+            role="presentation"
+            class="inline-flex items-center gap-1.5 text-sm text-v4-secondary-text-color cursor-pointer hover:text-v4-main-text-color transition-colors"
+            (click)="onChangeInputMethod()"
+          >
+            <lucide-icon [img]="arrowLeftIcon" [size]="16"></lucide-icon>
+            <span>Back to Selection</span>
+          </a>
+        </div>
+
+        <div class="flex flex-col items-center text-center gap-6">
+          <div
+            class="w-14 h-14 rounded-2xl flex items-center justify-center bg-v4-border-warning-subtle text-v4-text-warning"
+          >
+            <lucide-icon [img]="CodeIcon" [size]="26"></lucide-icon>
+          </div>
+
+          <div class="space-y-3 max-w-2xl">
+            <h2 class="text-2xl font-bold text-v4-main-text-color font-funnel">
+              API Integration
+            </h2>
+            <p
+              class="text-sm md:text-base text-v4-secondary-text-color leading-relaxed"
+            >
+              Integrate ZilMoney&apos;s bulk payment API directly into your
+              accounting system, ERP, or custom application. Process thousands
+              of payments programmatically with enterprise-grade security and
+              reliability.
+            </p>
+          </div>
+
+          <div
+            class="w-full max-w-3xl rounded-2xl bg-v4-primary-brand-color border border-v4-border-color p-6 md:p-8"
+          >
+            <div
+              class="flex px-3 py-1 rounded-full text-white text-xs font-semibold mb-4"
+            >
+              <h1 class="text-white text-base font-semibold">API Features</h1>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              @for (feature of apiIntegrationFeatures; track $index) {
+                <div class="flex items-start gap-3">
+                  <div
+                    class="mt-0.5 flex items-center justify-center text-v4-secondary-brand-color"
+                  >
+                    <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+                  </div>
+                  <p class="text-sm text-white font-medium text-left">
+                    {{ feature }}
+                  </p>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div
+            class="flex flex-col md:flex-row gap-3 items-center justify-center mt-2"
+          >
+            <app-common-button-v4
+              [text]="'Contact Sales Team'"
+              [type]="{ style: 'neon', name: 'main' }"
+              [boxshadow]="'none'"
+              [customClasses]="
+                '!text-[14px] !py-[10px] !px-[20px] whitespace-nowrap [&>div]:!gap-2'
+              "
+              (clickEvent)="onContactSalesTeam()"
+              [lucideIcon]="'mail'"
+            ></app-common-button-v4>
+
+            <app-common-button-v4
+              [text]="'Visit Developer Panel'"
+              [type]="{ style: 'outline', name: 'main' }"
+              [customClasses]="
+                '!text-[14px] !py-[10px] !px-[20px] whitespace-nowrap'
+              "
+              (clickEvent)="onVisitDeveloperPanel()"
+            ></app-common-button-v4>
+          </div>
+
+          <p class="text-xs text-v4-tertiary-text-color mt-1">
+            Our sales team will respond within 1 business day with pricing,
+            documentation, and integration support.
+          </p>
+        </div>
+      </div>
+    }
+  } @else if (activeTab === "scheduled") {
+    <div
+      class="mt-8 flex items-center justify-center w-full bg-v4-secondary-background-color rounded-xl flex-1"
+    >
+      <div class="flex flex-col items-center text-center gap-6">
+        <div class="inline-flex items-center justify-center -mt-6">
+          <div class="relative main-icon">
+            <div
+              class="relative w-20 h-20 rounded-full bg-v4-primary-brand-color flex items-center justify-center shadow-lg"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="36"
+                height="36"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-rocket text-v4-secondary-brand-color transform rotate-45"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"
+                ></path>
+                <path
+                  d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22 0 0 1-4 2z"
+                ></path>
+                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+              </svg>
+            </div>
+            <div class="absolute -top-2 -right-2 sub-icon">
+              <div
+                class="w-6 h-6 rounded-full bg-v4-secondary-brand-color flex items-center justify-center"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-sparkles text-v4-common-blue-color"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+                  ></path>
+                  <path d="M20 2v4"></path>
+                  <path d="M22 4h-4"></path>
+                  <circle cx="4" cy="20" r="2"></circle>
+                </svg>
+              </div>
+            </div>
+            <div class="absolute -bottom-1 -left-2 sub-icon">
+              <div class="w-4 h-4 rounded-full bg-v4-badge-sky-bg-color"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 mt-2">
+          <h2
+            class="text-xl md:text-2xl font-bold text-v4-main-text-color font-funnel"
+          >
+            Scheduled Payments - Coming Soon
+          </h2>
+          <p
+            class="text-sm md:text-base text-v4-secondary-text-color max-w-md mx-auto"
+          >
+            We're working hard to bring you powerful scheduled payment workflows
+            so you can automate recurring payouts with confidence. Stay tuned!
+          </p>
+        </div>
+      </div>
+    </div>
+  } @else if (activeTab === "my-groups") {
+    <ng-container
+      *ngTemplateOutlet="createGroupModal; context: { type: 'my-groups' }"
+    ></ng-container>
+  }
+</div>
+
+<ng-template #createGroupModal let-type="type">
+    <div class="flex flex-col">
+      @if (type === "load-group") {
+        <div class="mb-4 h-full flex items-center justify-between">
+          <a
+            role="presentation"
+            class="inline-flex items-center gap-1.5 text-sm text-v4-secondary-text-color cursor-pointer hover:text-v4-main-text-color transition-colors"
+            (click)="onChangeInputMethod()"
+          >
+            <lucide-icon [img]="arrowLeftIcon" [size]="16"></lucide-icon>
+            <span>Back to Selection</span>
+          </a>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'New'"
+            [lucideIcon]="'plus'"
+            (clickEvent)="onCreateGroup()"
+          />
+        </div>
+      }
+      <app-v4-group-payments-table
+        (selectedGroupId)="onSelectedGroupId($event)"
+        [isChildComponent]="type === 'load-group'"
+      />
+    </div>
+</ng-template>

@@ -1,0 +1,142 @@
+<div class="attachment_wrapper">
+  <div class="body_container">
+    <div class="main_header">
+      <div class="logo">
+        <img
+          [alt]="appConfig.websiteTitle"
+          [src]="
+            appConfig.websiteLogo || '../../../../assets/main/app_logo.svg'
+          "
+          [title]="appConfig.websiteTitle"
+        />
+      </div>
+    </div>
+
+    <ng-container *ngIf="!linkExpired && !loading && !uploaded">
+      <div class="main_body">
+        <div class="sub_heading">
+          <h3>
+            Verify Your
+            {{
+              documentType === "card" || documentType === "cardReverse"
+                ? "Credit Card Picture"
+                : "Invoice"
+            }}
+          </h3>
+          <span
+            *ngIf="documentType === 'card' || documentType === 'cardReverse'"
+            >{{
+              documentType === "card" ? "(Front View)" : "(Back View)"
+            }}</span
+          >
+        </div>
+        <div class="sub-body">
+          <div class="card-details">
+            <span>{{ metaData?.cardNickName }}</span>
+            <span>XXXXXXXXXXXX{{ metaData?.cardLast4 }}</span>
+          </div>
+          <span class="amount">
+            ${{ loading ? "0000" : metaData?.amount }}
+          </span>
+          <p>
+            {{
+              documentType === "card" || documentType === "cardReverse"
+                ? "Before making the first payment with this new  card, we kindly request you to upload the picture of your card masked as shown in the picture below for verification purpose."
+                : "Before making the payment, we kindly request you to upload the invoice for this payment. This is to verify and make the payment faster."
+            }}
+          </p>
+
+          <img
+            src="../../../../../../../assets/images/verify-card-invoice-modal/{{
+              documentType === 'card' || documentType === 'cardReverse'
+                ? 'credit-card-masked-with-finger'
+                : 'invoice'
+            }}.svg"
+            height="130px"
+            width=" 218"
+            alt="{{
+              documentType === 'card' || documentType === 'cardReverse'
+                ? 'Credit Card Masked With Finger'
+                : 'Invoice'
+            }}"
+          />
+
+          <div
+            class="upload-card"
+            [ngClass]="{ empty_file_input: !document?.name }"
+          >
+            <div
+              class="inner-empty"
+              *ngIf="!document?.name"
+              (click)="chooseFile(documentInput)"
+            >
+              <i class="fa-regular fa-plus"></i>
+              <span
+                >Upload
+                {{
+                  documentType === "card"
+                    ? "Credit Card Picture (Front View)"
+                    : documentType === "cardReverse"
+                      ? "Credit Card Picture (Back View)"
+                      : "Invoice"
+                }}</span
+              >
+            </div>
+            <div *ngIf="document?.name" class="inner-populated">
+              <i class="fa-solid fa-circle-check"></i>
+              <div class="left-div">
+                <span
+                  >{{
+                    documentType === "card"
+                      ? "Credit Card (Front View)"
+                      : documentType === "cardReverse"
+                        ? "Credit Card (Back View)"
+                        : "Invoice"
+                  }}
+                  : </span
+                >{{ document?.name ?? "" | truncate: 20 }}
+              </div>
+              <i
+                class="fa-solid fa-xmark cursor-pointer"
+                (click)="removeFile(documentInput)"
+              ></i>
+            </div>
+            <input
+              class="hidden"
+              [accept]="acceptedDocumentTypes"
+              (change)="filePicked($event)"
+              type="file"
+              #documentInput
+            />
+          </div>
+          <span *ngIf="showError" class="error_msg"
+            >{{ documentType === "card" ? "Card" : "Invoice" }} document is
+            required</span
+          >
+        </div>
+      </div>
+      <div class="footer">
+        <button class="ocw-btn" (click)="uploadFile()">
+          <span>{{ uploading ? "Uploading..." : "Upload" }}</span
+          ><span *ngIf="uploading" class="loadingSpinner"></span>
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="(linkExpired || uploaded) && !loading">
+      <div class="link_expired">
+        <p>
+          <img
+            *ngIf="linkExpired"
+            src="../../../../assets/images/link-expired.svg"
+            alt="Link Expired"
+          />
+          <i *ngIf="uploaded" class="fa-solid fa-circle-check"></i>
+        </p>
+        <p>{{ linkExpired ? "Link Expired!" : "Uploaded!" }}</p>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<div *ngIf="loading" class="data_spinner"></div>

@@ -1,0 +1,93 @@
+@if (getFormControl().controls.length > 0) {
+  <div class="mb-4">
+    <!-- Section header -->
+    <div role="presentation"
+      class="flex items-center justify-between px-4 py-3 bg-v4-secondary-background-color rounded-t-xl border border-v4-border-color cursor-pointer"
+      (click)="isCollapsed = !isCollapsed"
+    >
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="MailIcon" [size]="18" class="text-v4-common-blue-color" />
+        <h3 class="text-sm font-semibold text-v4-main-text-color font-funnel">Check Email</h3>
+        <span class="text-xs text-v4-tertiary-text-color">({{ getFormControl().controls.length }})</span>
+      </div>
+      <lucide-icon
+        [img]="ChevronDownIcon"
+        [size]="18"
+        class="text-v4-subtle-text-color transition-transform"
+        [class.rotate-180]="!isCollapsed"
+      />
+    </div>
+
+    <!-- Table -->
+    @if (!isCollapsed) {
+      <div class="overflow-x-auto border border-t-0 border-v4-border-color rounded-b-xl">
+        <table class="v4-ocw-table" [formGroup]="dynamicForm">
+          <thead>
+            <tr>
+              <th class="!text-center w-8">#</th>
+              <th>Source</th>
+              <th>Payee</th>
+              <th class="min-w-[208px] w-[208px]">Email</th>
+              <th>Amount</th>
+              <th>Memo</th>
+              <th>Invoice No</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="walletCheckEmailFormArray">
+            @for (data of getFormControl().controls; track data; let i = $index) {
+              <tr [formGroupName]="i">
+                <td class="text-center">
+                  <span class="text-xs text-v4-tertiary-text-color">{{ i + 1 }}</span>
+                </td>
+                <td>
+                  <lucide-icon
+                    [img]="WalletIcon"
+                    [size]="16"
+                    class="text-v4-common-blue-color"
+                    matTooltip="Wallet"
+                  />
+                </td>
+                <td>
+                  <span class="text-xs font-medium text-v4-main-text-color whitespace-nowrap truncate max-w-[180px] inline-block">
+                    {{ data?.value?.payee }}
+                  </span>
+                </td>
+                <td class="min-w-[208px] w-[208px]">
+                  <div
+                    [ngClass]="{
+                      '!border-v4-common-red-color !border !rounded-xl':
+                        dynamicForm.get('walletCheckEmailFormArray')?.at(i)?.get('email')?.invalid &&
+                        dynamicForm.get('walletCheckEmailFormArray')?.at(i)?.get('email')?.touched
+                    }"
+                  >
+                    <app-common-input-v4
+                      [placeholder]="'Email Address'"
+                      [type]="'email'"
+                      formControlName="email"
+                      fieldHeight="32px"
+                    />
+                  </div>
+                </td>
+                <td>
+                  <span class="text-xs font-medium text-v4-main-text-color whitespace-nowrap">
+                    {{ data?.value?.amount | currency }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color truncate max-w-[150px] inline-block">
+                    {{ data?.value?.memo || 'N/A' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-v4-secondary-text-color">
+                    {{ data?.value?.invoiceNo || '—' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

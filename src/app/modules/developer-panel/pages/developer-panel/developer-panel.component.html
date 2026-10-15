@@ -1,0 +1,784 @@
+<div class="max-w-[1400px] mx-auto bg-main-background-color p-10">
+  <div class="mb-8">
+    <h1 class="!text-main-text-color font-roboto font-semibold text-2xl mb-2">Developer Panel</h1>
+    <p class="!text-secondary-text-color font-roboto font-normal text-sm">Securely manage your API keys, webhooks, bank accounts, and activity logs from a single dashboard.</p>
+  </div>
+
+  <!--------main_common_module start -------->
+  <div class="flex gap-8">
+    <!--------left section start -------->
+    <div class="flex-1 border border-input-border-color rounded-xl bg-main-background-color">
+      <!-- Tab Navigation -->
+      <div class="flex gap-1 border-b border-input-border-color">
+        <button 
+          (click)="switchTab('api-settings')" 
+          class="px-6 py-3 font-roboto font-medium text-sm transition-colors border-b-2 relative"
+          [ngClass]="{
+            'text-common-blue-color border-common-blue-color bg-common-secondary-blue-color': selectedTab === 'api-settings',
+            'text-secondary-text-color border-transparent hover:text-main-text-color': selectedTab !== 'api-settings'
+          }"
+        >
+          <fa-icon [icon]="faGear" class="mr-2"></fa-icon>
+          API Settings
+        </button>
+        <button 
+          (click)="switchTab('webhooks')" 
+          class="px-6 py-3 font-roboto font-medium text-sm transition-colors border-b-2 relative"
+          [ngClass]="{
+            'text-common-blue-color border-common-blue-color bg-common-secondary-blue-color': selectedTab === 'webhooks',
+            'text-secondary-text-color border-transparent hover:text-main-text-color': selectedTab !== 'webhooks'
+          }"
+        >
+          <fa-icon [icon]="faWebhook" class="mr-2"></fa-icon>
+          Webhooks
+        </button>
+        <button 
+          (click)="switchTab('bank-accounts')" 
+          class="px-6 py-3 font-roboto font-medium text-sm transition-colors border-b-2 relative"
+          [ngClass]="{
+            'text-common-blue-color border-common-blue-color bg-common-secondary-blue-color': selectedTab === 'bank-accounts',
+            'text-secondary-text-color border-transparent hover:text-main-text-color': selectedTab !== 'bank-accounts'
+          }"
+        >
+          <fa-icon [icon]="faUniversity" class="mr-2"></fa-icon>
+          Bank Accounts
+        </button>
+      </div>
+
+      <!--------API Settings Tab start -------->
+      @if (selectedTab === 'api-settings') {
+        <div class="bg-main-background-color p-6">
+          <div class="mb-6">
+            <h2 class="!text-main-text-color font-roboto font-semibold text-xl mb-2">API Key</h2>
+            <p class="!text-secondary-text-color font-roboto font-normal text-sm">Use this key to authenticate your API requests. Keep it secure and never share it publicly.</p>
+          </div>
+          <div class="space-y-4">
+            <form [formGroup]="tokenApiForm" class="flex gap-3 items-center">
+              <div class="flex-1 relative">
+                <input
+                  type="text"
+                  class="w-full px-4 py-3 border border-input-border-color rounded-lg font-roboto font-normal text-sm !text-secondary-text-color bg-main-background-color focus:border-common-blue-color focus:outline-none transition-colors"
+                  [ngClass]="{ '!border-ottimate-color': copyCLass }"
+                  formControlName="token_api"
+                  #sharableLink
+                  [readonly]="true"
+                  placeholder="Your API key will appear here"
+                />
+                <div 
+                  class="absolute top-full left-0 mt-2 px-3 py-1 bg-ottimate-color text-white text-xs rounded-md shadow-md opacity-0 transition-all duration-300 transform translate-y-1 pointer-events-none z-10" 
+                  [ngClass]="{ '!opacity-100 !translate-y-0': copyCLass }" 
+                  #copied
+                >
+                  Copied!
+                  <div class="absolute -top-1 left-3 w-2 h-2 bg-ottimate-color transform rotate-45"></div>
+                </div>
+              </div>
+              <!-- Eye button to reveal/hide token -->
+              <button
+                type="button"
+                class="px-4 py-3 bg-secondary-background-color hover:bg-tertiary-background-color border border-input-border-color rounded-lg transition-colors"
+                (click)="revealToken()"
+                [disabled]="revealTokenLoading"
+                [class.opacity-50]="revealTokenLoading"
+                [class.cursor-not-allowed]="revealTokenLoading"
+                [matTooltip]="revealTokenLoading ? 'Loading...' : 'Click to reveal API key'"
+              >
+                <fa-icon
+                  [icon]="revealTokenLoading ? faSpinner : faEye"
+                  class="text-secondary-text-color"
+                  [animation]="revealTokenLoading ? 'spin' : undefined"
+                ></fa-icon>
+              </button>
+              
+              <!-- Copy button - always visible -->
+              <button
+                type="button"
+                class="px-4 py-3 bg-secondary-background-color hover:bg-tertiary-background-color border border-input-border-color rounded-lg transition-colors"
+                (click)="copyToClipboard(sharableLink, 'api')"
+                [disabled]="!isTokenRevealed"
+                [class.opacity-50]="!isTokenRevealed"
+                [matTooltip]="isTokenRevealed ? 'Copy to clipboard' : 'Reveal API key first to copy'"
+              >
+                <fa-icon
+                  [icon]="faCopyPaste"
+                  class="text-secondary-text-color"
+                  [ngClass]="{ '!text-ottimate-color': copyCLass }"
+                ></fa-icon>
+              </button>
+              <app-common-button-v35
+                customClasses="!h-[42px]"
+                (click)="newApi()"
+                type="list"
+                width="160px"
+                text="Generate New Key"
+                backGroundInput="var(--common-blue-color)"
+                [isAddIcon]="!generateBtn"
+                [icon]="faRotateArrow"
+                [loading]="generateBtn"
+              ></app-common-button-v35>
+            </form>
+          </div>
+
+          <!-- Connect with your partner sub-section -->
+          <div class="mt-8">
+            <div class="mb-6">
+              <h2 class="!text-main-text-color font-roboto font-semibold text-xl mb-2">Connect with your partner</h2>
+              <p class="!text-secondary-text-color font-roboto font-normal text-sm">Reveal and copy this key to securely connect your partner integration.</p>
+            </div>
+            <div class="space-y-4">
+              <form [formGroup]="tokenApiForm" class="flex gap-3 items-center">
+                <div class="flex-1 relative">
+                  <input
+                    type="text"
+                    class="w-full px-4 py-3 border border-input-border-color rounded-lg font-roboto font-normal text-sm !text-secondary-text-color bg-main-background-color focus:border-common-blue-color focus:outline-none transition-colors"
+                    [ngClass]="{ '!border-ottimate-color': partnerCopyClass }"
+                    formControlName="partner_token"
+                    #partnerLink
+                    [readonly]="true"
+                    placeholder="Your partner key will appear here"
+                  />
+                  <div
+                    class="absolute top-full left-0 mt-2 px-3 py-1 bg-ottimate-color text-white text-xs rounded-md shadow-md opacity-0 transition-all duration-300 transform translate-y-1 pointer-events-none z-10"
+                    [ngClass]="{ '!opacity-100 !translate-y-0': partnerCopyClass }"
+                  >
+                    Copied!
+                    <div class="absolute -top-1 left-3 w-2 h-2 bg-ottimate-color transform rotate-45"></div>
+                  </div>
+                </div>
+                <!-- Eye button to reveal/hide partner token -->
+                <button
+                  type="button"
+                  class="px-4 py-3 bg-secondary-background-color hover:bg-tertiary-background-color border border-input-border-color rounded-lg transition-colors"
+                  (click)="revealPartnerToken()"
+                  [disabled]="revealPartnerTokenLoading"
+                  [class.opacity-50]="revealPartnerTokenLoading"
+                  [class.cursor-not-allowed]="revealPartnerTokenLoading"
+                  [matTooltip]="revealPartnerTokenLoading ? 'Loading...' : 'Click to reveal partner key'"
+                >
+                  <fa-icon
+                    [icon]="revealPartnerTokenLoading ? faSpinner : faEye"
+                    class="text-secondary-text-color"
+                    [animation]="revealPartnerTokenLoading ? 'spin' : undefined"
+                  ></fa-icon>
+                </button>
+
+                <!-- Copy button -->
+                <button
+                  type="button"
+                  class="px-4 py-3 bg-secondary-background-color hover:bg-tertiary-background-color border border-input-border-color rounded-lg transition-colors"
+                  (click)="copyToClipboard(partnerLink, 'partner')"
+                  [disabled]="!isPartnerTokenRevealed"
+                  [class.opacity-50]="!isPartnerTokenRevealed"
+                  [matTooltip]="isPartnerTokenRevealed ? 'Copy to clipboard' : 'Reveal partner key first to copy'"
+                >
+                  <fa-icon
+                    [icon]="faCopyPaste"
+                    class="text-secondary-text-color"
+                    [ngClass]="{ '!text-ottimate-color': partnerCopyClass }"
+                  ></fa-icon>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 bg-common-secondary-yellow-color border border-common-yellow-color rounded-lg">
+            <div class="flex items-start gap-3">
+              <div class="flex-shrink-0 mt-0.5">
+                <fa-icon [icon]="faExclamationTriangle" class="text-common-yellow-color"></fa-icon>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-roboto font-medium text-sm text-common-yellow-color mb-1">Security Warning</h3>
+                <p class="font-roboto font-normal text-sm text-common-yellow-color">
+                  Creating a new API key will automatically revoke your current key. Please update all connected applications to avoid any service interruption.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+        <!--------Bank Accounts Tab start -------->
+        @if (selectedTab === 'bank-accounts') {
+          <div class="module_top_section p-8">
+            <div class="module_main_header pb-2">
+              <div class="header_title">
+                <h3 class="!text-main-text-color">Bank Accounts</h3>
+                <h6 class="!text-secondary-text-color text-sm">{{filteredActivityData?.length}} accounts found</h6>
+              </div>
+            </div>
+            <!-------- module_main_body start -------->
+            <div class="module_main_body">
+              <!-------- ocw_table_wrapper -------->
+              <div class="ocw_table_wrapper !border !border-input-border-color !rounded-lg">
+                <table class="ocw-table ocw-table-striped" [ngClass]="{ skelton: loadingSignal() }">
+                  <thead class="!bg-secondary-background-color !text-main-text-color">
+                    <tr>
+                      <td>Name</td>
+                      <td>Nick Name</td>
+                      <td>Bank Account ID</td>
+                      <td>Account Number</td>
+                      <td>Routing Number</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <input 
+                          type="text" 
+                          class="input_style w-full !text-secondary-text-color" 
+                          placeholder="Search name"
+                          [(ngModel)]="searchName"
+                          (input)="filterTable()"
+                        >
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          class="input_style w-full !text-secondary-text-color" 
+                          placeholder="Search nick name"
+                          [(ngModel)]="searchNickName"
+                          (input)="filterTable()"
+                        >
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          class="input_style w-full !text-secondary-text-color" 
+                          placeholder="Search ID"
+                          [(ngModel)]="searchId"
+                          (input)="filterTable()"
+                        >
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          class="input_style w-full !text-secondary-text-color" 
+                          placeholder="Search account"
+                          [(ngModel)]="searchAccount"
+                          (input)="filterTable()"
+                        >
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          class="input_style w-full !text-secondary-text-color" 
+                          placeholder="Search routing"
+                          [(ngModel)]="searchRouting"
+                          (input)="filterTable()"
+                        >
+                      </td>
+                    </tr>
+                  </thead>
+                  @if (filteredActivityData?.length > 0) {
+                    <tbody class="ocw_table_wrapper-body">
+                      @for (item of filteredActivityData; track item.id) {
+                        <tr
+                          class="api-datas text-secondary-text-color"
+                        >
+                          <td>{{ item.bankAccountName }}</td>
+                          <td>{{ item.bankAccountNickName }}</td>
+                          <td>{{ item.id }}</td>
+                          <td>{{ item.bankAccountNumber }}</td>
+                          <td>{{ item.bankRoutingNumber }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  } @else {
+                    <tbody class="ocw_table_wrapper-body">
+                      <tr>
+                        <div class="flex flex-col justify-center items-center h-[193px]">
+                          <img
+                            ngSrc="/assets/images/empty-box-v3.svg"
+                            alt="No data"
+                            width="120"
+                            height="100"
+                          />
+                          <span class="font-roboto font-normal text-main-text-color text-sm">
+                            Sorry, No Data Found!!
+                          </span>
+                        </div>
+                      </tr>
+                    </tbody>
+                  }
+                </table>
+              </div>
+            </div>
+          </div>
+        }
+
+      <!--------Webhooks Tab start -------->
+      @if (selectedTab === 'webhooks') {
+        <div class="bg-main-background-color p-6">
+          <div class="mb-6">
+            <h2 class="!text-main-text-color font-roboto font-semibold text-xl mb-2">Webhook Settings</h2>
+            <p class="!text-secondary-text-color font-roboto font-normal text-sm">Configure webhooks to receive real-time notifications about events in your account</p>
+          </div>
+
+          <!-- NEW/OLD tabs -->
+          <div class="flex gap-1 mb-6 bg-secondary-background-color p-1 rounded-lg inline-flex">
+            <button 
+              type="button" 
+              (click)="switchWebhookTab('new')"
+              class="px-4 py-2 rounded-md text-sm font-roboto font-medium transition-colors"
+              [ngClass]="{
+                'bg-main-background-color text-common-blue-color': selectedWebhook === 'new',
+                'text-secondary-text-color hover:text-main-text-color': selectedWebhook !== 'new'
+              }"
+            >
+              NEW
+            </button>
+            <button 
+              type="button" 
+              (click)="switchWebhookTab('old')"
+              class="px-4 py-2 rounded-md text-sm font-roboto font-medium transition-colors"
+              [ngClass]="{
+                'bg-main-background-color text-common-blue-color': selectedWebhook === 'old',
+                'text-secondary-text-color hover:text-main-text-color': selectedWebhook !== 'old'
+              }"
+            >
+              OLD
+            </button>
+          </div>
+
+          @if (selectedWebhook === "old") {
+            <div class="space-y-6">
+              <form [formGroup]="webhookForm" class="space-y-6" autocomplete="off">
+                <!-- Webhook URL -->
+                <div>
+                  <label class="block text-sm font-roboto font-medium !text-main-text-color mb-2">
+                    Webhook URL
+                    <button
+                      type="button"
+                      class="ml-2 text-secondary-text-color hover:text-main-text-color"
+                      matTooltip="Webhook url is the place where we will send status (Localhost and http URLs are not allowed)"
+                    >
+                      <fa-icon [icon]="faCircleQuestion" class="text-xs"></fa-icon>
+                    </button>
+                  </label>
+                  <div class="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      name="webhook-endpoint-url"
+                      class="flex-1 px-4 py-3 border border-input-border-color rounded-lg font-roboto font-normal text-sm !text-main-text-color bg-main-background-color focus:border-common-blue-color focus:outline-none transition-colors"
+                      formControlName="webhookUrl"
+                      placeholder="https://webhook.site/#!/c042a-42a2-405f-b238a018f5ef"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <app-control-message
+                    [control]="webhookForm.controls.webhookUrl"
+                    labelName="This field is required"
+                  ></app-control-message>
+                </div>
+
+                <!-- Secret Key -->
+                <div>
+                  <label class="block text-sm font-roboto font-medium !text-main-text-color mb-2">
+                    Secret Key
+                    <button
+                      type="button"
+                      class="ml-2 text-secondary-text-color hover:text-main-text-color"
+                      matTooltip="You can set any key to verify it is going from onlinecheckwriter"
+                    >
+                      <fa-icon [icon]="faCircleQuestion" class="text-xs"></fa-icon>
+                    </button>
+                  </label>
+                  <div class="relative">
+                    <input [type]="hideSecretKey() ? 'password' : 'text'"
+                      name="webhook-secret-key"
+                      class="w-full px-4 py-3 border border-input-border-color rounded-lg font-roboto font-normal text-sm !text-main-text-color bg-main-background-color focus:border-common-blue-color focus:outline-none transition-colors"
+                      formControlName="secrectKey" placeholder="Enter a secret key to verify webhook signatures" 
+                      autocomplete="new-password"
+                    />
+                    <fa-icon [icon]="hideSecretKey() ? faEye : faEyeSlash"
+                      class="text-xs absolute right-3 top-1/2 -translate-y-1/2 text-secondary-text-color cursor-pointer"
+                      (click)="hideSecretKey.set(!hideSecretKey())"></fa-icon>
+                  </div>
+                </div>
+
+                <!-- Status -->
+                <div class="flex items-center gap-2">
+                  <span class="block text-sm font-roboto font-medium !text-main-text-color">Enable Status</span>
+
+                  <div role="presentation" (click)="toggleStatus('old')" class="flex rounded-xl h-5 w-10 p-0.5 transition-all duration-1000" [ngClass]="[
+                    webhookForm.controls.webhookStatus.value === '1'
+                      ? 'justify-end bg-common-blue-color'
+                      : 'justify-start bg-input-border-color',
+                    webhookForm.controls.webhookStatus.disabled
+                      ? 'pointer-events-none'
+                      : 'cursor-pointer'
+                  ]">
+                    <div class="rounded-full h-4 w-4 transition-all duration-1000" [ngClass]="[
+                      webhookForm.controls.webhookStatus.value === '1'
+                        ? 'bg-main-background-color'
+                        : 'bg-main-text-color'
+                    ]"></div>
+                  </div>
+
+                </div>
+
+                <!-- Event Subscription -->
+                <div>
+                  <label class="block text-sm font-roboto font-medium !text-main-text-color mb-3">Select an event Update</label>
+                  <div class="space-y-3">
+                    <div class="flex items-center">
+                      <mat-checkbox
+                        [checked]="mailTrackChecked"
+                        (change)="onChecked($event, 1)"
+                        class="mr-3"
+                      >
+                      </mat-checkbox>
+                      <span class="font-roboto font-normal text-sm !text-main-text-color">Mail Tracking Status</span>
+                    </div>
+                    <div class="flex items-center">
+                      <mat-checkbox
+                        [checked]="checkStatusChecked"
+                        (change)="onChecked($event, 2)"
+                        class="mr-3"
+                      >
+                      </mat-checkbox>
+                      <span class="font-roboto font-normal text-sm !text-main-text-color">Send Check Status Update</span>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Update Button -->
+            <div class="flex justify-end mt-6">
+              <app-common-button-v35
+                customClasses="!h-[42px]"
+                (click)="WebUpdatebtn()"
+                type="list"
+                width="120px"
+                [isAddIcon]="true"
+                [icon]="faFloppyDisk"
+                text="Update"
+                backGroundInput="var(--common-blue-color)"
+                [loading]="btnDisable2"
+                [disabled]="
+                  (webhookForm.controls.mailTrack.value === '' &&
+                    webhookForm.controls.sendCheckUpdate.value === '') ||
+                  btnDisable2
+                "
+              ></app-common-button-v35>
+            </div>
+          }
+
+          @if (selectedWebhook === "new") {
+            <div class="space-y-6">
+              <form [formGroup]="getpaidWebhookForm" class="space-y-6" autocomplete="off">
+                <!-- Webhook URL -->
+                <div>
+                  <label class="block text-sm font-roboto font-medium !text-main-text-color mb-2">
+                    Webhook URL
+                    <button
+                      type="button"
+                      class="ml-2 text-secondary-text-color hover:text-main-text-color"
+                      matTooltip="Webhook url is the place where we will send status"
+                    >
+                      <fa-icon [icon]="faCircleQuestion" class="text-xs"></fa-icon>
+                    </button>
+                  </label>
+                  <div class="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      name="getpaid-webhook-endpoint-url"
+                      class="flex-1 px-4 py-3 border border-input-border-color rounded-lg font-roboto font-normal text-sm !text-main-text-color bg-main-background-color focus:border-common-blue-color focus:outline-none transition-colors"
+                      formControlName="getPaidWebhookurl"
+                      placeholder="https://webhook.site/#!/c042a-42a2-405f-b238a018f5ef"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <app-control-message
+                    [control]="getpaidWebhookForm.controls.getPaidWebhookurl"
+                    labelName="This field is required"
+                  ></app-control-message>
+                </div>
+
+                <!-- Secret Key -->
+                <div>
+                  <label class="block text-sm font-roboto font-medium !text-main-text-color mb-2">
+                    Secret Key
+                    <button
+                      type="button"
+                      class="ml-2 text-secondary-text-color hover:text-main-text-color"
+                      matTooltip="You can set any key to verify it is going from onlinecheckwriter"
+                    >
+                      <fa-icon [icon]="faCircleQuestion" class="text-xs"></fa-icon>
+                    </button>
+                  </label>
+                  <div class="relative">
+                    <input [type]="hideSecretKey() ? 'password' : 'text'"
+                      name="getpaid-webhook-secret-key"
+                      class="w-full px-4 py-3 border border-input-border-color rounded-lg font-roboto font-normal text-sm !text-main-text-color bg-main-background-color focus:border-common-blue-color focus:outline-none transition-colors"
+                      formControlName="getPaidSecret" placeholder="Enter a secret key to verify webhook signatures" 
+                      autocomplete="new-password"
+                    />
+                    <fa-icon [icon]="hideSecretKey() ? faEye : faEyeSlash"
+                      class="text-xs absolute right-3 top-1/2 -translate-y-1/2 text-secondary-text-color cursor-pointer"
+                      (click)="hideSecretKey.set(!hideSecretKey())"></fa-icon>
+                  </div>
+                </div>
+
+                <!-- Status -->
+                <div class="flex items-center gap-2">
+                  <span class="block text-sm font-roboto font-medium !text-main-text-color">Enable Status</span>
+
+                  <div role="presentation" (click)="toggleStatus('new')" class="flex rounded-xl h-5 w-10 p-0.5 transition-all duration-1000" [ngClass]="[
+                    getpaidWebhookForm.controls.getPaidStatus.value === '1'
+                      ? 'justify-end bg-common-blue-color'
+                      : 'justify-start bg-input-border-color',
+                    getpaidWebhookForm.controls.getPaidStatus.disabled
+                      ? 'pointer-events-none'
+                      : 'cursor-pointer'
+                  ]">
+                    <div class="rounded-full h-4 w-4 transition-all duration-1000" [ngClass]="[
+                      getpaidWebhookForm.controls.getPaidStatus.value === '1'
+                        ? 'bg-main-background-color'
+                        : 'bg-main-text-color'
+                    ]"></div>
+                  </div>
+                </div>
+
+              </form>
+              <!-- Events Subscription -->
+              <div>
+                <label class="block text-sm font-roboto font-medium !text-main-text-color mb-1">
+                  Select an event Update
+                  <button
+                    type="button"
+                    class="ml-2 text-secondary-text-color hover:text-main-text-color"
+                    matTooltip="You can set the events you want to receive"
+                  >
+                    <fa-icon [icon]="faCircleQuestion" class="text-xs"></fa-icon>
+                  </button>
+                </label>
+                @if(!loadingSignal()) {
+                <h6 class="!text-secondary-text-color font-roboto font-normal text-sm pb-3">{{selectedEvents.length}} events selected</h6>
+                }
+                <ng-select 
+                  [items]="webhookEvents"
+                  [multiple]="true"
+                  [closeOnSelect]="false"
+                  [placeholder]="'Select your preferred events from the list to receive updates.'"
+                  [(ngModel)]="selectedEvents"
+                  class="ng-dropdown-panel-v35 text-sm height-5"
+                  [searchable]="false"
+                  [dropdownPosition]="'top'"
+                >
+                    <ng-option *ngFor="let item of webhookEvents" [value]="item">
+                      <ng-template 
+                        ng-option-tmp 
+                        let-item="item"
+                      >
+                        <div class="flex items-center justify-between w-full">
+                          <div class="flex items-center">
+                            <input 
+                              type="checkbox" 
+                              [ngModel]="checkEventSelected(item)"
+                              class="mr-3"
+                            />
+                            <span class="font-roboto font-normal text-sm !text-main-text-color">{{ item }}</span>
+                          </div>
+                          <button
+                            type="button" 
+                            class="ml-2 text-secondary-text-color hover:text-main-text-color"
+                            matTooltip="This event will be generated when getpaid by check is {{
+                              item === 'gpbf.check.created'
+                                ? 'created'
+                                : 'updated'
+                            }}"
+                            *ngIf="
+                              item === 'gpbf.check.created' ||
+                              item === 'gpbf.check.updated'
+                            "
+                            (click)="$event.stopPropagation()"
+                          >
+                            <fa-icon [icon]="faCircleQuestion" class="text-xs"></fa-icon>
+                          </button>
+                        </div>
+                      </ng-template>
+                    </ng-option>
+                    <ng-template ng-multi-label-tmp>
+                      @for (item of selectedEvents; track item; let index = $index) {
+                        <div class="ng-value px-1">
+                          <span class="ng-value-label font-roboto">
+                            {{ item }}
+                          </span>
+                        </div>
+                        <span class="ng-value-icon right mr-2 mb-1" aria-hidden="true" (click)="removeEventFromSelection(item)">×</span>
+                      }
+                    </ng-template>
+                  </ng-select>
+                </div>
+
+              <!-- Update Button -->
+              <div class="flex justify-end mt-6">
+                <app-common-button-v35
+                  [disabled]="selectedEvents.length === 0 || btnDisable"
+                  customClasses="!h-[42px]"
+                  type="list"
+                  width="120px"
+                  [isAddIcon]="true"
+                  [icon]="faFloppyDisk"
+                  text="Update"
+                  backGroundInput="var(--common-blue-color)"
+                  [loading]="btnDisable"
+                  (click)="formWebhookUpdateBtn()"
+              ></app-common-button-v35>
+              </div>
+            </div>
+          }
+        </div>
+      }
+  </div>
+    <!-------- right section start -------->
+    <div class="w-[300px] flex-shrink-0">
+      <!-- Support & Resources Card -->
+      <div class="bg-main-background-color border border-input-border-color rounded-xl shadow-sm p-6 relative">
+      <div class="mb-6">
+        <h3 class="!text-main-text-color font-roboto font-medium text-lg mb-0">Support & Resources</h3>
+      </div>
+      
+      <div class="space-y-5">
+        <div class="flex items-start gap-4" appWhiteLabel shownIf="isDocumentationShown">
+          <div class="w-9 h-9 bg-common-secondary-blue-color rounded-full flex items-center justify-center flex-shrink-0">
+            <fa-icon [icon]="faBookBlank" class="text-common-blue-color text-medium"></fa-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="!text-main-text-color font-roboto font-medium text-base leading-6 mb-1">Documentation</h4>
+            <p class="text-common-blue-color font-roboto font-normal text-sm">
+              <a
+                [href]="staticWhiteLabelConditions.apiDocumentation"
+                target="_blank"
+                rel="noopener"
+                class="hover:underline"
+              >API Documentation</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4" appWhiteLabel shownIf="isWebhookDocumentationShown">
+          <div class="w-9 h-9 bg-common-secondary-violet-color rounded-full flex items-center justify-center flex-shrink-0">
+            <fa-icon [icon]="faWebhook" class="text-common-violet-color text-medium"></fa-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="!text-main-text-color font-roboto font-medium text-base leading-6 mb-1">Webhook Documentation</h4>
+            <p class="text-common-blue-color font-roboto font-normal text-sm">
+              <a
+                href="https://support.onlinecheckwriter.com/portal/en/kb/articles/how-to-enable-webhook?_ga=2.138098096.1293115439.1644816732-43713359.1639371874"
+                target="_blank"
+                class="hover:underline"
+              >View Documentation</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-9 h-9 bg-common-secondary-yellow-color rounded-full flex items-center justify-center flex-shrink-0">
+            <fa-icon [icon]="faFileText" class="text-common-yellow-color text-medium"></fa-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="!text-main-text-color font-roboto font-medium text-base leading-6 mb-1">API Log</h4>
+            <p class="text-common-blue-color font-roboto font-normal text-sm">
+              <a routerLink="../api-log" class="hover:underline">	View API Logs</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-9 h-9 bg-secondary-background-color rounded-full flex items-center justify-center flex-shrink-0">
+            <fa-icon [icon]="faHistory" class="text-secondary-text-color text-medium"></fa-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="!text-main-text-color font-roboto font-medium text-base leading-6 mb-1">Webhook Logs</h4>
+            <p class="text-common-blue-color font-roboto font-normal text-sm">
+              <a routerLink="../webhook-events/" class="hover:underline">View Webhook History</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Icons at bottom -->
+      <div
+          class="absolute min-w-[120px] overflow-visible -right-[170px] top-[-140px]"
+        >
+          <div class="flex flex-col justify-center">
+            <a
+              class="group relative mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center shadow-xl border border-main-background-color flex items-center justify-center"
+              appWhiteLabel
+              hiddenIf="hideLiveChat"
+            >
+              <fa-icon
+                (click)="goToLiveChat()"
+                class="text-common-blue-color text-base cursor-pointer"
+                [icon]="faMessage"
+              ></fa-icon>
+              <div
+                class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !right-[50px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[70px]"
+              >
+                <span class="text-xs font-inter !text-common-blue-color pl-2"
+                  >Live Chat</span
+                >
+              </div>
+            </a>
+            <a
+              class="group relative mt-2.5 bg-secondary-background-color w-8 h-8 flex items-center justify-center rounded-full text-center shadow-xl border border-main-background-color"
+              [href]="
+                'mailto:' + staticWhiteLabelConditions.customerSupportEmail
+              "
+            >
+              <fa-icon
+                class="text-common-blue-color text-base cursor-pointer"
+                [icon]="faEnvelope"
+              ></fa-icon>
+              <div
+                class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !right-[50px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[200px]"
+              >
+                <span class="text-xs font-inter !text-common-blue-color pl-2">
+                  {{ staticWhiteLabelConditions.customerSupportEmail }}</span
+                >
+              </div>
+            </a>
+            @if (staticWhiteLabelConditions.customerSupportNo) {
+              <a
+                [href]="'tel:' + staticWhiteLabelConditions.customerSupportNo"
+                class="group relative flex justify-center items-center mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center border border-main-background-color"
+              >
+                <fa-icon
+                  class="text-common-blue-color text-base cursor-pointerr"
+                  [icon]="faHeadSet"
+                ></fa-icon>
+                <div
+                  class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !right-[50px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[145px]"
+                >
+                  <span class="text-xs font-inter !text-common-blue-color pl-2">
+                    Call at
+                    {{ staticWhiteLabelConditions.customerSupportNo }}</span
+                  >
+                </div>
+              </a>
+            } @else {
+              <a
+                [href]="staticWhiteLabelConditions.helpWebsite"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group relative flex justify-center items-center mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center shadow-xl border border-main-background-color"
+              >
+                <fa-icon
+                  class="text-common-blue-color text-base cursor-pointer"
+                  [icon]="faHeadSet"
+                ></fa-icon>
+                <div
+                  class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !right-[50px] bg-main-background-color group-hover:opacity-100 top rounded-md w-[145px]"
+                >
+                  <span class="text-xs font-inter !text-common-blue-color pl-2">
+                    Contact Us</span
+                  >
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+    </div>
+  </div>
+</div>

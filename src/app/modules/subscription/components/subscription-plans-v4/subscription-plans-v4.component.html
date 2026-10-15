@@ -1,0 +1,596 @@
+<div class="zm-pricing">
+  <!-- In-app controls (hidden in /outside public mode) -->
+  @if (!isOutside) {
+    <div class="zm-controls">
+      <div
+        class="zm-control-btn"
+        matTooltip="Go Back"
+        matTooltipClass="override_tooltip"
+        (click)="goBack()"
+        role="presentation"
+      >
+        <fa-icon [icon]="['fas', 'arrow-left']" />
+      </div>
+      <div class="zm-controls-right">
+        <app-v4-help-button />
+        <div
+          class="zm-control-btn"
+          matTooltip="Close"
+          matTooltipClass="override_tooltip"
+        >
+          <button (click)="onClose()" aria-label="Close">
+            <fa-icon [icon]="['fas', 'xmark']" />
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================== HERO ===================== -->
+  <section class="zm-hero">
+    <h1>Choose the <span class="accent">Best Plan</span> for Your Business</h1>
+    <p class="lead">
+      Transparent, pay-as-you-go pricing built to scale — no hidden fees, no
+      surprises. Find the plan that works best for your business and update it
+      anytime.
+    </p>
+  </section>
+
+  <!-- ===================== PLANS ===================== -->
+  <section class="zm-plans-section" #plansSection>
+    <div class="zm-wrap">
+      @if (!plansReady) {
+        <div class="zm-plans-loading" aria-busy="true" aria-live="polite">
+          <div class="sk-card h-full"></div>
+          <div class="sk-card sk-card--lg"></div>
+        </div>
+      } @else {
+      <div
+        class="zm-plans"
+        [ngClass]="{
+          'is-single': !showPayAsYouGoCard,
+          'is-skeleton': autoClickOnPlan
+        }"
+      >
+        <!-- ---------- PAY AS YOU GO ---------- -->
+        @if (showPayAsYouGoCard) {
+          <div
+            class="zm-card"
+            [ngClass]="{
+              'is-current': currentPlan === 'pay-as-you-go-monthly-v3',
+              skelton: !availablePlans.length && !isOutside
+            }"
+          >
+            <div class="card-head">
+              <span class="card-badge">Most Popular</span>
+              <p class="plan-tag">Self-serve</p>
+              <h2 class="plan-name">Pay As You Go</h2>
+              <div class="pricebox">
+                <div class="price">$0.00</div>
+                <div class="price-sub">
+                  Your Minimum Recharge <strong>$30.00</strong>
+                  <span
+                    class="info"
+                    matTooltip="An Initial recharge of $30.00 will be applied to your transaction fees & it will never expire."
+                    matTooltipClass="override_tooltip"
+                    >i</span
+                  >
+                </div>
+              </div>
+              <button
+                class="btn btn-soft btn-block btn-choose"
+                [disabled]="currentPlan === 'pay-as-you-go-monthly-v3'"
+                (click)="choosePlan('pay-as-you-go-monthly-v3')"
+              >
+                {{
+                  loadigContent
+                    ? "Loading..."
+                    : currentPlan === "pay-as-you-go-monthly-v3"
+                      ? "Current Plan"
+                      : "Choose Plan"
+                }}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>
+              </button>
+            </div>
+            <div class="feewrap">
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['pay-as-you-go-monthly-v3'].fromCard,
+                  icon: true
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['pay-as-you-go-monthly-v3'].fromWallet
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['pay-as-you-go-monthly-v3'].fromBank
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['pay-as-you-go-monthly-v3'].features
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['pay-as-you-go-monthly-v3'].checkMailing
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['pay-as-you-go-monthly-v3']
+                    .internationalMailing
+                }"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- ---------- ENTERPRISE (featured) ---------- -->
+        <div
+          class="zm-card zm-card--dark"
+          [ngClass]="{
+            'is-current':
+              currentPlan &&
+              (currentPlan === enterPriseMonthlyPlanCode ||
+                currentPlan === enterPriseYearlyPlanCode) &&
+              enterPrisePlan.length === 1,
+            skelton: !availablePlans.length && !isOutside
+          }"
+        >
+          <div class="card-head">
+            <span class="card-badge">Best Value</span>
+            <p class="plan-tag">Built for scale</p>
+            <h2 class="plan-name">Enterprise</h2>
+
+            <div class="pricebox pricebox--ent">
+              @if (isEnterpriseLoading) {
+                <div class="ent-loader" aria-busy="true" aria-live="polite">
+                  <span class="ent-sk ent-sk-price"></span>
+                  <span class="ent-sk ent-sk-sub"></span>
+                  <span class="ent-sk ent-sk-phone"></span>
+                </div>
+              } @else if (isCustomEnterprise) {
+                <div class="ent-price">Volume / Custom Pricing</div>
+                <div class="ent-sub">
+                  Customizable pricing according to your needs
+                </div>
+                <a class="ent-phone" href="tel:{{ supportNo }}">{{
+                  supportNo
+                }}</a>
+              } @else if (enterPrisePlan.length === 2) {
+                <div class="ent-price-grid">
+                  <div class="ent-price-col">
+                    <div class="ent-price">{{
+                      enterPrisePlan?.[0]?.planPrice | currency
+                    }}</div>
+                    <div class="ent-per">
+                      <span class="ent-per-bar"></span>
+                      <span class="ent-per-lbl"
+                        >per
+                        {{
+                          enterPrisePlan?.[0]?.billIntervalUnit === "months"
+                            ? "Month"
+                            : "Year"
+                        }}</span
+                      >
+                    </div>
+                  </div>
+                  <div class="ent-price-col">
+                    @if (savedAmount > 0) {
+                      <div class="ent-strike">{{
+                        enterPrisePlan?.[0]?.planPrice * 12 | currency
+                      }}</div>
+                      <div class="ent-save">
+                        You Will Save {{ savedAmount | currency }}
+                      </div>
+                    }
+                    <div class="ent-price">{{
+                      enterPrisePlan?.[1]?.planCategoryType === 4 || isOutside
+                        ? "Volume / Custom Pricing"
+                        : (enterPrisePlan?.[1]?.planPrice | currency)
+                    }}</div>
+                    <div class="ent-per">
+                      <span class="ent-per-bar"></span>
+                      <span class="ent-per-lbl"
+                        >per
+                        {{
+                          enterPrisePlan?.[1]?.billIntervalUnit === "months"
+                            ? "Month"
+                            : "Year"
+                        }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="ent-price">
+                  @if (isMonthlyPlan()) {
+                    {{ enterPrisePlan?.[0]?.planPrice | currency }}/Month
+                  } @else if (isYearlyPlan()) {
+                    {{ enterPrisePlan?.[0]?.planPrice | currency }}/Year
+                  } @else {
+                    {{ enterPrisePlan?.[0]?.planPrice | currency }}
+                  }
+                </div>
+                <div class="ent-sub">
+                  Customizable pricing according to your needs
+                </div>
+                <a class="ent-phone" href="tel:{{ supportNo }}">{{
+                  supportNo
+                }}</a>
+              }
+            </div>
+
+            @if (isEnterpriseLoading) {
+              <div class="ent-actions ent-actions--loading">
+                <span class="ent-sk ent-sk-btn"></span>
+              </div>
+            } @else if (isCustomEnterprise) {
+              <div class="ent-actions">
+                <button class="btn btn-green" (click)="onBookNow()">
+                  Book a Time Now
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>
+                </button>
+                @for (item of supportOptions; track item.id) {
+                  <button
+                    class="btn btn-mini btn-outline-dark"
+                    (click)="onSupportClick(item.id)"
+                  >
+                    <fa-icon [icon]="item.icon" />
+                    <span>{{ item.name }}</span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <div
+                class="ent-choose"
+                [ngClass]="{ 'is-duo': enterPrisePlan.length === 2 }"
+              >
+                @if (enterPrisePlan.length === 2) {
+                  <button
+                    class="btn btn-green"
+                    [disabled]="currentPlan === enterPriseMonthlyPlanCode"
+                    (click)="choosePlan(enterPriseMonthlyPlanCode)"
+                  >
+                    {{
+                      currentPlan === enterPriseMonthlyPlanCode
+                        ? "Current Plan"
+                        : "Choose Plan"
+                    }}
+                  </button>
+                  <button
+                    class="btn btn-green"
+                    [disabled]="currentPlan === enterPriseYearlyPlanCode"
+                    (click)="choosePlan(enterPriseYearlyPlanCode)"
+                  >
+                    {{
+                      currentPlan === enterPriseYearlyPlanCode
+                        ? "Current Plan"
+                        : "Choose Plan"
+                    }}
+                  </button>
+                } @else {
+                  <button
+                    class="btn btn-green btn-block"
+                    [disabled]="currentPlan === enterPrisePlan[0]?.planCode"
+                    (click)="choosePlan(enterPrisePlan[0]?.planCode)"
+                  >
+                    {{
+                      currentPlan === enterPrisePlan[0]?.planCode
+                        ? "Current Plan"
+                        : "Choose Plan"
+                    }}
+                  </button>
+                }
+              </div>
+
+              @if (enterPrisePlan.length === 2) {
+                <div class="ent-custom-line">
+                  <span>Customizable pricing according to your needs</span>
+                  <a href="tel:{{ supportNo }}">{{ supportNo }}</a>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="ent-lower">
+            <div class="feewrap">
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['enterprise-custom-monthly-v2'].fromCard,
+                  icon: true
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['enterprise-custom-monthly-v2'].fromWallet
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['enterprise-custom-monthly-v2'].fromBank
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['enterprise-custom-monthly-v2'].features
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['enterprise-custom-monthly-v2'].checkMailing
+                }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="feeSection"
+                [ngTemplateOutletContext]="{
+                  data: planFeatures['enterprise-custom-monthly-v2']
+                    .internationalMailing
+                }"
+              />
+            </div>
+            <aside class="benefits">
+              <h3>Additional Benefits</h3>
+              @for (item of additionalBenefits; track item.title) {
+                <div class="benefit">
+                  <div class="benefit-head">
+                    <span class="benefit-ico">
+                      <fa-icon [icon]="item.faIcon" />
+                    </span>
+                    <span class="benefit-title">{{ item.title }}</span>
+                  </div>
+                  <p>{{ item.desc }}</p>
+                </div>
+              }
+            </aside>
+          </div>
+        </div>
+      </div>
+      }
+
+      <div
+        class="note"
+        [ngClass]="{ 'note--single': plansReady && !showPayAsYouGoCard }"
+      >
+        * The minimum charge for ACH transactions is $0.50, unless you have
+        special pricing.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STAT BAND ===================== -->
+  <section class="zm-statband">
+    <div class="statband-inner">
+      <h2>Trusted by Businesses Nationwide</h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num">$100B+</div>
+          <div class="stat-lbl">Processed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">1M+</div>
+          <div class="stat-lbl">Businesses</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">22K+</div>
+          <div class="stat-lbl">Bank Integrations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">0%</div>
+          <div class="stat-lbl">Fees on Eligible Payments*</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TRUST ===================== -->
+  <section class="zm-trust">
+    <div class="trust-grid">
+      <div class="trust-col">
+        <div class="badge-60"><b>60</b><span>DAYS</span></div>
+        <h4>Money Back Guarantee</h4>
+        <p>
+          Once you join as a paid member and find out you are not into it, Zil
+          Money offers a 60-day money-back guarantee.
+        </p>
+      </div>
+      <div class="trust-col">
+        <div class="cards">
+          <span class="pc visa">VISA</span>
+          <span class="pc"><span class="mc"><i></i><i></i></span></span>
+          <span class="pc amex">AMEX</span>
+          <span class="pc disc">DISCOVER</span>
+        </div>
+        <h4>Accepted Payment Methods</h4>
+        <p>We provide you the facility to pay using the most secured ways.</p>
+      </div>
+      <div class="trust-col">
+        <div class="badge-ssl">SSL</div>
+        <h4>SSL Secure Payments</h4>
+        <p>
+          Our system uses SSL encryption technology, the same technology banks
+          use to protect sensitive information.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CTA FOOTER ===================== -->
+  <section class="zm-cta">
+    <div class="cta-inner">
+      <div class="cta-copy">
+        <h2>One platform for every payment. No monthly subscription.</h2>
+        <p class="cta-lead">
+          Over 1 million businesses pay vendors, payroll, and bills from a single dashboard — by check, ACH, wire, virtual card, or credit card — and pay only for the transactions they send.
+        </p>
+        <ul class="cta-checks">
+          <li>
+            <span class="tick"><fa-icon [icon]="faCheck" /></span>Pay by credit card even where cards aren't accepted, and keep your card's rewards
+          </li>
+          <li>
+            <span class="tick"><fa-icon [icon]="faCheck" /></span>Print, email, or mail checks in one click via USPS or FedEx
+          </li>
+          <li>
+            <span class="tick"><fa-icon [icon]="faCheck" /></span>ACH, same-day ACH, and domestic or international wires
+          </li>
+        </ul>
+        <div class="cta-actions">
+          <button class="btn btn-green" (click)="scrollToPlans()">
+            Get Started Free
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>
+          </button>
+          <button class="btn btn-outline-dark" (click)="onCalculateFee()">
+            Calculate Your Savings
+          </button>
+        </div>
+        <div class="cta-meta">
+          No credit card required · 5-minute setup · Cancel anytime
+        </div>
+        <p class="cta-disclaimer">
+          *3.00% APY on average monthly wallet balances of $10,000+; 1.00% APY
+          on $1,000–$9,999. APY applies to the full qualifying balance and is
+          subject to change.
+        </p>
+      </div>
+      <div class="cta-media">
+        <img
+          class="cta-media-img"
+          src="assets/images/subscription/lap.webp"
+          alt="Business owner managing payments on a laptop"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LEGAL ===================== -->
+  <div class="legal-disclaimer">
+    {{
+      isOlliePay
+        ? "OlliePay"
+        : fromType === "zm"
+          ? "Zil Money"
+          : "OnlineCheckWriter.com - Powered by Zil Money"
+    }}
+    is a financial technology company, not a bank.
+    {{ fromType === "zm" ? "Zil Money" : "OnlineCheckWriter.com" }} offers
+    banking services through partnerships with FDIC member banks Texas National
+    Bank. Customers are not directly insured by the FDIC — but through the
+    pass-through coverage of our partner banks and is conditional on proper
+    titling, record-keeping, and custodial arrangements.
+  </div>
+</div>
+
+<!-- ===================== FEE SECTION TEMPLATE ===================== -->
+<ng-template #feeSection let-data="data" let-icon="icon">
+  @if (icon) {
+    <div class="fee-head">
+      <div class="fee-title">
+        <span class="dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="5" width="20" height="14" rx="2.5" /><path d="M2 10h20" /></svg>
+        </span>
+        <span class="fee-name"
+          >{{ data.title }}
+          @if (data.tooltip) {
+            <span
+              class="info"
+              [matTooltip]="data.tooltip"
+              matTooltipClass="override_tooltip"
+              >i</span
+            >
+          }
+        </span>
+      </div>
+      @if (data.calcuator) {
+        <span
+          class="calc"
+          role="presentation"
+          (click)="onCalculateFee()"
+          matTooltip="See how much you can save by using your credit card to pay anyone"
+          matTooltipClass="override_tooltip"
+          >Calculate Savings</span
+        >
+      }
+    </div>
+  } @else {
+    <div class="sec-head">
+      {{ data.title }}
+      @if (data.tooltip) {
+        <span
+          class="info"
+          [matTooltip]="data.tooltip"
+          matTooltipClass="override_tooltip"
+          >i</span
+        >
+      }
+    </div>
+  }
+
+  @for (value of data.values; track value.name; let first = $first) {
+    <div class="fee-row" [ngClass]="{ first: first, tall: value.desc }">
+      <span class="fee-label">
+        <span class="fl-main">
+          <span [innerHTML]="value.name"></span>
+          @if (value.flag) {
+            <img
+              class="flag-img"
+              height="14"
+              width="20"
+              [ngSrc]="value.flag"
+              alt=""
+            />
+          }
+          @if (value.tooltip) {
+            <span
+              class="info"
+              [matTooltip]="value.tooltip"
+              matTooltipClass="override_tooltip"
+              >i</span
+            >
+          }
+        </span>
+        @if (value.desc) {
+          <span class="fee-sub">{{ value.desc }}</span>
+        }
+      </span>
+
+      <span class="fee-val">
+        @switch (value.type) {
+          @case ("check") {
+            <span class="check" [ngClass]="{ off: value.value !== true }">
+              <fa-icon [icon]="faCheck" />
+            </span>
+          }
+          @case ("minMax") {
+            <span><span class="pct">{{ value.min }}</span> or Max {{ value.max }}</span>
+          }
+          @case ("as-low-as") {
+            <span class="as-low"
+              ><span class="as-low-lbl">As low as</span> {{ value.value }}</span
+            >
+          }
+          @case ("italic") {
+            <span class="vcp" [innerHTML]="value.value"></span>
+          }
+          @default {
+            <span [ngClass]="{ free: value.color }" [innerHTML]="value.value"></span>
+          }
+        }
+      </span>
+    </div>
+  }
+</ng-template>

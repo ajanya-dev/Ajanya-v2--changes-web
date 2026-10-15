@@ -1,0 +1,198 @@
+<div class="flex flex-col main-body">
+  <div class="flex import-settings">
+    <div class="font-semibold">Import From FreshBooks</div>
+    <div
+      class="flex items-center font-semibold w-min pl-2 pr-2 pt-1 pb-1 cursor-pointer"
+      matTooltip="More Settings"
+      (click)="goToThirdpartyHome()"
+    >
+      <i class="fa-solid fa-gear"></i>
+    </div>
+  </div>
+  <div class="data_spinner" [ngClass]="{ data_fetched: dataLoaded }"></div>
+  <div
+    class="grow disconnected-banner flex flex-col justify-center items-center"
+    *ngIf="!isConnected && dataLoaded"
+  >
+    <section
+      class="top-box mt-6 border-solid border-2 border-input-border-color relative"
+    >
+      <div class="logo-bg"></div>
+      <div class="top-twobox">
+        <div class="top-box-centr main-bx-padding">
+          <p class="main-p">FreshBooks</p>
+          <div class="status-color">
+            <p><span>Status:</span><span class="red-clr">Disconnected</span></p>
+          </div>
+        </div>
+        <div>
+          <button
+            class="ocw-btn ocw-btn-gradient submit-btn mr-4"
+            (click)="goToThirdpartyHome()"
+          >
+            Integrate FreshBooks
+          </button>
+        </div>
+      </div>
+      <div class="top-box-img"></div>
+      <div class="top-box-img-2"></div>
+      <div class="logo-sec">
+        <img
+          src="../../../../../assets/images/integration/freshbook.png"
+          alt="FreshBook logo"
+        />
+      </div>
+    </section>
+  </div>
+  <div
+    class="grid grid-cols-2 text-sm py-4 grow"
+    [formGroup]="freshbookForm"
+    *ngIf="isConnected && dataLoaded"
+  >
+    <!-- left section start-->
+    <div class="flex flex-col border border-r-0 rounded-sm p-4">
+      <div class="search_box">
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          data-prefix="far"
+          data-icon="search"
+          class="svg-inline--fa fa-search fa-w-16 ml-2"
+          role="img"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 512 512"
+        >
+          <path
+            fill="currentColor"
+            d="M508.5 468.9L387.1 347.5c-2.3-2.3-5.3-3.5-8.5-3.5h-13.2c31.5-36.5 50.6-84 50.6-136C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c52 0 99.5-19.1 136-50.6v13.2c0 3.2 1.3 6.2 3.5 8.5l121.4 121.4c4.7 4.7 12.3 4.7 17 0l22.6-22.6c4.7-4.7 4.7-12.3 0-17zM208 368c-88.4 0-160-71.6-160-160S119.6 48 208 48s160 71.6 160 160-71.6 160-160 160z"
+          ></path>
+        </svg>
+        <input
+          type="search"
+          class="input_style"
+          [(ngModel)]="searchText"
+          (ngModelChange)="onSearchCompany()"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="Search company.."
+        />
+      </div>
+
+      <div class="mt-5">
+        <div class="flex flex-wrap gap-2 flex-col import_from_wrapper">
+          <span class="importFrom">
+            <mat-checkbox
+              class="setting_heading_main"
+              [checked]="allChecked"
+              [indeterminate]="someComplete()"
+              (change)="setAll($event.checked); changeImportFrom()"
+            >
+              {{ importFrom.name }}
+            </mat-checkbox>
+          </span>
+          <span
+            class="importFrom_sub_check_box"
+            [ngClass]="
+              dataLoaded ? 'loader_white_bg_end' : 'loader_white_bg_start'
+            "
+          >
+            <div class="company_section">
+              <ul>
+                <li *ngFor="let list of companyData; let i = index">
+                  <mat-checkbox
+                    [(ngModel)]="list.checked"
+                    [name]="list.value"
+                    [ngModelOptions]="{ standalone: true }"
+                    checked="true"
+                    (ngModelChange)="updateAllComplete()"
+                    (change)="changeImportFrom()"
+                    [matTooltip]="tooltip(list.name)"
+                  >
+                    {{ list.name }}
+                  </mat-checkbox>
+                </li>
+              </ul>
+            </div>
+          </span>
+
+          <ng-container>
+            <div
+              class="data_spinner"
+              [ngClass]="{ data_fetched: dataLoaded }"
+            ></div>
+          </ng-container>
+
+          <ng-container *ngIf="companyData?.length == 0">
+            <span class="no_data"> No Company Found.</span>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+    <!-- left section end -->
+
+    <!-- right section start -->
+    <div class="rightbox flex flex-col gap-6">
+      <span class="setting_heading">Filter</span>
+      <!-- Time span start -->
+
+      <div cala>
+        <span class="setting_heading">Time Span</span>
+        <mat-radio-group
+          aria-labelledby="mat-radio-group-label"
+          formControlName="importTime"
+          class="mat-radio-group grid grid-cols-2 radiobtn"
+        >
+          <mat-radio-button
+            class="mat-radio-button"
+            *ngFor="let time of importTime"
+            [value]="time.value"
+          >
+            {{ time.name }}
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+      <!-- Time span end -->
+      <div class="text-sm">
+        <span class="setting_heading">Download Filter</span>
+        <mat-radio-group
+          aria-labelledby="mat-radio-group-label"
+          formControlName="importStatus"
+          class="mat-radio-group grid radiobtn"
+        >
+          <mat-radio-button
+            class="mat-radio-button"
+            *ngFor="let radio of downloadFilter"
+            [checked]="radio.value === 'markAsPrintLater'"
+            [value]="radio.value"
+          >
+            {{ radio.name }}
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+    </div>
+    <!-- right section end -->
+  </div>
+
+  <!-- footer -->
+  <div class="flex justify-end pt-4" *ngIf="isConnected && dataLoaded">
+    <!-- <a routerLink="/manage/thirdparty_app/freshbooks/home" (click)="closeDialog()">
+        <button class="ocw-btn ocw-btn-modal-light-blue add_btn">
+          Add More Company
+        </button>
+      </a> -->
+    <button
+      class="ocw-btn ocw-btn-modal-bordered cancel-btn px-2 cursor-pointer"
+      (click)="back()"
+    >
+      <span> Cancel</span>
+    </button>
+    <button
+      class="ocw-btn ocw-btn-modal-blue submit-btn ml-2"
+      (click)="onSubmit()"
+    >
+      <ng-container *ngIf="loading">
+        <span class="loadingSpinner"></span>
+      </ng-container>
+      <span> {{ !loading ? "Import" : "Importing" }}</span>
+    </button>
+  </div>
+</div>

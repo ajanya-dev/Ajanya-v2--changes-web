@@ -1,0 +1,214 @@
+<div
+  class="flex flex-col rounded-2xl overflow-hidden max-h-[90vh] bg-v4-main-background-color font-peridot"
+>
+  <!-- Header -->
+  <div
+    class="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+  >
+    <h2 class="text-lg lg:text-xl font-semibold text-v4-main-text-color m-0">
+      {{ editMode() ? 'Edit Multi-Level Approval Rule' : 'Add Multi-Level Approval Rule' }}
+    </h2>
+    <button
+      type="button"
+      class="p-2 rounded-xl hover:bg-v4-main-background-color transition-colors"
+      (click)="cancel()"
+      aria-label="Close"
+    >
+      <lucide-icon name="x" [size]="20" class="text-v4-tertiary-text-color" />
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6">
+    <div class="flex flex-col gap-4" [formGroup]="ruleForm">
+      <!-- Rule Name -->
+      <div>
+        <app-common-input-v4
+          [placeholder]="'Rule Name'"
+          [control]="ruleForm.controls.name"
+          formControlName="name"
+          [maxLength]="ruleNameMaxLength"
+        />
+      </div>
+
+      <!-- Applies To -->
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-v4-main-text-color">
+          Applies To <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-v4-select-dropdown
+          [items]="submitterOptions()"
+          [placeholder]="'Applies To'"
+          [compact]="false"
+          formControlName="submitterUserId"
+        />
+        <app-control-message-v4 [control]="ruleForm.controls.submitterUserId" />
+      </div>
+
+      <!-- Approval Levels -->
+      <div class="flex items-center gap-2 pt-2">
+        <span class="font-semibold text-base text-v4-main-text-color">Approval Levels</span>
+        <lucide-icon
+          name="info"
+          [size]="15"
+          class="cursor-pointer text-v4-tertiary-text-color"
+          matTooltip="Configure multiple levels of approvers. Any one approver in a level can approve. A user selected in one level cannot appear in another level, and the submitter is excluded from approver options."
+          matTooltipPosition="right"
+        />
+      </div>
+
+      <div formArrayName="levels" class="flex flex-col gap-3">
+        @for (level of levels.controls; track level; let i = $index) {
+          <div
+            [formGroupName]="i"
+            class="bg-v4-secondary-background-color border border-v4-border-color rounded-lg p-4 flex flex-col gap-3"
+          >
+            <div class="flex justify-between items-center">
+              <span class="font-medium text-v4-main-text-color">Level {{ i + 1 }}</span>
+              @if (levels.length > 1) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-sm text-v4-common-red-color"
+                  (click)="removeLevel(i)"
+                >
+                  <lucide-icon name="trash-2" [size]="14" />
+                  Remove
+                </button>
+              }
+            </div>
+
+            <!-- Approver multiselect -->
+            <div>
+              <div
+                class="v4-common-dropdown"
+                cdkOverlayOrigin
+                #approverTrigger="cdkOverlayOrigin"
+              >
+                <button
+                  type="button"
+                  class="flex items-center gap-1 w-full"
+                  (click)="toggleLevelDropdown(i)"
+                >
+                  <span class="flex-1 text-left truncate text-v4-subtle-text-color">
+                    Add approvers
+                  </span>
+                  <lucide-icon
+                    name="chevron-down"
+                    [size]="14"
+                    class="text-v4-subtle-text-color transition-transform"
+                    [class.rotate-180]="openLevelIndex() === i"
+                  />
+                </button>
+
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayOrigin]="approverTrigger"
+                  [cdkConnectedOverlayOpen]="openLevelIndex() === i"
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+                  [cdkConnectedOverlayPositions]="overlayPositions"
+                  [cdkConnectedOverlayWidth]="approverTrigger.elementRef.nativeElement.offsetWidth"
+                  (backdropClick)="closeLevelDropdown()"
+                >
+                  <div class="v4-common-dropdown-panel w-full box-border">
+                    <div class="p-2 border-b border-v4-border-color">
+                      <input
+                        type="text"
+                        class="w-full px-3 py-1.5 text-sm border border-v4-input-border-color bg-v4-input-background-color rounded-lg text-v4-main-text-color outline-none focus:border-v4-primary-brand-color"
+                        placeholder="Search approvers"
+                        [value]="approverSearch()"
+                        (input)="approverSearch.set($any($event.target).value)"
+                      />
+                    </div>
+                    <div class="overflow-y-auto max-h-[240px] p-1">
+                      @if (filteredApproversFor(i).length === 0) {
+                        <p class="p-3 text-xs text-v4-tertiary-text-color text-center m-0">
+                          No approvers available
+                        </p>
+                      } @else {
+                        @for (approver of filteredApproversFor(i); track approver.client_id) {
+                          <div
+                            role="button"
+                            tabindex="0"
+                            class="v4-dropdown-item gap-2"
+                            [class.selected]="isApproverSelected(i, approver.client_id)"
+                            (click)="toggleApprover(i, approver.client_id)"
+                            (keydown.enter)="toggleApprover(i, approver.client_id)"
+                            (keydown.space)="toggleApprover(i, approver.client_id); $event.preventDefault()"
+                          >
+                            <input
+                              type="checkbox"
+                              class="w-4 h-4 rounded border-v4-input-border-color accent-v4-primary-brand-color pointer-events-none"
+                              [checked]="isApproverSelected(i, approver.client_id)"
+                            />
+                            <span class="truncate">{{ approver.client_name }}</span>
+                          </div>
+                        }
+                      }
+                    </div>
+                  </div>
+                </ng-template>
+              </div>
+
+              <!-- Selected approver chips -->
+              @if (approversForLevel(i).length > 0) {
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  @for (approver of approversForLevel(i); track approver.userId) {
+                    <span
+                      class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-v4-badge-info-bg-color text-v4-badge-info-text-color"
+                    >
+                      {{ approver.username }}
+                      <button
+                        type="button"
+                        class="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-v4-main-background-color/50 transition-colors"
+                        (click)="removeApprover(i, approver.userId)"
+                        [attr.aria-label]="'Remove ' + approver.username"
+                      >
+                        <lucide-icon name="x" [size]="10" />
+                      </button>
+                    </span>
+                  }
+                </div>
+              }
+
+              <app-control-message-v4
+                [control]="level.controls.approvers"
+                [customMessages]="{ required: 'Please select at least one approver for this level.' }"
+              />
+            </div>
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="self-start inline-flex items-center gap-1 text-sm font-medium text-v4-primary-brand-bold-color hover:underline"
+        (click)="addLevel()"
+      >
+        <lucide-icon name="plus" [size]="14" />
+        Add Level
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex-shrink-0 px-4 md:px-6 py-3 md:py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <div class="flex justify-end gap-3">
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        [disabled]="saving()"
+        (clickEvent)="cancel()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="editMode() ? 'Update Rule' : 'Save Rule'"
+        [loading]="saving()"
+        [disabled]="saving()"
+        (clickEvent)="submit()"
+      />
+    </div>
+  </div>
+</div>

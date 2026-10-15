@@ -1,0 +1,93 @@
+<div class="ocw_one_side_body">
+  <div class="ocw_header">
+    <div class="title flex items-center gap-1">
+      <app-common-back-button-v35></app-common-back-button-v35>
+      <h3>Gusto Mapping</h3>
+    </div>
+  </div>
+  <hr class="header_border" />
+
+  <!-- main body -->
+  <div class="ocw_body">
+    <!-- table start -->
+
+    <ng-container>
+      <div class="data_spinner" [ngClass]="{ data_fetched: !dataLoaded }"></div>
+    </ng-container>
+
+    <div class="ocw_table_wrapper">
+      @if (!dataLoaded) {
+        <table class="ocw-table ocw-table-striped">
+          <thead>
+            <tr>
+              <td>Company ID</td>
+              <td>Company Name</td>
+              <td>Bank Account Name</td>
+              <td>Bank Account Nick Name</td>
+              <td>Action</td>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (bank of bankAccountList; track bankById; let i = $index) {
+              <ng-container>
+                <tr>
+                  <td>{{ bank.companyId }}</td>
+                  <td>{{ bank.companyName }}</td>
+                  @if (bank.isMapped) {
+                    <ng-container>
+                      <td>{{ bank.OcwAccountName }}</td>
+                    </ng-container>
+                  } @else {
+                    <td>
+                      <div
+                        class="map_bank"
+                        matTooltip="Map your bank account."
+                        (click)="openBankAccountMappingModal(bank)"
+                        (keydown.enter)="openBankAccountMappingModal(bank)"
+                        tabindex="0"
+                      >
+                        <p>Map Now</p>
+                      </div>
+                    </td>
+                  }
+                  <td>{{ bank.OcwAccountNickName }}</td>
+                  <td>
+                    <div class="delete_column">
+                      <a>
+                        <fa-icon
+                          [icon]="['far', 'pen-to-square']"
+                          [ngClass]="{ hidden: !bank.isMapped }"
+                          (click)="openBankAccountMappingModal(bank, true)"
+                        ></fa-icon>
+                      </a>
+                      <a>
+                        @if (loading !== i) {
+                          <fa-icon
+                            [icon]="['far', 'trash-can']"
+                            aria-hidden="true"
+                            (click)="onDeleteBankAccount(bank.id, i)"
+                            style="color: var(--text_danger)"
+                          ></fa-icon>
+                        }
+                      </a>
+                      @if (loading === i) {
+                        <span class="loadingSpinner"></span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            }
+            @if (!bankAccountList.length) {
+              <tr class="no_data">
+                <td colspan="5">No bank accounts found.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+    <!-- table end -->
+  </div>
+</div>

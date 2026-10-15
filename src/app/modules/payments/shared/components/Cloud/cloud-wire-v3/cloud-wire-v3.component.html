@@ -1,0 +1,203 @@
+<div class="main-container" [formGroup]="wireForm">
+  <div class="w-full flex flex-col items-center justify-center">
+    <app-amount-input
+      formControlName="amount"
+      [maxLength]="15"
+      customClass="amount-input-v3"
+    ></app-amount-input>
+    @if (
+      wireForm.controls.amount?.value !== null &&
+      wireForm.controls.amount?.value < 10
+    ) {
+      <div>
+        <small class="text-common-red-color text-xs font-medium font-roboto"
+          >Minimum transaction amount should be $10.00</small
+        >
+      </div>
+    }
+  </div>
+
+  <div class="w-full flex justify-center">
+    <app-control-message-v35
+      [control]="wireForm.controls.amount"
+      label="Amount is required"
+    ></app-control-message-v35>
+  </div>
+  <div class="w-full flex flex-col justify-center items-center mt-8">
+    @if (payeeDataService.payeeDataSignal()) {
+      <div class="w-full flex justify-end items-end mb-1 text-main-text-color">
+        <button
+          matTooltip="View Payee Summary"
+          (click)="payeeDataService.openTransactionHistoryModal()"
+        >
+          <fa-icon [icon]="faHistory"></fa-icon>
+        </button>
+      </div>
+    }
+    <div class="w-full flex justify-center items-center">
+      <div class="custom-input-v3-wrapper max-w-[340px]">
+        <app-cloud-account-dropdown-v35
+          (selectionEvent)="cloudDropDownChange($event)"
+          (clearEvent)="clearCloudAccount()"
+          [setSelectDropdownItem]="this.paymentConfig?.paymentFormValue?.cloud"
+        ></app-cloud-account-dropdown-v35>
+      </div>
+      <div class="arrow-wrapper flex justify-center items-center">
+        <div class="arrow flex justify-center items-center">
+          <fa-icon [icon]="['fas', 'arrow-right-long']"></fa-icon>
+        </div>
+      </div>
+      <div class="custom-input-v3-wrapper flex grow shadow max-w-[340px]">
+        <app-payee-dropdown-v3
+          class="w-full"
+          customHeight="3"
+          (ngModelChange)="payeeSelect($event, true)"
+          formControlName="payee"
+          appendTo="body"
+          (ready)="
+            autoPopulateDropdown(
+              $event,
+              paymentConfig?.paymentFormValue?.payee?.encryptedId
+            )
+          "
+          (clearEvent)="clearPayee()"
+        ></app-payee-dropdown-v3>
+      </div>
+    </div>
+  </div>
+  <div class="flex">
+    <app-control-message-v35
+      [control]="wireForm.controls.cloud"
+      class="w-full"
+    ></app-control-message-v35>
+    <app-control-message-v35
+      [control]="wireForm.controls.payee"
+      class="w-full pl-7"
+    ></app-control-message-v35>
+  </div>
+  <div class="grid grid-cols-2 gap-6 mt-5">
+    @if (wireType === "domestic") {
+      <div class="single_input w-full">
+        <div class="flex w-full drop-down-app">
+          <app-drop-down-payee-bank
+            #payeeBankDropDown
+            class="w-full"
+            [payeeDetails]="payeeBankDetails"
+            [data]="payeeBankDetails"
+            (clearEvent)="clearBankAccount($event)"
+            [selectedPayeeName]="editBankName ?? selectedPayeeBankData"
+            placeholder="Payee Bank Account"
+            (selectionChange)="changeBankAccount($event)"
+            (addPayeeEvent)="addNewBankAccount()"
+          ></app-drop-down-payee-bank>
+        </div>
+        @if (!isWireAllowed) {
+          <button
+            class="text-common-blue-color border-common-red-color z-50 border rounded px-2 mt-2"
+            (click)="enableWire()"
+          >
+            <fa-icon
+              [icon]="['fas', 'circle-exclamation']"
+              class="mr-2 text-common-red-color"
+            ></fa-icon
+            >Confirm Wire Info
+          </button>
+        }
+        <app-control-message-v35
+          [control]="wireForm.controls.payeeBankAc"
+        ></app-control-message-v35>
+      </div>
+    }
+    @if (wireType === "international") {
+      <div class="single_input w-full">
+        <div class="flex w-full drop-down-app">
+          <app-drop-down-international-bank
+            #payeeBankDropDown
+            class="w-full"
+            [payeeDetails]="internationalAccounts"
+            [data]="internationalAccounts"
+            (clearEvent)="clearInterBankAccount($event)"
+            [selectedPayeeName]="editBankName ?? selectedPayeeBankData"
+            placeholder="Payee Bank Account"
+            (selectionChange)="changeInterBankAccount($event)"
+            (addPayeeEvent)="addInternationalPayeeBankAc()"
+          ></app-drop-down-international-bank>
+        </div>
+        <app-control-message-v35
+          [control]="wireForm.controls.payeeBankAc"
+        ></app-control-message-v35>
+      </div>
+    }
+    <!-- Industry Type -->
+    <!-- <div class="single_input">
+      <app-industry-types-dropdown
+        class="w-full"
+        (selectionChange)="selectionChange($event)"
+        [selectedItem]="wireForm.controls.industryType.value"
+        [payeeId]="wireForm.controls.payee.value?.id"
+      />
+      <app-control-message-v35 [control]="wireForm.controls.industryType">
+      </app-control-message-v35>
+    </div> -->
+    <div class="single_input">
+      <input
+        id="payeeId"
+        type="text"
+        class="input_style"
+        formControlName="payeeIdNumber"
+        maxlength="30"
+        placeholder=" "
+      />
+      <label for="payeeId" class="floating_label_field"
+        >Payee ID/Account Number</label
+      >
+    </div>
+    <div class="single_input">
+      <input
+        type="text"
+        class="input_style"
+        placeholder=" "
+        id="payeeEmail"
+        formControlName="payeeEmail"
+      />
+      <label for="payeeEmail" class="floating_label_field">Payee Email</label>
+      <app-control-message-v35
+        [control]="wireForm.controls.payeeEmail"
+      ></app-control-message-v35>
+    </div>
+    <div class="single_input col-span-2 mb-2">
+      <input
+        id="memo"
+        type="text"
+        class="input_style memo-input-with-icon"
+        placeholder=" "
+        formControlName="memo"
+        [maxlength]="100"
+      />
+      <label for="memo" class="floating_label_field"
+        >Memo<span class="error_msg">*</span></label
+      >
+      <app-control-message-v35
+        [control]="wireForm.controls.memo"
+        label="Please enter the memo"
+      ></app-control-message-v35>
+    </div>
+    <!-- we will use this code in the next phase, so commented it -->
+    <!-- <div class="flex items-center flex-col justify-center">
+      <app-on-behalf-of-v3 class="w-full" (checkBoxChange)="getCheckBoxChange($event)"
+        (emitOnBehalfOfDetails)="emitOnBehalfOfDetails($event)"></app-on-behalf-of-v3>
+      <app-control-message-v35 [control]="wireForm.controls.behalfOf"></app-control-message-v35>
+    </div> -->
+  </div>
+  <div class="pt-6 flex gap-2 !justify-end">
+    <app-common-button-v35
+      class="w-1/2"
+      [type]="{ style: 'filled', name: 'main' }"
+      text="Wire Now"
+      width="100%"
+      (clickEvent)="onSubmit()"
+      [loading]="submitting"
+      [disabled]="submitting"
+    ></app-common-button-v35>
+  </div>
+</div>

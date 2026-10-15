@@ -1,0 +1,179 @@
+<div class="mt-4">
+  <form [formGroup]="itemForm">
+      <div
+        class="bg-main-background-color rounded-lg border border-input-border-color"
+      >
+        <div class="font-inter">
+          <h3 class="text-lg font-medium text-main-text-color p-4">
+            ITEMS
+          </h3>
+
+          <div class="overflow-hidden">
+            <table class="w-full border-collapse new-table">
+              <thead class="sticky top-0 w-full z-10 bg-secondary-background-color">
+                <tr
+                  class="bg-secondary-background-color text-main-text-color font-medium text-sm"
+                >
+                  <th
+                    class="px-3 py-3 text-left border-input-border-color border-t"
+                  >
+                    ITEM
+                  </th>
+                  <th
+                    class="px-3 py-3 text-left border-input-border-color border-t"
+                  >
+                    DESCRIPTION
+                  </th>
+                  <th
+                    class="px-3 py-3 text-left border-input-border-color border-t"
+                  >
+                    QUANTITY
+                  </th>
+                  <th
+                    class="px-3 py-3 text-left border-input-border-color border-t"
+                  >
+                    UNIT COST
+                  </th>
+                  <th
+                    class="px-3 py-3 text-left border-input-border-color border-t"
+                  >
+                    TOTAL
+                  </th>
+                  <th
+                    class="px-3 py-3 text-center border-input-border-color border-t"
+                  >
+                    ACTION
+                  </th>
+                </tr>
+              </thead>
+              <tbody formArrayName="items" class="block overflow-y-auto max-h-[250px] w-full" (scroll)="onTableScroll()">
+                @for (
+                  data of itemForm?.controls['items']?.controls;
+                  let i = $index;
+                  track data
+                ) {
+                  <tr
+                    [formGroupName]="i"
+                    [ngClass]="
+                      i % 2 === 0
+                        ? 'bg-main-background-color'
+                        : 'bg-secondary-background-color'
+                    "
+                  >
+                    <td
+                      class="px-3 py-2"
+                    >
+                    <div class="flex items-center gap-1">
+                      <ng-select
+                        #invoiceItemDropdown
+                        class="flex-1 min-w-0"
+                        formControlName="id"
+                        (scrollToEnd)="onScrollToEnd()"
+                        (keyup)="search($event)"
+                        (change)="itemChange($event, i)"
+                        bindLabel="name"
+                        appendTo="body"
+                        placeholder="Select Items"
+                        [clearable]="true"
+                      >
+                      @for (item of invoiceItems; track item.id) {
+                        <ng-option [value]="item.id">
+                          <span [title]="item.name">{{ item.name }}</span>
+                        </ng-option>
+                      }
+                      </ng-select>
+                    <button
+                    class="add_modal_btn"
+                    (click)="openAddInvoiceItemModal(i)"
+                  >
+                    <fa-icon [icon]="faPlus"></fa-icon>
+                  </button>
+                  </div>
+                    </td>
+                    <td
+                      class="px-3 py-2"
+                    >
+                      <app-common-input-field
+                        formControlName="description"
+                        [maxLength]="100"
+                        [isFieldRequired]="false"
+                        placeholder=""
+                        [fieldHeight]="'30px'"
+                        (inputEvent)="setTotal()"
+                      />
+                    </td>
+                    <td
+                      class="px-3 py-2"
+                    >
+                      <app-common-input-field
+                        formControlName="quantity"
+                        [maxLength]="10"
+                        [isNumberOnly]="true"
+                        [numberType]="'numeric'"
+                        (inputEvent)="setTotal()"
+                        (keypress)="utils.numberOnly($event, 'numeric')"
+                        customClass="!border-0 !text-right"
+                        placeholder=""
+                        [fieldHeight]="'30px'"
+                        [isFieldRequired]="false"
+                      />
+                    </td>
+                    <td
+                      class="px-3 py-2 text-right"
+                    >
+                      <app-amount-input
+                        (inputEvent)="setTotal()"
+                        formControlName="unitPrice"
+                        [maxLength]="10"
+                        customClass="!border-0 !text-right"
+                      ></app-amount-input>
+                    </td>
+                    <td
+                      class="px-3 py-2 text-right"
+                    >
+                      <app-amount-input
+                        formControlName="total"
+                        [isReadOnly]="true"
+                        customClass="!border-0 !text-right"
+                      ></app-amount-input>
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        (click)="removeItem(i)"
+                        class="text-common-red-color transition-colors duration-200 p-2 rounded-full"
+                        [attr.aria-label]="'Delete row ' + (i + 1)"
+                      >
+                        <fa-icon [icon]="faTrash"></fa-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sticky bottom-0 bg-main-background-color border-t border-input-border-color z-[5] p-4">
+            <div class="flex justify-between items-center">
+              <div class="flex gap-3">
+                <button
+                  type="button"
+                  class="w-8 h-8 bg-common-green-color text-main-background-color rounded-md transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  (click)="pushItem()"
+                  [attr.aria-label]="'Add new row'"
+                >
+                  <fa-icon [icon]="faPlus"></fa-icon>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-6">
+                <div class="text-sm font-medium text-main-text-color">
+                  Total: {{ total | currency }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </form>
+</div>

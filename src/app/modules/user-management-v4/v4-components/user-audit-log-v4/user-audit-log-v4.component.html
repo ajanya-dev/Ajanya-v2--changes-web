@@ -1,0 +1,173 @@
+<div class="pt-3 sm:pt-4 h-[572px] overflow-auto">
+  <!-- Card Container -->
+  <div
+    class="rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-4 h-full flex flex-col"
+  >
+    <!-- Header Row -->
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h4 class="text-sm font-bold text-v4-main-text-color font-peridot">
+          Permission Change History
+        </h4>
+        @if (auditEntries().length) {
+          <p class="text-xs text-v4-secondary-text-color font-peridot mt-1">
+            {{ totalCount() }} changes recorded
+          </p>
+        }
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'View Full Log'"
+        [lucideIcon]="'arrow-right'"
+        [lucideIconSize]="12"
+        [customHeight]="'32px'"
+        [textClasses]="'text-xs font-semibold'"
+        [customClasses]="'rounded-lg px-3'"
+        (clickEvent)="onViewFullLog()"
+      />
+    </div>
+
+    <!-- Audit Entries List -->
+    @if (loading()) {
+      <app-common-list-skelton [items]="5" />
+    } @else if (auditEntries().length) {
+      <div class="space-y-3 flex-1 min-h-0 overflow-auto -mr-2 pr-2">
+        @for (entry of auditEntries(); track $index) {
+          <div
+            class="p-3 bg-v4-popup-background-color rounded-lg border border-v4-border-color"
+          >
+            <!-- Entry Header: Date + Changed By -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-v4-secondary-text-color font-peridot">
+                {{ entry.created_at }}
+              </span>
+              <span class="text-xs text-v4-secondary-text-color font-peridot">
+                by {{ entry.created_by_name }}
+              </span>
+            </div>
+
+            <!-- Enabled Permissions -->
+            @if (entry.enabled_permissions?.length) {
+              <div class="mb-1">
+                <span class="text-xs font-medium text-v4-common-green-color"
+                  >Enabled:
+                </span>
+                <span class="text-xs text-v4-main-text-color font-peridot">
+                  @for (
+                    perm of getDisplayPermissions(entry.enabled_permissions)
+                      .visible;
+                    track perm;
+                    let i = $index
+                  ) {
+                    {{ perm | titlecase }}
+                    @if (
+                      i <
+                      getDisplayPermissions(entry.enabled_permissions).visible
+                        .length -
+                        1
+                    ) {
+                      ,
+                    }
+                  }
+                </span>
+                @if (
+                  getDisplayPermissions(entry.enabled_permissions).moreCount > 0
+                ) {
+                  <button
+                    class="text-xs text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+                    (click)="
+                      onShowMorePermissions(
+                        entry.enabled_permissions,
+                        'Enabled'
+                      )
+                    "
+                  >
+                    +{{
+                      getDisplayPermissions(entry.enabled_permissions).moreCount
+                    }}
+                    more
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- Disabled Permissions -->
+            @if (entry.disabled_permissions?.length) {
+              <div>
+                <span class="text-xs font-medium text-v4-common-red-color"
+                  >Disabled:
+                </span>
+                <span class="text-xs text-v4-main-text-color font-peridot">
+                  @for (
+                    perm of getDisplayPermissions(entry.disabled_permissions)
+                      .visible;
+                    track perm;
+                    let i = $index
+                  ) {
+                    {{ perm | titlecase }}
+                    @if (
+                      i <
+                      getDisplayPermissions(entry.disabled_permissions).visible
+                        .length -
+                        1
+                    ) {
+                      ,
+                    }
+                  }
+                </span>
+                @if (
+                  getDisplayPermissions(entry.disabled_permissions).moreCount >
+                  0
+                ) {
+                  <button
+                    class="text-xs text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+                    (click)="
+                      onShowMorePermissions(
+                        entry.disabled_permissions,
+                        'Disabled'
+                      )
+                    "
+                  >
+                    +{{
+                      getDisplayPermissions(entry.disabled_permissions)
+                        .moreCount
+                    }}
+                    more
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- No Changes -->
+            @if (
+              !entry.enabled_permissions?.length &&
+              !entry.disabled_permissions?.length
+            ) {
+              <span
+                class="text-xs text-v4-secondary-text-color italic font-peridot"
+              >
+                No permission changes
+              </span>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Empty State -->
+      <div class="flex flex-1 flex-col items-center justify-center py-10">
+        <div
+          class="w-14 h-14 rounded-2xl bg-v4-badge-info-bg-color flex items-center justify-center mb-3"
+        >
+          <lucide-icon
+            name="shield-check"
+            [size]="24"
+            class="text-v4-primary-brand-color"
+          ></lucide-icon>
+        </div>
+        <p class="text-sm text-v4-secondary-text-color font-peridot">
+          No permission changes recorded
+        </p>
+      </div>
+    }
+  </div>
+</div>

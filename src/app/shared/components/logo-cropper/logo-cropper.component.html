@@ -1,0 +1,130 @@
+<div class="w-full max-w-2xl mx-auto font-inter">
+  <!-- Hidden file input -->
+  <input
+    #fileInput
+    type="file"
+    accept="image/*"
+    (change)="onFileSelected($event)"
+    class="hidden"
+  />
+
+  <!-- Upload Section -->
+  @if (!cropping) {
+    <div>
+      <!-- Drag and Drop Area -->
+      <div
+        class="border-2 border-dashed border-input-border-color rounded-xl p-12 text-center cursor-pointer transition-all duration-200 mb-8 bg-main-background-color hover:border-common-blue-color hover:bg-secondary-background-color"
+        [class.border-common-blue-color]="isDragOver"
+        [class.bg-main-background-color]="isDragOver"
+        [class.scale-105]="isDragOver"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="triggerFileInput()"
+      >
+        <div>
+          <fa-icon
+            [icon]="faUpload"
+            class="text-5xl text-common-blue-color mb-4"
+          ></fa-icon>
+          <h4 class="text-xl font-semibold text-main-text-color mb-2">
+            Drop your logo here
+          </h4>
+          <p class="text-sm text-secondary-text-color mb-6">
+            or click to browse
+          </p>
+          <div class="flex flex-col gap-2 items-center">
+            <div
+              class="flex items-center gap-2 text-xs text-secondary-text-color"
+            >
+              <fa-icon
+                [icon]="faInfo"
+                class="text-sm text-common-blue-color"
+              ></fa-icon>
+              <span>Supports: JPG, PNG</span>
+            </div>
+            <div
+              class="flex items-center gap-2 text-xs text-secondary-text-color"
+            >
+              <fa-icon
+                [icon]="faInfo"
+                class="text-sm text-common-blue-color"
+              ></fa-icon>
+              <span>Max size: {{ formatFileSize(maxFileSize) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-center gap-4">
+        <app-common-button-v35
+          width="120px"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Cancel"
+          (clickEvent)="onCancel()"
+        >
+        </app-common-button-v35>
+      </div>
+    </div>
+  }
+
+  <!-- Cropping Section -->
+  @if (cropping) {
+    <div>
+      <!-- Image Cropper -->
+      <div
+        class="mb-6 rounded-lg overflow-hidden border border-input-border-color bg-main-background-color image-cropper-container"
+      >
+        <image-cropper
+          style="width: 228px; height: 228px"
+          [imageChangedEvent]="imageChangedEvent"
+          [maintainAspectRatio]="true"
+          [aspectRatio]="2 / 2"
+          format="png"
+          (imageCropped)="imageCropped($event)"
+          [output]="'base64'"
+          [resizeToWidth]="228"
+          [onlyScaleDown]="true"
+          [cropperMinWidth]="128"
+          [roundCropper]="false"
+        >
+        </image-cropper>
+      </div>
+
+      <!-- Error Message -->
+      @if (isError) {
+        <div
+          class="flex items-center gap-2 p-3 bg-common-red-color text-white border border-red-200 rounded-md mb-6"
+        >
+          <fa-icon
+            [icon]="faExclamationTriangle"
+            class="text-common-red-color"
+          ></fa-icon>
+          <span class="text-sm text-common-red-color"
+            >Please crop the image before proceeding</span
+          >
+        </div>
+      }
+
+      <!-- Action Buttons -->
+      <div class="flex justify-center gap-4">
+        <app-common-button-v35
+          width="120px"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Cancel"
+          (clickEvent)="onCancel()"
+        >
+        </app-common-button-v35>
+        <app-common-button-v35
+          width="120px"
+          [type]="{ style: 'modal', name: 'main' }"
+          text="Confirm"
+          (clickEvent)="onConfirm()"
+          [disabled]="!croppedImage.base64"
+        >
+        </app-common-button-v35>
+      </div>
+    </div>
+  }
+</div>

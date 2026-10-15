@@ -1,0 +1,171 @@
+<div class="flex flex-col max-h-[80vh]">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        {{ editmode ? "Update Bank Account Mapping" : "Bank Account Mapping" }}
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon name="x" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="flex-1 overflow-y-auto p-6 space-y-4 bg-v4-tertiary-background-color"
+    [formGroup]="mapForm"
+  >
+    <!-- Info box -->
+    <div
+      class="p-3 rounded-xl bg-v4-mailing-card-selected-bg-blue border border-v4-insight-card-border-blue"
+    >
+      <div class="flex items-start gap-2">
+        <lucide-icon
+          name="info"
+          [size]="14"
+          class="text-v4-insight-card-icon-blue mt-0.5 flex-shrink-0"
+        ></lucide-icon>
+        @if (app === "QBO") {
+          <p class="text-xs text-v4-main-text-color">
+            You are mapping the QuickBooks bank account
+            <span class="font-bold">{{ qbData?.quickBookAccount }}</span>
+            from QuickBooks company
+            <span class="font-bold">{{ qbData?.QBCompanyName }}</span>
+            to OCW bank account.
+          </p>
+        } @else if (app === "NetSuite") {
+          <p class="text-xs text-v4-main-text-color">
+            You are mapping the NetSuite bank account
+            <span class="font-bold">{{ netSuiteData?.netsuiteAccount }}</span>
+            from NetSuite company
+            <span class="font-bold">NetSuite</span>
+            to OCW bank account.
+          </p>
+        } @else if (app === "Odoo") {
+          <p class="text-xs text-v4-main-text-color">
+            You are mapping the Odoo bank account
+            <span class="font-bold">{{ odooData?.name }}</span>
+            to OCW bank account.
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- Bank Account -->
+    <div>
+      <label
+        class="text-xs font-bold tracking-wider text-v4-secondary-text-color mb-2 block"
+      >
+        Select a bank account to map
+      </label>
+      <div class="bank-account-row flex items-center gap-2">
+        <div class="flex-1">
+          <app-bank-ac-dropdown-v4
+            [append]="'body'"
+            [labelIconNeeded]="false"
+            [enableAddNew]="false"
+            (changeEvent)="bankDropDownChange($event)"
+            (ready)="onDropdownReady($event)"
+          ></app-bank-ac-dropdown-v4>
+        </div>
+        <app-common-button-v4
+          class="flex-shrink-0"
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="''"
+          [isAddIcon]="true"
+          [icon]="['fas', 'plus']"
+          [textColorInput]="'white'"
+          [toolTip]="'Add new bank account'"
+          [customHeight]="'42px'"
+          [width]="'40px'"
+          [minWidth]="'40px'"
+          [customPadding]="'0'"
+          (clickEvent)="openAddNewBank()"
+        />
+      </div>
+      <app-control-message-v4 [control]="mapForm.controls.bankAccount" />
+    </div>
+
+    <!-- Class & Location (QBO) -->
+    @if (app === "QBO") {
+      <div class="flex gap-3">
+        <div class="flex-1">
+          <label
+            class="text-xs font-bold tracking-wider text-v4-secondary-text-color mb-2 block"
+          >
+            Class
+          </label>
+          <app-v4-common-dropdown
+            [config]="classDropdownConfig"
+            [listData]="qbClass"
+            [loading]="isClassLoading()"
+            [appendTo]="'body'"
+            formControlName="qboClass"
+            (scrollToEnd)="scrollClass('')"
+            (searchEvent)="scrollClass($event)"
+          ></app-v4-common-dropdown>
+        </div>
+        @if (isLocation) {
+          <div class="flex-1">
+            <label
+              class="text-xs font-bold tracking-wider text-v4-secondary-text-color mb-2 block"
+            >
+              Location
+            </label>
+            <app-v4-common-dropdown
+              [config]="locationDropdownConfig"
+              [listData]="qbLocations"
+              [loading]="isLocationLoading()"
+              [appendTo]="'body'"
+              formControlName="qboLocation"
+            ></app-v4-common-dropdown>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Subsidiary (NetSuite) -->
+    @if (app === "NetSuite") {
+      <div>
+        <label
+          class="text-xs font-bold tracking-wider text-v4-secondary-text-color mb-2 block"
+        >
+          Select subsidiary
+        </label>
+        <app-v4-common-dropdown
+          [config]="subsidiaryDropdownConfig"
+          [listData]="subsidiaryList()"
+          [loading]="isSubsidiaryLoading()"
+          [appendTo]="'body'"
+          formControlName="subsidiary"
+        ></app-v4-common-dropdown>
+      </div>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color flex-shrink-0"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="editmode ? 'Update' : 'Map Now'"
+      [disabled]="loading"
+      [loading]="loading"
+      (clickEvent)="submit()"
+    />
+  </div>
+</div>

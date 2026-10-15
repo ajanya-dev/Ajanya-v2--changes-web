@@ -1,0 +1,86 @@
+<div
+  class="v3-dt-payee-drop-down-wrapper w-full"
+  [matTooltip]="selectedBankNamesString || ''"
+>
+  <ng-select
+    (scrollToEnd)="onScrollToEnd()"
+    (focus)="search($event)"
+    (keyup)="search($event)"
+    (change)="onChange()"
+    (clear)="clear()"
+    class="ng-select-payee bg-main-background-color payee-dropdown-dt"
+    appendTo=".ag-root-wrapper"
+    placeholder="Select Bank Account"
+    dropdownPosition="bottom"
+    [multiple]="true"
+    [closeOnSelect]="false"
+    [formControl]="selectedBanksControl"
+    [searchable]="showSearch"
+    #ngSelect
+    (open)="showSearch = true"
+    (close)="showSearch = false"
+    [ngClass]="{
+      'border border-common-blue-color rounded':
+        selectedBanksControl.value
+    }"
+        [notFoundText]="
+        permissionDenied()
+          ? 'Permission Denied'
+          : 'No items found'
+      "
+  >
+    @for (bank of bankAccounts(); track bank.id; let index = $index) {
+      <ng-option [value]="bank">
+        <ng-template
+          ng-option-tmp
+          let-item="item"
+          let-item$="item$"
+          let-index="index"
+        >
+          <input
+            class="!h-2"
+            id="item-{{ index }}"
+            type="checkbox"
+            [ngModel]="item$.selected"
+          />
+          {{ item.nickName || item.name }}
+          @if (item.verified === 1) {
+            <span class="text-xs text-secondary-text-color ml-1">[VERIFIED]</span>
+          }
+        </ng-template>
+      </ng-option>
+    }
+
+    @if (!showSearch) {
+      <ng-template ng-multi-label-tmp let-items="items">
+        @if (items.length === 1) {
+          <div class="mr-1">
+            <span
+              class="bank-name whitespace-nowrap overflow-hidden text-ellipsis w-24 block"
+            >
+              {{ items[0].nickName || items[0].name }}
+            </span>
+          </div>
+        } @else {
+          <div class="selected-items mr-1">
+            Selected Banks: {{ items.length }}
+          </div>
+        }
+      </ng-template>
+    } @else {
+      <ng-template ng-multi-label-tmp let-items="items">
+        <div class="selected-items"></div>
+      </ng-template>
+    }
+    <ng-template ng-footer-tmp>
+      <div class="flex justify-center">
+        <button
+          (click)="applyFilter()"
+          class="px-4 py-2 bg-common-blue-color text-white rounded transition-colors"
+        >
+          Apply
+        </button>
+      </div>
+    </ng-template>
+  </ng-select>
+</div>

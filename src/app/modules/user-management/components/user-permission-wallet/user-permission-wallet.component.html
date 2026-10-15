@@ -1,0 +1,232 @@
+<div class="wallet-container">
+  <!-- Selected Wallets Display -->
+  @if (isLoadingAccountsPermission()) {
+    <div class="mb-4 p-3 bg-common-secondary-blue-color rounded-lg border border-common-secondary-blue-color">
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between">
+          <div class="skelton !w-[200px] !h-5"></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          @for (item of [1,2,3,4,5]; track item) {
+            <div class="skelton !w-[80px] !h-7 !rounded-2xl"></div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (totalSelectedCountComputed() > 0) {
+    <div class="mb-4 p-3 bg-common-secondary-blue-color rounded-lg border border-common-secondary-blue-color">
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between">
+          <h3 class="text-sm font-semibold text-common-blue-color mb-2" [ngClass]="{'!mb-0': isAllWalletsSelectedComputed()}">
+            @if (isAllWalletsSelectedComputed()) {
+              All Wallets Selected
+            } @else {
+              Selected Wallets ({{ totalSelectedCountComputed() }})
+            }
+          </h3>
+          @if (!isAllWalletsSelectedComputed()) {
+            @if (totalSelectedCountComputed() > 5) {
+              <div class="flex items-center gap-2">
+                <button class="text-xs text-common-blue-color bg-main-background-color border border-common-blue-color rounded-md px-2 py-1 hover:bg-common-blue-color hover:text-white transition-colors duration-200" (click)="toggleShowAllSelected()">
+                  {{ showAllSelected ? 'Show Less' : 'Show All' }}
+                </button>
+                <button class="text-xs text-common-red-color bg-main-background-color border border-common-red-color rounded-md px-2 py-1 hover:bg-common-red-color hover:text-white transition-colors duration-200" (click)="clearAllSelected()">
+                  Clear All
+                </button>
+              </div>
+            }
+            @else if (totalSelectedCountComputed() > 0) {
+              <div class="flex items-center gap-2">
+                <button class="text-xs text-common-red-color bg-main-background-color border border-common-red-color rounded-md px-2 py-1" (click)="clearAllSelected()">
+                  Clear All
+                </button>
+              </div>
+            }
+          }
+        </div>
+        <div [ngClass]="{'hidden': isAllWalletsSelectedComputed()}">
+          <div 
+            class="flex flex-wrap gap-2"
+            [class.max-h-48]="showAllSelected"
+            [class.overflow-y-auto]="showAllSelected"
+            (scroll)="showAllSelected && onScrollToEnd($event)"
+          >
+            @if (!isAllWalletsSelectedComputed()) {
+              @for (name of getSelectedNames(); track name) {
+                <span class="selected-name inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium bg-main-background-color text-main-text-color">
+                  <span class="truncate">{{ name }}</span>
+                  <fa-icon 
+                    [icon]="faXmark" 
+                    class="cursor-pointer text-secondary-text-color text-sm pt-1"
+                    (click)="removeSelectedItem(name)"
+                    title="Remove {{ name }}"
+                  />
+                </span>
+              }
+              @if (totalSelectedCountComputed() > 5 && !showAllSelected) {
+                <span class="border-2 border-dotted border-common-blue-color items-center p-2 rounded-md text-xs font-medium bg-main-background-color text-common-blue-color">
+                  +{{ totalSelectedCountComputed() - 5 }} More
+                </span>
+              }
+            }
+            @if (isLoadingMoreSelectedItems) {
+              <span class="border-2 border-dotted border-common-blue-color items-center p-2 rounded-md text-xs font-medium bg-main-background-color text-common-blue-color">
+                <fa-icon [icon]="faSpinner" [animation]="'spin'" class="mr-1"></fa-icon>
+                Loading more...
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="w-full overflow-x-auto bg-main-background-color">
+    <!-- Header Row -->
+    <div
+      class="flex border-b border-input-border-color bg-tertiary-background-color"
+    >
+      <div class="p-2 flex-[0_0_40px] flex justify-center items-center">
+        <input
+          type="checkbox"
+          [(ngModel)]="selectAllWallets"
+          (change)="toggleSelectAll()"
+          class="w-6 h-[18px] rounded"
+        />
+      </div>
+      <div class="flex-1 p-2 text-left">
+        <span class="font-inter text-sm text-main-text-color font-medium"
+          >Wallet Name</span
+        >
+      </div>
+      <div class="flex-1 p-2 text-left">
+        <span class="font-inter text-sm text-main-text-color font-medium"
+          >Account Number</span
+        >
+      </div>
+    </div>
+    <div
+      class="flex border-b border-input-border-color bg-main-background-color shadow-common-tab-bottom"
+    >
+      <div class="flex-[0_0_40px] text-right w-full text-input-border-color">|</div>
+      <div class="text-left w-full">
+        <input
+          type="text"
+          placeholder="Search"
+          (input)="onSearch($event.target.value)"
+          [(ngModel)]="searchInput"
+          class="p-1 rounded ml-1 font-inter font-normal text-secondary-text-color text-sm"
+        />
+        @if(searchInput) {
+          <fa-icon [icon]="faXmark" class="cursor-pointer text-main-text-color text-sm" (click)="clearSearch()" />
+        }
+      </div>
+      <div class="w-full text-input-border-color">|</div>
+    </div>
+
+    <!-- Data Rows -->
+    <div class="custom-body h-[325px] overflow-x-auto">
+      @if (!isLoading() && displayedWalletList.length) {
+        @for (wallet of displayedWalletList; track wallet) {
+          <div
+            class="flex border-b border-input-border-color hover:bg-secondary-background-color"
+            [ngClass]="{
+              '!bg-secondary-background-color': walletIds[wallet.id]
+            }"
+            role="presentation"
+            (click)="rowSelect(wallet.id)"
+          >
+            <div class="p-2 flex-[0_0_40px] flex justify-center items-center">
+              <input
+                type="checkbox"
+                [(ngModel)]="walletIds[wallet.id]"
+                class="w-6 h-[18px] rounded"
+              />
+            </div>
+            <div
+              class="flex-1 p-2 text-left font-inter text-sm text-main-text-color font-normal"
+              [matTooltip]="wallet.walletName.length > 47 ? wallet.walletName : ''"
+            >
+              {{ wallet.walletName | truncate: 47 }}
+            </div>
+            <div
+              class="flex-1 p-2 text-left font-inter text-sm text-main-text-color font-normal"
+            >
+              {{ wallet.bankAccountNumber }}
+            </div>
+          </div>
+        }
+      } @else if (!isLoading() && !displayedWalletList.length) {
+        <div class="w-full h-full flex justify-center items-center">
+          <span class="font-inter font-medium text-sm text-main-text-color"
+            >Sorry! No results found</span
+          >
+        </div>
+      } @else {
+        <div
+          class="font-inter font-normal text-sm text-main-text-color w-full h-full flex justify-center items-center gap-1"
+        >
+          <fa-icon [icon]="faSpinner" animation="spin" />
+          <span>Loading..</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="flex gap-1 p-2 justify-between">
+    <div>
+      <span class="font-inter font-semibold text-sm text-main-text-color"
+        >Showing {{ currentNumber }} to {{ toNumber }} of
+        {{ totalWallets }} results</span
+      >
+    </div>
+    <div class="flex gap-1">
+      <div class="flex gap-1 rounded" aria-label="Pagination">
+        <button
+          [disabled]="isLoading()"
+          (click)="onPrevious()"
+          class="h-6 px-2 py-[5px] flex items-center justify-center text-main-text-color rounded border border-input-border-color cursor-pointer"
+        >
+          <fa-icon [icon]="faAngleLeft"> </fa-icon>
+        </button>
+        @for (item of pageArr; track item; let i = $index) {
+          <button
+            aria-current="page"
+            [disabled]="isLoading()"
+            (click)="gotoPage(item)"
+            class="h-6 px-2 py-[5px] flex items-center justify-center text-main-text-color rounded border border-input-border-color cursor-pointer"
+            [ngClass]="{
+              '!bg-common-blue-color !border !border-common-blue-color shadow-common-button !text-white':
+                selectedPage === item
+            }"
+          >
+            {{ item }}
+          </button>
+        }
+        <button
+          [disabled]="isLoading()"
+          (click)="onNext()"
+          class="h-6 px-2 py-[5px] flex items-center justify-center text-main-text-color rounded border border-input-border-color cursor-pointer"
+        >
+          <fa-icon [icon]="faAngleRight"> </fa-icon>
+        </button>
+      </div>
+      <div class="flex gap-1 items-center">
+        <input
+          class="text-center w-[51px] h-6 border border-input-border-color font-inter font-semibold text-base rounded"
+          title="Go To Specific Page"
+          [(ngModel)]="specificPageInput"
+          type="number"
+          (keyup.enter)="gotoPage(specificPageInput)"
+          (keypress)="utils.numberOnly($event, 'numeric')"
+        />
+        <button
+          class="text-common-blue-color font-inter font-semibold text-sm"
+          (click)="gotoPage(specificPageInput)"
+        >
+          Go To Page
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

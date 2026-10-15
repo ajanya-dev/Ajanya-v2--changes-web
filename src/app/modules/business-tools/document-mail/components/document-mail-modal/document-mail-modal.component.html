@@ -1,0 +1,317 @@
+<div class="p-2 font-inter">
+  @if (invalidIds && invalidIds.length) {
+    <div class="toast absolute top-3 z-50">
+      <div class="toast-header">
+        <p class="mr-auto">
+          Invoice numbers <span>{{ invalidIds }}</span>
+          {{ invalidIds.length === 1 ? "is" : "are" }} not eligible for mailing
+        </p>
+      </div>
+    </div>
+  }
+  <div class="flex justify-between items-center relative">
+    <span class="font-semibold text-main-text-color">{{
+      type === "invoice" || type === "added-invoice"
+        ? "Invoice Mail"
+        : type === "bulk"
+          ? "Bulk Mail"
+          : "Document Mail"
+    }}</span>
+    <span [mat-dialog-close]="false">
+      <fa-icon class="cursor-pointer" [icon]="faXmark" />
+    </span>
+  </div>
+  <div class="h-5"></div>
+  <div class="grid gap-4 grid-cols-4 rounded bg-tertiary-background-color p-3">
+    @if (!(type === "invoice" || type === "added-invoice")) {
+      <div>
+        <span class="font-roboto font-medium text-[13px] text-main-text-color"
+          >Select From</span
+        >
+        <div class="h-2"></div>
+        <app-v35-common-dropdown
+          [(ngModel)]="commonFrom"
+          (ngModelChange)="onCommonFromChange($event)"
+          (buttonClick)="addFromAddress()"
+          class="w-full"
+          [config]="{
+            placeholder: 'Select From',
+            displayField: 'payee_name',
+            enableAddNew: true,
+            style: {
+              enableLabelIcon: false,
+              size: '0'
+            }
+          }"
+          [listData]="addressList"
+          [loading]="addresLoading"
+          appendTo="body"
+        />
+      </div>
+    }
+    @if (type === "bulk") {
+      <div>
+        <span class="font-roboto font-medium text-[13px] text-main-text-color"
+          >Select Commmon File</span
+        >
+        <div class="h-2"></div>
+        <div class="flex gap-1">
+          <div class="single_input w-full">
+            <input
+              disabled
+              type="text"
+              [(ngModel)]="commonFileName"
+              class="input_style"
+              placeholder=" "
+            />
+            <span class="floating_label_field">
+              Select File
+              <span class="required">*</span></span
+            >
+          </div>
+          <input
+            type="file"
+            #commonFileInput
+            (change)="onCommonFilePick($event)"
+            hidden
+            class="input_style !hidden"
+            placeholder=" "
+          />
+          <div
+            class="icon-buttons flex-shrink-0"
+            (click)="clickFileAttachment(commonFileInput)"
+          >
+            <fa-icon [icon]="faPaperclip" />
+          </div>
+        </div>
+      </div>
+    }
+    <div>
+      <span class="font-roboto font-medium text-[13px] text-main-text-color"
+        >Shipping Type</span
+      >
+      <div class="h-2"></div>
+      <app-v35-common-dropdown
+        [(ngModel)]="commonShippingType"
+        (ngModelChange)="onCommonShippingChange($event)"
+        class="w-full max-w-full"
+        [config]="{
+          placeholder: 'Select Shipping Type',
+          displayField: 'name',
+          style: {
+            enableLabelIcon: false,
+            size: '0'
+          }
+        }"
+        [listData]="shippingTypes"
+        [loading]="shippingTypeLoading"
+        appendTo="body"
+      />
+    </div>
+    @if (type !== "bulk") {
+      <div></div>
+    }
+  </div>
+  @if (type === "bulk") {
+    <div class="h-5"></div>
+  }
+  @if (type === "bulk") {
+    <div>
+      <div class="font-roboto font-medium text-sm text-main-text-color">
+        No of Mails
+      </div>
+      <div class="h-1"></div>
+      <div class="flex gap-2">
+        <div class="single_input w-14">
+          <input
+            #rowinput
+            type="number"
+            [(ngModel)]="numberOfMails"
+            (keydown.enter)="immediateRowCountChange(rowinput)"
+            class="input_style"
+            placeholder=" "
+          />
+        </div>
+        <div class="icon-buttons" (click)="changeRowCount('dec')">
+          <fa-icon [icon]="faMinus" />
+        </div>
+        <div class="icon-buttons" (click)="changeRowCount('inc')">
+          <fa-icon [icon]="faPlus" />
+        </div>
+      </div>
+    </div>
+  }
+  <div class="h-5"></div>
+  <div class="w-full">
+    <table class="w-full overflow-auto table-fixed">
+      <thead
+        class="bg-tertiary-background-color h-8 font-roboto font-medium text-xs text-main-text-color"
+      >
+        <th class="!w-[15px] text-left px-2">#</th>
+        <th class="text-left px-2">File</th>
+        @if (!(type === "invoice" || type === "added-invoice")) {
+          <th class="text-left px-2">From</th>
+        }
+        <th class="text-left px-2">Payee</th>
+        <th class="text-left px-2">Shipping Type</th>
+      </thead>
+      <div class="h-2"></div>
+      <tbody class="gap-1">
+        @for (control of mailForm.controls; track control; let i = $index) {
+          <tr class="p-1 max-w-full">
+            <td class="w-[15px] p-1 align-top">
+              <div
+                class="font-roboto font-medium text-xs text-main-text-color pt-3"
+              >
+                {{ i + 1 }}
+              </div>
+            </td>
+            <td class="p-1 w-full align-top">
+              <div class="flex gap-1">
+                <div class="single_input w-full">
+                  <input
+                    type="text"
+                    [formControl]="control.controls.document_title"
+                    class="input_style"
+                    placeholder=" "
+                  />
+                  <span class="floating_label_field"
+                    >File Name <span class="required">*</span></span
+                  >
+                </div>
+                <input
+                  #singleFileInput
+                  (change)="onIndividualFilePick($event, i)"
+                  type="file"
+                  class="!hidden"
+                />
+                @if (type === "bulk") {
+                  <div
+                    (click)="clickFileAttachment(singleFileInput)"
+                    class="icon-buttons flex-shrink-0"
+                  >
+                    <fa-icon [icon]="faPaperclip" />
+                  </div>
+                }
+              </div>
+              @if (type === "bulk") {
+                <app-control-message-v35
+                  [control]="control.controls.file"
+                  label="File is required"
+                />
+              }
+              @if (type === "normal") {
+                <app-control-message-v35
+                  [control]="control.controls.id"
+                  label="File is required"
+                />
+              }
+            </td>
+            @if (!(type === "invoice" || type === "added-invoice")) {
+              <td class="w-full p-1 align-top">
+                <app-v35-common-dropdown
+                  [formControl]="control.controls.reply_to_id"
+                  (buttonClick)="addFromAddress(i)"
+                  class="w-full"
+                  [config]="{
+                    placeholder: 'Select From',
+                    displayField: 'payee_name',
+                    enableAddNew: true,
+                    style: {
+                      enableLabelIcon: false,
+                      size: '0'
+                    }
+                  }"
+                  [listData]="addressList"
+                  [loading]="addresLoading"
+                  appendTo="body"
+                />
+                <app-control-message-v35
+                  [control]="control.controls.reply_to_id"
+                  label="From address is required"
+                />
+              </td>
+            }
+            <td class="w-full p-1 align-top">
+              <app-payee-dropdown-v3
+                [clearable]="!(type === 'added-invoice' || type === 'invoice')"
+                [searchable]="!(type === 'added-invoice' || type === 'invoice')"
+                (ready)="
+                  autoPopulateDropdown($event, control.controls.payee_id)
+                "
+                [formControl]="control.controls.payee_id"
+                class="w-full"
+                appendTo="body"
+              />
+              <app-control-message-v35
+                [control]="control.controls.payee_id"
+                label="Payee is required"
+              />
+              @if (
+                !control.controls.payee_id?.errors?.["required"] &&
+                control.controls.validPayee?.touched &&
+                control.controls.validPayee?.errors?.["required"]
+              ) {
+                <div
+                  (click)="editPayee(control.controls.payee_id, control)"
+                  class="flex gap-2 items-center cursor-pointer"
+                >
+                  <app-control-message-v35
+                    [control]="control.controls.validPayee"
+                    label="Invalid Payee Address"
+                  />
+                  <fa-icon
+                    [icon]="faPenToSquare"
+                    class="text-sm text-common-blue-color"
+                  />
+                </div>
+              }
+            </td>
+            <td class="w-full p-1 align-top">
+              <div class="flex gap-2 max-w-full items-center">
+                <app-v35-common-dropdown
+                  [formControl]="control.controls.shipping_type"
+                  class="w-full max-w-full"
+                  [config]="{
+                    placeholder: 'Select Shipping Type',
+                    displayField: 'name',
+                    style: {
+                      enableLabelIcon: false,
+                      size: '0'
+                    }
+                  }"
+                  [listData]="shippingTypes"
+                  [loading]="shippingTypeLoading"
+                  appendTo="body"
+                />
+                <fa-icon
+                  (click)="deleteRow(i)"
+                  class="text-secondary-text-color cursor-pointer"
+                  [icon]="faTrash"
+                />
+              </div>
+              <app-control-message-v35
+                [control]="control.controls.shipping_type"
+                label="Shipping type is required"
+              />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="h-5"></div>
+  <div class="flex justify-end items-center gap-3">
+    <span class="font-roboto font-medium text-sm text-main-text-color pt-0.5"
+      >Total Shipping Cost: {{ shippingCost | currency }}</span
+    >
+    <app-common-button-v35
+      (click)="onSubmit()"
+      [loading]="mailing"
+      [disabled]="mailing"
+      width="90px"
+      text="Mail"
+      [type]="{ name: 'main', style: 'modal' }"
+    />
+  </div>
+</div>

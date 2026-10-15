@@ -1,0 +1,134 @@
+<div>
+  <form [formGroup]="featureForm" (ngSubmit)="onSubmit()">
+    <!-- Modal Header -->
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Submit an Idea
+      </h1>
+      <div
+        [mat-dialog-close]="false"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon [img]="closeIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 bg-v4-tertiary-background-color">
+      <div class="space-y-4">
+        <!-- Description -->
+        <div>
+          <label
+            for="description"
+            class="block text-sm font-medium text-v4-secondary-text-color mb-1.5 tracking-wide"
+          >
+            Description <span class="text-common-red-color">*</span>
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            placeholder="Describe your idea..."
+            class="w-full px-4 py-3 min-h-[120px] border border-v4-border-color text-base md:text-sm bg-v4-input-background-color text-v4-main-text-color placeholder:text-v4-tertiary-text-color focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+            [style.border-radius]="'10px'"
+            rows="4"
+            [maxlength]="240"
+          ></textarea>
+          <app-control-message-v4
+            [control]="featureForm.controls.description"
+            [customMessages]="{
+              required: 'Description is Required',
+              maxlength: 'Description cannot exceed 240 characters'
+            }"
+          />
+        </div>
+
+        <!-- Take a Video -->
+        <div>
+          <app-common-button-v4
+            id="loom-record-sdk-button-v4"
+            width="150px"
+            [type]="{ style: 'outline', name: 'main' }"
+            text="Take a Video"
+            [loading]="loomService.isVideoLoading"
+            [disabled]="loomService.isVideoLoading"
+            (clickEvent)="openLoom()"
+          />
+        </div>
+
+        <!-- Loom Videos List -->
+        @if (loomService.loomVideos.length) {
+          <div class="max-h-[200px] overflow-y-auto space-y-1">
+            @for (item of loomService.loomVideos; track item) {
+              <div
+                class="bg-v4-secondary-background-color rounded-lg p-2 flex justify-between items-center"
+              >
+                <a
+                  target="_blank"
+                  class="text-sm text-v4-common-blue-color truncate max-w-[350px]"
+                  [href]="item"
+                >{{ item | truncate: 60 }}</a>
+                <button
+                  type="button"
+                  class="text-v4-common-red-color cursor-pointer ml-2 hover:opacity-70"
+                  (click)="removeVideo(item)"
+                >
+                  <lucide-icon [img]="closeIcon" [size]="16" />
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Upload Document -->
+        <div
+          class="upload-input flex items-center border border-v4-border-color bg-v4-input-background-color overflow-hidden"
+          [style.border-radius]="'10px'"
+        >
+          <div class="flex-1 px-4 py-3 min-w-0">
+            <span
+              class="text-sm truncate block"
+              [class.text-v4-tertiary-text-color]="!fileName"
+              [class.text-v4-main-text-color]="fileName"
+            >
+              {{ fileName || "Upload Document" }}
+            </span>
+          </div>
+          <label
+            class="flex-shrink-0 px-4 py-3 bg-v4-secondary-background-color border-l border-v4-border-color text-sm font-semibold text-v4-secondary-text-color cursor-pointer hover:opacity-80 transition-colors select-none"
+          >
+            BROWSE
+            <input
+              type="file"
+              class="hidden"
+              (change)="uploadFile($event)"
+              accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+            />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div
+      class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    >
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Close"
+      />
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Submit"
+        [loading]="loading"
+        [disabled]="btnDisable"
+        [btnType]="'submit'"
+        (clickEvent)="onSubmit()"
+      />
+    </div>
+  </form>
+</div>

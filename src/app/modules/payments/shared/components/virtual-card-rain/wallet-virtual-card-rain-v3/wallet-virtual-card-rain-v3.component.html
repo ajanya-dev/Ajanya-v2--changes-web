@@ -1,0 +1,127 @@
+<div class="main-container h-full min-h-[680px]" [formGroup]="form">
+  <div
+    [ngClass]="{ skelton: initialLoading() }"
+    class="w-full flex flex-col items-center justify-center"
+  >
+    <app-amount-input
+      [ngClass]="
+        form.controls.amount.disabled
+          ? 'disable_field_amt cursor-no-drop bg-check-input-disabled-color'
+          : ''
+      "
+      formControlName="amount"
+      [maxLength]="15"
+      customClass="amount-input-v3"
+    />
+    <app-control-message-v35
+      [control]="form.controls.amount"
+      [customMessages]="{
+        min: 'Minimum transaction amount should be $10.00',
+        required: 'Amount is required'
+      }"
+    />
+  </div>
+  <div class="w-full flex flex-col justify-center items-center mt-8">
+    @if (payeeDataService.payeeDataSignal()) {
+      <div class="w-full flex justify-end items-end mb-1 text-main-text-color">
+        <button
+          matTooltip="View Payee Summary"
+          (click)="payeeDataService.openTransactionHistoryModal()"
+        >
+          <fa-icon [icon]="faHistory"></fa-icon>
+        </button>
+      </div>
+    }
+    <div class="w-full flex justify-center items-center">
+      <div
+        [ngClass]="{ 'skelton after:z-[9999]': initialLoading() }"
+        class="custom-input-v3-wrapper flex grow shadow max-w-[340px]"
+      >
+        <app-wallet-dropdown-v3
+          class="w-full"
+          formControlName="wallet"
+          (ready)="
+            populateOnEdit(
+              $event,
+              paymentConfig()?.paymentFormValue?.wallet?.id
+            )
+          "
+          append="ng-select"
+          customHeight="3"
+        />
+      </div>
+      <div class="arrow-wrapper flex justify-center items-center">
+        <div class="arrow flex justify-center items-center">
+          <fa-icon [icon]="['fas', 'arrow-right-long']"></fa-icon>
+        </div>
+      </div>
+      <div
+        [ngClass]="{ 'skelton after:z-[9999]': initialLoading() }"
+        class="custom-input-v3-wrapper flex grow shadow max-w-[340px]"
+      >
+        <app-payee-dropdown-v3
+          class="w-full"
+          customHeight="3"
+          [enableAddNew]="true"
+          formControlName="payee"
+          (ready)="
+            populateOnEdit(
+              $event,
+              paymentConfig()?.paymentFormValue?.payee?.encryptedId
+            )
+          "
+        />
+      </div>
+    </div>
+  </div>
+  <div class="flex gap-7">
+    <app-control-message-v35 [control]="form.controls.wallet" class="w-full" />
+    <app-control-message-v35 [control]="form.controls.payee" class="w-full" />
+  </div>
+  <div class="grid grid-cols-2 gap-6 mt-5">
+    <div [ngClass]="{ skelton: initialLoading() }" class="single_input">
+      <input
+        id="payeeEmail"
+        type="text"
+        class="input_style"
+        placeholder=" "
+        formControlName="payeeEmail"
+      />
+      <label for="payeeEmail" class="floating_label_field">
+        Payee Email<span class="error_msg">*</span>
+      </label>
+      <app-control-message-v35 [control]="form.controls.payeeEmail" />
+      <app-control-message-v35
+        [customMessages]="{
+          phoneEmailValidation: 'Email or Phone is required'
+        }"
+        [control]="form"
+      />
+    </div>
+    <div [ngClass]="{ skelton: initialLoading() }" class="single_input">
+      <app-new-phone-input
+        append="body"
+        formControlName="payeePhone"
+        mask="(000) 000-0000"
+      />
+      <app-control-message-v35 [control]="form.controls.payeePhone" />
+      <app-control-message-v35
+        [customMessages]="{
+          phoneEmailValidation: 'Email or Phone is required'
+        }"
+        [control]="form"
+      />
+    </div>
+  </div>
+
+  <div class="pt-6 grid grid-cols-2 gap-6">
+    <div></div>
+    <app-common-button-v35
+      class="flex-1"
+      [type]="{ style: 'filled', name: 'main' }"
+      text="Send Card"
+      width="100%"
+      (clickEvent)="submitPayment()"
+    />
+  </div>
+</div>

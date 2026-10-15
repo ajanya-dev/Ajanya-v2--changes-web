@@ -1,0 +1,172 @@
+<section
+  class="flex max-w-[1500px] w-full m-auto gap-5 origin-top max-xl:flex-col max-xl:items-center"
+>
+  <div class="max-w-[50%] flex-[1_1_50%] max-xl:!w-3/4 max-xl:!max-w-full">
+    <div class="flex flex-col gap-5 !bg-transparent rounded">
+      <div
+        class="bg-main-background-color rounded-[5px] w-full"
+        [ngClass]="{ 'skelton h-[290px]': isLoading() }"
+      >
+        <div
+          class="m-2 p-2 bg-secondary-background-color rounded-tl-[5px] rounded-tr-[5px] border-b border-input-border-color flex justify-between items-center"
+        >
+          <div class="flex gap-3 items-center">
+            <app-ocw-back-button
+              [btnStyle]="{ bg: 'light' }"
+              [isRounded]="true"
+              (click)="goBack()"
+              type="takeEvent"
+            >
+            </app-ocw-back-button>
+            <h3 class="text-main-text-color font-inter text-[15px] font-medium">
+              Vendor Credit Details
+            </h3>
+          </div>
+        </div>
+        <div>
+          <div class="px-4 py-6">
+            <div class="flex flex-col gap-y-4">
+              @for (item of viewItems; track item.label) {
+                <div class="grid grid-cols-4 gap-8">
+                  <span
+                    class="font-inter text-secondary-text-color font-normal text-xs col-span-1"
+                  >
+                    {{ item.label }}
+                  </span>
+                  <span
+                    class="font-inter text-main-text-color font-semibold text-xs col-span-3"
+                    [matTooltip]="item.value?.length > 50 ? item.value : ''"
+                  >
+                    @if (item.type === "currency") {
+                      {{ item.value | currency }}
+                    } @else {
+                      {{ item.value | truncate: 50 }}
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      <ng-container
+        *ngTemplateOutlet="auditTrailTemplate; context: { $implicit: 'mobile' }"
+      >
+      </ng-container>
+      <div
+        class="bg-main-background-color rounded-[5px] px-4 pt-2 pb-4 h-full w-full"
+        [ngClass]="{ skelton: isLoading() }"
+      >
+        <mat-tab-group animationDuration="0ms">
+          <mat-tab label="Comments">
+            <app-view-comments
+              slug="vendor-credits"
+              [id]="vendorId"
+            ></app-view-comments>
+            <div class="flex justify-end mt-2">
+              <app-common-button-v35
+                text="Add Comment"
+                [type]="{ style: 'filled', name: 'main' }"
+                class="mr-3"
+                (clickEvent)="onAddcomment()"
+              ></app-common-button-v35>
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Attachments">
+            <app-view-attachments
+              slug="vendor-credits"
+              [id]="vendorId"
+            ></app-view-attachments>
+            <div class="flex justify-end mt-2">
+              <app-common-button-v35
+                text="Add Attachments"
+                [type]="{ style: 'filled', name: 'main' }"
+                class="mr-3"
+                (clickEvent)="onAddattachment()"
+              ></app-common-button-v35>
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Payment Details">
+            <div>
+              @if (!isLoading() && paymentsData?.length) {
+                <table class="new-table">
+                  <thead>
+                    <tr>
+                      @for (item of ["Date", "Amount", "Ref"]; track $index) {
+                        <th>{{ item }}</th>
+                      }
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @for (item of paymentsData; track $index) {
+                      <tr>
+                        <td>{{ item.paymentDate }}</td>
+                        <td>{{ item.amount | currency }}</td>
+                        <td>
+                          <a
+                            role="presentation"
+                            class="cursor-pointer text-common-blue-color"
+                            (click)="goToCheck(item.paymentReference,item?.referenceType)"
+                            >Click here</a
+                          >
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <div
+                  class="flex flex-col justify-center items-center h-[213px]"
+                >
+                  <img
+                    ngSrc="/assets/images/empty-box-v3.svg"
+                    alt="No data"
+                    width="120"
+                    height="100"
+                  />
+                  <span
+                    class="font-roboto font-normal text-main-text-color text-sm"
+                  >
+                    Sorry, No Data Found!!
+                  </span>
+                </div>
+              }
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-[50%] flex-[1_1_50%]">
+    <ng-container
+      *ngTemplateOutlet="auditTrailTemplate; context: { $implicit: 'desktop' }"
+    >
+    </ng-container>
+  </div>
+</section>
+<ng-template #auditTrailTemplate let-type>
+  <div
+    class="bg-main-background-color rounded-[5px] px-4 pt-2 pb-4 min-h-[290px]"
+    [ngClass]="{
+      'skelton h-[290px]': isLoading(),
+      'hidden max-xl:hidden': type === 'desktop',
+      'max-xl:block hidden': type === 'mobile'
+    }"
+  >
+    <div class="bg-secondary-background-color rounded-[5px] px-2 py-4 mb-[7px]">
+      <h1 class="font-inter text-secondary-text-color font-medium text-xs">
+        Audit Trail
+      </h1>
+    </div>
+    <div>
+      <app-view-audit-trail
+        slug="vendor-credits"
+        [id]="vendorId"
+      ></app-view-audit-trail>
+    </div>
+  </div>
+</ng-template>

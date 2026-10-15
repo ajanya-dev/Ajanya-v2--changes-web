@@ -1,0 +1,123 @@
+<div class="main-div">
+  <div class="flex justify-between pb-6">
+    <div>
+       <span class="mt-18 w-full text-base text-main-text-color align-middle flex items-center">
+        <div class="ocw_modal_title">Import</div>
+       </span>
+    </div>
+    <div >
+     <fa-icon  (click)="close()" class="text-secondary-text-color cursor-pointer" [icon]="faXmark"></fa-icon>
+   </div>
+ </div>
+  <div appWhiteLabel hiddenIf="isThirdPartyImportEnabled">
+    <div class="mt-2">
+      <div>
+        <div class="font-semibold text-lg center">
+          Connect Your Preferred App
+        </div>
+        <div class="center">Connect any app you like to import payees.</div>
+      </div>
+      <div class="flex justify-center">
+        @if (payeeAppData.length > 0) {
+          <div class="search">
+            <input
+              type="search"
+              class="input_style input-field"
+              name="search"
+              id="search"
+              [(ngModel)]="searchInput"
+              placeholder="Search here.."
+            />
+            <i class="fa-solid fa-magnifying-glass icon"></i>
+          </div>
+        } @else {
+          @if (!loader.list) {
+            <h2 class="text-very_light_black_2 p-3 py-5">
+              No Connected Apps Found!
+            </h2>
+          }
+        }
+      </div>
+      <div class="flex justify-center">
+        @if ((payeeAppData | searchFilter: searchInput ?? []).length === 0) {
+          @if (!loader.list && payeeAppData.length > 0) {
+            <h2 class="text-very_light_black_2 p-3 py-5">
+              No Matching result found!
+            </h2>
+          }
+        }
+        @if (loader.list) {
+          <h2 class="text-very_light_black_2 p-3 py-5">Loading...</h2>
+        }
+      </div>
+    </div>
+    <div class="grid grid-cols-3 overflow-y-auto app-list">
+      @for (app of payeeAppData | searchFilter: searchInput; track app) {
+        <div class="app-box flex flex-col items-center">
+          <img height="64" width="60" class="p-2" [ngSrc]="app.logo" [alt]="app.name" />
+          <h6 class="text-sm mt-3">{{ app.name }}</h6>
+          <ng-container>
+            @if (!app?.loading) {
+              <span
+                class="connection"
+                role="presentation"
+                (click)="onImportFromApp(app.appId)"
+                >Import Payees</span
+              >
+            }
+            @if (app?.loading) {
+              <span
+                class="connection-loading"
+                [ngClass]="{ red: app?.loading === 2 }"
+                >{{
+                  app?.loading === 2
+                    ? "Disconnecting"
+                    : app?.loading === 1
+                      ? "Importing"
+                      : ""
+                }}...</span
+              >
+            }
+            @if (!app?.loading) {
+              <span
+                class="connection-disconnect connection red"
+                role="presentation"
+                (click)="onDisconnectFromApp(app.appId)"
+                >Disconnect</span
+              >
+            }
+          </ng-container>
+        </div>
+      }
+    </div>
+    <div class="flex items-center mx-4 my-2">
+      <div class="border-t border-very_light_black_2 w-full"></div>
+      <span class="mx-2 text-very_light_black_2">OR</span>
+      <div class="border-t border-very_light_black_2 w-full"></div>
+    </div>
+    <div
+      class="manual-box flex justify-center items-center p-2"
+      role="presentation"
+      (click)="onConnectNewApp()"
+    >
+      @if (loader.newAppConnect === false) {
+        <div class="center text-lg font-semibold">Connect new App</div>
+      } @else {
+        <div
+          class="center text-lg font-semibold flex items-center justify-center"
+        >
+          <span
+            class="loadingSpinner mr-2 common-font-color connectNewApp"
+          ></span>
+          Connecting! Please wait...
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<div appWhiteLabel shownIf="isThirdPartyImportEnabled">
+  <h2 class="text-very_light_black_2 p-3 py-5 text-center font-lg">
+    No Access Granted!
+  </h2>
+</div>

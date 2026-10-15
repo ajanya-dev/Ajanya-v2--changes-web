@@ -1,0 +1,264 @@
+@if (!noCards() || loading()) {
+  <div class="p-5">
+    <div class="module_top_section">
+      <div class="flex flex-col md:flex-row">
+        <div class="relative w-[310px] h-[220px]">
+          <div
+            class="relative w-[280px] h-[176px] bg-secondary-background-color rounded-xl"
+          >
+            <div id="absolute inset-0">
+              <img
+                src="/assets/images/logos/credit-card-filled.svg"
+                alt="Credit Card"
+              />
+            </div>
+            <div class="p-5 absolute flex justify-between flex-col inset-0">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-sm text-white">Balance</p>
+                  <p
+                    class="w-32 text-xl font-medium text-white"
+                    [ngClass]="{ skelton: cardLoading || loading() }"
+                  >
+                    {{
+                      cardLoading
+                        ? "$00"
+                        : (cardDetails?.available_balance | currency)
+                    }}
+                  </p>
+                </div>
+                <img
+                  class="w-10"
+                  src="/assets/images/cloud-bank/Mastercard-logo.svg"
+                  alt="Mastercard Logo"
+                />
+              </div>
+              <div
+                class="text-sm text-white"
+                [ngClass]="{ skelton: cardLoading || loading() }"
+              >
+                <p
+                  [matTooltip]="
+                    (selectedCard()?.cardHolder?.name?.length ?? 0) > 20
+                      ? (selectedCard()?.cardHolder?.name ?? '')
+                      : null
+                  "
+                  class="whitespace-nowrap"
+                >
+                  {{
+                    cardLoading
+                      ? "****"
+                      : (selectedCard()?.cardHolder?.name ?? "" | truncate: 20)
+                  }}
+                </p>
+                <div class="flex justify-between">
+                  @if (isCardNoShown) {
+                    <p class="whitespace-nowrap">
+                      {{ formatNumber(cardDetails?.card_number ?? 0) }}
+                    </p>
+                  } @else {
+                    <p class="whitespace-nowrap">
+                      **** **** **** {{ selectedCard()?.last4 }}
+                    </p>
+                  }
+                  <p class="whitespace-nowrap">{{ selectedCard()?.expiry }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-secondary-background-color grid gap-3 grid-cols-1 md:grid-cols-2 grid-rows-4 md:grid-rows-2 rounded-xl h-[176px] flex-1 p-4 md:p-6 items-center"
+          [ngClass]="{ skelton: cardLoading || loading() }"
+        >
+          <div class="max-w-[250px]">
+            <p class="text-xs text-secondary-text-color pb-2">Card Number</p>
+            <p class="font-medium text-normal">
+              @if (isCardNoShown) {
+                <span>{{ formatNumber(cardDetails?.card_number ?? "") }}</span>
+              }
+              @if (!isCardNoShown && selectedCard()?.last4) {
+                <span class="">{{
+                  "**** **** **** " + selectedCard()?.last4
+                }}</span>
+              }
+              @if (isCardNoShown) {
+                <fa-icon
+                  class="cursor-pointer"
+                  [icon]="['fas', 'eye-slash']"
+                  (click)="viewCard()"
+                ></fa-icon>
+              } @else {
+                <fa-icon
+                  class="cursor-pointer"
+                  [icon]="['fas', 'eye']"
+                  (click)="viewCard()"
+                ></fa-icon>
+              }
+            </p>
+          </div>
+          <div class="max-w-[250px]">
+            <p class="text-xs text-secondary-text-color pb-2">CVV</p>
+            <p class="font-medium text-normal">
+              @if (isCvcShown) {
+                <span>{{ cardDetails?.cvc }}</span>
+              } @else {
+                <span>***</span>
+              }
+              @if (isCvcShown) {
+                <fa-icon
+                  class="cursor-pointer"
+                  [icon]="['fas', 'eye-slash']"
+                  (click)="viewCvc()"
+                ></fa-icon>
+              } @else {
+                <fa-icon
+                  class="cursor-pointer"
+                  [icon]="['fas', 'eye']"
+                  (click)="viewCvc()"
+                ></fa-icon>
+              }
+            </p>
+          </div>
+          <div class="max-w-[250px]">
+            <p class="text-xs text-secondary-text-color pb-2">Expiry</p>
+            <p class="font-semibold text-normal">
+              {{ selectedCard()?.expiry }}
+            </p>
+          </div>
+          <div class="max-w-[250px]">
+            <p class="text-xs text-secondary-text-color pb-2">Status</p>
+            <p
+              class="font-semibold text-sm"
+              [ngClass]="
+                selectedCard()?.status === 'ACTIVE'
+                  ? 'text-common-green-color'
+                  : 'text-common-yellow-color'
+              "
+            >
+              {{ selectedCard()?.status ?? "" }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <app-sent-recv-common-card-table-v35
+          [tableId]="tableId"
+        ></app-sent-recv-common-card-table-v35>
+        <!-- <div class="transaction-table relative">
+          <h2 class="text-base">Transactions</h2>
+          <div
+            class="ocw_table_wrapper mt-4 max-h-[476px] min-h-[340px]"
+            [ngClass]="{ skelton: transactionLoading || cardLoading || loading() }"
+          >
+          @if (cardTransactions?.length) {
+            <table
+              class="ocw-table ocw-table-striped"
+              [ngClass]="{ skelton: loading() }"
+            >
+              <thead>
+                <tr>
+                  <td>Amount</td>
+                  <td>Transaction Date</td>
+                  <td>Description</td>
+                  <td>Merchant Name</td>
+                  <td>Status</td>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of cardTransactions; track item.card_id) {
+                  <ng-container>
+                    <tr>
+                      <td>
+                        <span class="text-common-green-color">
+                          {{ item?.billing_amount }}
+                        </span>
+                      </td>
+                      <td>{{ formateDate(item?.txn_date ?? "") }}</td>
+                      <td>{{ item?.description }}</td>
+                      <td>{{ item?.merchant?.merchant_name }}</td>
+                      <td>
+                        <span
+                          class="capitalize"
+                          [ngClass]="{
+                            'text-common-green-color': item?.status === 'completed',
+                            'text-common-yellow-color': item?.status === 'pending',
+                            'text-common-red-color': item?.status === 'declined'
+                          }"
+                        >
+                          {{ item?.status }}
+                        </span>
+                      </td>
+                    </tr>
+                  </ng-container>
+                }
+              </tbody>
+            </table>
+          }
+          @if (!cardTransactions?.length && !transactionLoading) {
+            <p
+              class="no-transactions text-center text-sm font-normal mt-20"
+            >
+              No Transactions to show
+            </p>
+          }
+          </div>
+
+          @if (cardTransactions?.length) {
+            <div
+              class="px-4 py-3 flex items-center justify-between sm:px-6 pagination-sec"
+            >
+              <div class="hidden sm:flex-1 sm:flex justify-end">
+                <ul class="flex items-center -space-x-px h-8 text-sm">
+                  <li>
+                    <a
+                      class="flex items-center justify-center px-3 h-8 ml-0 leading-tight text-main-text-color bg-main-background-color border border-input-border-color rounded-l-lg hover:bg-secondary-background-color hover:text-common-blue-color cursor-pointer"
+                    >
+                      <fa-icon
+                        class="cursor-pointer"
+                        [icon]="['fas', 'chevron-left']"
+                        (click)="previous()"
+                      ></fa-icon>
+                    </a>
+                  </li>
+                  <li>
+                    <p
+                      class="flex items-center justify-center px-3 h-8 leading-tight text-main-text-color bg-main-background-color border border-input-border-color cursor-default"
+                    >
+                      {{ page }}
+                    </p>
+                  </li>
+                  <li>
+                    <a
+                      class="flex items-center justify-center px-3 h-8 leading-tight text-main-text-color bg-main-background-color border border-input-border-color rounded-r-lg hover:bg-secondary-background-color hover:text-common-blue-color cursor-pointer"
+                    >
+                      <fa-icon
+                        class="cursor-pointer"
+                        [icon]="['fas', 'chevron-right']"
+                        (click)="next()"
+                      ></fa-icon>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          }
+        </div> -->
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="no-cards h-full w-full flex flex-col justify-center items-center">
+    <img
+      ngSrc="/assets/images/no_activity.svg"
+      width="130"
+      height="130"
+      alt="Empty Box"
+    />
+    <p class="text-secondary-text-color">
+      Sorry, there are no cards in your list..
+    </p>
+  </div>
+}

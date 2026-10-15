@@ -1,0 +1,175 @@
+<div class="flex flex-col bg-v4-main-background-color">
+
+  <!-- ── Page Header — sticky so it stays visible while the shell scrolls ── -->
+  <div class="flex-shrink-0 bg-v4-main-background-color border-b border-v4-border-color py-4">
+
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="flex items-center justify-center w-8 h-8 rounded-lg border border-v4-border-color bg-v4-secondary-background-color text-v4-main-text-color cursor-pointer hover:bg-v4-tertiary-background-color transition-colors"
+          (click)="goBack()"
+        >
+          <lucide-icon name="arrow-left" [size]="16" />
+        </button>
+        <h1 class="m-0 text-xl leading-7 font-bold text-v4-main-text-color font-funnel whitespace-nowrap">
+          Mailing Dashboard Report
+        </h1>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-sm text-v4-secondary-text-color font-medium">From</span>
+        <div class="w-44">
+          <app-v4-date-picker
+            placeholder="Select date"
+            [formControl]="fromDate"
+            [control]="fromDate"
+            [isFieldRequired]="false"
+            fieldHeight="44px"
+          />
+        </div>
+        <span class="text-sm text-v4-secondary-text-color font-medium">To</span>
+        <div class="w-44">
+          <app-v4-date-picker
+            placeholder="Select date"
+            [formControl]="toDate"
+            [control]="toDate"
+            [isFieldRequired]="false"
+            fieldHeight="44px"
+          />
+        </div>
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Filter"
+          [disabled]="isReportLoading() || !fromDate.value || !toDate.value"
+          (clickEvent)="onFilterClicked()"
+        />
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Content — no overflow; shell's overflow-y-auto is the single scroll ── -->
+  <div class="space-y-5 pt-4">
+
+    <!-- Loading Skeleton -->
+    @if (isReportLoading()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        @for (item of [1,2,3,4,5,6,7,8]; track $index) {
+          <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="skelton h-4 w-32 rounded-md"></div>
+              <div class="skelton w-2 h-2 rounded-full"></div>
+            </div>
+            <div class="skelton h-3 w-16 rounded-md"></div>
+            <div class="border-t border-v4-border-color pt-3 space-y-2">
+              <div class="flex justify-between">
+                <div class="skelton h-3 w-28 rounded-md"></div>
+                <div class="skelton h-3 w-8 rounded-md"></div>
+              </div>
+              <div class="flex justify-between">
+                <div class="skelton h-3 w-24 rounded-md"></div>
+                <div class="skelton h-3 w-8 rounded-md"></div>
+              </div>
+              <div class="flex justify-between pt-1">
+                <div class="skelton h-3 w-20 rounded-md"></div>
+                <div class="skelton h-4 w-10 rounded-md"></div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="skelton h-5 w-48 rounded-md"></div>
+          <div class="flex gap-3">
+            <div class="skelton h-5 w-32 rounded-md"></div>
+            <div class="skelton h-5 w-32 rounded-md"></div>
+          </div>
+        </div>
+        <div class="skelton h-[220px] rounded-lg"></div>
+      </div>
+    }
+
+    <!-- Cards Grid -->
+    @if (!isReportLoading() && reportData()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        @for (shippingType of reportData()?.shipping_types; track $index) {
+          <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-4 hover:shadow-md transition-shadow duration-200">
+
+            <div class="flex items-start justify-between mb-1">
+              <span class="font-semibold text-v4-main-text-color text-sm leading-snug font-peridot">
+                {{ getTypeName(shippingType.name) || shippingType.name }}
+              </span>
+              <div class="w-2 h-2 rounded-full flex-shrink-0 mt-1" style="background-color: var(--v4-primary-brand-bold-color)"></div>
+            </div>
+
+            @if (getPrice(shippingType.name)) {
+              <p class="text-xs text-v4-subtle-text-color mb-3">{{ getPrice(shippingType.name) }}</p>
+            } @else {
+              <div class="mb-3"></div>
+            }
+
+            <div class="border-t border-v4-border-color pt-3 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-v4-secondary-text-color">Check Mail Count</span>
+                <span class="text-sm font-medium text-v4-common-sky-color">{{ shippingType.check_mail_count | number }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-v4-secondary-text-color">Group Check Mail</span>
+                <span class="text-sm font-medium text-v4-common-green-color">{{ shippingType.group_check_mail_count | number }}</span>
+              </div>
+              <div class="flex justify-between items-center pt-1 border-t border-v4-border-color">
+                <span class="text-xs font-medium text-v4-secondary-text-color">Total Count</span>
+                <span class="text-sm font-bold text-v4-common-violet-color">{{ shippingType.total_count | number }}</span>
+              </div>
+            </div>
+
+          </div>
+        }
+      </div>
+
+      @if (!reportData()?.shipping_types?.length) {
+        <div class="text-center py-8 text-v4-secondary-text-color text-sm">
+          No shipping types found for the selected date range.
+        </div>
+      }
+    }
+
+    <!-- Chart -->
+    @if (!isReportLoading() && reportData()?.shipping_types?.length) {
+      <div class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-6">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <h2 class="m-0 text-base font-semibold text-v4-main-text-color font-peridot">Shipping Types Overview</h2>
+          <div class="flex items-center gap-5">
+            <button class="flex items-center gap-1.5 text-[13px] font-medium font-peridot text-v4-primary-brand-bold-color bg-transparent border-none cursor-pointer p-0 no-underline hover:underline disabled:opacity-40 disabled:cursor-not-allowed" [disabled]="!shippingChart" (click)="exportChartAsImage()">
+              <fa-icon [icon]="faImage" class="text-[13px]"></fa-icon>
+              <span>Export as Image</span>
+            </button>
+            <button class="flex items-center gap-1.5 text-[13px] font-medium font-peridot text-v4-primary-brand-bold-color bg-transparent border-none cursor-pointer p-0 no-underline hover:underline disabled:opacity-40 disabled:cursor-not-allowed" [disabled]="!shippingChart" (click)="exportChartAsPDF()">
+              <fa-icon [icon]="faFilePdf" class="text-[13px]"></fa-icon>
+              <span>Export as PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="h-[260px]">
+          <canvas id="v4ShippingChart" class="h-full w-full"></canvas>
+        </div>
+      </div>
+    }
+
+    <!-- Check Records Table -->
+    @if (!isReportLoading() && reportData()) {
+      <app-v4-check-records [selectedDate]="selectedDate()" />
+    }
+
+    <!-- Error state -->
+    @if (!isReportLoading() && !reportData()) {
+      <div class="flex flex-col items-center justify-center py-20">
+        <lucide-icon name="alert-circle" [size]="40" class="text-v4-subtle-text-color mb-3"></lucide-icon>
+        <p class="text-v4-secondary-text-color text-sm">Failed to load report data. Please try again.</p>
+      </div>
+    }
+
+  </div>
+
+</div>

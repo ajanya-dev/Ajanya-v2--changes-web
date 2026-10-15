@@ -1,0 +1,296 @@
+<div>
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Add New Bank Account
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color overflow-y-auto max-h-[70vh]">
+    <!-- Info Banner -->
+    <div
+      class="flex items-start gap-2 p-3 mb-5 bg-v4-secondary-background-color rounded-xl border border-v4-border-color"
+    >
+      <lucide-icon
+        [img]="InfoIcon"
+        [size]="16"
+        class="text-v4-primary-brand-bold-color mt-0.5 flex-shrink-0"
+      ></lucide-icon>
+      <span class="text-xs text-v4-main-text-color">
+        Please ensure all account information is entered accurately.
+      </span>
+    </div>
+
+    <form [formGroup]="bankForm">
+      <!-- Country Toggle -->
+      <div class="flex gap-3 mb-5">
+        <button
+          type="button"
+          class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border-2 transition-all cursor-pointer"
+          [class.border-v4-primary-brand-bold-color]="countryType() === 1"
+          [class.bg-v4-secondary-background-color]="countryType() === 1"
+          [class.text-v4-primary-brand-bold-color]="countryType() === 1"
+          [class.border-v4-border-color]="countryType() !== 1"
+          [class.bg-transparent]="countryType() !== 1"
+          [class.text-v4-subtle-text-color]="countryType() !== 1"
+          (click)="onCountryChange(1)"
+        >
+          USA
+        </button>
+        <button
+          type="button"
+          class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border-2 transition-all cursor-pointer"
+          [class.border-v4-primary-brand-bold-color]="countryType() === 2"
+          [class.bg-v4-secondary-background-color]="countryType() === 2"
+          [class.text-v4-primary-brand-bold-color]="countryType() === 2"
+          [class.border-v4-border-color]="countryType() !== 2"
+          [class.bg-transparent]="countryType() !== 2"
+          [class.text-v4-subtle-text-color]="countryType() !== 2"
+          (click)="onCountryChange(2)"
+        >
+          Canada
+        </button>
+      </div>
+
+      <!-- USA Fields -->
+      @if (countryType() === 1) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <app-common-input-v4
+            [placeholder]="'Routing Number'"
+            [control]="bankForm.controls.bankRoutingNumber"
+            formControlName="bankRoutingNumber"
+            [isNumberOnly]="true"
+            [maxLength]="9"
+            (inputEvent)="lookupRoutingNumber($event)"
+          />
+          <app-common-input-v4
+            [placeholder]="'Account Number'"
+            [control]="bankForm.controls.bankAccountNumber"
+            formControlName="bankAccountNumber"
+            [isNumberOnly]="true"
+            [maxLength]="20"
+            [customMask]="'0000000000000000000000'"
+            [patterns]="customPattern"
+            [hiddenInput]="true"
+            [preventCopy]="true"
+            (inputEvent)="onInputEvent()"
+            (inputFocusEvent)="onAccountFocus()"
+            (inputFocusOutEvent)="onAccountBlur()"
+          />
+          <div class="sm:col-span-2">
+            <app-common-input-v4
+              [placeholder]="'Confirm Account Number'"
+              [control]="bankForm.controls.confirmAccountNumber"
+              formControlName="confirmAccountNumber"
+              [isNumberOnly]="true"
+              [maxLength]="20"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Canada Fields -->
+      @if (countryType() === 2) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <app-common-input-v4
+            [placeholder]="'Transit Number'"
+            [control]="bankForm.controls.transitNumber"
+            formControlName="transitNumber"
+            [isNumberOnly]="true"
+            [maxLength]="5"
+          />
+          <app-common-input-v4
+            [placeholder]="'Financial Institute No.'"
+            [control]="bankForm.controls.financialNumber"
+            formControlName="financialNumber"
+            [isNumberOnly]="true"
+            [maxLength]="3"
+          />
+          <app-common-input-v4
+            [placeholder]="'Account Number'"
+            [control]="bankForm.controls.bankAccountNumber"
+            formControlName="bankAccountNumber"
+            [isNumberOnly]="true"
+            [maxLength]="20"
+          />
+          <app-common-input-v4
+            [placeholder]="'Confirm Account Number'"
+            [control]="bankForm.controls.confirmAccountNumber"
+            formControlName="confirmAccountNumber"
+            [isNumberOnly]="true"
+            [maxLength]="20"
+          />
+        </div>
+      }
+
+      <!-- Account Type -->
+      <div class="mb-5">
+        <app-v4-common-dropdown
+          [config]="accountTypeConfig"
+          [listData]="accountTypeList"
+          [clearable]="false"
+          [appendTo]="'body'"
+          formControlName="bankAccountType"
+        ></app-v4-common-dropdown>
+      </div>
+
+      <!-- Account Holder Section -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <app-common-input-v4
+          [placeholder]="'Account Name'"
+          [control]="bankForm.controls.bankAccountName"
+          formControlName="bankAccountName"
+          [maxLength]="60"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+        <app-common-input-v4
+          [placeholder]="'Nick Name'"
+          [control]="bankForm.controls.bankAccountNickName"
+          formControlName="bankAccountNickName"
+          [maxLength]="60"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+        <div (focusin)="activeAddressTarget.set('holder')">
+          <app-address-autocomplete-v4
+            [placeholder]="'Address Line 1'"
+            [control]="bankForm.controls.bankAccountAddressLine1"
+            (addressSelected)="onHolderAddressSelected($event)"
+          />
+        </div>
+        <app-common-input-v4
+          [placeholder]="'Address Line 2 (optional)'"
+          [control]="bankForm.controls.bankAccountAddressLine2"
+          formControlName="bankAccountAddressLine2"
+          [isFieldRequired]="false"
+          [maxLength]="100"
+        />
+        <app-common-input-v4
+          [placeholder]="'City'"
+          [control]="bankForm.controls.bankAccountCity"
+          formControlName="bankAccountCity"
+          [maxLength]="100"
+        />
+        <app-common-input-v4
+          [placeholder]="'State'"
+          [control]="bankForm.controls.bankAccountState"
+          formControlName="bankAccountState"
+          [maxLength]="100"
+        />
+        <app-common-input-v4
+          [placeholder]="countryType() === 2 ? 'Postal Code' : 'Zip'"
+          [control]="bankForm.controls.bankAccountZip"
+          formControlName="bankAccountZip"
+          [maxLength]="10"
+        />
+        <app-phone-input-v4
+          [control]="bankForm.controls.bankAccountPhone"
+          formControlName="bankAccountPhone"
+          [isFieldRequired]="false"
+          [showCountryDropdown]="false"
+        />
+        <app-common-input-v4
+          [placeholder]="'Email'"
+          [control]="bankForm.controls.bankAccountEmail"
+          formControlName="bankAccountEmail"
+          [isFieldRequired]="false"
+          [maxLength]="60"
+        />
+      </div>
+
+      <!-- Bank Details Section -->
+      <h3
+        class="text-sm font-bold tracking-wider text-v4-secondary-text-color uppercase mt-6 mb-4"
+      >
+        Bank Details
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <app-common-input-v4
+          [placeholder]="'Bank Name'"
+          [control]="bankForm.controls.bankName"
+          formControlName="bankName"
+          [maxLength]="50"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+        <div (focusin)="activeAddressTarget.set('bank')">
+          <app-address-autocomplete-v4
+            [placeholder]="'Street Address'"
+            [control]="bankForm.controls.bankAddress1"
+            [addressInstance]="0"
+            (addressSelected)="onBankAddressSelected($event)"
+          />
+        </div>
+        <app-common-input-v4
+          [placeholder]="'City'"
+          [control]="bankForm.controls.bankCity"
+          formControlName="bankCity"
+          [maxLength]="50"
+        />
+        <app-common-input-v4
+          [placeholder]="'State'"
+          [control]="bankForm.controls.bankState"
+          formControlName="bankState"
+          [maxLength]="100"
+        />
+        <app-common-input-v4
+          [placeholder]="countryType() === 2 ? 'Postal Code' : 'Zip'"
+          [control]="bankForm.controls.bankZip"
+          formControlName="bankZip"
+          [maxLength]="10"
+        />
+        <app-common-input-v4
+          [placeholder]="'Starting Check Number'"
+          [control]="bankForm.controls.bankStartingCheckNumber"
+          formControlName="bankStartingCheckNumber"
+          [isFieldRequired]="false"
+          [isNumberOnly]="true"
+          [maxLength]="12"
+        />
+        <app-common-input-v4
+          [placeholder]="'Fractional Number'"
+          [control]="bankForm.controls.bankFractionalNumber"
+          formControlName="bankFractionalNumber"
+          [isFieldRequired]="false"
+          [maxLength]="12"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+      </div>
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      [text]="'Cancel'"
+      [width]="'120px'"
+      (clickEvent)="dialogRef.close(false)"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="'Add'"
+      [width]="'120px'"
+      [loading]="loading()"
+      [disabled]="loading()"
+      [isAddIcon]="true"
+      (clickEvent)="submit()"
+    />
+  </div>
+</div>

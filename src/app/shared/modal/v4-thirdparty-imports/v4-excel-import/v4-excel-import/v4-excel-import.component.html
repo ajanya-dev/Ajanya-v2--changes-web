@@ -1,0 +1,312 @@
+<!-- Step 1: Import Form -->
+<div [style.display]="currentStep() === 1 ? 'block' : 'none'">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-3">
+      <button
+        (click)="back()"
+        class="w-8 h-8 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center border-none bg-transparent"
+      >
+        <lucide-icon
+          [img]="ChevronLeftIcon"
+          [size]="18"
+          class="text-v4-subtle-text-color"
+        ></lucide-icon>
+      </button>
+      <div class="flex flex-col">
+        <h1 class="text-xl font-medium text-v4-main-text-color font-funnel">
+          Import from Excel File
+        </h1>
+      </div>
+    </div>
+    <div
+      (click)="back()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="p-6 bg-v4-tertiary-background-color overflow-y-auto max-h-[500px]"
+  >
+    <form [formGroup]="importForm" class="space-y-4">
+      <!-- Source -->
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+        >
+          Source: <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-v4-common-dropdown
+          [listData]="sourceOptions"
+          [config]="{
+            placeholder: 'Select Source',
+            displayField: 'label',
+            outputField: 'value'
+          }"
+          [clearable]="false"
+          appendTo="body"
+          formControlName="source"
+        ></app-v4-common-dropdown>
+        <app-control-message-v4
+          [control]="importForm.controls.source"
+          label="Please select source"
+        />
+      </div>
+
+      <!-- Select Account -->
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+        >
+          Select Account: <span class="text-v4-common-red-color">*</span>
+        </label>
+        @if (importForm.controls.source.value === "bankAccount") {
+          <app-bank-ac-dropdown-v4
+            permissionContext="forPayment"
+            [formControl]="selectedBank"
+            class="w-full"
+            [enableAddNew]="true"
+            [labelIconNeeded]="false"
+            append="body"
+            (clearEvent)="onRemoveBank()"
+          ></app-bank-ac-dropdown-v4>
+          <app-control-message-v4
+            [control]="importForm.controls.bankAccount"
+            label="Please select bank account"
+          />
+        } @else if (importForm.controls.source.value === "wallet") {
+          <app-wallet-dropdown-v4
+            [formControl]="selectedWallet"
+            class="w-full"
+            [enableAddNew]="true"
+            [labelIconNeeded]="false"
+            append="body"
+          ></app-wallet-dropdown-v4>
+          <app-control-message-v4
+            [control]="importForm.controls.wallet"
+            label="Please select wallet"
+          />
+        }
+      </div>
+
+      <!-- Payment Method (Wallet only) -->
+      @if (importForm.controls.source.value === "wallet") {
+        <div class="space-y-1.5">
+          <label
+            class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+          >
+            Payment Method: <span class="text-v4-common-red-color">*</span>
+          </label>
+          <app-v4-common-dropdown
+            [listData]="paymentMethodOptions"
+            [config]="{
+              placeholder: 'Select Payment Method',
+              displayField: 'label',
+              outputField: 'value'
+            }"
+            [clearable]="false"
+            appendTo="body"
+            formControlName="paymentMethod"
+          ></app-v4-common-dropdown>
+          <app-control-message-v4
+            [control]="importForm.controls.paymentMethod"
+            label="Please select payment method"
+          />
+        </div>
+      }
+
+      <!-- Select File -->
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+        >
+          Select File: <span class="text-v4-common-red-color">*</span>
+        </label>
+        <div class="flex items-center gap-2">
+          @if (fileName) {
+            <div
+              class="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-v4-badge-success-text-color bg-v4-badge-success-bg-color h-[44px]"
+            >
+              <lucide-icon
+                [img]="FileSpreadsheetIcon"
+                [size]="16"
+                class="text-v4-badge-success-text-color flex-shrink-0"
+              ></lucide-icon>
+              <span
+                class="text-sm text-v4-badge-success-text-color truncate flex-1"
+                >{{ fileName }}</span
+              >
+              <button
+                type="button"
+                (click)="clearFile(fileInput)"
+                class="text-v4-badge-success-text-color hover:opacity-70 border-none bg-transparent cursor-pointer p-0 flex-shrink-0 flex items-center"
+              >
+                <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          } @else {
+            <div
+              class="flex-1 px-3 rounded-lg border border-v4-input-border-color bg-v4-tertiary-background-color text-sm text-v4-subtle-text-color h-[44px] flex items-center"
+            >
+              No file selected
+            </div>
+          }
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'BROWSE'"
+            [lucideIcon]="'upload'"
+            [lucideIconSize]="14"
+            (clickEvent)="fileInput.click()"
+          ></app-common-button-v4>
+          <input
+            #fileInput
+            type="file"
+            class="hidden"
+            accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.rtf,.txt,.jpg,.png"
+            (change)="onFileChange($event)"
+          />
+        </div>
+        <app-control-message-v4
+          [control]="importForm.controls.file"
+          label="Please select a file"
+        />
+      </div>
+
+      <!-- Select Template -->
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+        >
+          Select Template:
+        </label>
+        <div class="v4-excel-ng-select w-full">
+          <ng-select
+            #templateSelect
+            appendTo="body"
+            class="ng-dropdown-panel-v4 text-sm"
+            (change)="changeTemplate($event)"
+            [clearable]="false"
+            [searchable]="false"
+          >
+            @for (item of templates; track $index) {
+              <ng-option class="relative" [value]="item">
+                <ng-container>{{ item.templateName }}</ng-container>
+                <ng-template ng-option-tmp let-item="item">
+                  <div class="flex items-center justify-between">
+                    <span>{{ item.templateName }}</span>
+                    @if (item.id) {
+                      <button
+                        class="text-v4-common-red-color hover:text-v4-common-red-color p-1 border-none bg-transparent cursor-pointer"
+                        (click)="deleteTemplate(item, $event)"
+                      >
+                        <lucide-icon
+                          [img]="Trash2Icon"
+                          [size]="14"
+                        ></lucide-icon>
+                      </button>
+                    }
+                  </div>
+                </ng-template>
+              </ng-option>
+            }
+          </ng-select>
+        </div>
+      </div>
+
+      <!-- Include Column Heading Lines -->
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide"
+        >
+          Include Column Heading Lines:
+        </label>
+        <app-v4-common-dropdown
+          [listData]="headerOptions"
+          [config]="{
+            placeholder: 'Select',
+            displayField: 'label',
+            outputField: 'value'
+          }"
+          [clearable]="false"
+          appendTo="body"
+          formControlName="includeHeader"
+        ></app-v4-common-dropdown>
+      </div>
+    </form>
+
+    <!-- Import Button -->
+    <div class="flex justify-end mt-5">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Import'"
+        [textColorInput]="'white'"
+        (clickEvent)="submit()"
+        [loading]="submitting"
+        [disabled]="submitting"
+      ></app-common-button-v4>
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-v4-border-color my-4"></div>
+
+    <!-- Helper Text -->
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2 text-v4-main-text-color">
+        <lucide-icon
+          [img]="ChevronRightIcon"
+          [size]="14"
+          class="text-v4-primary-brand-bold-color"
+        ></lucide-icon>
+        <span>Please make sure date format is (mm/dd/yyyy or mm/dd/yy)</span>
+      </div>
+      <div class="flex items-center gap-2 text-v4-main-text-color">
+        <lucide-icon
+          [img]="ChevronRightIcon"
+          [size]="14"
+          class="text-v4-primary-brand-bold-color"
+        ></lucide-icon>
+        <span>We only support csv/xlsx file</span>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <button
+      class="flex items-center gap-2 text-v4-primary-brand-bold-color hover:underline text-sm border-none bg-transparent cursor-pointer p-0 font-semibold"
+      [disabled]="isSampleFileLoading()"
+      (click)="downloadClick()"
+    >
+      <lucide-icon [img]="DownloadIcon" [size]="14"></lucide-icon>
+      <span>Download Sample File</span>
+    </button>
+  </div>
+</div>
+
+<!-- Step 2: Column Matching -->
+@if (currentStep() === 2 && step2Data()) {
+  <app-v4-excel-import-step2
+    [importData]="step2Data()!"
+    [templateNameInput]="step2TemplateName()"
+    [source]="step2Source()"
+    (stepBack)="onStep2Back()"
+    (submitSuccess)="onStep2SubmitSuccess($event)"
+  />
+}
+
+<!-- Step 3: Review Imported Checks -->
+@if (currentStep() === 3) {
+  <app-v4-excel-import-step3
+    [source]="step3Source()"
+    (cancel)="onStep3Cancel()"
+    (submitSuccess)="onStep3SubmitSuccess($event)"
+    (processNowSuccess)="onStep3ProcessNow($event)"
+  />
+}

@@ -1,0 +1,78 @@
+<div class="flex gap-2 items-center status-container pl-2">
+  @if (transferModeStatus !== "Pending") {
+    <div
+      class="statement-container"
+      [matTooltip]="toolTip"
+      role="presentation"
+      (click)="openStatement()"
+    >
+      <button
+        class="status-field"
+        [ngStyle]="{ color: dynamicFontColor }"
+        [ngClass]="{
+          'text-common-red-color':
+            dynamicFontColor === 'failed' ||
+            transferModeStatus === 'Mail Scheduled-Void' ||
+            dynamicFontColor === 'canceled',
+          'text-common-green-color':
+            dynamicFontColor === 'approved' ||
+            dynamicFontColor === 'completed' ||
+            dynamicFontColor === 'settled',
+          '!underline !text-common-green-color': trackingUrl,
+          'text-common-blue-color':
+            dynamicFontColor === 'processing' || dynamicFontColor === 'refund',
+          '!cursor-default': mailingType === 'First Class'
+        }"
+      >
+        {{ transferModeStatus }}
+      </button>
+    </div>
+  }
+  @if (
+    commonTransactionTableRowData.transfer_type_code === "print" &&
+    commonTransactionTableRowData?.status !== "CANCELED"
+  ) {
+    <div class="transfer-mode">
+      <h2>{{ commonTransactionTableRowData?.transfer_mode }}</h2>
+    </div>
+  }
+  @if (transferModeStatus === "Pending" && !isBillTable) {
+    <app-common-button-v4
+      type="list"
+      text="Pay"
+      textColorInput="white"
+      (clickEvent)="onPayButtonClick()"
+    >
+    </app-common-button-v4>
+  }
+
+  @if (isBillTable && transferModeStatus === "Pending") {
+    <h2 class="">Pending</h2>
+  }
+  <div class="icon-color">
+    @if (areCommentsPresent) {
+      <fa-icon
+        class="px-2 cursor-pointer"
+        [icon]="['fas', 'comment-plus']"
+        matTooltip="View Comments"
+        (click)="openCommentModal()"
+      >
+      </fa-icon>
+    }
+    @if (areAttachmentsPresent) {
+      <fa-icon
+        class="px-2 cursor-pointer"
+        [icon]="['fas', 'paperclip']"
+        matTooltip="View Attachments"
+        (click)="openAttachmentModal()"
+      >
+      </fa-icon>
+    }
+  </div>
+  @if (
+    statuscode.includes(agGridCellRendererParams.data.cheque_status) ||
+    agGridCellRendererParams.data.cheque_status === null
+  ) {
+    <app-common-filter-icon (filterEvent)="onFilterClicked()" />
+  }
+</div>

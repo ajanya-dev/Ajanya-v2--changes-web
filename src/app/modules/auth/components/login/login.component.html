@@ -1,0 +1,450 @@
+@if (showNewUiSignal()) {
+  <app-new-login [currentPage]="initiatedFrom()" />
+} @else {
+  <div class="login_wrappper">
+    <!-- SIGN UP START -->
+    <section class="sign_up_wrapper left_section">
+      <div class="sign_up_container">
+        <header id="sign_up_left_header">
+          <div class="title_img_wrapper">
+            @if (isBuckzy) {
+              <img
+                role="presentation"
+                alt="Buckzy"
+                (click)="authV3Service.onGoToWebsite()"
+                [ngSrc]="'assets/white_label/buckzy/assets/app_logo.png'"
+                title="Buckzy"
+                width="141"
+                height="75"
+                priority
+              />
+            } @else if (isOlliepay) {
+              <img
+                role="presentation"
+                alt="OlliePay"
+                (click)="authV3Service.onGoToWebsite()"
+                [ngSrc]="'assets/white_label/olliepay/assets/app_logo.png'"
+                title="OlliePay"
+                width="141"
+                height="75"
+                priority
+              />
+            } 
+            @else if (isArcharina) {
+              <img
+                role="presentation"
+                alt="Archarina"
+                (click)="authV3Service.onGoToWebsite()"
+                [ngSrc]="'assets/white_label/archarina.io/assets/app_logo.png'"
+                title="Archarina"
+                width="160"
+                height="75"
+                priority
+                class="!max-w-[160px]"
+              />
+            }
+            @else {
+              <img
+                role="presentation"
+                appWhiteLabel
+                shownIf="isCompassRequirement"
+                alt="Compass"
+                (click)="authV3Service.onGoToWebsite()"
+                [ngSrc]="'assets/white_label/compass/assets/app_logo.png'"
+                title="Compass"
+                width="141"
+                height="75"
+                priority
+              />
+              <img
+                role="presentation"
+                appWhiteLabel
+                hiddenIf="isCompassRequirement"
+                [alt]="authV3Service.appConfig?.websiteTitle"
+                (click)="authV3Service.onGoToWebsite()"
+                [ngSrc]="
+                  authV3Service.appConfig?.websiteLogo ||
+                  '../../../../assets/main/app_logo.svg'
+                "
+                [title]="authV3Service.appConfig?.websiteTitle"
+                width="141"
+                height="75"
+                priority
+              />
+            }
+          </div>
+        </header>
+  
+        <section id="sign_up_left_body">
+          <div class="sign_up_body_wrapper">
+            <h3>{{ authV3Service.pageLabels?.title }}</h3>
+            <div class="input_wrapper">
+              <form [formGroup]="loginForm">
+                <div class="single_input">
+                  <input
+                    type="text"
+                    required
+                    (keyup)="onchange($event)"
+                    (keydown)="enterKey($event, 1)"
+                    class="input_style"
+                    formControlName="username"
+                    placeholder="Email Address"
+                    maxlength="100"
+                    [readonly]="isReadOnly"
+                  />
+                </div>
+                <div class="single_input password">
+                  <input
+                    [type]="passwordHide ? 'password' : 'text'"
+                    id="password"
+                    required
+                    (keyup)="onchange($event)"
+                    (keydown)="enterKey($event, 2)"
+                    formControlName="password"
+                    class="input_style"
+                    placeholder="Password"
+                    maxlength="100"
+                  />
+                  @if (passwordHide) {
+                    <fa-icon
+                      [icon]="faEye"
+                      (click)="passwordHide = !passwordHide"
+                      class="text-secondary-text-color eye-btn"
+                    ></fa-icon>
+                  }
+                  @if (!passwordHide) {
+                    <fa-icon
+                      [icon]="faEyeSlash"
+                      (click)="passwordHide = !passwordHide"
+                      class="text-secondary-text-color eye-btn"
+                    ></fa-icon>
+                  }
+                  <!-- EYE BUTTON END-->
+                </div>
+                @if (authV3Service.warningMsg !== "") {
+                  <span class="alert_label">
+                    <p>{{ authV3Service.warningMsg }}</p>
+                  </span>
+                }
+
+                @if (showExistingAccountMessage()) {
+                  <div
+                    class="flex items-start gap-2.5 p-3 my-3 rounded-md border border-common-blue-color bg-common-secondary-blue-color"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <fa-icon
+                      [icon]="faCircleInfo"
+                      class="shrink-0 mt-0.5 text-common-blue-color text-base"
+                      aria-hidden="true"
+                    ></fa-icon>
+                    <p class="font-inter text-sm leading-5 text-main-text-color m-0">
+                      <span class="font-semibold">You already have an account.</span>
+                      Please log in with your password, or
+                      <a
+                        routerLink="/password/reset"
+                        class="font-medium text-common-blue-color hover:underline"
+                      >reset it here</a>
+                      if you’ve forgotten it.
+                    </p>
+                  </div>
+                }
+
+                <div class="forgot_section space-btw-content" [ngClass]="{ '!hidden': showExistingAccountMessage() }">
+                  <div class="remember-me space-btw-content">
+                    <input
+                      [(ngModel)]="isRememberMe"
+                      name="isRememberMe"
+                      ngDefaultControl
+                      [ngModelOptions]="{ standalone: true }"
+                      type="checkbox"
+                    />
+                    <p (click)="isRememberMe = !isRememberMe" role="presentation">
+                      Remember Me
+                    </p>
+                  </div>
+                  <div class="forgot" routerLink="/password/reset">
+                    <p>Forgot Password?</p>
+                  </div>
+                </div>
+                @if (authV3Service.timerExist()) {
+                  <div class="flex justify-center text-center mb-2">
+                    <div class="text-main-text-color font-inter text-sm">
+                      Retry After :
+                      <span class="!text-common-red-color">
+                        {{ authV3Service.displayTimer() }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </form>
+            </div>
+  
+            <div class="login_button">
+              <button
+                class="ocw-btn flex justify-center align-center"
+                (click)="authV3Service.timerExist() ? '' : submit()"
+                [ngStyle]="{
+                  'pointer-events': authV3Service.loading ? 'none' : 'all'
+                }"
+              >
+                <span
+                  [ngStyle]="{
+                    display: authV3Service.loading ? 'block' : 'none'
+                  }"
+                  class="loadingSpinner align-middle"
+                ></span>
+                {{ authV3Service.pageLabels?.submitButton }}
+              </button>
+            </div>
+            @if (authV3Service.staticWhiteLabelConditions.socialLoginVisible) {
+              <div id="signin_with">
+                <!-- Social login icons start -->
+                <ng-container>
+                  <span
+                    >{{
+                      authV3Service.pageLabels?.signInWith?.heading
+                    }}
+                    With</span
+                  >
+                  <div class="options">
+                    @for (item of authV3Service.socialLoginIcons; track item) {
+                      <ng-container>
+                        <div [ngClass]="{ quickbook: item.name === 'Intuit' }">
+                          <a
+                            role="presentation"
+                            (click)="authV3Service.onClickSocialIcon(item.url)"
+                            [matTooltip]="'Sign in with' + ' ' + item.name"
+                          >
+                            <img
+                              class="social_login cursor-pointer"
+                              [ngClass]="item?.styles?.others"
+                              [ngStyle]="item?.styles?.img"
+                              [ngSrc]="
+                                '../../../../assets/images/login/social/' +
+                                item.image
+                              "
+                              [alt]="item.name"
+                              fill
+                            />
+                          </a>
+                        </div>
+                      </ng-container>
+                    }
+                    <div class="social_login_empty"></div>
+                  </div>
+                </ng-container>
+                <!-- Social login icons end -->
+  
+                <div class="sign_up">
+                  <p>
+                    Don't have an account yet?
+                    <span
+                      role="presentation"
+                      (click)="authV3Service.register()"
+                      [ngStyle]="{
+                        'pointer-events': authV3Service.loading ? 'none' : 'all'
+                      }"
+                      >{{ authV3Service.pageLabels?.signUpText }}</span
+                    >
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+          @if (
+            isBuckzy ||
+            isOlliepay ||
+            isArcharina ||
+            environment.env_id === 'csnhc' ||
+            (sandbox &&
+              !authV3Service.staticWhiteLabelConditions.socialLoginVisible)
+          ) {
+            <div class="sign_up">
+              <p>
+                Don't have an account yet?
+                <span
+                  role="presentation"
+                  (click)="authV3Service.register()"
+                  [ngStyle]="{
+                    'pointer-events': authV3Service.loading ? 'none' : 'all'
+                  }"
+                  >{{ authV3Service.pageLabels?.signUpText }}</span
+                >
+              </p>
+            </div>
+          }
+        </section>
+  
+        <footer id="sign_up_left_footer">
+          <div class="footer_wrapper">
+            @if (authV3Service.staticWhiteLabelConditions.zilMoneyLogoVisible) {
+              <div class="powered_by">
+                <p>powered by</p>
+                <a
+                  class="flex items-center leading-none"
+                  href="https://zilmoney.com/"
+                >
+                  <img
+                    class="block"
+                    ngSrc="/assets/main/zil_Money_logo.svg"
+                    width="90"
+                    height="18"
+                    priority
+                    alt="Zil Money"
+                  />
+                </a>
+              </div>
+            }
+            @if (supportNo) {
+              <a
+                class="flex justify-center font-inter font-normal text-sm"
+                href="tel:{{ supportNo }}"
+                ><span
+                  class="self-center flex gap-2.5 text-[13px] rounded-sm cursor-pointer py-1.5 px-2"
+                  ><fa-icon [icon]="faPhone" role="presentation"></fa-icon
+                  >{{ supportNo }}</span
+                ></a
+              >
+            }
+          </div>
+        </footer>
+      </div>
+    </section>
+    <!-- SIGN UP END -->
+  
+    <!--ADS CONTENT START -->
+    <section class="ads_content_wrapper right_section">
+      <div class="change_root_url">
+        @if (isItDev) {
+          <button
+            (click)="authV3Service.onChangeBaseUrl()"
+            matTooltip="Change root url(API)"
+            class="ocw-btn ocw-btn-trash"
+          >
+            Change Root Url
+          </button>
+        }
+      </div>
+  
+      @if (isItDev) {
+        <div class="absolute top-[68px] right-64 w-52 manual-height-override">
+          <ng-select
+            appendTo="ng-select"
+            [(ngModel)]="authV3Service.selectedEnvironmentId"
+            name="selectedEnvironmentId"
+            ngDefaultControl
+            (ngModelChange)="authV3Service.setGlobalEnvironmentId()"
+            placeholder="Environments"
+          >
+            @for (item of authV3Service.dynamicWhiteLabelData; track item) {
+              <ng-option [value]="item.environmentId">
+                {{ item.environmentId }}
+              </ng-option>
+            }
+          </ng-select>
+        </div>
+      }
+      @if (
+        authV3Service.sliderDetails &&
+        authV3Service.sliderNum &&
+        !authV3Service.hideDescription
+      ) {
+        <div class="slider_wrapper" id="slider_wrapper">
+          <div class="single_slide">
+            <div class="left_section">
+              <div class="headings">
+                <h2>
+                  {{
+                    authV3Service.sliderDetails[authV3Service.sliderNum].heading
+                      .main
+                  }}
+                </h2>
+                <h5>
+                  {{
+                    authV3Service.sliderDetails[authV3Service.sliderNum].heading
+                      .sub
+                  }}
+                </h5>
+              </div>
+              <div class="content">
+                <h6>
+                  {{
+                    authV3Service.sliderDetails[authV3Service.sliderNum].content
+                      .main
+                  }}
+                </h6>
+                <p>
+                  {{
+                    authV3Service.sliderDetails[authV3Service.sliderNum].content
+                      .sub
+                  }}
+                </p>
+              </div>
+            </div>
+            <div class="right_section">
+              <div
+                class="image"
+                role="presentation"
+                id="swipper_img"
+                [ngClass]="{
+                  link: authV3Service.sliderDetails[authV3Service.sliderNum].image
+                    .link
+                }"
+                (click)="
+                  authV3Service.onClickSliderImg(
+                    authV3Service.sliderDetails[authV3Service.sliderNum]
+                  )
+                "
+              >
+                <img
+                  [ngSrc]="
+                    authV3Service.sliderDetails[authV3Service.sliderNum].image.url
+                  "
+                  width="471"
+                  height="568"
+                  [alt]="
+                    authV3Service.sliderDetails[authV3Service.sliderNum].image
+                      .title
+                  "
+                  priority
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+      @if (
+        authV3Service.sliderDetails &&
+        authV3Service.sliderDetails.length > 0 &&
+        authV3Service.hideDescription
+      ) {
+        <div
+          class="border-8 border-white bg-[#e4effa]"
+          role="presentation"
+          [ngClass]="{
+            link: authV3Service.sliderDetails[authV3Service.sliderNum].image.link
+          }"
+          (click)="
+            authV3Service.onClickSliderImg(
+              authV3Service.sliderDetails[authV3Service.sliderNum]
+            )
+          "
+        >
+          <img
+            class="h-full w-full cursor-pointer"
+            [ngSrc]="
+              authV3Service.sliderDetails[authV3Service.sliderNum].image.url
+            "
+            width="940"
+            height="568"
+            [alt]="
+              authV3Service.sliderDetails[authV3Service.sliderNum].image.title
+            "
+            priority
+          />
+        </div>
+      }
+    </section>
+  </div>
+}

@@ -1,0 +1,219 @@
+<section class="main_common_module module_main_body">
+  <!-- left section -->
+  <div class="main_left_wrapper">
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title flex items-center gap-1">
+          <app-common-back-button-v35></app-common-back-button-v35>
+          <h3>
+            Recurring details
+            {{ viewData?.isItSendOrReceived ? " (Received)" : " (Send)" }}
+          </h3>
+        </div>
+      </div>
+
+      <div class="activity_table ocw_table_wrapper">
+        <table class="ocw-table ocw-table-bordered mt-4 mt-5">
+          <tbody>
+            <tr>
+              <td>Staus</td>
+              <td
+                [ngClass]="{
+                  started:
+                    viewData?.status === 'Started' ||
+                    viewData?.status === 'Completed',
+                  paused: viewData?.status === 'Paused',
+                  canceled: viewData?.status === 'Canceled'
+                }"
+              >
+                {{ viewData?.status }}
+              </td>
+            </tr>
+            <tr>
+              <td>Amount</td>
+              <td>{{ viewData?.amount }}</td>
+            </tr>
+            <tr>
+              <td>Frequency</td>
+              <td class="font-medium">{{ viewData?.frequency }}</td>
+            </tr>
+            <tr>
+              <td>Start date</td>
+              <td>{{ viewData?.startDate }}</td>
+            </tr>
+            @if(!viewData?.isItUnlimited) {
+            <tr>
+              <td>End date</td>
+              <td>{{ viewData?.endDate }}</td>
+            </tr>
+            }
+            <tr>
+              <td># of pay</td>
+              <td>{{ viewData?.ofPay }}</td>
+            </tr>
+            <tr>
+              <td># of paid</td>
+              <td>{{ viewData?.ofPaid }}</td>
+            </tr>
+            <tr>
+              <td># of left</td>
+              <td>{{ viewData?.ofLeft }}</td>
+            </tr>
+            <tr>
+              <td>Payable to</td>
+              <td>{{ viewData?.payableTo }}</td>
+            </tr>
+            <tr>
+              <td>Memo</td>
+              <td>{{ viewData?.memo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="main_right_section">
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title">
+          <h3>
+            {{
+              personalDetails?.heading
+                ? personalDetails?.heading
+                : "Payer details"
+            }}
+          </h3>
+        </div>
+      </div>
+      <div></div>
+      <div class="activity_table ocw_table_wrapper">
+        <table class="ocw-table ocw-table-bordered mt-4 mt-5">
+          <tbody>
+            <tr>
+              <td>Payee name</td>
+              <td>{{ personalDetails?.payeeName }}</td>
+            </tr>
+            <tr>
+              <td>Payee email</td>
+              <td>{{ personalDetails?.payeeEmail }}</td>
+            </tr>
+            <tr>
+              <td>Address</td>
+              <td>
+                {{ personalDetails?.address.payeeName }}<br />
+                {{ personalDetails?.address.addressLine1 }}<br />
+                {{ personalDetails?.address.payeeCity }},{{
+                  personalDetails?.address.payeeState
+                }},{{ personalDetails?.address.payeeZip }}<br />
+                {{ personalDetails?.address.payeeCountry }}<br />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="ocw_one_side_body mt-5 margin-top">
+  <!-- left section -->
+  <div class="ocw_header">
+    <div class="title">
+      <h3>Audit Trail</h3>
+    </div>
+  </div>
+  <div></div>
+  <div class="activity_table ocw_table_wrapper">
+    <table class="ocw-table ocw-table-bordered mt-4 mt-5">
+      <thead>
+        <tr>
+          <td>DATE</td>
+          <td>STATUS</td>
+          <td>Device</td>
+          <td>BY</td>
+          <td>NOTE</td>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of auditTrail; track item) {
+          <tr>
+            <td>{{ item.date }}</td>
+            <td>{{ item.status }}</td>
+            <td>{{ item.ipOrLocation }}</td>
+            <td>{{ item.by }}</td>
+            <td>{{ item.note }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="ocw_one_side_body mt-5 margin-top">
+  <div class="ocw_header">
+    <div class="title">
+      <h3>Comments</h3>
+    </div>
+  </div>
+
+  <div class="activity_table ocw_table_wrapper">
+    <table class="ocw-table ocw-table-bordered mt-4">
+      <thead>
+        <tr>
+          <td>DATE</td>
+          <td>COMMENTS</td>
+          <td>BY</td>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of commentList; track item) {
+          <tr>
+            <td>{{ item.formated_date }}</td>
+            <td>{{ item.comments }}</td>
+            <td>{{ item.user_name }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="example-form flex flex-col items-end">
+    <textarea
+      placeholder="Write your comments "
+      class="input_style mb-4 mt-4"
+      [(ngModel)]="comment"
+    ></textarea>
+    <button
+      class="ocw-data-btn ocw-btn ocw-btn-light-blue"
+      [ngClass]="{ 'loadingSpinner spinner-gap': isloading }"
+      (click)="addComment()"
+    >
+      Add Comments
+    </button>
+  </div>
+</section>
+
+<section class="ocw_one_side_body mt-5 margin-top">
+  <div class="ocw_header">
+    <div class="title">
+      <h3>Recurring Event Details</h3>
+    </div>
+  </div>
+  <div class="activity_table ocw_table_wrapper">
+    <table class="ocw-table ocw-table-bordered mt-4">
+      <thead>
+        <tr>
+          <td>RECURRING DATE</td>
+          <td>STATUS</td>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of recurringEventDetails; track item) {
+          <tr>
+            <td>{{ item.recurringDate }}</td>
+            <td>{{ item.status }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<div style="width: 100%; height: 50px"></div>

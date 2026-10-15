@@ -1,0 +1,479 @@
+<div class="ocw_man_modal_wrapper">
+  <form [formGroup]="payeeBankForm">
+    <div class="ocw_modal_header">
+      <div class="ocw_modal_title">
+        {{
+          editMode
+            ? "Edit Bank Account Details (Receiver)"
+            : "Add Bank Account (Receiver)"
+        }}
+      </div>
+      <div class="close_btn" [mat-dialog-close]="false">
+        <fa-icon [icon]="['fas', 'xmark']"></fa-icon>
+      </div>
+    </div>
+    <div class="ocw_modal_body" [class.bank_loading]="bankLoading">
+      @if (bankLoading) {
+        <div class="bank_skeleton">
+          @for (row of skeletonRows; track $index) {
+            <div class="skelton skeleton_field"></div>
+          }
+        </div>
+      }
+      <div class="select_item">
+        <p class="heading">
+          Choose one or more modes of transaction for this bank account.
+        </p>
+        <mat-checkbox class="example-margin" checked disabled>ACH</mat-checkbox>
+        <mat-checkbox
+          [ngStyle]="{ 'border-color': isWireChecked ? '#005691' : '#e1e1e1' }"
+          [checked]="isWireChecked"
+          class="example-margin"
+          [disabled]="legalNameEdit || (!this.editMode && payeeBankDetails.from === 'wire')"
+          (change)="getChange($event)"
+          >WIRE/RTP</mat-checkbox
+        >
+      </div>
+      @if (!wireUserDetails && !wireBankDetails) {
+        <div class="input_group">
+          <div class="single_input mb-3">
+            <div class="relative">
+              <input
+                type="text"
+                class="input_style pr-10"
+                placeholder=" "
+                formControlName="bankName"
+                maxlength="60"
+              />
+              <span class="floating_label_field">
+                Account Holder Legal Name <span class="required">*</span>
+              </span>
+              <fa-icon
+                class="holder-name-info absolute right-3 top-1/2 -translate-y-1/2 z-10"
+                [icon]="faCircleInfo"
+                [matTooltip]="legalNameInfo"
+                matTooltipPosition="above"
+              ></fa-icon>
+            </div>
+            <app-control-message
+              [control]="payeeBankForm.controls.bankName"
+            ></app-control-message>
+          </div>
+          <div class="single_input mb-3">
+            <input
+              type="text"
+              class="input_style"
+              (keyup)="lookupRoutingNumber($event)"
+              (keypress)="utils.numberOnly($event, 'numeric')"
+              maxlength="9"
+              formControlName="routingNumber"
+              placeholder=" "
+            />
+            <span class="floating_label_field">
+              9-Digit Routing Number <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="payeeBankForm.controls.routingNumber"
+            ></app-control-message>
+          </div>
+          <div class="single_input mb-3">
+            <div class="relative">
+              <input
+                type="text"
+                class="input_style pr-10"
+                minlength="5"
+                maxlength="20"
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                placeholder=" "
+                formControlName="accountNumber"
+                (focus)="onFocus()"
+                (blur)="onBlur()"
+                mask="0000000000000000000000"
+                [patterns]="customPatternAccount"
+                [hiddenInput]="true"
+                (copy)="(false)"
+                (cut)="(false)"
+              />
+              <span class="floating_label_field">
+                Bank Account Number <span class="required">*</span></span
+              >
+              <button
+                type="button"
+                (click)="toggleAccountNumber()"
+                class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-secondary-text-color p-0 leading-none"
+              >
+                <fa-icon [icon]="showAccountNumber ? faEyeSlash : faEye"></fa-icon>
+              </button>
+            </div>
+            <app-control-message
+              [control]="payeeBankForm.controls.accountNumber"
+            ></app-control-message>
+          </div>
+          <div class="single_input mb-3">
+            <div class="relative">
+              <input
+                type="text"
+                formControlName="confirmAccountNumber"
+                class="input_style require_fields pr-10"
+                id="AccNumber"
+                maxlength="20"
+                minlength="5"
+                placeholder=" "
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                (paste)="(false)"
+                (cut)="(false)"
+                mask="0000000000000000000000"
+                [patterns]="customPatternConfirm"
+                [hiddenInput]="true"
+                (focus)="onConfirmAccountNumberFocus()"
+                (blur)="onConfirmAccountNumberBlur()"
+              />
+              <label class="floating_label_field"
+                >Confirm Account Number <span class="required">*</span></label
+              >
+              <button
+                type="button"
+                (click)="toggleConfirmAccountNumber()"
+                class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-secondary-text-color p-0 leading-none"
+              >
+                <fa-icon [icon]="showConfirmAccountNumber ? faEyeSlash : faEye"></fa-icon>
+              </button>
+            </div>
+            <app-control-message
+              [control]="payeeBankForm.controls.confirmAccountNumber"
+            ></app-control-message>
+          </div>
+          <div class="single_input mb-3">
+            <select
+              name="account_type"
+              id="account_type"
+              class="input_style"
+              matTooltip="Select account type"
+              formControlName="accountType"
+            >
+              <option value="" selected disabled>Account Type</option>
+              @for (type of bankAccountType; track type) {
+                <option [value]="type.value">{{ type.name }}</option>
+              }
+            </select>
+            <app-control-message
+              [control]="payeeBankForm.controls.accountType"
+            ></app-control-message>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (wireUserDetails) {
+      <div class="wire_section">
+        @if (
+          !wireBankDetails ||
+          (wireBankDetails && beneficiaryBankDetailsAvailable)
+        ) {
+          <div class="bank_account_user_details">
+            <p class="label">Beneficiary Details (Receiver)</p>
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankAccountFirstName"
+                />
+                <span class="floating_label_field">
+                  First Name<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankAccountFirstName"
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankAccountLastName"
+                />
+                <span class="floating_label_field"> Last Name</span>
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankAccountLastName"
+                ></app-control-message>
+              </div>
+            </div>
+
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  #beneficiary
+                  (focus)="loadGoogleAddress(beneficiary, 'beneficiary')"
+                  formControlName="bankAccountAddress1"
+                />
+                <span class="floating_label_field">
+                  Address Line 1<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankAccountAddress1"
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankAccountAddress2"
+                />
+                <span class="floating_label_field"> Address Line 2</span>
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankAccountAddress2"
+                ></app-control-message>
+              </div>
+            </div>
+
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankAccountCity"
+                />
+                <span class="floating_label_field">
+                  City<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankAccountCity"
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <app-common-state-select
+                  formControlName="bankAccountState"
+                  [country]="payeeBankForm.controls.bankAccountCountry.value"
+                  [isRequired]="true"
+                  placeholder="State"
+                ></app-common-state-select>
+              </div>
+            </div>
+
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  maxlength="10"
+                  placeholder=" "
+                  formControlName="bankAccountZip"
+                />
+                @if (
+                  payeeBankForm.get("bankAccountCountry")?.value === "US" ||
+                  payeeBankForm.get("bankAccountCountry")?.value === "" ||
+                  payeeBankForm.get("bankAccountCountry")?.value ===
+                    "United States"
+                ) {
+                  <span class="floating_label_field">
+                    Zip<span class="required">*</span></span
+                  >
+                } @else {
+                  <span class="floating_label_field">
+                    Postal Code<span class="required">*</span></span
+                  >
+                }
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankAccountZip"
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <app-common-country-select
+                  formControlName="bankAccountCountry"
+                  [allowedCountries]="receiverCountries"
+                  [isRequired]="true"
+                  placeholder="Country"
+                ></app-common-country-select>
+              </div>
+            </div>
+          </div>
+        }
+        @if (wireBankDetails && !beneficiaryBankDetailsAvailable) {
+          <div class="bank_details">
+            <p class="label">Beneficiary Bank Details (Receiver)</p>
+            <div class="single_input mb-3">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="bankingInstituteName"
+              />
+              <span class="floating_label_field"
+                >Bank Name<span class="required">*</span></span
+              >
+              <app-control-message
+                [control]="payeeBankForm.controls.bankingInstituteName"
+              ></app-control-message>
+            </div>
+
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  #beneficiaryBank
+                  (focus)="
+                    loadGoogleAddress(beneficiaryBank, 'beneficiaryBank')
+                  "
+                  formControlName="bankingInstituteAddressLine1"
+                />
+                <span class="floating_label_field">
+                  Address Line 1<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="
+                    payeeBankForm.controls.bankingInstituteAddressLine1
+                  "
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankingInstituteAddressLine2"
+                />
+                <span class="floating_label_field"> Address Line 2</span>
+                <app-control-message
+                  [control]="
+                    payeeBankForm.controls.bankingInstituteAddressLine2
+                  "
+                ></app-control-message>
+              </div>
+            </div>
+
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankingInstituteCity"
+                />
+                <span class="floating_label_field">
+                  City<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankingInstituteCity"
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="bankingInstituteState"
+                />
+                <span class="floating_label_field">
+                  State<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankingInstituteState"
+                ></app-control-message>
+              </div>
+            </div>
+
+            <div class="flex group_input">
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  maxlength="10"
+                  placeholder=" "
+                  formControlName="bankingInstituteZip"
+                />
+                @if (
+                  payeeBankForm.get("bankingInstituteCountry")?.value ===
+                    "US" ||
+                  payeeBankForm.get("bankingInstituteCountry")?.value === "" ||
+                  payeeBankForm.get("bankingInstituteCountry")?.value ===
+                    "United States"
+                ) {
+                  <span class="floating_label_field">
+                    Zip<span class="required">*</span></span
+                  >
+                } @else {
+                  <span class="floating_label_field">
+                    Postal Code<span class="required">*</span></span
+                  >
+                }
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankingInstituteZip"
+                ></app-control-message>
+              </div>
+              <div class="single_input mb-3">
+                <input
+                  type="text"
+                  class="input_style"
+                  readonly
+                  placeholder=" "
+                  formControlName="bankingInstituteCountry"
+                />
+                <span class="floating_label_field">
+                  Country<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="payeeBankForm.controls.bankingInstituteCountry"
+                ></app-control-message>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="ocw_modal_footer">
+      <mat-dialog-actions align="end">
+        <ng-container>
+          @if (wireUserDetails || wireBankDetails) {
+            <button
+              [disabled]="isLoading"
+              (click)="goBack()"
+              class="ocw-btn ocw-btn-modal-blue add_btn"
+            >
+              Back
+            </button>
+          }
+          <button
+            type="submit"
+            class="ocw-btn add_btn"
+            [ngClass]="
+              isWireChecked && !wireBankDetails
+                ? 'ocw-btn-modal-blue'
+                : 'ocw-btn-light-green'
+            "
+            [disabled]="isLoading || bankLoading"
+            (click)="onSubmit(isWireChecked)"
+          >
+            @if (!editMode) {
+              <fa-icon [icon]="['fas', 'plus']"></fa-icon>
+            }
+            @if (!editMode) {
+              <span
+                >{{ isWireChecked && !wireBankDetails ? "Next" : "Add" }}
+                @if (isLoading) {
+                  <span class="loadingSpinner ml-2"></span>
+                }
+              </span>
+            } @else {
+              <span
+                >{{ isWireChecked && !wireBankDetails ? "Next" : "Update" }}
+                @if (isLoading) {
+                  <span class="loadingSpinner ml-2"></span>
+                }
+              </span>
+            }
+          </button>
+        </ng-container>
+      </mat-dialog-actions>
+    </div>
+  </form>
+</div>

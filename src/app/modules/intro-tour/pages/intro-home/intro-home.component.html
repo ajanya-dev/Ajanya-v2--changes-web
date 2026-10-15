@@ -1,0 +1,388 @@
+<div
+  class="payments-main-container flex justify-between bg-secondary-background-color rounded h-full w-full"
+>
+  <div
+    class="relative payments-main-sub-container-1 flex bg-main-background-color justify-center rounded w-full"
+    [class]="false ? 'overflow-hidden' : 'overflow-auto'"
+  >
+    @if (false) {
+      <div
+        class="absolute bg-main-background-color z-[2000] w-full h-full flex flex-col justify-center items-center right-3.5"
+      >
+        <div class="flex gap-2 pb-3">
+          <div class="w-6 h-6 rounded-full dot"></div>
+          <div class="w-11 h-6 rounded-full oval"></div>
+        </div>
+        <div class="animate-pulse">Payment Processing</div>
+      </div>
+    }
+
+    <div
+      class="payments-main-sub-container-2 flex justify-center rounded items-start w-1/2 min-w-[640px] max-w-[700px] pt-7"
+    >
+      <div
+        class="payments-main-sub-container-3 rounded flex flex-col justify-center items-center w-full pt-6"
+      >
+        <div class="top-section w-full rounded">
+          <div class="flex justify-between w-full px-1">
+            <div>
+              <div
+              class=" custom-switch1 h-10 w-44 bg-secondary-background-color p-1 rounded"
+              >
+              <div class="slider-container h-0 w-full">
+                <div
+                  class="slider border border-common-secondary-blue-color rounded h-8 w-1/2 bg-main-background-color ease-linear duration-200"
+                  [ngClass]="
+                    customSwitch === 'RECEIVE' ? 'translate-x-full' : ''
+                  "
+                ></div>
+              </div>
+              
+              <div
+                class="intro-pay-receive switch-container flex relative justify-between h-full w-full"
+                #container
+                >
+                <button
+                  type="button"
+                  class="switch-item flex justify-center items-center cursor-pointer w-1/2"
+                  (click)="onChangeTab('PAY')"
+                >
+                  <span class="font-medium text-sm text-main-text-color"
+                    >Pay</span
+                  >
+                </button>
+                <button
+                  title="Receive Payment"
+                  type="button"
+                  class="switch-item flex justify-center items-center cursor-pointer w-1/2"
+                  (click)="onChangeTab('RECEIVE')"
+                >
+                  <span class="font-medium text-sm text-main-text-color"
+                    >Receive</span
+                  >
+                </button>
+                @if(introService.isBlinking()){
+                  <div >
+                    <fa-icon 
+                    [icon]="faArrowPointer"
+                    class="mouse-icon text-white text-xl moving" 
+                    ></fa-icon>
+                  </div>
+                }
+              </div>
+            </div>
+            </div>
+            <div class="flex justify-end items-center gap-3">
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                text="Default Payment"
+                width="135px"
+                matTooltip="Set your default payment settings here."
+                [type]="{ name: 'action', style: 'blue' }"
+                [disableHoverEffect]="false"
+                customClasses="font-extralight p-0"
+                backGroundInput="transparent"
+              >
+              </app-common-button-v35>
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                [type]="{ style: 'blue', name: 'action' }"
+                text="Bulk Pay"
+                width="80px"
+                matTooltip="Organize multiple payments into a group. Save it and pay at once."
+                routerLink="/manage/group-payments/main"
+                [type]="{ name: 'action', style: 'blue' }"
+                [disableHoverEffect]="false"
+                customClasses="font-extralight p-0"
+                backGroundInput="transparent"
+              >
+              </app-common-button-v35>
+              <div class="h-full flex items-center lg:items-start md:pt-1">
+                <app-demo-video slug="v35Homepage"></app-demo-video>
+              </div>
+            </div>
+          </div>
+          @if (customSwitch === "PAY") {
+            <div class="pay-options-dropdown flex justify-between w-full pt-8">
+              <div
+                class="intro-pay-from pay-from-dropdown w-1/2 introTourClass-payfrom-tab p-2"
+              >
+                <div class="pay-from-header flex pl-3">
+                  <p
+                    class="text-base text-main-text-color font-semibold bg-secondary-background-color rounded-t-lg px-2"
+                  >
+                    Pay From
+                  </p>
+                </div>
+                <div class="bg-secondary-background-color rounded-lg p-2">
+                  <ng-select
+                    (change)="payFromSelected($event)"
+                    [clearable]="false"
+                    [searchable]="false"
+                    [(ngModel)]="selectedPayFromItem"
+                    (open)="introStepUpdate('.ng-dropdown-panel-items')"
+                    (close)="introStepUpdate('#intro-pay-as')"
+                  >
+                    @for (item of payFromItems; track item) {
+                      <ng-option [value]="item">
+                        <div class="flex items-center gap-2">
+                          @if (item.fontawesomeIconDataV35) {
+                            <fa-icon
+                              [icon]="item.fontawesomeIconDataV35.icon"
+                            ></fa-icon>
+                          }
+                          @if (item.img) {
+                            <img [src]="item.img" [alt]="item.label" />
+                          }
+                          <span
+                            class="main-text-highlight text-sm font-medium"
+                            >{{ item.label }}</span
+                          >
+                        </div>
+                      </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+
+              <div
+                class="pay-arrow-wrapper flex justify-center items-end px-1 pb-7"
+              >
+                <fa-icon
+                  [icon]="['fas', 'arrow-right']"
+                  class="text-xs text-secondary-text-color"
+                ></fa-icon>
+              </div>
+
+              <div
+                id="intro-pay-as"
+                class="pay-as-dropdown w-1/2 introTourClass-payas-tab p-2"
+              >
+                <div class="pay-as-header flex pl-3">
+                  <p
+                    class="text-base text-main-text-color font-semibold bg-secondary-background-color rounded-t-lg px-2"
+                  >
+                    Pay As
+                  </p>
+                </div>
+                <div class="bg-secondary-background-color rounded-lg p-2">
+                  <ng-select
+                    (change)="payAsSelected($event)"
+                    [(ngModel)]="selectedPayAsItem"
+                    [clearable]="false"
+                    [searchable]="false"
+                    (open)="introStepUpdate('.ng-dropdown-panel-items')"
+                    (close)="introStepUpdate('.intro-home-payment-amount')"
+                  >
+                    @for (item of payAsItems; track item) {
+                      <ng-option [value]="item">
+                        <div class="flex items-center gap-2">
+                          @if (item.fontawesomeIconDataV35) {
+                            <fa-icon
+                              [icon]="item.fontawesomeIconDataV35.icon"
+                            ></fa-icon>
+                          }
+                          @if (item.img) {
+                            <img [src]="item.img" [alt]="item.label" />
+                          }
+                          <span class="text-sm font-medium">{{
+                            item.label
+                          }}</span>
+                        </div>
+                      </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (customSwitch === "RECEIVE") {
+            <div
+              class="receive-options-dropdown flex justify-between w-full pt-8"
+            >
+              <div class="receive-to-dropdown w-1/2 p-2">
+                <div class="receive-to-header flex pl-3">
+                  <p
+                    class="text-base text-main-text-color font-semibold bg-secondary-background-color rounded-t-lg px-2"
+                  >
+                    Receive To
+                  </p>
+                </div>
+                <div
+                  class="bg-secondary-background-color rounded-lg p-2 payment-receive-to-dropdown"
+                >
+                  <ng-select
+                    (change)="receiveToSelected($event)"
+                    [clearable]="false"
+                    [searchable]="false"
+                    [(ngModel)]="selectedReceiveToItem"
+                  >
+                    @for (item of receiveToItems; track item) {
+                      <ng-option [value]="item">
+                        <div class="flex items-center gap-2">
+                          @if (item.fontawesomeIconDataV35) {
+                            <fa-icon
+                              [icon]="item.fontawesomeIconDataV35.icon"
+                            ></fa-icon>
+                          }
+                          @if (item.img) {
+                            <img [src]="item.img" [alt]="item.label" />
+                          }
+                          <span class="text-sm font-medium">{{
+                            item.label
+                          }}</span>
+                        </div>
+                      </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+
+              <div
+                class="pay-arrow-wrapper flex justify-center items-end px-1 pb-7"
+              >
+                <fa-icon
+                  class="text-xs text-secondary-text-color"
+                  [icon]="['fas', 'arrow-left']"
+                ></fa-icon>
+              </div>
+
+              <div class="intro-receive-from receive-from-dropdown w-1/2 p-2">
+                <div class="receive-from-header flex pl-3">
+                  <p
+                    class="text-base text-main-text-color font-semibold bg-secondary-background-color rounded-t-lg px-2"
+                  >
+                    Receive From
+                  </p>
+                </div>
+                <div class="bg-secondary-background-color rounded-lg p-2">
+                  <ng-select
+                    (change)="receiveFromSelected($event)"
+                    [(ngModel)]="selectedReceiveFromItem"
+                    [clearable]="false"
+                    [searchable]="false"
+                    (open)="introStepUpdate('.ng-dropdown-panel-items')"
+                    (close)="receiveFromClose()"
+                  >
+                    @for (item of receiveFromItems; track item) {
+                      <ng-option [value]="item">
+                        <div class="flex items-center gap-2">
+                          @if (item.fontawesomeIconDataV35) {
+                            <fa-icon
+                              [icon]="item.fontawesomeIconDataV35.icon"
+                            ></fa-icon>
+                          }
+                          @if (item.img) {
+                            <img [src]="item.img" [alt]="item.label" />
+                          }
+                          <span class="text-sm font-medium">{{
+                            item.label
+                          }}</span>
+                        </div>
+                      </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (customSwitch === "PAY") {
+          <div class="payment-container flex w-full rounded">
+            <div class="payment-component-container grow">
+              @if (!isPaymentInitLoading) {
+                @if (introService.isShowSuccess()) {
+                  @if(introService.isSaved()){
+                    <app-intro-payment-success
+                      [isSaved]="true"
+                      (closePaymentSuccess)="closePaymentSuccess()"
+                    ></app-intro-payment-success>
+                  }@else{
+                    <app-intro-payment-success
+                      (closePaymentSuccess)="closePaymentSuccess()"
+                    ></app-intro-payment-success>
+                  }
+                } @else {
+                  <ng-container
+                    [ngTemplateOutlet]="paymentComponents"
+                  ></ng-container>
+                }
+              } @else {
+                <ng-container [ngTemplateOutlet]="loader"></ng-container>
+              }
+              <ng-template #paymentComponents>
+                <app-pay-form
+                  (saveEvent)="saveButtonClicked()"
+                  (sendEvent)="sendClicked()"
+                  (printEvent)="printClicked()"
+                  (sendMailEvent)="sendOrPrintClicked()"
+                  (printCheckEvent)="sendOrPrintClicked()"
+                  (paymentEvent)="paymentButtonClicked()"
+                  [formId]="
+                    selectedPayFromItem?.id + '_' + selectedPayAsItem?.id
+                  "
+                ></app-pay-form>
+              </ng-template>
+            </div>
+          </div>
+        }
+
+        @if (customSwitch === "RECEIVE") {
+          <div class="payment-container flex w-full rounded">
+            <div class="payment-component-container grow">
+              @if (!isPaymentInitLoading) {
+                @if (introService.isShowSuccess()) {
+                  <app-intro-payment-success
+                    [isRequest]="true"
+                    (closePaymentSuccess)="closePaymentRequestSuccess()"
+                  ></app-intro-payment-success>
+                } @else {
+                  <ng-container
+                    [ngTemplateOutlet]="paymentComponents"
+                  ></ng-container>
+                }
+              } @else {
+                <ng-container [ngTemplateOutlet]="loader"></ng-container>
+              }
+
+              <ng-template #paymentComponents>
+                <app-receive-form
+                  [formId]="
+                    selectedReceiveFromItem?.id +
+                    '_' +
+                    selectedReceiveToItem?.id
+                  "
+                  (paymentRequest)="paymentRequestClicked()"
+                ></app-receive-form>
+              </ng-template>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- -----------TEMPLATES------------- -->
+
+<ng-template #loader>
+  <div class="h-full w-full pt-10">
+    <div class="flex justify-center">
+      <div class="single_input w-40 h-20 skelton"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-5 mt-5">
+      @for (x of [1, 2, 3, 4, 5, 6]; track x) {
+        <div class="single_input skelton">
+          <input class="input_style" />
+        </div>
+      }
+      @for (x of [1, 2]; track x) {
+        <div class="single_input skelton mt-10">
+          <input class="input_style" />
+        </div>
+      }
+    </div>
+  </div>
+</ng-template>

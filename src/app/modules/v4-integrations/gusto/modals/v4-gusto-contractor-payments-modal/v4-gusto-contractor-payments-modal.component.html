@@ -1,0 +1,97 @@
+<div class="flex flex-col max-h-[90vh] min-w-[700px]">
+  <!-- header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+      {{ data.company.companyName }} — Contractor Checks
+    </h1>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center shrink-0"
+    >
+      <lucide-icon name="x" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- body -->
+  <div class="flex-1 overflow-auto p-6 bg-v4-tertiary-background-color min-h-0">
+    @if (loading()) {
+      <div class="flex justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="32"
+          class="text-v4-primary-brand-color animate-spin"
+        />
+      </div>
+    } @else if (!payments().length) {
+      <div class="text-center py-12 text-v4-tertiary-text-color">
+        No contractor payments found for this company.
+      </div>
+    } @else {
+      <div
+        class="border border-v4-input-border-color rounded-xl overflow-hidden bg-v4-secondary-background-color"
+      >
+        <div class="overflow-x-auto max-h-[60vh]">
+          <table class="w-full text-sm text-v4-main-text-color">
+            <thead>
+              <tr class="bg-v4-input-background-color">
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Company Name
+                </th>
+                <th
+                  class="px-4 py-2 text-right text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Wage Total
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-xs font-semibold text-v4-secondary-text-color whitespace-nowrap"
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of payments(); track item.contractor_uuid) {
+                <tr
+                  class="border-b border-v4-input-border-color last:border-b-0 hover:bg-v4-input-background-color/50 transition-colors"
+                >
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    {{ data.company.companyName }}
+                  </td>
+                  <td class="px-4 py-3 text-right whitespace-nowrap">
+                    {{ item.wage_total | currency }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <app-common-button-v4
+                      [type]="{ style: 'primary', name: 'main' }"
+                      text="Create"
+                      width="120px"
+                      [loading]="creating() === item.contractor_uuid"
+                      [disabled]="creating() === item.contractor_uuid"
+                      (clickEvent)="createCheck(item)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- footer -->
+  <div
+    class="flex justify-end gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color flex-shrink-0"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      [text]="'Close'"
+    />
+  </div>
+</div>

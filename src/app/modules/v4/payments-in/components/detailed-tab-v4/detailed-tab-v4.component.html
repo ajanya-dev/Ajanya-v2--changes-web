@@ -1,0 +1,55 @@
+<div class="flex flex-col flex-1 mt-3 relative"
+  [ngClass]="{'!mt-0':isShowingEmptyState}"
+  >
+  @if (isRowActionLoading()) {
+    <app-loading-overlay-v4 /> 
+  }
+  <!-- Status Tabs Bar -->
+  @if (!isReceiveChecksReport() && !isShowingEmptyState) {
+    <div class="mb-1 flex min-h-[28px] items-center">
+      <app-common-tab-v4
+        [tabs]="statusTabs"
+        [activeTab]="activeTab()"
+        (tabChange)="onStatusTabChange($event)"
+        variant="pill"
+      />
+    </div>
+  }
+
+  <!-- Data Table -->
+  <app-v4-data-table
+    [columnDefs]="columnDefs"
+    [tableId]="tableId"
+    [backButtonEnabled]="!!backUrl"
+    [defaultColumnFields]="columnFields"
+    [headerElements]="headerElements()"
+    [frameworkComponents]="frameworkComponents"
+    [fieldsShownByDefault]="fieldsShownByDefault"
+    [HeaderButtonLoadingProp]="headerButtonLoadingProp()"
+    (headerButtonEvent)="headerButtonNavigation($event)"
+    (cellRendererViewEvent)="getViewAction($event)"
+    (cellRendererIdEvent)="getActionComp($event)"
+    [exportConfig]="exportConfig"
+    (rowSelected)="onRowSelected($event)"
+    (tableExportEvent)="onExportData($event)"
+    (emptyStateActionClick)="onEmptyStateAction()"
+    [useCustomEmptyState]="true"
+    [emptyStateConfig]="{
+      icon: 'download',
+      title: 'No payments received yet',
+      description: 'Payments you receive from customers will appear here.',
+      buttonText: 'Request Payment',
+    }"
+  />
+</div>
+
+@if (selectedRow()) {
+  <app-payments-in-detail-panel-v4
+    [uuid]="selectedRow()?.uu_id ?? ''"
+    [encryptedId]="selectedRow()?.encrypted_id ?? ''"
+    [row]="selectedRow()"
+    [isOpen]="isPanelOpen()"
+    (closed)="closePanelAndReset($event)"
+    (actionButtonClicked)="onPanelAction($event)"
+  />
+}

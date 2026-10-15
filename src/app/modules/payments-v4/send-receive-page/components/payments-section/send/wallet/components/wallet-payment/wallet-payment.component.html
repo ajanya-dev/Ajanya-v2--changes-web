@@ -1,0 +1,143 @@
+<div
+  [formGroup]="form"
+  class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-[18px]"
+>
+  <!-- Payee bank account -->
+  @if (needsPayeeBank()) {
+    <div class="flex flex-col gap-[7px]" data-field="payeeBankAc">
+      <app-sp-payee-bank-dropdown
+        class="relative block"
+        [required]="this.method() === 'wire'"
+        [ngClass]="
+          sendStateService.isApprovedSkipUpdate()
+            ? 'disable_field pointer-events-none'
+            : ''
+        "
+        [payeeId]="sendStateService.payeeId()"
+        [payeeEncryptedId]="sendStateService.payeeDetails()?.payeeEncryptedId ?? ''"
+        [payeeName]="sendStateService.payeeDetails()?.payee_information?.payee_name ?? ''"
+        [preselectBankId]="sendStateService.preferredBankId()"
+        [paymentMethod]="sendStateService.methodId()"
+        [reloadTrigger]="sendStateService.payeeBankReloadTrigger()"
+        (bankSelected)="onBankListSelected($event)"
+        (wireAllowedChange)="onWireAllowedChange($event)"
+      />
+      <app-control-message-v4
+        [control]="form.controls.payeeBankAc"
+        [customMessages]="{
+          required: 'Please select a bank account for the payee'
+        }"
+      />
+    </div>
+  }
+
+  <!-- Virtual card -->
+  @if (isVirtualCard()) {
+    <div class="flex flex-col gap-[7px]" data-field="cardLimitType">
+      <app-sp-select-dropdown
+        class="relative block"
+        [ngClass]="
+          sendStateService.isApprovedSkipUpdate()
+            ? 'disable_field pointer-events-none'
+            : ''
+        "
+        label="Card Limit"
+        [required]="true"
+        [placeholder]="'Select a card limit'"
+        [searchPlaceholder]="'Search card limit'"
+        [items]="cardLimitOptions"
+        displayField="label"
+        outputField="value"
+        formControlName="cardLimitType"
+      />
+      <app-control-message-v4
+        [control]="form.controls.cardLimitType"
+        [customMessages]="{
+          required: 'Please choose a card limit'
+        }"
+      />
+    </div>
+  }
+
+  <!-- Category -->
+  @if (showsInvoiceAndMemo()) {
+    <div class="flex flex-col gap-[7px]" data-field="category">
+      <app-sp-category-dropdown
+        [enableAddNew]="true"
+        class="relative block"
+        [ngClass]="
+          sendStateService.isApprovedSkipUpdate()
+            ? 'disable_field pointer-events-none'
+            : ''
+        "
+        formControlName="category"
+        [zIndex]="0"
+      />
+    </div>
+  }
+
+  <!-- Payee ID -->
+  <div class="flex flex-col gap-[7px]" data-field="payeeIdNumber">
+    <label
+      class="block text-v4-main-text-color text-[13px] font-semibold tracking-[-0.01em]"
+      for="wallet-payee-id"
+    >
+      {{ 'Payee' | whiteLabel: 'payeeName' }} ID/Account Number
+    </label>
+    <app-common-input-v4
+      [fieldHeight]="'34px'"
+      variant="compact"
+      inputId="wallet-payee-id"
+      [placeholder]="('Payee' | whiteLabel: 'payeeName') + ' ID/Account Number'"
+      [isFieldRequired]="false"
+      [readOnly]="sendStateService.isApprovedSkipUpdate()"
+      [isApprovedReadOnly]="sendStateService.isApprovedSkipUpdate()"
+      formControlName="payeeIdNumber"
+    />
+    <app-control-message-v4 [control]="form.controls.payeeIdNumber" />
+  </div>
+
+  <!-- Invoice number -->
+  @if (showsInvoiceAndMemo()) {
+    <div class="flex flex-col gap-[7px]" data-field="invoiceNumber">
+      <label
+        class="block text-v4-main-text-color text-[13px] font-semibold tracking-[-0.01em]"
+        for="wallet-invoice"
+      >
+        Invoice Number
+      <i-lucide
+        [img]="InfoIcon"
+        [size]="13"
+        class="ml-1 inline-block cursor-help align-text-bottom text-v4-tertiary-text-color"
+        [matTooltip]="invoiceTooltip"
+        matTooltipClass="whitespace-pre-line"
+      ></i-lucide>
+      </label>
+      <app-common-input-v4
+        [fieldHeight]="'34px'"
+        variant="compact"
+        inputId="wallet-invoice"
+        [placeholder]="'Enter invoice number'"
+        [isFieldRequired]="false"
+        [readOnly]="sendStateService.isApprovedSkipUpdate()"
+        [isApprovedReadOnly]="sendStateService.isApprovedSkipUpdate()"
+        formControlName="invoiceNumber"
+      />
+    </div>
+  }
+
+  <!-- Memo — after the per-method fields, so they read as a group. -->
+  @if (showsInvoiceAndMemo()) {
+  }
+
+  <!-- Everything below the memo is a full-width card, not a form field. -->
+
+
+  <app-schedule-notify
+    [form]="form"
+    [allowScheduledDate]="false"
+    [frequencies]="frequencies"
+    [endOptions]="recurringEndOptions"
+    [showIncludeThisPayment]="false"
+  />
+</div>

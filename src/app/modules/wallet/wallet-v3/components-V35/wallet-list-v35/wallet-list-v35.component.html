@@ -1,0 +1,320 @@
+<div class="h-full">
+  <!-- shown only screen size less than laptop -->
+  <div class="block laptop:hidden w-full relative">
+    @if (walletDataService.walletAccountsSignal()?.data?.length) {
+      <div>
+        <app-wallet-dropdown-v3
+          placeholder="Select Wallet"
+          [formControl]="dropDownWallet"
+          customHeight="3"
+          [showLogoUpdateModal]="false"
+        ></app-wallet-dropdown-v3>
+      </div>
+    }
+  </div>
+  <div class="hidden laptop:flex flex-col h-full">
+    @if (!resize) {
+      <app-list-header-v35
+        header="Wallets"
+        [isSwitchOption]="false"
+        [isAddButton]="false"
+        (searchEvent)="onWalletSearch($event)"
+      ></app-list-header-v35>
+    }
+    @if (this.securityDeposit && !walletDataService.isLoading && !resize) {
+      <div class="border-t border-input-border-color h-12">
+        <div class="pl-4 pr-3 py-2 flex gap-3">
+          <div class="flex items-center justify-center">
+            <div
+              class="flex justify-center items-center h-7 w-7 bg-common-secondary-blue-color rounded-full"
+            >
+              <fa-icon
+                class="text-common-blue-color text-xs"
+                [icon]="['fas', 'lock']"
+              ></fa-icon>
+            </div>
+          </div>
+          <div>
+            <h1 class="font-roboto text-xs font-medium text-main-text-color">
+              Security Deposit
+            </h1>
+            <h2
+              class="font-roboto text-xs font-normal text-secondary-text-color"
+            >
+              ${{ securityDeposit.available_balance }}
+            </h2>
+          </div>
+        </div>
+      </div>
+    }
+    @if (!walletDataService.isLoading) {
+      <ng-container>
+        @if (this.walletDataService.walletDataSignal()) {
+          <div
+            class="wallet-list-container border-t border-input-border-color flex flex-col"
+            [ngClass]="{
+              'cursor-grabbing': grabbing,
+              'overflow-auto':
+                (walletDataService.walletAccountsListSignal()?.length ?? 0) > 12
+            }"
+            appScrollToEnd
+            (scrollToEnd)="onScrollToEnd()"
+            cdkDropList
+            (cdkDropListDropped)="dropListSort($event)"
+            [cdkDropListSortPredicate]="sortPredicate()"
+          >
+            <div
+              role="presentation"
+              class="border-b border-input-border-color wallet-item h-12 hover:shadow-common-button"
+              [ngClass]="{
+                'cursor-grabbing': grabbing,
+                'border !border-common-blue-color shadow-common-button rounded bg-secondary-background-color':
+                  this.walletDataService.walletDataSignal()?.uuId === ''
+              }"
+              (click)="selectTotal()"
+            >
+              <div class="pl-6 pr-3 py-2 flex gap-3">
+                <div class="w-full">
+                  <h1
+                    class="font-roboto text-xs font-medium text-main-text-color"
+                  >
+                    All Wallets
+                  </h1>
+                  <h2
+                    class="font-roboto text-xs font-normal text-secondary-text-color"
+                  >
+                    ${{
+                      walletDataService.walletAccountsSignal()
+                        ?.totalAvailableBalance
+                    }}
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            @for (
+              item of walletDataService.walletAccountsSignal()?.data;
+              track item.id
+            ) {
+              <div
+                class="wallet-item cursor-pointer"
+                [ngClass]="{
+                  '!cursor-grab': item.isFavorite && !grabbing,
+                  '!cursor-grabbing': grabbing
+                }"
+                cdkDragLockAxis="y"
+                cdkDragBoundary=".wallet-list-container"
+                cdkDrag
+                (cdkDragStarted)="dragEvents('start')"
+                (cdkDragEnded)="dragEvents('end')"
+                [cdkDragDisabled]="!item.isFavorite"
+              >
+                <div
+                  role="presentation"
+                  class="border-b select-none border-input-border-color wallet-item h-12 hover:shadow-lg hover:bg-secondary-background-color overflow-hidden"
+                  [ngClass]="{
+                    'border !border-common-blue-color shadow-common-button rounded bg-secondary-background-color':
+                      item?.uuId ===
+                      this.walletDataService.walletDataSignal()?.uuId
+                  }"
+                  (click)="selectWallet(item)"
+                >
+                  <div class="pl-4 pr-3 py-2 flex gap-3">
+                    @if (!resize) {
+                      <div class="flex items-center justify-center relative">
+                        <div
+                          class="flex justify-center items-center h-7 w-7 bg-common-secondary-violet-color rounded-full"
+                          [ngClass]="{
+                            '!bg-main-background-color':
+                              item?.uuId ===
+                              this.walletDataService.walletDataSignal()?.uuId
+                          }"
+                        >
+                          @if (item.logo) {
+                            <img [ngSrc]="item.logo" alt="logo" class="rounded-full" width="32" height="32" />
+                          }
+                          @else {
+                            <fa-icon
+                              class="text-common-violet-color text-xs"
+                              [icon]="faWallet"
+                            ></fa-icon>
+                          }
+                        </div>
+                        @if (item.isFavorite) {
+                          <fa-icon
+                            size="xs"
+                            class="absolute -top-1 -right-1 text-common-yellow-color"
+                            [icon]="faStar"
+                          />
+                        }
+                      </div>
+                    }
+                    <div class="w-full">
+                      <h1
+                        class="font-roboto text-xs font-medium text-main-text-color"
+                        [matTooltip]="
+                          item.walletName.length > 22 ? item.walletName : ''
+                        "
+                      >
+                        {{ item.walletName | truncate: 22 }}
+                      </h1>
+                      <div class="flex justify-between">
+                        <h2
+                          class="font-roboto text-xs font-normal text-secondary-text-color"
+                        >
+                          {{ item.bankAccountNumber }}
+                        </h2>
+                        @if (!resize) {
+                          <h2
+                            class="font-roboto text-xs font-normal text-secondary-text-color"
+                          >
+                            ${{ item.availableBalance }}
+                          </h2>
+                        }
+                      </div>
+                    </div>
+                    <div class="flex justify-center">
+                      @if (!resize) {
+                        <button
+                          matTooltip="Actions"
+                          aria-label="Example icon-button with a menu"
+                        >
+                          <fa-icon
+                            class="text-secondary-text-color text-[15px] px-2"
+                            [icon]="['fas', 'ellipsis-vertical']"
+                            [matMenuTriggerFor]="menu"
+                          ></fa-icon>
+                        </button>
+                      }
+                      <mat-menu #menu="matMenu">
+                        <button (click)="menuAction(item, 2)" mat-menu-item>
+                          <fa-icon
+                            [icon]="faDollar"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color"
+                            >Recharge My Credits</span
+                          >
+                        </button>
+                        <button (click)="menuAction(item, 3)" mat-menu-item>
+                          <fa-icon
+                            [icon]="faArrowRightArrowLeft"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color"
+                            >Transfer Fund</span
+                          >
+                        </button>
+                        <button (click)="menuAction(item, 4)" mat-menu-item>
+                          <fa-icon
+                            [icon]="faMoneyFromBracket"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color"
+                            >Withdraw Fund</span
+                          >
+                        </button>
+                        <button (click)="menuAction(item, 1)" mat-menu-item>
+                          <fa-icon
+                            [icon]="faPlus"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color"
+                            >Fund Your Wallet</span
+                          >
+                        </button>
+                        <button (click)="menuAction(item, 5)" mat-menu-item>
+                          <fa-icon
+                            [icon]="faDownload"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color"
+                            >Download Statement</span
+                          >
+                        </button>
+                        <button (click)="menuAction(item, 6)" mat-menu-item>
+                          <fa-icon
+                            [icon]="faStar"
+                            [ngClass]="{
+                              '!text-common-yellow-color': item.isFavorite === 0
+                            }"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color">{{
+                            item.isFavorite === 1
+                              ? "Unfavorite"
+                              : "Add to Favorite"
+                          }}</span>
+                        </button>
+                        <button
+                          (click)="openLogoUpdateModal(item)"
+                          mat-menu-item
+                        >
+                          <fa-icon
+                            [icon]="faLogo"
+                            class="pr-3 text-secondary-text-color"
+                          />
+                          <span class="text-secondary-text-color"
+                            > @if(item.logo) { Update Logo  } @else { Add Logo For Wallet }</span
+                          >
+                        </button>
+                        @if (
+                          env.env_id === "buckzy" ||
+                          env.env_id === "buckzy-sandbox"
+                        ) {
+                          <button
+                            (click)="menuAction(item, 7)"
+                            mat-menu-item
+                            [disabled]="isDownload()"
+                          >
+                            <fa-icon
+                              [icon]="isDownload() ? faSpinner : faDownload"
+                              [animation]="isDownload() ? 'spin' : ''"
+                              class="pr-3 text-secondary-text-color"
+                            />
+                            <span
+                              class="text-secondary-text-color"
+                              [matTooltip]="
+                                isDownload()
+                                  ? 'Downloading...'
+                                  : 'Download Account Funding Details'
+                              "
+                              >Account Funding Details</span
+                            >
+                          </button>
+                        }
+                      </mat-menu>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+            @if (isWalletListLoading) {
+              <div>
+                <app-common-list-skelton [items]="3"></app-common-list-skelton>
+              </div>
+            }
+          </div>
+        }
+      </ng-container>
+    }
+    @if (walletDataService.isLoading && walletDataService.page === 1) {
+      <div class="overflow-y-auto overflow-x-hidden lap">
+        <app-common-list-skelton [items]="14"></app-common-list-skelton>
+      </div>
+    }
+    @if (
+      (walletDataService.walletAccountsSignal()?.data ?? [] | json) === "[]" &&
+      !walletDataService.isLoading &&
+      !isWalletListLoading
+    ) {
+      <div class="h-full w-full flex items-center text-center justify-center">
+        Sorry!
+        @if (resize) {
+          <br />
+        }
+        No results Found.
+      </div>
+    }
+  </div>
+</div>

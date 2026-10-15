@@ -1,0 +1,116 @@
+<div class="ocw_one_side_body">
+  <div class="ocw_header">
+    <div class="title flex items-center gap-1">
+      <app-common-back-button-v35></app-common-back-button-v35>
+      <h3>Odoo Bank Account Mapping</h3>
+    </div>
+    <div>
+      <app-common-button-v35
+        [type]="{ style: 'green', name: 'money-action' }"
+        text="Import Bank Accounts"
+        (clickEvent)="ImportBank()"
+        toolTip="Import all bank accounts from Odoo account"
+        [isAddIcon]="true"
+        [icon]="['fas', 'down-to-line']"
+        [disabled]="isImportBank"
+        [loading]="isImportBank"
+      />
+    </div>
+  </div>
+
+  <div class="ocw_body">
+    <ng-container>
+      @if (odooMappedBank?.length === 0 && !isImportBank && !loading) {
+        <div class="text-center">Sorry! No result found :(</div>
+      }
+      @if (loading) {
+        <div class="data_spinner"></div>
+      }
+    </ng-container>
+
+    @if (odooMappedBank?.length) {
+      <div class="ocw_table_wrapper max-h-[700px] overflow-auto">
+        <table class="ocw-table ocw-table-striped">
+          <thead>
+            <tr>
+              <!-- <td>Odoo ID</td> -->
+              <td>Odoo Bank Ac</td>
+              <td>OCW Bank Ac</td>
+              <td>OCW Bank Nick Name</td>
+              <td>Action</td>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bank of odooMappedBank; track bank; let i = $index) {
+              <ng-container>
+                <tr>
+                  <!-- <td>{{ bank.id }}</td> -->
+                  <td>{{ bank.name }}</td>
+                  <ng-container>
+                    @if (bank.connected) {
+                      <td>
+                        {{ bank.ocwBankAccount }}
+                      </td>
+                    } @else {
+                      <td>
+                        <app-common-button-v35
+                          [type]="{ style: 'blue', name: 'money-action' }"
+                          text="Map Now"
+                          (clickEvent)="
+                            openBankAccountMappingModal(bank.id, bank, 1)
+                          "
+                          toolTip="Map your bank account."
+                        />
+                      </td>
+                    }
+                  </ng-container>
+                  <td>{{ bank.ocwBankAccountNickName }}</td>
+                  <td>
+                    <div class="flex justify-evenly pt-1">
+                      @if (bank.connected) {
+                        <app-common-button-v35
+                          [type]="{ style: 'blue', name: 'money-action' }"
+                          text="clear"
+                          (clickEvent)="removeMapping(bank.id, i)"
+                          [loading]="isDelete[i]"
+                          [disabled]="isDelete[i]"
+                          toolTip="This will remove your current bank account mapping."
+                        />
+                      }
+                      @if (!bank.connected) {
+                        <div class="w-14"></div>
+                      }
+                      <div>
+                        <fa-icon
+                          class="cursor-pointer"
+                          [icon]="faEdit"
+                          aria-hidden="true"
+                          (click)="onEditRow(bank.id, bank, 1)"
+                        ></fa-icon>
+                      </div>
+                      <div>
+                        @if (!isDelete[i]) {
+                          <fa-icon
+                            class="cursor-pointer text-common-red-color"
+                            [icon]="faTrash"
+                            aria-hidden="true"
+                            (click)="onDeleteRow(bank.id, i)"
+                          ></fa-icon>
+                        }
+                        @if (isDelete[i]) {
+                          <span
+                            class="loadingSpinner !pr-0 after:!border-common-red-color"
+                          ></span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

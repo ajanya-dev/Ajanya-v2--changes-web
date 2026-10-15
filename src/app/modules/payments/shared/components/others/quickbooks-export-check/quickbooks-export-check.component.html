@@ -1,0 +1,950 @@
+<div class="main-container">
+  <div class="header1">
+    <mat-checkbox [(ngModel)]="isEnableExport" class="mr-3" (ngModelChange)="enableExport($event)"
+    [disabled]="(isEnableExport && isWiygulEnterPrise) || diasableExportCheck()">
+    </mat-checkbox>
+    Export Check
+  </div>
+  <div class="v35-tabs text-sm pt-4">
+    @if (isEnableExport) {
+      @for (app of exportApps; track app) {
+        <div
+          [ngClass]="{
+            selected: activeTab === app.id
+          }"
+          role="presentation"
+          (click)="toggleTab(app.id)"
+        >
+          <div>{{ app.name }}</div>
+        </div>
+      }
+    }
+  </div>
+  @if (isEnableExport) {
+    @if (activeTab === "qbo") {
+      @if (exportOptions?.isQBOPushBack) {
+        <div
+          class="flex flex-col gap-5 pt-4"
+          [ngClass]="{
+            'cursor-not-allowed': !exportOptions?.isQBOPushBack,
+            'ltr-animation': ltrTransition,
+            'rtl-animation': !ltrTransition
+          }"
+        >
+          <div class="flex justify-end">
+            <app-demo-video slug="qbOnlineExport"> </app-demo-video>
+          </div>
+          <div class="flex mb-4 mt-2 gap-2">
+            <div class="flex items-center single_input" style="width: 49%">
+              <input
+                type="text"
+                class="input_style"
+                [(ngModel)]="QBCompanyName"
+                id="companyName"
+                disabled
+                placeholder=" "
+                maxlength="155"
+              />
+              <label
+                for="companyName"
+                class="floating_label_field !bg-main-background-color"
+              >
+                QuickBooks Company<span class="required">*</span></label
+              >
+            </div>
+            <div class="flex justify-center items-center">
+              <div
+                class="qb-company-connect-icon-wrapper flex justify-center items-center"
+              >
+                <fa-icon [icon]="['fas', 'arrows-left-right']"></fa-icon>
+              </div>
+            </div>
+            <div class="flex items-center single_input" style="width: 49%">
+              <input
+                type="text"
+                class="input_style"
+                [(ngModel)]="QBBankAccountName"
+                id="accountName"
+                disabled
+                placeholder=" "
+                maxlength="155"
+              />
+              <label
+                for="accountName"
+                class="floating_label_field !bg-main-background-color"
+                >QuickBooks Bank Accounts<span class="required">*</span></label
+              >
+            </div>
+          </div>
+          @if (isLocation) {
+            <div
+              class="flex items-center justify-between mt-5 w-[332px]"
+              [ngClass]="{
+                'pointer-events-none': !exportOptions?.isQBOPushBack
+              }"
+            >
+              <ng-select
+                class="location_item"
+                placeholder="Select Location"
+                appendTo="ng-select"
+                [(ngModel)]="selectedLocationId"
+              >
+                @for (item of qbLocations; track item) {
+                  <ng-option [value]="item.id">
+                    {{ item.name }}
+                  </ng-option>
+                }
+              </ng-select>
+            </div>
+          }
+
+          <div
+            class="qb-grid-table-container mt-3 mb-6"
+            [formGroup]="qboExportsForm"
+            [ngClass]="{ 'pointer-events-none': !exportOptions?.isQBOPushBack }"
+          >
+            <div
+              class="grid gap-2 grid-row header-bar mb-2 border-b !border-input-border-color"
+            >
+              <div class="table-header1 col-span-4">Category</div>
+              <div class="table-header1 col-span-4">Description</div>
+              <div class="table-header1 col-span-4">Customer</div>
+              <div class="table-header1 col-span-4">Class</div>
+              <div class="table-header1 col-span-3">Amount</div>
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body">
+              @for (
+                formgroup of qboExportsForm.controls;
+                track formgroup;
+                let formGroupIndex = $index
+              ) {
+                <ng-container [formGroupName]="formGroupIndex">
+                  <div class="grid-table-cell col-span-4 angular-ocw-v35-ng-select-dropdown">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      appendTo="ng-select"
+                      (scrollToEnd)="onScrollCompanyDetails('category-items')"
+                      (keyup)="
+                        onSearchItemsCompanyDetails(
+                          $event?.target?.value,
+                          'category-items'
+                        )
+                      "
+                      bindLabel="name"
+                      placeholder="select Items"
+                      formControlName="qboCategory"
+                      [matTooltip]="formgroup.get('qboCategory')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of QBCategoryItem; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-4">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        class="input_style !h-9"
+                        formControlName="gboDescription"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid-table-cell col-span-4 angular-ocw-v35-ng-select-dropdown">
+                    <div class="single_input">
+                      <ng-select
+                        class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                        (scrollToEnd)="onScrollCompanyDetails('customers')"
+                        (keyup)="
+                          onSearchItemsCompanyDetails(
+                            $event?.target?.value,
+                            'customers'
+                          )
+                        "
+                        bindLabel="name"
+                        formControlName="gboCustomer"
+                        placeholder="select Items"
+                        appendTo="ng-select"
+                        [matTooltip]="formgroup.get('gboCustomer')?.value?.name || ''"
+                        matTooltipPosition="above"
+                      >
+                        @for (item of QBCustomerItem; track item) {
+                          <ng-option [value]="item">
+                            {{ item.name }}
+                          </ng-option>
+                        }
+                        <ng-template ng-option-tmp let-item="item">
+                          <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                        </ng-template>
+                      </ng-select>
+                    </div>
+                  </div>
+                  <div class="grid-table-cell col-span-4 angular-ocw-v35-ng-select-dropdown">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      (scrollToEnd)="onScrollCompanyDetails('classes')"
+                      (keyup)="
+                        onSearchItemsCompanyDetails(
+                          $event?.target?.value,
+                          'classes'
+                        )
+                      "
+                      bindLabel="name"
+                      formControlName="qboClass"
+                      placeholder="select Items"
+                      appendTo="ng-select"
+                      [matTooltip]="formgroup.get('qboClass')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of QBClassItem; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-3">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        formControlName="qboAmount"
+                        maxlength="10"
+                        class="input_style !h-9"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        separatorLimit="10000000"
+                        [allowNegativeNumbers]="true"
+                        placeholder="Amount"
+                        (change)="updateCategoryTotal()"
+                        (input)="validateInput($event)"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="grid-table-cell flex justify-center items-center h-full"
+                  >
+                    <fa-icon
+                      [icon]="['fas', 'trash']"
+                      class="cursor-pointer !text-base text-secondary-text-color"
+                      (click)="removeSelectedRowQBO(formGroupIndex)"
+                    ></fa-icon>
+                  </div>
+                </ng-container>
+              }
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body mt-4">
+              <div class="grid-table-cell add-row-btn">
+                <fa-icon
+                  [icon]="['fas', 'circle-plus']"
+                  class="cursor-pointer"
+                  (click)="addNewRowQBO()"
+                ></fa-icon>
+              </div>
+              <div class="grid-table-cell col-span-9"></div>
+              <div class="grid-table-cell col-span-9 justify-self-end">
+                <app-common-button-v35
+                  text="Save Details"
+                  (clickEvent)="QBOSaveClicked()"
+                  [type]="{ name: 'action', style: 'blue' }"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'floppy-disk']"
+                ></app-common-button-v35>
+              </div>
+              <div class="grid-table-cell"></div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        @if (!exportOptions?.isQBOPushBackPermitted) {
+          <div class="h-96 flex justify-center items-center">
+            <span class="font-light text-sm">
+              To enable this feature, please
+              <a
+                role="presentation"
+                (click)="openExportCheckEnableInfo()"
+                class="hover:underline font-medium cursor-pointer ancher-tag text-common-blue-color"
+                >contact</a
+              >
+              our support team.
+            </span>
+          </div>
+        } @else {
+          <div class="h-96 flex justify-center items-center">
+            <div class="flex gap-3">
+              <div>Please connect QuickBooks</div>
+              <div>
+                <app-common-button-v35
+                  class="whitespace-nowrap"
+                  text="Integrate QuickBooks"
+                  [type]="{ name: 'action', style: 'green' }"
+                  [disableHoverEffect]="false"
+                  customClasses="font-extralight p-0"
+                  backGroundInput="transparent"
+                  routerLink="/manage/thirdparty_app/quickBooks/quickbooks_online"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      }
+    }
+
+    @if (activeTab === "qbd") {
+      @if (exportOptions?.isQBDPushBack) {
+        <div
+          class="flex flex-col gap-5 pt-4"
+          [ngClass]="{
+            'cursor-not-allowed': !exportOptions?.isQBDPushBack,
+            'ltr-animation': ltrTransition,
+            'rtl-animation': !ltrTransition
+          }"
+        >
+        <div class="flex justify-end">
+          <app-demo-video slug="qbDesktopExport"> </app-demo-video>
+        </div>
+          <div class="flex mb-4 mt-2 gap-2">
+            <div class="flex items-center single_input" style="width: 49%">
+              <input
+                type="text"
+                class="input_style"
+                [(ngModel)]="QBDCompanyName"
+                id="companyName"
+                disabled
+                placeholder=" "
+                maxlength="155"
+              />
+              <label for="companyName" class="floating_label_field">
+                QuickBooks Company<span class="required">*</span></label
+              >
+            </div>
+            <div class="flex justify-center items-center">
+              <div
+                class="qb-company-connect-icon-wrapper flex justify-center items-center"
+              >
+                <fa-icon [icon]="['fas', 'arrows-left-right']"></fa-icon>
+              </div>
+            </div>
+            <div class="flex items-center single_input" style="width: 49%">
+              <input
+                type="text"
+                class="input_style"
+                [(ngModel)]="QBDBankAccountName"
+                id="acccountName"
+                disabled
+                placeholder=" "
+                maxlength="155"
+              />
+              <label for="acccountName" class="floating_label_field"
+                >QuickBooks Bank Accounts<span class="required">*</span></label
+              >
+            </div>
+          </div>
+
+          <div
+            class="qb-grid-table-container mt-3 mb-6"
+            [formGroup]="qbdExportsForm"
+            [ngClass]="{ 'pointer-events-none': !exportOptions?.isQBDPushBack }"
+          >
+            <div
+              class="grid gap-2 grid-row header-bar mb-2 border-b !border-input-border-color"
+            >
+              <div class="table-header1 col-span-4">EXPENSE</div>
+              <div class="table-header1 col-span-4">Description</div>
+              <div class="table-header1 col-span-4">Customer</div>
+              <div class="table-header1 col-span-4">Class</div>
+              <div class="table-header1 col-span-3">Amount</div>
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body">
+              @for (
+                formgroup of qbdExportsForm.controls;
+                track formgroup;
+                let formGroupIndex = $index
+              ) {
+                <ng-container [formGroupName]="formGroupIndex">
+                  <div class="grid-table-cell col-span-4">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      appendTo="ng-select"
+                      (scrollToEnd)="onQBDScrollCompanyDetails('expense-items')"
+                      (keyup)="
+                        onQBDSearchItemsCompanyDetails(
+                          $event?.target?.value,
+                          'expense-items'
+                        )
+                      "
+                      bindLabel="name"
+                      placeholder="select Items"
+                      formControlName="expense"
+                      [matTooltip]="formgroup.get('expense')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of QBDExpenseItem; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-4">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        class="input_style !h-9"
+                        formControlName="description"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid-table-cell col-span-4">
+                    <div class="single_input">
+                      <ng-select
+                        class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                        (scrollToEnd)="onQBDScrollCompanyDetails('customers')"
+                        (keyup)="
+                          onQBDSearchItemsCompanyDetails(
+                            $event?.target?.value,
+                            'customers'
+                          )
+                        "
+                        bindLabel="name"
+                        formControlName="customer"
+                        placeholder="select Items"
+                        appendTo="ng-select"
+                        [matTooltip]="formgroup.get('customer')?.value?.name || ''"
+                        matTooltipPosition="above"
+                      >
+                        @for (item of QBDCustomersItem; track item) {
+                          <ng-option [value]="item">
+                            {{ item.name }}
+                          </ng-option>
+                        }
+                        <ng-template ng-option-tmp let-item="item">
+                          <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                        </ng-template>
+                      </ng-select>
+                    </div>
+                  </div>
+                  <div class="grid-table-cell col-span-4">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      (scrollToEnd)="onQBDScrollCompanyDetails('classes')"
+                      (keyup)="
+                        onQBDSearchItemsCompanyDetails(
+                          $event?.target?.value,
+                          'classes'
+                        )
+                      "
+                      bindLabel="name"
+                      formControlName="class"
+                      placeholder="select Items"
+                      appendTo="ng-select"
+                      [matTooltip]="formgroup.get('class')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of QBDClassItem; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-3">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        placeholder="Amount"
+                        formControlName="amount"
+                        maxlength="10"
+                        class="input_style !h-9"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        (keypress)="utils.numberOnly($event, 'decimal')"
+                        (change)="updateExpenseTotal()"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="grid-table-cell flex justify-center items-center h-full"
+                  >
+                    <fa-icon
+                      [icon]="['fas', 'trash']"
+                      class="cursor-pointer !text-base text-secondary-text-color"
+                      (click)="removeSelectedRowQBD(formGroupIndex)"
+                    ></fa-icon>
+                  </div>
+                </ng-container>
+              }
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body mt-4">
+              <div class="grid-table-cell add-row-btn">
+                <fa-icon
+                  [icon]="['fas', 'circle-plus']"
+                  class="cursor-pointer"
+                  (click)="addNewRowQBD()"
+                ></fa-icon>
+              </div>
+              <div class="grid-table-cell col-span-9"></div>
+              <div class="grid-table-cell col-span-9 justify-self-end">
+                <app-common-button-v35
+                  text="Save Details"
+                  (clickEvent)="QBDSaveExpense()"
+                  [type]="{ name: 'action', style: 'blue' }"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'floppy-disk']"
+                ></app-common-button-v35>
+              </div>
+              <div class="grid-table-cell"></div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        @if (!exportOptions?.isQBDPushBackPermitted) {
+          <div class="h-96 flex justify-center items-center">
+            <span class="font-light text-sm">
+              To enable this feature, please
+              <a
+                role="presentation"
+                (click)="openExportCheckEnableInfo()"
+                class="hover:underline font-medium cursor-pointer ancher-tag text-common-blue-color"
+                >contact</a
+              >
+              our support team.
+            </span>
+          </div>
+        } @else {
+          <div class="h-96 flex justify-center items-center">
+            <div class="flex gap-3">
+              <div>Please connect QuickBooks Desktop</div>
+              <div>
+                <app-common-button-v35
+                  class="whitespace-nowrap"
+                  text="Integrate QuickBooks"
+                  [type]="{ name: 'action', style: 'green' }"
+                  [disableHoverEffect]="false"
+                  customClasses="font-extralight p-0"
+                  backGroundInput="transparent"
+                  routerLink="/manage/thirdparty_app/qb_desktop"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      }
+    }
+    @if (activeTab === "netsuite") {
+      @if (exportOptions?.isNetsuitePushBack) {
+        <div
+          class="flex flex-col gap-5 pt-4"
+          [ngClass]="{
+            'cursor-not-allowed': !exportOptions?.isNetsuitePushBack,
+            'ltr-animation': ltrTransition,
+            'rtl-animation': !ltrTransition
+          }"
+        >
+          <div class="flex items-center single_input" style="width: 49%">
+            <input
+              type="text"
+              class="input_style"
+              [(ngModel)]="netSuiteBankName"
+              id="acccountName"
+              disabled
+              placeholder=" "
+              maxlength="155"
+            />
+            <label for="acccountName" class="floating_label_field"
+              >NetSuite Bank Account<span class="required">*</span></label
+            >
+          </div>
+
+          <div
+            class="qb-grid-table-container mt-3 mb-6"
+            [formGroup]="netsuiteExportsForm"
+            [ngClass]="{
+              'pointer-events-none': !exportOptions?.isNetsuitePushBack
+            }"
+          >
+            <div
+              class="grid gap-2 grid-row header-bar mb-2 border-b !border-input-border-color"
+            >
+              <div class="table-header1 col-span-3">EXPENSE</div>
+              <div class="table-header1 col-span-3">Description</div>
+              <div class="table-header1 col-span-3">Customer</div>
+              <div class="table-header1 col-span-3">Class</div>
+              <div class="table-header1 col-span-3">Location</div>
+              <div class="table-header1 col-span-2">Amount</div>
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body">
+              @for (
+                formgroup of netsuiteExportsForm.controls;
+                track formgroup;
+                let formGroupIndex = $index
+              ) {
+                <ng-container [formGroupName]="formGroupIndex">
+                  <div class="grid-table-cell col-span-3">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      appendTo="ng-select"
+                      (scrollToEnd)="
+                        onScrollNetSuiteDetails('expense-accounts')
+                      "
+                      (keyup)="
+                        onNetSuiteDetails(
+                          'expense-accounts',
+                          $event?.target?.value
+                        )
+                      "
+                      bindLabel="name"
+                      placeholder="select Items"
+                      formControlName="expense"
+                      [matTooltip]="formgroup.get('expense')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of netSuiteExpense(); track item.id) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-3">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        class="input_style !h-9"
+                        formControlName="description"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid-table-cell col-span-3">
+                    <div class="single_input">
+                      <ng-select
+                        class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                        (scrollToEnd)="onScrollNetSuiteDetails('payees')"
+                        (keyup)="
+                          onNetSuiteDetails('payees', $event?.target?.value)
+                        "
+                        bindLabel="name"
+                        formControlName="customer"
+                        placeholder="select Items"
+                        appendTo="ng-select"
+                        [matTooltip]="formgroup.get('customer')?.value?.name || ''"
+                        matTooltipPosition="above"
+                      >
+                        @for (item of netSuitePayee; track item) {
+                          <ng-option [value]="item">
+                            {{ item.name }}
+                          </ng-option>
+                        }
+                        <ng-template ng-option-tmp let-item="item">
+                          <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                        </ng-template>
+                      </ng-select>
+                    </div>
+                  </div>
+                  <div class="grid-table-cell col-span-3">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      (scrollToEnd)="onScrollNetSuiteDetails('classes')"
+                      (keyup)="
+                        onNetSuiteDetails('classes', $event?.target?.value)
+                      "
+                      bindLabel="name"
+                      formControlName="class"
+                      placeholder="select Items"
+                      appendTo="ng-select"
+                      [matTooltip]="formgroup.get('class')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of netSuiteClass; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-3">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      bindLabel="name"
+                      placeholder="Select Location"
+                      appendTo="ng-select"
+                      formControlName="location"
+                      [matTooltip]="formgroup.get('location')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of netSuiteLocations; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-3">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        placeholder="Amount"
+                        formControlName="amount"
+                        maxlength="10"
+                        class="input_style !h-9"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        (keypress)="utils.numberOnly($event, 'decimal')"
+                        (change)="updateNetSuiteExpenseTotal()"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="grid-table-cell flex justify-center items-center h-full"
+                  >
+                    <fa-icon
+                      [icon]="['fas', 'trash']"
+                      class="cursor-pointer !text-base text-secondary-text-color"
+                      (click)="removeSelectedRowNetSuite(formGroupIndex)"
+                    ></fa-icon>
+                  </div>
+                </ng-container>
+              }
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body mt-4">
+              <div class="grid-table-cell add-row-btn">
+                <fa-icon
+                  [icon]="['fas', 'circle-plus']"
+                  class="cursor-pointer"
+                  (click)="addNewRowNetSuite()"
+                ></fa-icon>
+              </div>
+              <div class="grid-table-cell col-span-9"></div>
+              <div class="grid-table-cell col-span-9 justify-self-end">
+                @if(showSavedMessage){
+                  <div class="flex items-center text-common-green-color text-base font-inter font-medium bg-common-secondary-green-color py-[2px] px-3 rounded">
+                    <fa-icon [icon]="faCheckCircle" class="text-common-green-color mr-2 text-lg" />
+                    <span>Saved!</span>
+                  </div>
+                }@else{
+                  <app-common-button-v35
+                    text="Save Details"
+                    (clickEvent)="netSuiteSaveExpense()"
+                    [type]="{ name: 'action', style: 'blue' }"
+                    [isAddIcon]="true"
+                    [icon]="['fas', 'floppy-disk']"
+                  ></app-common-button-v35>
+                }
+              </div>
+              <div class="grid-table-cell"></div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        @if (exportOptions?.isNetSuitePushBackPermitted) {
+          <div class="h-96 flex justify-center items-center">
+            <span class="font-light text-sm">
+              To enable this feature, please
+              <a
+                role="presentation"
+                (click)="openExportCheckEnableInfo()"
+                class="hover:underline font-medium cursor-pointer ancher-tag text-common-blue-color"
+                >contact</a
+              >
+              our support team.
+            </span>
+          </div>
+        } @else {
+          <div class="h-96 flex justify-center items-center">
+            <div class="flex gap-3">
+              <div>Please connect NetSuite</div>
+              <div>
+                <app-common-button-v35
+                  class="whitespace-nowrap"
+                  text="Connect"
+                  [type]="{ name: 'action', style: 'green' }"
+                  [disableHoverEffect]="false"
+                  customClasses="font-extralight p-0"
+                  backGroundInput="transparent"
+                  routerLink="/manage/thirdparty_app/netsuite/home"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      }
+    }
+
+    @if (activeTab === "freshbooks") {
+      @if (exportOptions?.isFreshBooksPushBack) {
+        <div
+          class="flex flex-col gap-5 pt-4 mb-6"
+          [ngClass]="{
+            'cursor-not-allowed': !exportOptions?.isFreshBooksPushBack,
+            'ltr-animation': ltrTransition,
+            'rtl-animation': !ltrTransition
+          }"
+        >
+          <div class="flex mb-4 mt-2 gap-2">
+            <div class="flex items-center single_input" style="width: 49%">
+              <app-v35-common-dropdown
+                class="w-full"
+                [listData]="FBCompanies"
+                [config]="{
+                  placeholder: 'FreshBooks Company',
+                  displayField: 'companyName',
+                  outputField: 'companyId',
+                }"
+                [(ngModel)]="FreshBooksCompanyName"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onFreshBooksCompanyChange($event)"
+              />
+            </div>
+          </div>
+
+          <div
+            class="qb-grid-table-container mt-3 mb-6"
+            [formGroup]="freshbooksExportsForm"
+            
+          >
+            <div
+              class="grid gap-2 grid-row header-bar mb-2 border-b !border-input-border-color"
+            >
+              <div class="table-header1 col-span-7">Category</div>
+              <div class="table-header1 col-span-7">Description</div>
+              <div class="table-header1 col-span-6">Amount</div>
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body">
+              @for (
+                formgroup of freshbooksExportsForm.controls;
+                track formgroup;
+                let formGroupIndex = $index
+              ) {
+                <ng-container [formGroupName]="formGroupIndex">
+                  <div class="grid-table-cell col-span-7">
+                    <ng-select
+                      class="category_item ng-dropdown-panel-v35 export-check-dropdown-panel-v35"
+                      appendTo="ng-select"
+                      bindLabel="name"
+                      placeholder="select Items"
+                      formControlName="fbCategory"
+                      [matTooltip]="formgroup.get('fbCategory')?.value?.name || ''"
+                      matTooltipPosition="above"
+                    >
+                      @for (item of FBCategoryItem; track item) {
+                        <ng-option [value]="item">
+                          {{ item.name }}
+                        </ng-option>
+                      }
+                      <ng-template ng-option-tmp let-item="item">
+                        <span appEllipsisActive #ellip="ellipsisElement" class="block min-w-0 flex-1 truncate" [matTooltip]="item.name" [matTooltipDisabled]="!ellip.ellipsisActive" matTooltipPosition="above" matTooltipClass="export-check-option-tooltip">{{ item.name }}</span>
+                      </ng-template>
+                    </ng-select>
+                  </div>
+                  <div class="grid-table-cell col-span-7">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        placeholder="Description"
+                        formControlName="description"
+                        maxlength="100"
+                        class="input_style !h-9"
+                      />
+                    </div>
+                  </div>
+                    <div class="grid-table-cell col-span-6">
+                    <div class="single_input">
+                      <input
+                        type="text"
+                        placeholder="Amount"
+                        formControlName="amount"
+                        maxlength="10"
+                        class="input_style !h-9"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        (keypress)="utils.numberOnly($event, 'decimal')"
+                        (change)="updateFreshBooksTotal()"
+                      />
+                    </div>
+                  </div>
+                </ng-container>
+              }
+            </div>
+            <div class="grid gap-2 grid-row grid-table-body mt-4">
+              <div class="grid-table-cell col-span-9"></div>
+              <div class="grid-table-cell col-span-11 justify-self-end">
+                @if(showFreshBooksSavedMessage()){
+                  <div class="flex items-center text-common-green-color text-base font-inter font-medium bg-common-secondary-green-color py-[2px] px-3 rounded">
+                    <fa-icon [icon]="faCheckCircle" class="text-common-green-color mr-2 text-lg" />
+                    <span>Saved!</span>
+                  </div>
+                }@else{
+                <app-common-button-v35
+                  text="Save Details"
+                  (clickEvent)="freshBooksSaveExpense()"
+                  [type]="{ name: 'action', style: 'blue' }"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'floppy-disk']"
+                ></app-common-button-v35>
+                }
+              </div>
+              <div class="grid-table-cell"></div>
+            </div>
+          </div>
+        </div>
+      }@else{
+        @if (!exportOptions?.isFreshBooksPushBackPermitted) {
+          <div class="h-96 flex justify-center items-center">
+            <span class="font-light text-sm">
+              To enable this feature, please
+              <a
+                role="presentation"
+                (click)="openExportCheckEnableInfo()"
+                class="hover:underline font-medium cursor-pointer ancher-tag text-common-blue-color"
+                >contact</a
+              >
+              our support team.
+            </span>
+          </div>
+        } @else {
+          <div class="h-96 flex justify-center items-center">
+            <div class="flex gap-3">
+              <div>Please connect FreshBooks</div>
+              <div>
+                <app-common-button-v35
+                  class="whitespace-nowrap"
+                  text="Connect"
+                  [type]="{ name: 'action', style: 'green' }"
+                  [disableHoverEffect]="false"
+                  customClasses="font-extralight p-0"
+                  backGroundInput="transparent"
+                  routerLink="/manage/thirdparty_app/freshbooks/home"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      }
+    }
+  }
+</div>

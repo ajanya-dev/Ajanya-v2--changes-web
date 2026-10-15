@@ -1,0 +1,627 @@
+<div class="h-full flex flex-col overflow-hidden bg-v4-main-background-color">
+  <div class="mb-3">
+    <app-v4-payment-links-header
+      (goToSettings)="goToSettings()"
+      (createNew)="onCreateNew()"
+    />
+  </div>
+
+  @if (isSmallScreen()) {
+    <!-- TABLET / SMALL SCREEN: show either list OR detail (mirrors common-layout-v4) -->
+    @if (!showMobileDetail()) {
+      <!-- List full width -->
+      <div class="flex-1 min-h-0">
+        <div class="flex flex-col h-full min-h-0">
+          <app-v4-list-panel
+            [links]="filteredLinks()"
+            [loading]="loading()"
+            [selectedLinkId]="selectedLink()?.id ?? ''"
+            [totalCount]="totalCount()"
+            [collapsed]="false"
+            [hideCollapseToggle]="true"
+            [searchTerm]="currentSearchTerm()"
+            (selectLink)="onSelectLink($event)"
+            (editLink)="onEditLink($event)"
+            (copyLink)="onCopyLink($event)"
+            (shareLink)="onShareLink($event)"
+            (archiveLink)="onArchiveLink($event)"
+            (restoreLink)="onRestoreLink($event)"
+            [selectedListTab]="selectedListTab()"
+            (tabChange)="onTabChange($event)"
+            (viewDetails)="onViewDetails($event)"
+            (viewAuditTrail)="openAuditTrail($event.id)"
+            (searchChange)="onSearchChange($event)"
+            (loadMore)="onLoadMore()"
+            (createNew)="onCreateNew()"
+          />
+        </div>
+      </div>
+    } @else {
+      <!-- Detail full width with back button -->
+      <div
+        class="flex-1 min-h-0 flex flex-col overflow-hidden"
+      >
+        <div class="flex items-center pb-2">
+          <button
+            class="flex items-center gap-2 text-sm transition-colors cursor-pointer text-v4-secondary-text-color hover:text-v4-main-text-color"
+            (click)="goBackToList()"
+          >
+            <lucide-angular name="arrow-left" [size]="16" />
+            <span>Back</span>
+          </button>
+        </div>
+        <div
+          class="flex-1 overflow-y-auto min-h-0 thin-scroll flex flex-col bg-v4-main-background-color rounded-xl"
+        >
+          @if (selectedLink(); as link) {
+            <div
+              class="flex flex-col gap-4"
+              [class.flex-1]="isArchivedView()"
+              [class.min-h-full]="isArchivedView()"
+            >
+              <!-- Header Card -->
+              <app-v4-header-card
+                [link]="link"
+                [isArchived]="isArchivedView()"
+                [busy]="isLinkActionPending(link.id)"
+                (edit)="onEditLink(link)"
+                (preview)="onPreview()"
+                (duplicate)="onDuplicate()"
+                (share)="onShare()"
+                (toggleStatus)="onToggleStatus($event)"
+                (customizeNotification)="onCustomizeNotification()"
+                (archive)="onArchiveLink(link)"
+              />
+
+              @if (isArchivedView()) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    archivedSection;
+                    context: { $implicit: link }
+                  "
+                />
+              } @else {
+                <!-- Tabs -->
+                <div
+                  class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color overflow-hidden"
+                >
+                  <div
+                    class="flex gap-6 border-b border-v4-border-color px-4 pt-3 overflow-x-auto"
+                  >
+                    @for (tab of tabs; track tab.value) {
+                      <button
+                        type="button"
+                        class="pb-2.5 px-3 pt-1.5 rounded-t-lg text-sm font-medium transition-all relative cursor-pointer whitespace-nowrap shrink-0"
+                        [ngClass]="
+                          activeTab() === tab.value
+                            ? 'text-v4-primary-brand-bold-color font-semibold'
+                            : 'text-v4-tertiary-text-color hover:bg-v4-tertiary-background-color hover:text-v4-secondary-text-color'
+                        "
+                        (click)="activeTab.set(tab.value)"
+                      >
+                        <span>{{ tab.label }}</span>
+                        @if (activeTab() === tab.value) {
+                          <span
+                            class="absolute bottom-0 left-0 right-0 h-0.5 rounded-sm bg-v4-primary-brand-color"
+                            aria-hidden="true"
+                          ></span>
+                        }
+                      </button>
+                    }
+                  </div>
+
+                  <div [class.hidden]="activeTab() !== 'sub-links'">
+                    <app-v4-sub-links-tab [link]="link" />
+                  </div>
+                  <div [class.hidden]="activeTab() !== 'dynamic-iframe'">
+                    <app-v4-dynamic-iframe-tab
+                      [dynamicLink]="dynamicLink()"
+                      [iframeCode]="iframeCode()"
+                      [loading]="dynamicIframeLoading()"
+                    />
+                  </div>
+                  <div [class.hidden]="activeTab() !== 'ecommerce'">
+                    <app-v4-ecommerce-buttons-tab
+                      [buttons]="eCButtons()"
+                      [selectedIndex]="selectedButtonIndex()"
+                      [selectedButtonDetails]="selectedButtonDetails()"
+                      (selectButton)="onSelectECommerceButton($event)"
+                      (updateAmount)="onUpdateECommerceAmount($event)"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (loading()) {
+            <ng-container *ngTemplateOutlet="rightPanelShimmer" />
+          } @else {
+            <app-v4-data-table-empty-state
+              icon="link-2"
+              [title]="
+                isArchivedView()
+                  ? 'No archived payment links yet'
+                  : 'No payment links yet'
+              "
+              [description]="
+                isArchivedView()
+                  ? 'Payment links you archive will appear here.'
+                  : 'Create your first payment link to start accepting payments online'
+              "
+              [buttonText]="isArchivedView() ? '' : 'New Link'"
+              (actionClick)="onCreateNew()"
+            />
+          }
+        </div>
+      </div>
+    }
+  } @else {
+    <!-- DESKTOP: Two-Panel Layout: fixed row height so both panels get constrained height and scroll -->
+    <div
+      class="flex-1 min-h-0 grid gap-4 payment-links-grid"
+      [class.payment-links-grid--collapsed]="listCollapsed()"
+    >
+      <!-- Left Panel: List (h-full + min-h-0 so list panel gets constrained height and list can scroll) -->
+      <div class="flex flex-col h-full min-h-0">
+        <app-v4-list-panel
+          [links]="filteredLinks()"
+          [loading]="loading()"
+          [selectedLinkId]="selectedLink()?.id ?? ''"
+          [totalCount]="totalCount()"
+          [collapsed]="listCollapsed()"
+          [searchTerm]="currentSearchTerm()"
+          (selectLink)="onSelectLink($event)"
+          (editLink)="onEditLink($event)"
+          (copyLink)="onCopyLink($event)"
+          (shareLink)="onShareLink($event)"
+          (archiveLink)="onArchiveLink($event)"
+          (restoreLink)="onRestoreLink($event)"
+          [selectedListTab]="selectedListTab()"
+          (tabChange)="onTabChange($event)"
+          (viewDetails)="onViewDetails($event)"
+          (viewAuditTrail)="openAuditTrail($event.id)"
+          (searchChange)="onSearchChange($event)"
+          (loadMore)="onLoadMore()"
+          (createNew)="onCreateNew()"
+          (toggleCollapse)="listCollapsed.set(!listCollapsed())"
+        />
+      </div>
+
+      <!-- Right Panel: entire right side scrolls as one unit; ping bg full height -->
+      <div
+        class="overflow-y-auto min-h-0 thin-scroll flex flex-col min-h-full bg-v4-main-background-color rounded-xl"
+      >
+        @if (selectedLink(); as link) {
+          <div
+            class="flex flex-col gap-4"
+            [class.flex-1]="isArchivedView()"
+            [class.min-h-full]="isArchivedView()"
+          >
+            <!-- Header Card -->
+            <app-v4-header-card
+              [link]="link"
+              [isArchived]="isArchivedView()"
+              [busy]="isLinkActionPending(link.id)"
+              (edit)="onEditLink(link)"
+              (preview)="onPreview()"
+              (duplicate)="onDuplicate()"
+              (share)="onShare()"
+              (toggleStatus)="onToggleStatus($event)"
+              (customizeNotification)="onCustomizeNotification()"
+              (archive)="onArchiveLink(link)"
+            />
+
+            @if (isArchivedView()) {
+              <ng-container
+                *ngTemplateOutlet="
+                  archivedSection;
+                  context: { $implicit: link }
+                "
+              />
+            } @else {
+              <!-- Tabs (inline with v4 Tailwind colors only) -->
+              <div
+                class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color overflow-hidden"
+              >
+                <div
+                  class="flex gap-6 border-b border-v4-border-color px-4 pt-3 overflow-x-auto"
+                >
+                  @for (tab of tabs; track tab.value) {
+                    <button
+                      type="button"
+                      class="pb-2.5 px-3 pt-1.5 rounded-t-lg text-sm font-medium transition-all relative cursor-pointer whitespace-nowrap shrink-0"
+                      [ngClass]="
+                        activeTab() === tab.value
+                          ? 'text-v4-primary-brand-bold-color font-semibold'
+                          : 'text-v4-tertiary-text-color hover:bg-v4-tertiary-background-color hover:text-v4-secondary-text-color'
+                      "
+                      (click)="activeTab.set(tab.value)"
+                    >
+                      <span>{{ tab.label }}</span>
+                      @if (activeTab() === tab.value) {
+                        <span
+                          class="absolute bottom-0 left-0 right-0 h-0.5 rounded-sm bg-v4-primary-brand-color"
+                          aria-hidden="true"
+                        ></span>
+                      }
+                    </button>
+                  }
+                </div>
+
+                <!-- Tab content: all tabs stay alive (hidden), matching V3 pattern -->
+                <div [class.hidden]="activeTab() !== 'sub-links'">
+                  <app-v4-sub-links-tab [link]="link" />
+                </div>
+                <div [class.hidden]="activeTab() !== 'dynamic-iframe'">
+                  <app-v4-dynamic-iframe-tab
+                    [dynamicLink]="dynamicLink()"
+                    [iframeCode]="iframeCode()"
+                    [loading]="dynamicIframeLoading()"
+                  />
+                </div>
+                <div [class.hidden]="activeTab() !== 'ecommerce'">
+                  <app-v4-ecommerce-buttons-tab
+                    [buttons]="eCButtons()"
+                    [selectedIndex]="selectedButtonIndex()"
+                    [selectedButtonDetails]="selectedButtonDetails()"
+                    (selectButton)="onSelectECommerceButton($event)"
+                    (updateAmount)="onUpdateECommerceAmount($event)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (loading()) {
+          <ng-container *ngTemplateOutlet="rightPanelShimmer" />
+        } @else {
+          <app-v4-data-table-empty-state
+            icon="link-2"
+            [title]="
+              isArchivedView()
+                ? 'No archived payment links yet'
+                : 'No payment links yet'
+            "
+            [description]="
+              isArchivedView()
+                ? 'Payment links you archive will appear here.'
+                : 'Create your first payment link to start accepting payments online'
+            "
+            [buttonText]="isArchivedView() ? '' : 'New Link'"
+            (actionClick)="onCreateNew()"
+          />
+        }
+      </div>
+    </div>
+  }
+
+  <!-- View Details Drawer -->
+  @if (viewDetailsLink(); as drawerLink) {
+    <app-v4-view-details-drawer
+      [link]="drawerLink"
+      [isArchived]="isArchivedView()"
+      [busy]="isLinkActionPending(drawerLink.id)"
+      (close)="closeViewDetails()"
+      (edit)="onEditLink(drawerLink); closeViewDetails()"
+      (duplicate)="onViewDetailsDuplicate()"
+      (share)="onViewDetailsShare()"
+      (preview)="onViewDetailsPreview()"
+      (toggleStatus)="onViewDetailsToggleStatus($event)"
+      (customizeNotification)="onCustomizeNotification(); closeViewDetails()"
+      (archive)="onArchiveLink(drawerLink); closeViewDetails()"
+      (restoreLink)="onRestoreLink(drawerLink); closeViewDetails()"
+    />
+  }
+
+  <!-- Preview Drawer -->
+  @if (previewOpen() && selectedLink(); as previewLink) {
+    <app-v4-preview-drawer
+      [link]="previewLink"
+      (close)="previewOpen.set(false)"
+      (share)="previewOpen.set(false); onShare()"
+    />
+  }
+
+  <!-- Reusable archived-state section (renders where sub-tabs would appear) -->
+  <ng-template #archivedSection let-link>
+    <div
+      class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color px-8 py-10 flex flex-col items-center justify-center text-center gap-4 flex-1 min-h-[320px]"
+    >
+      <div
+        class="flex items-center justify-center w-12 h-12 rounded-full"
+        [style.background-color]="'var(--v4-badge-error-bg-color)'"
+      >
+        <lucide-angular
+          name="archive"
+          [size]="20"
+          class="text-v4-common-red-color"
+        />
+      </div>
+      <div class="flex flex-col gap-1.5 max-w-[420px]">
+        <span class="font-semibold text-base text-v4-main-text-color"
+          >This link is archived</span
+        >
+        <span class="text-sm text-v4-secondary-text-color leading-relaxed">
+          This payment link is no longer active. Restore it to re-enable
+          payments and access all settings.
+        </span>
+      </div>
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Restore Link"
+        lucideIcon="archive-restore"
+        [width]="'180px'"
+        (clickEvent)="onRestoreLink(link)"
+      />
+    </div>
+  </ng-template>
+
+  <!-- Reusable right-panel shimmer (header card + tabs) used while loading with no selected link -->
+  <ng-template #rightPanelShimmer>
+    <div class="flex flex-col gap-4">
+      <!-- Header Card Shimmer -->
+      <div
+        class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color p-5"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="h-5 w-40 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+          <div class="flex items-center gap-2">
+            <div
+              class="h-5 w-16 rounded-full animate-shimmer"
+              style="
+                background: linear-gradient(
+                  90deg,
+                  var(--v4-tertiary-background-color) 25%,
+                  var(--v4-border-color) 50%,
+                  var(--v4-tertiary-background-color) 75%
+                );
+                background-size: 400px 100%;
+              "
+            ></div>
+            <div
+              class="h-5 w-9 rounded-full animate-shimmer"
+              style="
+                background: linear-gradient(
+                  90deg,
+                  var(--v4-tertiary-background-color) 25%,
+                  var(--v4-border-color) 50%,
+                  var(--v4-tertiary-background-color) 75%
+                );
+                background-size: 400px 100%;
+              "
+            ></div>
+          </div>
+        </div>
+        <div
+          class="h-9 w-full rounded-lg animate-shimmer mb-3"
+          style="
+            background: linear-gradient(
+              90deg,
+              var(--v4-tertiary-background-color) 25%,
+              var(--v4-border-color) 50%,
+              var(--v4-tertiary-background-color) 75%
+            );
+            background-size: 400px 100%;
+          "
+        ></div>
+        <div class="flex items-center gap-6 mb-3">
+          <div
+            class="h-3.5 w-28 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+        </div>
+        <div class="flex items-center gap-2 mb-4">
+          <div
+            class="h-3.5 w-14 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+          <div
+            class="h-6 w-20 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+          <div
+            class="h-6 w-24 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+        </div>
+        <div class="flex gap-3">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div
+              class="flex-1 h-9 rounded-lg animate-shimmer"
+              style="
+                background: linear-gradient(
+                  90deg,
+                  var(--v4-tertiary-background-color) 25%,
+                  var(--v4-border-color) 50%,
+                  var(--v4-tertiary-background-color) 75%
+                );
+                background-size: 400px 100%;
+              "
+            ></div>
+          }
+        </div>
+      </div>
+
+      <!-- Tabs Shimmer -->
+      <div
+        class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color overflow-hidden"
+      >
+        <div
+          class="flex gap-6 border-b border-v4-border-color px-4 pt-3 pb-2.5"
+        >
+          <div
+            class="h-4 w-16 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+          <div
+            class="h-4 w-28 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+          <div
+            class="h-4 w-32 rounded animate-shimmer"
+            style="
+              background: linear-gradient(
+                90deg,
+                var(--v4-tertiary-background-color) 25%,
+                var(--v4-border-color) 50%,
+                var(--v4-tertiary-background-color) 75%
+              );
+              background-size: 400px 100%;
+            "
+          ></div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-4">
+            <div
+              class="h-5 w-20 rounded animate-shimmer"
+              style="
+                background: linear-gradient(
+                  90deg,
+                  var(--v4-tertiary-background-color) 25%,
+                  var(--v4-border-color) 50%,
+                  var(--v4-tertiary-background-color) 75%
+                );
+                background-size: 400px 100%;
+              "
+            ></div>
+            <div class="flex items-center gap-2">
+              <div
+                class="h-8 w-32 rounded-lg animate-shimmer"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    var(--v4-tertiary-background-color) 25%,
+                    var(--v4-border-color) 50%,
+                    var(--v4-tertiary-background-color) 75%
+                  );
+                  background-size: 400px 100%;
+                "
+              ></div>
+              <div
+                class="h-8 w-8 rounded-lg animate-shimmer"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    var(--v4-tertiary-background-color) 25%,
+                    var(--v4-border-color) 50%,
+                    var(--v4-tertiary-background-color) 75%
+                  );
+                  background-size: 400px 100%;
+                "
+              ></div>
+              <div
+                class="h-8 w-24 rounded-lg animate-shimmer"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    var(--v4-tertiary-background-color) 25%,
+                    var(--v4-border-color) 50%,
+                    var(--v4-tertiary-background-color) 75%
+                  );
+                  background-size: 400px 100%;
+                "
+              ></div>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4 py-2 border-b border-v4-border-color mb-2"
+          >
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div
+                class="h-3 rounded animate-shimmer"
+                [style.width]="12 + i * 3 + '%'"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    var(--v4-tertiary-background-color) 25%,
+                    var(--v4-border-color) 50%,
+                    var(--v4-tertiary-background-color) 75%
+                  );
+                  background-size: 400px 100%;
+                "
+              ></div>
+            }
+          </div>
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div
+              class="flex items-center gap-4 py-3 border-b border-v4-border-color"
+            >
+              @for (j of [1, 2, 3, 4, 5]; track j) {
+                <div
+                  class="h-3 rounded animate-shimmer"
+                  [style.width]="10 + j * 4 + '%'"
+                  style="
+                    background: linear-gradient(
+                      90deg,
+                      var(--v4-tertiary-background-color) 25%,
+                      var(--v4-border-color) 50%,
+                      var(--v4-tertiary-background-color) 75%
+                    );
+                    background-size: 400px 100%;
+                  "
+                ></div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</div>

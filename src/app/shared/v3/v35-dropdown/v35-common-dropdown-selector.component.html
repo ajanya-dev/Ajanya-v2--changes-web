@@ -1,0 +1,115 @@
+<div class="angular-ocw-v35-ng-select-dropdown relative" [ngClass]="config.extraStyles">
+  <div
+    class="absolute top-0 z-[999] height-{{ config.style?.size ?? '2' }}"
+    *ngIf="config.style?.enableLabelIcon"
+  >
+    <div
+      class="flex justify-center items-center v35-dropdown-labeled-icon border-r border-input-border-color"
+    >
+      <fa-icon
+        [style]="
+          'color: var(--' +
+          (config.style?.labelIconData?.color ?? 'main-text-color') +
+          ');'
+        "
+        [icon]="config.style?.labelIconData?.icon_fa ?? ['fas', 'circle-dot']"
+      ></fa-icon>
+    </div>
+  </div>
+  <ng-select
+    [placeholder]="config.placeholder ?? 'Select'"
+    [(ngModel)]="dropDownValue"
+    [clearable]="clearable"
+    [disabled]="isDisabled()"
+    #selectController="ngModel"
+    (blur)="onNgSelectBlur()"
+    (scrollToEnd)="onScrollToEnd()"
+    [class]="
+      config.style?.enableLabelIcon ? 'height-' + config.style?.size :
+      config.style?.size === 6 && !config.style?.enableLabelIcon ? 'height-6' : ''
+    "
+    class="ng-dropdown-panel-v35 text-sm height-0"
+    [loading]="loading"
+    (close)="onClose()"
+    [required]="isRequired"
+    [appendTo]="appendTo"
+    (keyup)="search($event)"
+    [searchFn]="searchFn"
+    [notFoundText]="notFoundText"
+    [dropdownPosition]="dropdownPosition()"
+  >
+    <!-- Custom label template when enabled -->
+    @if (config.customLabelTemplate?.enabled) {
+    <ng-template 
+      ng-label-tmp 
+      let-item="item" 
+    >
+      <span>{{ getCustomLabelText(item) }}</span>
+    </ng-template>
+    }
+    <ng-option *ngIf="config.enableAddNew" [value]="'add-new'">
+      <div
+        class="add-new-btn-ng-option p-2 flex justify-center items-center text-center text-sm bg-common-secondary-blue-color rounded-lg text-common-blue-color"
+      >
+        <fa-icon class="mr-1" [icon]="['fas', 'plus']"></fa-icon>
+        <span class="add-new-text-ng-option">New</span>
+      </div>
+    </ng-option>
+
+    <ng-option *ngFor="let item of updatedListData" [value]="item.value">
+      <div
+        *ngIf="item.icon.show"
+        class="rounded-full mr-2 text-sm"
+        [ngClass]="
+          item.icon.type === 'text' || item.icon.type === 'fa-icon'
+            ? 'w-8 h-8 flex justify-center items-center bg-' +
+              item.icon.bgOCWv35Clr +
+              ' uppercase'
+            : 'bg-tertiary-background-color'
+        "
+        [style]="
+          item.icon.type === 'text' || item.icon.type === 'fa-icon'
+            ? 'background-color:var(--' +
+              item.icon.bgOCWv35Clr +
+              ');color:white;'
+            : ''
+        "
+        [ngStyle]="{ color: 'var(--' + item.icon.textOCWv35Clr + ')' }"
+      >
+        <fa-icon
+          class="text-secondary-text-color px-2"
+          [icon]="item.icon.data"
+          *ngIf="item.icon.type === 'fa-icon'"
+          [ngStyle]="{ color: 'var(--' + item.icon.textOCWv35Clr + ')' }"
+        ></fa-icon>
+        <span
+          [innerHTML]="item.icon.data"
+          *ngIf="item.icon.type === 'text' || item.icon.type === 'html'"
+        >
+        </span>
+        <img
+          [src]="item.icon.data"
+          alt="Image not loaded"
+          class="w-7 h-7 object-cover"
+          *ngIf="item.icon.type === 'img-url'"
+        />
+      </div>
+      <div class="flex-1" [title]="item.mainText">
+        <p [ngClass]="'main-text-highlight'"
+        title="{{ item.mainText}}"
+        >
+          {{ item.mainText.length > 35? (item.mainText | slice:0:35) + '...' : item.mainText }}
+        </p>
+        <ng-container *ngIf="item.subText.show">
+          <span class="text-sm text-secondary-text-color">{{
+            item.subText.data
+          }}</span>
+        </ng-container>
+      </div>
+    </ng-option>
+  </ng-select>
+
+  <app-control-message-v35
+    [control]="selectControllerNgModel.control"
+  ></app-control-message-v35>
+</div>

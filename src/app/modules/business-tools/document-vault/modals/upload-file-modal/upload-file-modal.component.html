@@ -1,0 +1,166 @@
+<div class="px-[6px] pb-[6px]">
+  <div class="flex justify-between pb-6">
+    <div>
+      <span class="mt-18 w-full text-base text-main-text-color align-middle flex items-center">
+        <fa-icon class="!text-sm pt-1" [icon]="faUpload"></fa-icon>
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"> Upload Files </span>
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon class="text-secondary-text-color cursor-pointer" [icon]="faXmark"></fa-icon>
+    </div>
+  </div>
+
+  <div>
+    <!-- File Drop Zone -->
+    <div
+      class="border-2 border-dashed border-input-border-color rounded-lg p-8 transition-colors flex"
+      [ngClass]="{
+        'flex-row justify-between items-center': selectedFiles.length > 0,
+        'flex-col text-center': selectedFiles.length === 0,
+        'border-common-blue-color bg-blue-50': isDragging,
+        'cursor-pointer hover:border-common-blue-color': canAddMoreFiles(),
+        'cursor-not-allowed opacity-50': !canAddMoreFiles()
+      }"
+      [tabindex]="canAddMoreFiles() ? 0 : -1"
+      role="button"
+      [attr.aria-label]="'File upload drop zone'"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="openFileBrowser()"
+      (keydown)="onKeyDown($event)"
+    >
+      <div
+        class="flex items-center gap-3"
+        [ngClass]="{ 'flex-col': selectedFiles.length === 0 }"
+      >
+        <fa-icon
+          [icon]="faCloudArrowUp"
+          class="text-secondary-text-color text-3xl"
+          [ngClass]="{ 'mb-3': selectedFiles.length === 0 }"
+        ></fa-icon>
+        <p
+          class="text-secondary-text-color"
+          [ngClass]="{ 'mb-4': selectedFiles.length === 0 }"
+        >
+          Click or drag and drop files
+        </p>
+      </div>
+      @if (canAddMoreFiles()) {
+        <div class="flex justify-center">
+          <app-common-button-v35
+            [type]="{ style: 'filled-blue', name: 'action' }"
+            [text]="selectedFiles.length > 0 ? 'Add More Files' : 'Browse Files'"
+            (click)="openFileBrowser(); $event.stopPropagation()"
+          ></app-common-button-v35>
+        </div>
+      }
+    </div>
+
+    <input
+      type="file"
+      #fileInput
+      class="hidden"
+      multiple
+      [accept]="acceptedFileTypes.join(',')"
+      (change)="onFileSelected($event)"
+    />
+
+    <!-- File info -->
+    <div class="mt-2 text-xs text-secondary-text-color">
+      <div>Max {{ maxFiles }} files, {{ maxFileSizeMB }}MB each</div>
+      <div>Allowed types: PDF, JPG, PNG, DOC, DOCX, CSV, XLS, XLSX</div>
+    </div>
+
+    <!-- Selected Files List -->
+    @if (selectedFiles.length > 0) {
+      <div class="mt-6 space-y-4 max-h-[400px] overflow-y-auto">
+        <div class="text-sm font-semibold text-main-text-color">
+          Selected Files ({{ selectedFiles.length }}/{{ maxFiles }})
+        </div>
+        @for (fileItem of selectedFiles; track fileItem.id; let i = $index) {
+          <div class="p-4 border border-input-border-color rounded-lg bg-secondary-background-color" (click)="$event.stopPropagation()">
+            <div class="flex items-start gap-3">
+              <!-- File Icon -->
+              <div class="flex items-center justify-center w-10 h-10 bg-white rounded border border-input-border-color flex-shrink-0">
+                <fa-icon
+                  [icon]="faFile"
+                  class="text-secondary-text-color text-xl"
+                ></fa-icon>
+              </div>
+
+              <!-- File Details -->
+              <div class="flex-1 space-y-3" (click)="$event.stopPropagation()">
+                <!-- Original File Info -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-secondary-text-color">
+                      Original: {{ fileItem.file.name }} ({{ getFileSize(fileItem.file.size) }})
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="removeFile(i); $event.stopPropagation()"
+                    class="text-secondary-text-color hover:text-red-500 transition-colors"
+                  >
+                    <fa-icon [icon]="faXmark" class="text-lg"></fa-icon>
+                  </button>
+                </div>
+
+                <!-- File Name Input -->
+                <div class="w-full" (click)="$event.stopPropagation()">
+                  <app-common-input-field
+                    [(ngModel)]="fileItem.name"
+                    [placeholder]="'File Name'"
+                    [isFieldRequired]="true"
+                    [inputId]="'fileName-' + i"
+                  ></app-common-input-field>
+                </div>
+
+                <!-- Serial Number & Memo Row -->
+                <div class="flex gap-3" (click)="$event.stopPropagation()">
+                  <div class="w-1/2">
+                    <app-common-input-field
+                      [(ngModel)]="fileItem.serialNumber"
+                      [placeholder]="'Serial Number'"
+                      [isFieldRequired]="false"
+                      [inputId]="'serialNumber-' + i"
+                    ></app-common-input-field>
+                  </div>
+                  <div class="w-1/2">
+                    <app-common-input-field
+                      [(ngModel)]="fileItem.memo"
+                      [placeholder]="'Memo'"
+                      [isFieldRequired]="false"
+                      [inputId]="'memo-' + i"
+                    ></app-common-input-field>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      [type]="{style:'bordered', name: 'main' }"
+      [text]="'Cancel'"
+      [disabled]="loading"
+      [mat-dialog-close]="false"
+      width="125px"
+    ></app-common-button-v35>
+
+    <app-common-button-v35
+      [type]="{style:'modal', name: 'main' }"
+      [text]="loading ? 'Uploading...' : 'Upload Files'"
+      [disabled]="loading || selectedFiles.length === 0"
+      [loading]="loading"
+      (click)="onUpload()"
+      width="125px"
+    ></app-common-button-v35>
+  </div>
+</div>

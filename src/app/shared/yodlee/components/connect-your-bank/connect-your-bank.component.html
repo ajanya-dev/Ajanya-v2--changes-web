@@ -1,0 +1,101 @@
+<div class="add-account-details-container flex flex-col ml-1">
+  <div class="flex justify-end pl-6">
+    @if (commonData?.isModal) {
+      <div
+        class="close-icon-container flex justify-center items-center"
+        mat-dialog-close
+      >
+        <fa-icon [icon]="faXmark" class="close-icon"></fa-icon>
+      </div>
+    }
+  </div>
+
+  <div class="grow flex flex-col pt-0 pb-5 pl-6 pr-6 content-section">
+    @if (!isBankSelected) {
+      <div class="pl-[35px] pr-[50px]">
+        <div class="py-[30px] text-[14px]">
+          Select your bank account from the list below and login with your bank
+          credentials.
+        </div>
+
+        <div class="text-[14px] pb-[3px]">
+          <input
+            maxlength="70"
+            [formControl]="searchControl"
+            class="h-10 w-full px-[15px] py-[5px]"
+            type="search"
+            (input)="removeWhitespace($event)"
+            style="font-family: Arial, FontAwesome"
+            placeholder=" Search for your bank or institution"
+          />
+        </div>
+        <div class="shadowed-div"></div>
+
+        <div
+          [ngClass]="{
+            'grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 w-full':
+              !isSearchResult,
+            'opacity-30 pointer-events-none': searching
+          }"
+        >
+          @for (item of yodleeBanks; track $index) {
+            <div
+              (click)="onSelectBank(item.id)"
+              [ngClass]="
+                !isSearchResult
+                  ? 'text-center cursor-pointer justify-center p-4 bg-gray-200 border border-gray-400 flex h-[65px] transition-[0.4s] duration-[ease] rounded-[5px] border-solid border-[#e1e1e1] hover:translate-y-[-2px] hover:shadow-[0px_10px_10px_rgba(0,0,0,0.15)] hover:scale-100'
+                  : 'cursor-pointer h-[50px] flex items-center border-b-[#e1e1e1] border-b border-solid hover:bg-[aliceblue]'
+              "
+              role="presentation"
+            >
+              <img
+                [ngClass]="{ 'h-5 min-w-[20px]': isSearchResult }"
+                [src]="isSearchResult ? item.favicon : item?.logo"
+                alt=""
+              />
+
+              @if (isSearchResult) {
+                <div class="flex flex-col pl-5" [title]="item.name">
+                  <span class="text-[14px] font-medium">{{ item.name }}</span>
+                  <span class="text-[13px] text-[#b1b1b1]">{{
+                    item.baseUrl | truncate: 70
+                  }}</span>
+                </div>
+              }
+            </div>
+          } @empty {
+            @if (!searching && !isChangedSearchValue) {
+              <div class="text-[13px] text-[gray] pt-2.5">
+                <span>We didn't find any result for</span
+                ><span class="pl-2 font-medium"
+                  >"{{ searchControl.value }}".</span
+                ><br />
+                <span
+                  >You may need to search for a different financial
+                  institution.</span
+                >
+              </div>
+            }
+          }
+        </div>
+      </div>
+    } @else {
+      @if (urlSafe) {
+        <iframe
+          style="width: 100%; height: 100%"
+          (load)="loadingEnd()"
+          [src]="urlSafe"
+        >
+        </iframe>
+
+        @if (!loadingDone) {
+          <span class="data_spinner"></span>
+        }
+      }
+    }
+
+    @if (searching) {
+      <span class="data_spinner"></span>
+    }
+  </div>
+</div>

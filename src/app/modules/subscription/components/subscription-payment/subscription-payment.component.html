@@ -1,0 +1,291 @@
+<section class="payment_main_wrapper">
+  <div class="payment_container">
+    <div class="action_area">
+      <div class="flex items-center gap-5 absolute top-[29px] right-[42px]">
+        <app-common-help-button [helpIcon]="true"></app-common-help-button>
+        <div class="close_btn action_btn !static" matTooltip="Close">
+          <button (click)="onClose()" class="text-2xl">
+            <fa-icon [icon]="faXmark"></fa-icon>
+          </button>
+        </div>
+      </div>
+      <div
+        role="presentation"
+        class="back_btn action_btn"
+        matTooltip="Go Back"
+        (click)="goBack()"
+      >
+        <fa-icon class="text-2xl" [icon]="faArrowLeft"></fa-icon>
+      </div>
+    </div>
+
+    <div class="payment_main_head">
+      @if (!changeCardPaymentMode) {
+        <h3>Select Payment Method</h3>
+      } @else {
+        <h2 style="text-align: center">Update Card</h2>
+      }
+    </div>
+
+    <div class="payment_main_head"></div>
+
+    @if (!changeCardPaymentMode) {
+      <div class="pay_type_list_wrapper">
+        @for (item of payTypeList; track $index) {
+          <li
+            role="presentation"
+            (click)="showPaymentArea(item.type)"
+            [ngClass]="item.type === selectedList && 'active'"
+          >
+            <span class="radio_label"></span>
+            <div class="type_img">
+              <img ngSrc="{{ item.icon }}" alt="" width="20" height="20" />
+              @if (item.icon2) {
+                <img ngSrc="{{ item.icon2 }}" alt="" width="20" height="20" />
+              }
+            </div>
+            <p class="pay_name">{{ item.type }}</p>
+          </li>
+        }
+      </div>
+    }
+
+    <div
+      class="payment_form_area"
+      [ngClass]="{ 'h-[484px]': openWalletDropDown() }"
+    >
+      @if (isItDownGrade && selectedList === "Card") {
+        <div class="alert-wrapper">
+          <div class="alert_area">
+            <span>
+              <fa-icon
+                [icon]="faTriangleExclamation"
+                class="text-common-red-color text-[56px]"
+              />
+            </span>
+            <p id="alert">Subscription downgrades aren't permitted.</p>
+          </div>
+        </div>
+      }
+
+      <!-- single payment -->
+      @if (selectedList === "Card") {
+        <div class="single_form_wrapper">
+          <div
+            class="skelton_loader"
+            [ngClass]="{ done: !loading.loadingCard }"
+            [hidden]="isItDownGrade"
+          >
+            <iframe
+              [src]="cardLink ? cardLink : ''"
+              width="100%"
+              height="650px"
+            ></iframe>
+          </div>
+        </div>
+      }
+
+      <!-- single payment -->
+      @if (selectedList === "Wallet") {
+        <div class="single_form_wrapper">
+          <h3 class="sub_heads">Wallet</h3>
+          <form action="" [formGroup]="payWithWalletForm">
+            <div class="form_group">
+              <!-- single field -->
+              <div class="single_input">
+                <app-wallet-dropdown-v3
+                  [dropdownIconNeeded]="false"
+                  placeholder="Select wallet"
+                  [enableAddNew]="false"
+                  [labelIconNeeded]="false"
+                  formControlName="wallet"
+                  (dropdownOpenChange)="handleDropdownOpenChange($event)"
+                  [showLogoUpdateModal]="false"
+                  (ready)="autoPopulateDropdown($event)"
+                ></app-wallet-dropdown-v3>
+                <app-control-message
+                  [control]="payWithWalletForm.controls.wallet"
+                  labelName="Please select a wallet."
+                >
+                </app-control-message>
+              </div>
+            </div>
+
+            <div class="submit_btn_wrapper">
+              <h3 class="total_price">
+                <span>Total:</span>
+                <span>{{ grandTotal | currency }}</span>
+              </h3>
+              <button
+                (click)="onSubmitWallet()"
+                class="ocw-btn ocw-btn-dark-green"
+              >
+                @if (!loading.httpCalling) {
+                  <span>
+                    {{ changePaymentMode ? "Update Payment" : "Pay Now" }}
+                  </span>
+                } @else {
+                  <div class="loading_msg">
+                    @if (loading.httpCalling) {
+                      <span class="loadingSpinner"></span>
+                    }
+                    <span>{{
+                      changePaymentMode ? "Update Payment" : "Pay Now"
+                    }}</span>
+                  </div>
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      <!-- THIS FEATURE IS TEMPORARILY DISABLED AND MAY BE ENABLED LATER. -->
+
+      <!-- @if(selectedList === 'Check'){
+        <div class="single_form_wrapper">
+          <h3 class="sub_heads">Pay with Check</h3>
+          <form action="" [formGroup]="payWithCheck">
+            <div class="form_group">
+              <div class="single_input">
+                <app-drop-down-bank-pro
+                  type="subscription"
+                  (selectionEvent)="onBankChange($event)"
+                >
+                </app-drop-down-bank-pro>
+                <app-control-message
+                  [control]="payWithCheck.controls.bankAccount"
+                  labelName="Bank account is required."
+                >
+                </app-control-message>
+                <span
+                  class="error_msg"
+                  id="bankAccErr_msg"
+                  style="display: none"
+                ></span>
+              </div>
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  formControlName="signature"
+                  placeholder=" "
+                  maxlength="15"
+                />
+                <label class="floating_label_field" for=""
+                  >Enter Name for Digital Signature</label
+                >
+                <app-control-message
+                  [control]="payWithCheck.controls.signature"
+                  labelName="Signature is required."
+                >
+                </app-control-message>
+              </div>
+            </div>
+  
+            <div class="submit_btn_wrapper">
+              <h3 class="total_price">
+                <span>Total:</span>
+                <span>{{ grandTotal | currency }}</span>
+              </h3>
+              <button
+                (click)="onSubmitCheck()"
+                class="ocw-btn ocw-btn-dark-green"
+              >
+              @if(!loading.httpCalling){
+                <span>
+                  {{ changePaymentMode ? "UPDATE PAYMENT" : "PAY NOW" }}
+                </span>
+              }@else{
+                <div class="loading_msg">
+                  @if(loading.httpCalling){
+                    <span
+                      class="loadingSpinner"
+                    ></span>
+                  }
+                  <span>{{
+                    changePaymentMode ? "Update Payment" : "Pay Now"
+                  }}</span>
+                </div>
+              }
+              </button>
+            </div>
+          </form>
+        </div>
+      } -->
+    </div>
+
+    <div class="secured_label">
+      <img
+        ngSrc="assets/images/secured_label.svg"
+        class="secured_icon"
+        alt="secured"
+        width="34"
+        height="34"
+      />
+      <h3>Secured Payment by</h3>
+      @if (staticWhiteLabelConditions?.zilMoneyLogoVisible) {
+        <img
+          [ngSrc]="brandLogoUrl()"
+          class="zill_logo"
+          alt="secured"
+          width="110"
+          height="20"
+        />
+      }
+    </div>
+  </div>
+
+  @if (loading.securedLoading) {
+    <div class="secured_loading">
+      <div class="loder_areas">
+        <svg
+          version="1.1"
+          id="L3"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          x="0px"
+          y="0px"
+          viewBox="0 0 100 100"
+          enable-background="new 0 0 0 0"
+          xml:space="preserve"
+        >
+          <circle
+            fill="none"
+            stroke="#179277"
+            stroke-width="4"
+            cx="50"
+            cy="50"
+            r="44"
+            style="opacity: 0.5"
+          />
+          <circle
+            fill="#626262"
+            stroke="#626262"
+            stroke-width="3"
+            cx="8"
+            cy="54"
+            r="6"
+          >
+            <animateTransform
+              attributeName="transform"
+              dur="0.8s"
+              type="rotate"
+              from="0 50 48"
+              to="360 50 52"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </svg>
+        <img
+          ngSrc="assets/images/secure_shield.svg"
+          class="secure_shield"
+          alt=""
+          width="100"
+          height="100"
+        />
+        <h3>Connecting to Secured Payment Gateway</h3>
+      </div>
+    </div>
+  }
+</section>

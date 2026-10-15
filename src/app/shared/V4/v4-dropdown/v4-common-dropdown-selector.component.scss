@@ -1,0 +1,89 @@
+@use "src/app/shared/components/v3/drop-downs/styles/drop-down-v4.scss" as v4;
+
+.angular-ocw-v4-ng-select-dropdown {
+  @include v4.v4-dropdown-styles;
+}
+
+.angular-ocw-v4-ng-select-dropdown ng-select ::ng-deep .ng-select-container {
+  border-radius: 0.75rem !important;
+}
+
+// The host <ng-select> carries the ambient shadow (drop-down-v4.scss) but no radius of its
+// own, so the halo renders square around the 0.75rem container and reads as a boxy corner.
+// Match the radius and the shadow follows the same curve.
+.angular-ocw-v4-ng-select-dropdown ng-select {
+  border-radius: 0.75rem;
+}
+
+// Override ng-select default theme focus ring (border-color:#007eff + blue box-shadow)
+// This is a flat global rule — ViewEncapsulation.None ensures it applies everywhere.
+.angular-ocw-v4-ng-select-dropdown
+  ng-select.ng-select-focused:not(.ng-select-opened)
+  > .ng-select-container {
+  border-color: var(--v4-primary-brand-color) !important;
+  box-shadow: none !important;
+}
+
+.v4-dropdown-small-font {
+  .ng-placeholder {
+    font-size: 12px !important;
+  }
+}
+
+// Align placeholder and selected value with the search input's left padding
+// so the blinking caret of a searchable dropdown doesn't land on top of the text.
+.angular-ocw-v4-ng-select-dropdown
+  .height-0
+  .ng-select-container
+  .ng-value-container {
+  .ng-placeholder {
+    padding-left: 6px;
+  }
+}
+
+/* Compact variant (pay-compact). Opt-in via [variant]="'compact'".
+   This component uses ViewEncapsulation.None, so these rules are global by
+   nature - the .v4-dd--compact host class is what keeps them scoped to the
+   dropdowns that asked for them, instead of the app-wide override sheet this
+   replaces. */
+.v4-dd--compact {
+  .ng-select .ng-select-container {
+    min-height: 44px;
+    height: 44px;
+    border: 1.5px solid var(--v4-border-color);
+    border-radius: 12px;
+    background: var(--v4-secondary-background-color);
+    box-shadow: none;
+    font-size: 13px;
+    color: var(--v4-main-text-color);
+    padding: 0 4px 0 12px;
+  }
+
+  .ng-select.ng-select-focused .ng-select-container {
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: 0 0 0 3px rgb(32 49 157 / 8%);
+  }
+
+  .ng-select .ng-select-container:hover {
+    border-color: var(--v4-primary-brand-color);
+    box-shadow: none;
+  }
+
+  /* Single-select compact dropdowns read like the custom bars: caret only, no clear-X. */
+  .ng-select:not(.ng-select-multiple) .ng-clear-wrapper {
+    display: none;
+  }
+}
+
+/* Per-option tooltip support (config.tooltipField).
+   Disabled options inherit `pointer-events: none` from _overrides-v4.scss, which
+   also kills hover — so a `title` on a disabled row would never fire. Re-enable
+   pointer events on the row itself for tooltip rows only. Clicks still bubble up
+   to ng-select's toggleItem(), which no-ops for disabled items. */
+.v4-option-row--tooltip {
+  pointer-events: auto;
+}
+
+.v4-option-row--disabled {
+  cursor: not-allowed;
+}

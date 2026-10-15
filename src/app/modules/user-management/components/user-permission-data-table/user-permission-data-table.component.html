@@ -1,0 +1,307 @@
+<div class="main-v3-data-table-container">
+  <!-- Selected Names Display -->
+  @if (isLoadingAccountsPermission()) {
+    <div class="mb-4 p-3 bg-common-secondary-blue-color rounded-lg border border-common-secondary-blue-color">
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between">
+          <div class="skelton !w-[200px] !h-5"></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          @for (item of [1,2,3,4,5]; track item) {
+            <div class="skelton !w-[80px] !h-7 !rounded-2xl"></div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (totalSelectedCountComputed() > 0) {
+    <div class="mb-4 p-3 bg-common-secondary-blue-color rounded-lg border border-common-secondary-blue-color max-h-[170px] overflow-y-auto" (scroll)="onScrollToEnd($event)">
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between">
+          <h3 class="text-sm font-semibold text-common-blue-color mb-2" [ngClass]="{'!mb-0': isAllItemsSelectedComputed()}">
+            @if (isAllItemsSelectedComputed()) {
+              All {{ permissionName() === 'payee-accounts' ? 'Payees' : 'Bank Accounts' }} Selected
+            } @else {
+              Selected {{ permissionName() === 'payee-accounts' ? 'Payees' : 'Bank Accounts' }} ({{ totalSelectedCountComputed() }})
+            }
+          </h3>
+          @if (!isAllItemsSelectedComputed()) {
+            @if (totalSelectedCountComputed() > 5) {
+              <div class="flex items-center gap-2">
+                <button class="text-xs text-common-blue-color bg-main-background-color border border-common-blue-color rounded-md px-2 py-1 hover:bg-common-blue-color hover:text-white transition-colors duration-200" (click)="toggleShowAllSelected()">
+                  {{ showAllSelected ? 'Show Less' : 'Show All' }}
+                </button>
+                <button class="text-xs text-common-red-color bg-main-background-color border border-common-red-color rounded-md px-2 py-1 hover:bg-common-red-color hover:text-white transition-colors duration-200" (click)="clearAllSelected()">
+                  Clear All
+                </button>
+              </div>
+            }
+            @else if (totalSelectedCountComputed() > 0) {
+              <div class="flex items-center gap-2">
+                <button class="text-xs text-common-red-color bg-main-background-color border border-common-red-color rounded-md px-2 py-1" (click)="clearAllSelected()">
+                  Clear All
+                </button>
+              </div>
+            }
+          }
+        </div>
+        <div [ngClass]="{'hidden': isAllItemsSelectedComputed()}">
+          <div class="flex flex-wrap gap-2">
+            @if (!isAllItemsSelectedComputed()) {
+              @for (name of getSelectedNames(); track name) {
+                <span class="selected-name inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium bg-main-background-color text-main-text-color">
+                  <span class="truncate">{{ name }}</span>
+                  <fa-icon 
+                    [icon]="faXmark" 
+                    class="cursor-pointer text-secondary-text-color text-sm pt-1"
+                    (click)="removeSelectedItem(name)"
+                    title="Remove {{ name }}"
+                  />
+                </span>
+              }
+              @if (totalSelectedCountComputed() > 5 && !showAllSelected) {
+                <span class="border-2 border-dotted border-common-blue-color items-center p-2 rounded-md text-xs font-medium bg-main-background-color text-common-blue-color">
+                  +{{ totalSelectedCountComputed() - 5 }} More
+                </span>
+              }
+            }
+            @if (isLoadingMoreSelectedItems) {
+              <span class="border-2 border-dotted border-common-blue-color items-center p-2 rounded-md text-xs font-medium bg-main-background-color text-common-blue-color">
+                <fa-icon [icon]="faArrowRotate" [animation]="'spin'" class="mr-1"></fa-icon>
+                Loading more...
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="pb-2">
+    <div class="flex justify-end">
+      <div class="flex gap-3">
+        <div
+          class="text-main-text-color flex justify-center items-center bg-secondary-background-color rounded h-[30px] min-w-[30px]"
+        >
+          <fa-icon
+            [icon]="faArrowRotate"
+            (click)="refreshV3DataTable()"
+            [animation]="isV3DataTableLoading ? 'spin' : undefined"
+          />
+        </div>
+        <select
+          class="text-main-text-color flex justify-center items-center bg-secondary-background-color rounded h-[30px] min-w-[30px] cursor-pointer"
+          aria-label="Select Rows Displayed"
+          [(ngModel)]="paginationSizeSelection"
+          (ngModelChange)="goToSpecificPage(1)"
+        >
+          @for (item of paginationSizeFilterOptions; track $index) {
+            <option [value]="item">
+              {{ item }}
+            </option>
+          }
+        </select>
+      </div>
+    </div>
+  </div>
+  <div
+    [ngStyle]="tableHeight ? { height: tableHeight } : null"
+    class="w-full v3-data-table-grid-container relative"
+  >
+  <div class="absolute top-2 left-2 z-[9999]">
+    <div class="custom-checkbox">
+      <input
+        type="checkbox"
+        [id]="'customCheckbox_' + permissionName()"
+        class="hidden-checkbox"
+        (change)="selectAll($event,permissionName())"
+        [checked]="isSelecetAll?.[permissionName()]"
+      />
+      <label [for]="'customCheckbox_' + permissionName()" class="styled-checkbox"></label>
+    </div>
+  </div>
+    @if (isPaymentTableHavePermission) {
+      @if (gridOptions) {
+        <ag-grid-angular
+          class="ag-theme-v3 ag-theme-material w-full"
+          [ngClass]="{
+            'body-view-scroll': !tableHeight,
+            'body-view-no-scroll': tableHeight
+          }"
+          [suppressColumnVirtualisation]="true"
+          [gridOptions]="gridOptions"
+          [columnDefs]="columnDefs"
+          [rowModelType]="rowModelType"
+          (gridReady)="onGridReady($event)"
+          [domLayout]="domLayout"
+          [defaultColDef]="defaultColDef"
+          [pagination]="true"
+          [suppressPaginationPanel]="true"
+          [paginationPageSize]="paginationPageSize"
+          (paginationChanged)="onPaginationChanged($event)"
+          (rowSelected)="onRowSelected($event)"
+          [isRowSelectable]="isRowSelectable"
+          (sortChanged)="onSortChange($event)"
+          [rowSelection]="rowSelection"
+          [rowMultiSelectWithClick]="rowMultiSelectWithClick"
+          [rowHeight]="rowHeight"
+          [rowBuffer]="50"
+          (rowClicked)="onRowClick($event)"
+          [suppressMovableColumns]="true"
+        >
+        </ag-grid-angular>
+      }
+    } @else {
+      <div class="flex w-full h-full justify-center items-center">
+        <div class="">
+          <div class="permission-denied-case">
+            <div>
+              <img
+                class="denied-img"
+                src="assets/images/access denied.svg"
+                alt="Permission Denied"
+              />
+            </div>
+            <div>
+              <p class="text">Permission Denied!</p>
+            </div>
+            <div>
+              <p class="text2">
+                Sorry! You don't have permission to view the page now.<br />
+                Please contact your administrator.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="pagination">
+    <div class="results">
+      @if (paginationTotalRowCount === 1) {
+        <h2>Showing 1 of 1 result</h2>
+      }
+      @if (paginationTotalRowCount !== 1) {
+        <h2>
+          Showing {{ v3DataTableService.defaultPayload?.startRow + 1 }} to
+          {{
+            v3DataTableService?.defaultPayload?.endRow < paginationTotalRowCount
+              ? v3DataTableService.defaultPayload?.endRow
+              : paginationTotalRowCount
+          }}
+          of {{ paginationTotalRowCount }} results
+        </h2>
+      }
+    </div>
+    @if (paginationTotalRowCount !== 0) {
+      <div class="controls">
+        <!-- Previous Page -->
+        <button
+          title="Previous Page"
+          class="control-item"
+          [ngClass]="{
+            disabled: isV3DataTableLoading || paginationCurrentPageNumber === 1
+          }"
+          (click)="goToPreviousPage()"
+          [disabled]="isV3DataTableLoading || paginationCurrentPageNumber === 1"
+        >
+          <fa-icon [icon]="faAngleLeft" />
+        </button>
+
+        <!-- Pagination Box One -->
+        @if (paginationBoxOneNumber) {
+          <button
+            title="Go To Page"
+            class="control-item"
+            [ngClass]="{
+              'current-page':
+                paginationBoxOneNumber === paginationCurrentPageNumber
+            }"
+            (click)="goToSpecificPage(paginationBoxOneNumber)"
+          >
+            {{ paginationBoxOneNumber }}
+          </button>
+        }
+        <!-- Pagination Box Two -->
+        @if (paginationBoxTwoNumber) {
+          <button
+            title="Go To Page"
+            class="control-item"
+            (click)="goToSpecificPage(paginationBoxTwoNumber)"
+          >
+            {{ paginationBoxTwoNumber }}
+          </button>
+        }
+
+        <!-- Divider -->
+        @if (
+          (paginationBoxThreeNumber || paginationBoxFourNumber) &&
+          (paginationCurrentPageNumber < paginationTotalPageCount - 3 ||
+            paginationCurrentPageNumber > paginationTotalPageCount - 2)
+        ) {
+          <button class="control-static-item">...</button>
+        }
+
+        <!-- Pagination Box 3 -->
+        @if (paginationBoxThreeNumber) {
+          <button
+            title="Go To Page"
+            class="control-item"
+            (click)="goToSpecificPage(paginationBoxThreeNumber)"
+            [ngClass]="{
+              'current-page':
+                paginationBoxThreeNumber === paginationCurrentPageNumber
+            }"
+          >
+            {{ paginationBoxThreeNumber }}
+          </button>
+        }
+        <!-- Pagination Box 4 -->
+        @if (paginationBoxFourNumber) {
+          <button
+            title="Go To Page"
+            class="control-item"
+            (click)="goToSpecificPage(paginationBoxFourNumber)"
+            [ngClass]="{
+              'current-page':
+                paginationBoxFourNumber === paginationCurrentPageNumber
+            }"
+          >
+            {{ paginationBoxFourNumber }}
+          </button>
+        }
+
+        <!-- Next Ppage -->
+        <button
+          title="Next Page"
+          class="control-item"
+          [ngClass]="{
+            disabled:
+              paginationCurrentPageNumber === paginationTotalPageCount ||
+              isV3DataTableLoading ||
+              paginationTotalPageCount <= 1
+          }"
+          [disabled]="
+            isV3DataTableLoading ||
+            paginationCurrentPageNumber >= paginationTotalPageCount ||
+            paginationTotalPageCount <= 1
+          "
+          (click)="goToNextPage()"
+        >
+          <fa-icon [icon]="faAngleRight" />
+        </button>
+        @if (paginationTotalPageCount > 1) {
+          <div class="specific-page-input-container">
+            <input
+              title="Go To Specific Page"
+              [(ngModel)]="specificPageInput"
+              type="number"
+              (keyup.enter)="goToSpecificPage()"
+            />
+            <button class="!font-medium" (click)="goToSpecificPage()">Go To Page</button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

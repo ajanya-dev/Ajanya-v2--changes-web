@@ -1,0 +1,173 @@
+<div class="px-[6px] pb-[6px]">
+  <form [formGroup]="integrationForm" (ngSubmit)="onSubmit()">
+    <!-- modal header -->
+    <div class="flex justify-between pb-4">
+      <div></div>
+      <div 
+      role="presentation"
+      (click)="onCancel()" [mat-dialog-close]="false">
+        <fa-icon
+          class="text-secondary-text-color cursor-pointer text-xl"
+          [icon]="faXmark"
+        ></fa-icon>
+      </div>
+    </div>
+
+    <!-- modal body start -->
+    <div class="pb-6">
+      <!-- Header Icon and Title -->
+      <div class="flex flex-col items-center mb-6">
+        @if (type() === 'call-back') {
+          <div class="mb-4">
+            <fa-icon class="text-common-violet-color text-4xl" [icon]="faPhoneVolume"></fa-icon>
+          </div>
+          <h2 class="text-2xl font-bold text-main-text-color mb-2">
+            Request a Callback for Integration Access
+          </h2>
+          <p class="text-sm text-secondary-text-color text-center max-w-md font-semibold">
+            We prioritize new integrations based on customer demand. Please share the details below, our team will reach out to you shortly.
+          </p>
+        }
+        @else {
+          <div class="mb-4">
+            <img
+              ngSrc="assets/icon/request.svg"
+              alt="integration-icon"
+              width="60"
+              height="60"
+            />
+          </div>
+          <h2 class="text-2xl font-bold text-main-text-color mb-2">
+            Request This Integration
+          </h2>
+          <p class="text-sm text-secondary-text-color text-center max-w-md font-semibold">
+            We prioritize integrations based on customer demand. Tell us your
+            needs to move this integration up our priority list.
+          </p>
+        }
+      </div>
+
+      <!-- Information Alert Box -->
+
+      <!-- Form Fields -->
+      <div class="space-y-6 bg-common-secondary-blue-color rounded-lg p-4">
+        <div class="flex items-start gap-3">
+          <fa-icon
+            class="text-common-blue-color flex-shrink-0 text-xl"
+            [icon]="faCircleInfo"
+          ></fa-icon>
+          <p class="text-sm text-main-text-color flex-1">
+            Our team can often enable specific features immediately. Tell us
+            your requirements below.
+          </p>
+        </div>
+
+        @if (type() === 'call-back') {
+          <!-- Required Application Name Field -->
+          <div class="relative w-full">
+            <label
+              for="appName"
+              class="block text-sm font-semibold text-main-text-color mb-2"
+            >
+            Required Application Name
+            <span class="text-common-red-color font-semibold">*</span>
+            </label>
+            <input
+              id="appName"
+              type="text"
+              placeholder="Enter the required application name"
+              formControlName="appName"
+              class="w-full px-3 py-2 border border-input-border-color rounded-md text-main-text-color bg-main-background-color focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent"
+            />
+            <app-control-message-v35
+              [control]="this.integrationForm.get('appName')!"
+              [customMessages]="{
+                required: 'Please enter the required application name'
+              }"
+            ></app-control-message-v35>
+          </div>
+
+          <!-- Phone Number Field -->
+          <div class="relative w-full">
+            <app-new-phone-input
+              formControlName="phoneNumber"
+              (countryDropdown)="countryChange($event)"
+              (countryCodeEmit)="countryCodeChange($event)"
+              dropdownWidth="250px"
+            />
+            <app-control-message-v35 [control]="integrationForm.get('phoneNumber')!" />
+          </div>
+        }
+
+        <!-- Your Requirements Field -->
+        <div class="relative">
+          <label
+            for="requirements"
+            class="block text-sm font-semibold text-main-text-color mb-2"
+          >
+            Your Requirements
+            <span class="text-common-red-color font-semibold">*</span>
+          </label>
+          <textarea
+            id="requirements"
+            formControlName="requirements"
+            placeholder="Please describe your specific integration needs"
+            class="w-full px-3 py-2 border border-input-border-color rounded-md text-main-text-color bg-main-background-color resize-none focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent min-h-[80px]"
+            rows="2"
+            [maxlength]="500"
+          ></textarea>
+          <app-control-message-v35
+            [control]="integrationForm.get('requirements')!"
+            [customMessages]="{
+              required: 'Please describe your specific integration needs',
+              minlength: 'Requirements must be at least 10 characters long',
+              maxlength: 'Requirements cannot exceed 500 characters'
+            }"
+          ></app-control-message-v35>
+        </div>
+
+        <!-- Desired Start Date Field -->
+        <div class="relative">
+          <label
+            for="desiredStartDate"
+            class="block text-sm font-semibold text-main-text-color mb-2"
+          >
+            Desired Start Date
+            <span class="text-common-red-color font-semibold">*</span>
+          </label>
+          <div class="relative">
+            <input
+              id="desiredStartDate"
+              type="date"
+              formControlName="desiredStartDate"
+              class="w-full px-3 py-2 pr-3 border border-input-border-color rounded-md text-main-text-color bg-main-background-color focus:outline-none focus:ring-2 focus:ring-common-blue-color focus:border-transparent"
+              [min]="minDate"
+              (keydown)="$event.preventDefault()"
+            />
+          </div>
+          <app-control-message-v35
+            [control]="integrationForm.get('desiredStartDate')!"
+            [customMessages]="{
+              required: 'Please select a desired start date',
+              min: 'Desired start date must be in the future'
+            }"
+          ></app-control-message-v35>
+        </div>
+      </div>
+    </div>
+    <!-- modal body end -->
+
+    <!-- Modal Footer -->
+    <div class="flex gap-3 pt-4 w-full">
+      <app-common-button-v35
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Continue"
+        (clickEvent)="onSubmit()"
+        [width]="'100%'"
+        class="!w-full"
+        [loading]="loading"
+        backGroundInput="var(--common-green-color)"
+      ></app-common-button-v35>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,358 @@
+<div
+  class="space-y-6 bg-v4-main-background-color min-h-full"
+>
+  <!-- Header: Title + Connected Count -->
+  <div class="flex items-start justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-v4-main-text-color">
+        App Integrations
+      </h1>
+      <p class="text-sm text-v4-secondary-text-color mt-1">
+        Connect your favorite tools and automate your workflows
+      </p>
+    </div>
+    <div
+      class="p-3 md:p-4 border border-v4-border-color rounded-xl bg-v4-secondary-background-color shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+    >
+      <div class="text-center">
+        @if (isLoading()) {
+          <div class="w-8 h-8 rounded skeleton mx-auto mb-1"></div>
+        } @else {
+          <p class="text-2xl font-bold text-v4-primary-brand-bold-color">
+            {{ connectedCount() }}
+          </p>
+        }
+        <p class="text-sm text-v4-secondary-text-color">Connected</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop (>1024px): Category Tabs -->
+  <div class="hidden min-[1025px]:flex items-center gap-4 flex-wrap">
+    <app-common-tab-v4
+      [tabs]="categories"
+      [activeTab]="selectedCategory()"
+      [variant]="'underline'"
+      (tabChange)="selectCategory($event)"
+    />
+  </div>
+
+  <!-- Tablet / Laptop (≤1024px): Search + Filter Button -->
+  <div class="relative min-[1025px]:hidden">
+    <div class="flex items-center gap-3">
+      <div class="relative flex-1">
+        <lucide-icon
+          [img]="searchIcon"
+          [size]="16"
+          class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10 text-v4-tertiary-text-color"
+        ></lucide-icon>
+        <input
+          type="text"
+          placeholder="Search..."
+          [formControl]="searchControl"
+          class="pl-12 pr-4 w-full h-11 rounded-xl text-sm text-v4-main-text-color placeholder:text-v4-placeholder-text-color bg-v4-secondary-background-color border border-v4-input-border-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-primary-brand-color focus-visible:ring-offset-1 transition-all duration-200"
+        />
+      </div>
+      <button
+        type="button"
+        class="flex items-center gap-2 px-4 h-[42px] border border-v4-primary-brand-color text-v4-primary-brand-bold-color rounded-lg font-semibold text-sm transition-colors shrink-0"
+        (click)="toggleFilter()"
+      >
+        <lucide-icon [img]="slidersIcon" [size]="16"></lucide-icon>
+        Filter
+        @if (selectedCategory() !== "all") {
+          <span
+            class="w-2 h-2 rounded-full bg-v4-primary-brand-bold-color flex-shrink-0"
+          ></span>
+        }
+      </button>
+    </div>
+
+    <!-- Filter Dropdown -->
+    @if (isFilterOpen()) {
+      <div
+        class="absolute right-0 top-full mt-2 z-20 bg-v4-secondary-background-color border border-v4-input-border-color rounded-xl shadow-lg py-2 min-w-[180px]"
+      >
+        @for (cat of categories; track cat.value) {
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-2 text-sm transition-colors"
+            [class.text-v4-primary-brand-bold-color]="
+              selectedCategory() === cat.value
+            "
+            [class.font-semibold]="selectedCategory() === cat.value"
+            [class.text-v4-main-text-color]="selectedCategory() !== cat.value"
+            (click)="selectCategory(cat.value)"
+          >
+            {{ cat.label }}
+            @if (selectedCategory() === cat.value) {
+              <lucide-icon
+                name="check"
+                [size]="14"
+                class="text-v4-primary-brand-bold-color flex-shrink-0"
+              ></lucide-icon>
+            }
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Available / Connected Tabs + Request an App -->
+  <div class="border-b border-v4-border-color -mt-3 pb-3">
+    <div class="flex items-end justify-between">
+      <div class="flex items-end gap-6">
+        <div class="flex gap-8">
+          <button
+            type="button"
+            class="pb-3 px-1 font-semibold transition-colors relative"
+            [ngClass]="{
+              'text-v4-primary-brand-bold-color': activeTab() === 'connected',
+              'text-v4-secondary-text-color hover:text-v4-main-text-color':
+                activeTab() !== 'connected'
+            }"
+            (click)="setActiveTab('connected')"
+          >
+            Connected
+            @if (isLoading()) {
+              <span
+                class="inline-block w-9 h-5 rounded skeleton align-middle"
+              ></span>
+            } @else {
+              ({{ connectedCount() }})
+            }
+            @if (activeTab() === "connected") {
+              <div
+                class="absolute bottom-0 left-0 right-0 h-0.5 bg-v4-primary-brand-color tab-underline"
+              ></div>
+            }
+          </button>
+          <button
+            type="button"
+            class="pb-3 px-1 font-semibold transition-colors relative"
+            [ngClass]="{
+              'text-v4-primary-brand-bold-color': activeTab() === 'available',
+              'text-v4-tertiary-text-color hover:text-v4-main-text-color':
+                activeTab() !== 'available'
+            }"
+            (click)="setActiveTab('available')"
+          >
+            Available
+            @if (activeTab() === "available") {
+              <div
+                class="absolute bottom-0 left-0 right-0 h-0.5 bg-v4-primary-brand-color tab-underline"
+              ></div>
+            }
+          </button>
+        </div>
+
+        <!-- Search (desktop only) -->
+        <div class="hidden min-[1025px]:block relative w-[280px]">
+          <lucide-icon
+            [img]="searchIcon"
+            [size]="16"
+            class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10 text-v4-tertiary-text-color"
+          ></lucide-icon>
+          <input
+            type="text"
+            placeholder="Search integrations..."
+            [formControl]="searchControl"
+            class="pl-12 pr-4 w-full h-11 rounded-xl text-sm text-v4-main-text-color placeholder:text-v4-placeholder-text-color bg-v4-secondary-background-color border border-v4-input-border-color focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v4-primary-brand-color focus-visible:ring-offset-1 transition-all duration-200"
+          />
+        </div>
+      </div>
+
+      <!-- Request an App -->
+      <div class="shrink-0 pb-2 self-center">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Request an App'"
+          (clickEvent)="requestIntegration()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Skeletons -->
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+        <div
+          class="p-6 bg-v4-secondary-background-color border border-v4-border-color rounded-xl h-[260px]"
+        >
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-14 h-14 rounded-2xl skeleton"></div>
+            <div class="w-20 h-6 rounded-full skeleton"></div>
+          </div>
+          <div class="w-2/3 h-6 rounded skeleton mb-2"></div>
+          <div class="w-full h-4 rounded skeleton mb-1"></div>
+          <div class="w-3/4 h-4 rounded skeleton mb-4"></div>
+          <div class="mt-auto">
+            <div class="w-20 h-6 rounded-full skeleton mb-3"></div>
+            <div class="w-full h-10 rounded-lg skeleton"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Integration Cards Grid -->
+  @if (!isLoading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      @for (app of filteredApps(); track app.id) {
+        <div role="presentation"
+          class="p-6 bg-v4-secondary-background-color border border-v4-border-color hover:shadow-xl transition-all cursor-pointer h-full flex flex-col rounded-xl group"
+          (click)="onCardClick(app)"
+          role="button"
+          tabindex="0"
+        >
+          <!-- Top: Logo + Status Badge -->
+          <div class="flex items-start justify-between mb-4">
+            <div
+              class="w-14 h-14 rounded-2xl flex items-center justify-center bg-v4-secondary-background-color border-2 border-v4-border-color p-2"
+            >
+              <img
+                [src]="app.icon"
+                [alt]="app.title"
+                class="w-full h-full object-contain"
+              />
+            </div>
+            @if (app.isConnected) {
+              <div
+                class="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-v4-badge-success-bg-color text-v4-badge-success-text-color"
+              >
+                <lucide-icon [img]="circleCheckIcon" [size]="12"></lucide-icon>
+                Connected
+              </div>
+            }
+          </div>
+
+          <!-- Title -->
+          <h3
+            class="text-xl font-bold text-v4-main-text-color mb-2 font-peridot"
+          >
+            {{ app.title }}
+          </h3>
+
+          <!-- Description -->
+          <p
+            class="text-sm text-v4-secondary-text-color mb-4 flex-1 line-clamp-2"
+          >
+            {{ app.description }}
+          </p>
+
+          <!-- Bottom: Category Badges + Button -->
+          <div class="space-y-3">
+            <div class="flex items-center text-xs">
+              <div class="flex flex-wrap gap-1">
+                @for (cat of app.categories; track cat) {
+                  <span
+                    class="px-2 py-1 rounded-full font-semibold text-white"
+                    [style.background-color]="getCategoryBgColor(cat)"
+                  >
+                    {{ cat }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div (click)="$event.stopPropagation()" role="presentation">
+              @if (app.isConnected) {
+                <app-common-button-v4
+                  [type]="{ style: 'outline', name: 'main' }"
+                  [text]="'Manage'"
+                  [width]="'100%'"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'gear']"
+                  (clickEvent)="onCardClick(app)"
+                />
+              } @else {
+                <app-common-button-v4
+                  [type]="{ style: 'primary', name: 'main' }"
+                  [text]="isCheckFromPdf(app) ? 'Print Checks Now' : 'Connect'"
+                  [width]="'100%'"
+                  (clickEvent)="onCardClick(app)"
+                />
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- No Connected Integrations Empty State -->
+  @if (!isLoading() && activeTab() === "connected" && connectedCount() === 0) {
+    <div
+      class="p-12 text-center border border-v4-border-color rounded-xl bg-v4-secondary-background-color"
+    >
+      <div
+        class="w-20 h-20 bg-v4-tertiary-background-color rounded-full flex items-center justify-center mx-auto mb-4"
+      >
+        <lucide-icon
+          [img]="layersIcon"
+          [size]="40"
+          class="text-v4-subtle-text-color"
+        ></lucide-icon>
+      </div>
+      <h3 class="text-xl font-bold text-v4-main-text-color mb-2">
+        No Connected Integrations
+      </h3>
+      <p class="text-v4-secondary-text-color mb-6 max-w-md mx-auto">
+        Connect your first integration to start automating your workflows and
+        syncing data.
+      </p>
+      <div class="flex justify-center">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Browse Available Integrations'"
+          (clickEvent)="setActiveTab('available')"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- No Results -->
+  @if (
+    !isLoading() &&
+    filteredApps().length === 0 &&
+    !(activeTab() === "connected" && connectedCount() === 0)
+  ) {
+    <div
+      class="p-12 text-center border border-v4-border-color rounded-xl bg-v4-secondary-background-color"
+    >
+      <div
+        class="w-20 h-20 bg-v4-tertiary-background-color rounded-full flex items-center justify-center mx-auto mb-4"
+      >
+        <lucide-icon
+          [img]="searchIcon"
+          [size]="40"
+          class="text-v4-tertiary-text-color"
+        ></lucide-icon>
+      </div>
+      <h3 class="text-xl font-bold text-v4-main-text-color mb-2">
+        No integrations found
+      </h3>
+      <p class="text-v4-secondary-text-color mb-6">
+        Try adjusting your search or filter criteria
+      </p>
+      <div class="flex justify-center">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Clear Filters'"
+          (clickEvent)="clearFilters()"
+        />
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Integration Side Panel -->
+<app-v4-integration-panel
+  [app]="selectedApp()"
+  [isOpen]="isPanelOpen()"
+  (closed)="closePanel()"
+  (connect)="onConnect($event)"
+  (disconnect)="onDisconnect($event)"
+/>

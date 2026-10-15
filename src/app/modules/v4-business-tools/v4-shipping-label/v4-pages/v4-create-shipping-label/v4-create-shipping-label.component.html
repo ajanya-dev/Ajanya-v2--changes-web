@@ -1,0 +1,186 @@
+<div class="min-h-screen w-full bg-v4-main-background-color px-4 lg:px-6 py-5">
+  <div
+    class="w-full max-w-[1320px] bg-v4-secondary-background-color border border-v4-border-color rounded-2xl overflow-hidden"
+  >
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-6 py-5">
+      <button
+        type="button"
+        class="w-9 h-9 rounded-full border border-v4-border-color flex items-center justify-center text-v4-secondary-text-color hover:text-v4-main-text-color hover:bg-v4-input-background-color transition-colors"
+        (click)="goToList()"
+      >
+        <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
+      </button>
+      <h1 class="m-0 text-xl font-semibold text-v4-main-text-color font-funnel">
+        Create Shipping Label
+      </h1>
+    </div>
+    <div class="border-t border-v4-border-color"></div>
+
+    <div class="flex flex-col lg:flex-row">
+      <!-- ============ STEPPER ============ -->
+      <div
+        class="w-full lg:w-[280px] shrink-0 border-b lg:border-b-0 lg:border-r border-v4-border-color p-5 flex flex-col gap-3"
+      >
+        @for (item of steps(); track item.name) {
+          <div
+            class="flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all duration-200"
+            [class]="
+              item.pages.includes(pageId())
+                ? 'bg-v4-primary-brand-color border-v4-brand-border-color'
+                : 'bg-v4-secondary-background-color border-v4-border-color'
+            "
+          >
+            <span
+              class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+              [class]="
+                item.step < currentStep()
+                  ? 'bg-v4-common-green-color text-white'
+                  : item.pages.includes(pageId())
+                    ? 'bg-v4-secondary-brand-color text-v4-primary-brand-color'
+                    : 'bg-v4-input-background-color text-v4-secondary-text-color'
+              "
+            >
+              @if (item.step < currentStep()) {
+                <lucide-icon name="check" [size]="13"></lucide-icon>
+              } @else {
+                {{ item.step }}
+              }
+            </span>
+            <span
+              class="text-sm font-medium font-peridot"
+              [class]="
+                item.pages.includes(pageId())
+                  ? 'text-white'
+                  : 'text-v4-main-text-color'
+              "
+            >
+              {{ item.name }}
+            </span>
+          </div>
+        }
+      </div>
+
+      <!-- ============ STEP CONTENT ============ -->
+      <div class="flex-1 min-w-0 p-6 flex flex-col gap-5">
+        @if (showPackageOptions()) {
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-0.5">
+              <h2
+                class="m-0 text-base font-semibold text-v4-main-text-color font-funnel"
+              >
+                What you want to ship
+              </h2>
+              <p
+                class="m-0 flex items-center gap-1.5 text-xs text-v4-secondary-text-color font-peridot"
+              >
+                Select the option you want to ship
+                <span
+                  class="inline-flex items-center justify-center text-v4-subtle-text-color cursor-pointer"
+                  [matTooltip]="dimensionTooltip()"
+                  matTooltipPosition="right"
+                >
+                  <lucide-icon name="circle-help" [size]="13"></lucide-icon>
+                </span>
+              </p>
+            </div>
+
+            <div
+              class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] midrange:grid-cols-2 gap-3"
+            >
+              @for (item of shipOptions; track item.name) {
+                <button
+                  type="button"
+                  class="relative flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors text-left min-w-0"
+                  [class]="
+                    packageType() === item.name
+                      ? 'border-v4-brand-border-color bg-v4-mailing-card-selected-bg-blue'
+                      : 'border-v4-border-color bg-v4-secondary-background-color hover:border-v4-brand-border-color'
+                  "
+                  [class.opacity-70]="!isPackageSelectable()"
+                  [class.cursor-default]="!isPackageSelectable()"
+                  [disabled]="!isPackageSelectable()"
+                  (click)="selectPackage(item)"
+                >
+                  @if (packageType() === item.name) {
+                    <span
+                      class="absolute top-1.5 right-1.5 w-4 h-4 grid place-items-center rounded-full bg-v4-primary-brand-color"
+                    >
+                      <lucide-icon
+                        name="check"
+                        [size]="12"
+                        class="text-white"
+                      ></lucide-icon>
+                    </span>
+                  }
+                  <span
+                    class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    [class]="
+                      packageType() === item.name
+                        ? 'bg-v4-primary-brand-color'
+                        : 'bg-v4-input-background-color'
+                    "
+                  >
+                    <lucide-icon
+                      [name]="item.icon"
+                      [size]="18"
+                      [class]="
+                        packageType() === item.name
+                          ? 'text-white'
+                          : 'text-v4-primary-brand-bold-color'
+                      "
+                    ></lucide-icon>
+                  </span>
+                  <span
+                    class="text-sm font-medium text-v4-main-text-color font-peridot min-w-0 leading-tight"
+                  >
+                    {{ item.name }}
+                  </span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="border-t border-v4-border-color"></div>
+        }
+
+        <!-- Steps keep their state, so they are hidden instead of destroyed. -->
+        <div [hidden]="pageId() !== 'delivery_address'">
+          <app-v4-delivery-address-step
+            [shipping_data]="shippingData"
+            [packageType]="packageType()"
+            (emitData)="getEmitedData($event)"
+          />
+        </div>
+
+        <div [hidden]="pageId() !== 'from_address'">
+          <app-v4-from-address-step
+            [shipping_data]="shippingData"
+            (emitData)="getEmitedData($event)"
+          />
+        </div>
+
+        <div [hidden]="pageId() !== 'existing_addr'">
+          <app-v4-existing-address-step
+            [shipping_data]="shippingData"
+            (emitData)="getEmitedData($event)"
+          />
+        </div>
+
+        <div [hidden]="pageId() !== 'package_page'">
+          <app-v4-package-details-step
+            [shipping_data]="shippingData"
+            (emitData)="getEmitedData($event)"
+          />
+        </div>
+
+        <div [hidden]="pageId() !== 'rate_page'">
+          <app-v4-checkout-step
+            [shipping_data]="shippingData"
+            (emitData)="getEmitedData($event)"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

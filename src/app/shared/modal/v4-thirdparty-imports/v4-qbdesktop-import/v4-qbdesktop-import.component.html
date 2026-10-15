@@ -1,0 +1,349 @@
+<div class="flex flex-col h-[600px] max-h-[80vh]">
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="flex items-center gap-3">
+      <img
+        ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+        alt="QuickBooks"
+        width="32"
+        height="32"
+      />
+      <span class="text-base font-semibold text-v4-main-text-color font-funnel"
+        >Import from QuickBooks Desktop</span
+      >
+    </div>
+    <button
+      class="flex items-center gap-2 px-3 py-1.5 text-sm text-v4-secondary-text-color hover:bg-v4-tertiary-background-color rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+      matTooltip="Integration Settings"
+      (click)="goToThirdpartyHome()"
+    >
+      <lucide-icon [img]="SettingsIcon" [size]="16"></lucide-icon>
+      <span class="hidden sm:inline">Settings</span>
+    </button>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="data_spinner" [ngClass]="{ data_fetched: dataLoaded }"></div>
+
+  <!-- Disconnected State -->
+  @if (!isConnected && dataLoaded) {
+    <div
+      class="flex-1 flex flex-col justify-center items-center px-6 py-12 overflow-auto"
+    >
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-8 max-w-md w-full text-center"
+      >
+        <div
+          class="w-20 h-20 mx-auto mb-6 bg-v4-tertiary-background-color rounded-full flex items-center justify-center"
+        >
+          <img
+            ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+            alt="QuickBooks"
+            width="48"
+            height="48"
+          />
+        </div>
+        <h3
+          class="text-xl font-semibold text-v4-main-text-color mb-2 font-funnel"
+        >
+          QuickBooks Desktop
+        </h3>
+        <div class="flex items-center justify-center gap-2 mb-6">
+          <span class="w-2 h-2 bg-v4-common-red-color rounded-full"></span>
+          <span class="text-sm text-v4-secondary-text-color">Disconnected</span>
+        </div>
+        <p class="text-sm text-v4-secondary-text-color mb-6">
+          Connect your QuickBooks Desktop application to import checks, bill
+          payments, and more.
+        </p>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Connect QuickBooks Desktop'"
+          [textColorInput]="'white'"
+          [width]="'100%'"
+          (clickEvent)="goToThirdpartyHome()"
+        ></app-common-button-v4>
+      </div>
+    </div>
+  }
+
+  <!-- Connected State - Main Content -->
+  @if (isConnected && dataLoaded) {
+    <!-- Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto px-6 py-4" [formGroup]="QuickBookForm">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Left Section: Company Select & Bank Accounts -->
+        <div
+          class="flex flex-col bg-v4-secondary-background-color border border-v4-border-color rounded-xl overflow-hidden"
+        >
+          <!-- Header with Search -->
+          <div
+            class="p-4 bg-v4-tertiary-background-color border-b border-v4-border-color flex-shrink-0"
+          >
+            <div class="flex items-center gap-2 mb-3">
+              <div
+                class="w-8 h-8 bg-v4-primary-brand-color rounded-lg flex items-center justify-center"
+              >
+                <lucide-icon
+                  [img]="Building2Icon"
+                  [size]="16"
+                  class="text-white"
+                ></lucide-icon>
+              </div>
+              <div>
+                <h3 class="text-sm font-semibold text-v4-main-text-color">
+                  Company
+                </h3>
+                <p class="text-xs text-v4-secondary-text-color">
+                  Select a company to import from
+                </p>
+              </div>
+            </div>
+            <!-- Search Input -->
+            <app-common-input-v4
+              [placeholder]="'Search companies...'"
+              [isFieldRequired]="false"
+              [ngModel]="searchText"
+              (ngModelChange)="searchText = $event; onSearchCompany()"
+              [ngModelOptions]="{ standalone: true }"
+            />
+          </div>
+
+          <!-- Company Dropdown -->
+          <div class="px-4 py-3 border-b border-v4-border-color flex-shrink-0">
+            <label
+              class="text-xs font-medium text-v4-secondary-text-color mb-1.5 block"
+              >Select Company</label
+            >
+            <select
+              class="w-full py-2.5 px-3 text-sm border border-v4-input-border-color rounded-lg bg-v4-secondary-background-color text-v4-main-text-color focus:outline-none focus:ring-2 focus:ring-v4-brand-focus-color focus:border-v4-primary-brand-color transition-all cursor-pointer"
+              formControlName="selectedCompanyDesktop"
+            >
+              <option value="" disabled selected>Select Company</option>
+              @for (
+                item of companyData | sort: "asc" : "name";
+                track item.value;
+                let i = $index
+              ) {
+                <option [ngValue]="item" [matTooltip]="tooltip(item.name)">
+                  {{ item.name }}
+                </option>
+              }
+            </select>
+            @if (companyData?.length === 0) {
+              <span
+                class="text-xs text-v4-secondary-text-color mt-2 block text-center"
+                >No Company Found.</span
+              >
+            }
+          </div>
+
+          <!-- Bank Accounts Header -->
+          <div
+            class="px-4 py-3 border-b border-v4-border-color bg-v4-tertiary-background-color flex-shrink-0 flex items-center justify-between"
+          >
+            <mat-checkbox
+              class="v4-mat-check-box v4-checkbox text-sm font-medium text-v4-main-text-color"
+              [checked]="allComplete"
+              [indeterminate]="someComplete()"
+              (change)="setAll($event.checked); changeImportFrom()"
+            >
+              <span class="ml-1 text-sm">{{
+                importFromBankAccounts.name
+              }}</span>
+            </mat-checkbox>
+            <lucide-icon
+              [img]="InfoIcon"
+              [size]="14"
+              class="text-v4-primary-brand-bold-color"
+              matTooltip="Choose the bank account to import the checks."
+              matTooltipPosition="right"
+            ></lucide-icon>
+          </div>
+
+          <!-- Bank Accounts List -->
+          <div
+            class="flex-1 overflow-y-auto max-h-[320px]"
+            [ngClass]="!companyLoading ? '' : 'opacity-50 pointer-events-none'"
+          >
+            <div
+              class="data_spinner"
+              [ngClass]="{ data_fetched: !companyLoading }"
+            ></div>
+            @for (
+              list of companyBankAccountsQBD;
+              track list.value;
+              let i = $index
+            ) {
+              <div
+                class="px-4 py-2.5 flex items-center hover:bg-v4-tertiary-background-color transition-all"
+              >
+                <mat-checkbox
+                  class="v4-mat-check-box v4-checkbox text-sm text-v4-main-text-color w-full"
+                  [(ngModel)]="list.completed"
+                  [name]="list.value"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="updateAllComplete()"
+                  (change)="changeImportFrom()"
+                >
+                  <span
+                    [matTooltip]="list.name.length > 60 ? list.name : ''"
+                    class="text-sm text-v4-main-text-color truncate block"
+                    >{{ list.name | truncate: 60 }}</span
+                  >
+                </mat-checkbox>
+              </div>
+            }
+            @if (companyBankAccountsQBD?.length === 0) {
+              <div class="flex flex-col items-center justify-center py-8 px-4">
+                <lucide-icon
+                  [img]="LandmarkIcon"
+                  [size]="24"
+                  class="text-v4-secondary-text-color mb-2"
+                ></lucide-icon>
+                <span class="text-xs text-v4-secondary-text-color"
+                  >No Accounts Found.</span
+                >
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right Section: Filters -->
+        <div class="flex flex-col gap-4">
+          <!-- Time Span Card -->
+          <div
+            class="bg-v4-secondary-background-color rounded-xl p-4 border border-v4-border-color"
+          >
+            <h4
+              class="text-sm font-semibold text-v4-main-text-color mb-3 flex items-center gap-2"
+            >
+              <lucide-icon
+                [img]="ClockIcon"
+                [size]="16"
+                class="text-v4-primary-brand-bold-color"
+              ></lucide-icon>
+              Time Span
+            </h4>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-3">
+                <label class="text-sm text-v4-secondary-text-color w-20"
+                  >From Date</label
+                >
+                <input
+                  type="date"
+                  class="flex-1 py-2 px-3 text-sm border border-v4-input-border-color rounded-lg bg-v4-secondary-background-color text-v4-main-text-color transition-all focus:outline-none focus:border-v4-primary-brand-color"
+                  [formControl]="date1"
+                />
+              </div>
+              <div class="flex items-center gap-3">
+                <label class="text-sm text-v4-secondary-text-color w-20"
+                  >To Date</label
+                >
+                <input
+                  type="date"
+                  class="flex-1 py-2 px-3 text-sm border border-v4-input-border-color rounded-lg bg-v4-secondary-background-color text-v4-main-text-color transition-all focus:outline-none focus:border-v4-primary-brand-color"
+                  [formControl]="date2"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Type Card -->
+          @if (data.type !== "bills" && data.type !== "invoices") {
+            <div
+              class="bg-v4-secondary-background-color rounded-xl p-4 border border-v4-border-color"
+            >
+              <h4
+                class="text-sm font-semibold text-v4-main-text-color mb-3 flex items-center gap-2"
+              >
+                <lucide-icon
+                  [img]="FileCheckIcon"
+                  [size]="16"
+                  class="text-v4-common-green-color"
+                ></lucide-icon>
+                Payment Type
+              </h4>
+              <div class="flex flex-wrap gap-x-4 gap-y-1.5">
+                <mat-checkbox
+                  formControlName="importCheck"
+                  class="v4-mat-check-box v4-checkbox"
+                >
+                  <span class="text-v4-main-text-color">Check</span>
+                </mat-checkbox>
+                <mat-checkbox
+                  formControlName="importBill"
+                  class="v4-mat-check-box v4-checkbox"
+                >
+                  <span class="text-v4-main-text-color"
+                    >Bill Payment (Check)</span
+                  >
+                </mat-checkbox>
+                <mat-checkbox
+                  formControlName="importPayroll"
+                  class="v4-mat-check-box v4-checkbox"
+                >
+                  <span class="text-v4-main-text-color">
+                    Payroll
+                    <lucide-icon
+                      [img]="InfoIcon"
+                      [size]="14"
+                      class="text-v4-primary-brand-bold-color ml-1 inline-flex align-middle"
+                      [matTooltip]="payrollTooltip"
+                      matTooltipClass="multiline-tooltip"
+                    ></lucide-icon>
+                  </span>
+                </mat-checkbox>
+              </div>
+            </div>
+
+            <!-- Download Filter Card -->
+            <div
+              class="bg-v4-secondary-background-color rounded-xl p-4 border border-v4-border-color"
+            >
+              <h4
+                class="text-sm font-semibold text-v4-main-text-color mb-3 flex items-center gap-2"
+              >
+                <lucide-icon
+                  [img]="FilterIcon"
+                  [size]="16"
+                  class="text-v4-common-violet-color"
+                ></lucide-icon>
+                Download Filter
+              </h4>
+              <app-v4-radio-group
+                formControlName="markAsPrintLater"
+                layout="vertical"
+                [options]="downloadFilter"
+                ariaLabel="Download Filter"
+              />
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div
+      class="flex items-center justify-end gap-3 px-6 py-4 border-t border-v4-border-color bg-v4-secondary-background-color flex-shrink-0"
+    >
+      <app-common-button-v4
+        [width]="'125px'"
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Cancel'"
+        (clickEvent)="back()"
+      ></app-common-button-v4>
+      <app-common-button-v4
+        [width]="'125px'"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Import'"
+        [textColorInput]="'white'"
+        (clickEvent)="onSubmit()"
+        [loading]="loading"
+        [disabled]="loading"
+      ></app-common-button-v4>
+    </div>
+  }
+</div>

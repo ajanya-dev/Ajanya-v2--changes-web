@@ -1,0 +1,146 @@
+<div class="npm">
+  <div class="npm-head">
+    <h3 class="npm-title">Notify the payee</h3>
+    <button type="button" class="npm-x" (click)="cancel()" aria-label="Close">
+      <i-lucide [img]="XIcon" [size]="18"></i-lucide>
+    </button>
+  </div>
+  <p class="npm-sub">
+    Choose how {{ data.payeeName || "the payee" }} is notified about this
+    payment.
+  </p>
+
+  <!-- ── Email ── -->
+  <div class="npm-ch" [class.soon]="data.caps.email === 'soon'">
+    <div class="npm-ch-hd">
+      <span class="npm-ch-ic"
+        ><i-lucide [img]="MailIcon" [size]="16"></i-lucide
+      ></span>
+      <span class="npm-ch-nm">Email</span>
+      @if (data.caps.email === "soon") {
+        <span class="npm-badge">Coming soon</span>
+      } @else if (data.caps.email === "required") {
+        <span class="npm-req">Required</span>
+      }
+      <button
+        type="button"
+        class="npm-switch"
+        [class.on]="emailEnabled()"
+        [disabled]="data.caps.email !== 'optional'"
+        (click)="emailEnabled.set(!emailEnabled())"
+      >
+        <i></i>
+      </button>
+    </div>
+    @if (data.caps.email !== "soon") {
+      <app-common-input-v4
+        [fieldHeight]="'34px'"
+        class="npm-field"
+        placeholder="payee@email.com"
+        type="email"
+        variant="compact"
+        errorLabel="Please enter an email address"
+        [customMessages]="{
+          invalidEmailAddress: 'Please enter a valid email address'
+        }"
+        [formControl]="emailCtrl"
+        [control]="emailCtrl"
+      />
+      @if (canSaveEmailToPayee) {
+        <label
+          class="npm-save text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]"
+          [class.disabled]="!emailEnabled() || !canSaveToPayee"
+          [matTooltip]="saveHint"
+          [matTooltipDisabled]="canSaveToPayee"
+        >
+          <input
+            type="checkbox"
+            [ngModel]="saveEmail()"
+            (ngModelChange)="saveEmail.set($event)"
+            [disabled]="!emailEnabled() || !canSaveToPayee"
+          />
+          <span
+            >Save this email to
+            {{ data.payeeName || "the payee" }}'s record</span
+          >
+        </label>
+      }
+    }
+  </div>
+
+  <!-- ── Text / SMS ── -->
+  <div class="npm-ch" [class.soon]="data.caps.sms === 'soon'">
+    <div class="npm-ch-hd">
+      <span class="npm-ch-ic"
+        ><i-lucide [img]="SmsIcon" [size]="16"></i-lucide
+      ></span>
+      <span class="npm-ch-nm">Text (SMS)</span>
+      @if (data.caps.sms === "optional") {
+        <span class="npm-fee">+$0.50</span>
+      }
+      @if (data.caps.sms === "soon") {
+        <span class="npm-badge">Coming soon</span>
+      } @else if (data.caps.sms === "required") {
+        <span class="npm-req">Required</span>
+      }
+      <button
+        type="button"
+        class="npm-switch"
+        [class.on]="smsEnabled()"
+        [disabled]="data.caps.sms !== 'optional'"
+        (click)="smsEnabled.set(!smsEnabled())"
+      >
+        <i></i>
+      </button>
+    </div>
+    @if (data.caps.sms !== "soon") {
+      <app-phone-input-v4
+        class="npm-field"
+        placeholder="Phone"
+        variant="compact"
+        dropdownWidth="250px"
+        [formControl]="phoneCtrl"
+        [control]="phoneCtrl"
+        [customMessages]="{
+          required: 'Please enter a phone number',
+          customMinLength: 'Please enter a complete phone number'
+        }"
+        (countryDropdown)="onCountryChange($event)"
+      />
+      <label
+        class="npm-save text-[13px] font-semibold text-v4-main-text-color tracking-[-0.01em]"
+        [class.disabled]="!smsEnabled() || !canSaveToPayee"
+        [matTooltip]="saveHint"
+        [matTooltipDisabled]="canSaveToPayee"
+      >
+        <input
+          type="checkbox"
+          [ngModel]="savePhone()"
+          (ngModelChange)="savePhone.set($event)"
+          [disabled]="!smsEnabled() || !canSaveToPayee"
+        />
+        <span
+          >Save this phone to
+          {{ data.payeeName || "the payee" }}'s record</span
+        >
+      </label>
+    }
+  </div>
+
+  <div class="npm-foot">
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="cancel()"
+    />
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Done"
+      [loading]="checking()"
+      [disabled]="checking()"
+      (clickEvent)="done()"
+    />
+  </div>
+</div>

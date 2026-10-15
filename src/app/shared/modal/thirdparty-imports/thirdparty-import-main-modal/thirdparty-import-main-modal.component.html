@@ -1,0 +1,247 @@
+<div class="ocw_man_modal_wrapper main-cont flex flex-col">
+  <!-- Header -->
+  <section>
+    <div class="flex items-center">
+      @if(!open){
+        <div class="cursor-pointer" role="presentation" (click)="back()">
+          <fa-icon class="!text-[20px] cursor-pointer" [icon]="faArrowLeft" ></fa-icon>
+        </div>
+      }
+      @if(!open && !isTabClicked){
+        <div class="header1">
+          Connect New
+        </div>
+      }
+      @if(open && !isTabClicked){
+        <div class="header1">
+          Import Payments
+        </div>
+      }
+      <div class="close_btn ml-auto" [mat-dialog-close]="false">
+        <fa-icon class="!text-[20px] cursor-pointer" [icon]="faXmark" ></fa-icon>
+      </div>
+    </div>
+  </section>
+
+  <!-- Connected Apps -->
+  @if(open && !isTabClicked){
+    <section
+      class="flex flex-col"
+      [ngClass]="{ skelton: loading }"
+      >
+      <div class="overflow-auto main-modal-body">
+        <div class="header2 mb-3">Connected Apps</div>
+        <section class="sub_cont">
+          <div class="flexContainer flex flex-wrap gap-2.5">
+            @for(tab of tabsArrays(); track tab; let i = $index){
+              <div role="presentation"
+                class="eachCard rounded p-2.5 flex flex-col items-center justify-center relative cursor-pointer overflow-hidden"
+                #customTab
+                [attr.isSelected]="selectedTab?.tab?.id === tab?.id ? true : false"
+                [ngClass]="
+                  selectedTab?.tab?.id === tab?.id
+                    ? 'tab-selected'
+                    : 'tab-not-selected'
+                "
+                (click)="selectTab(tab, i)"
+                (click)="activeLink = tab?.name"
+                >
+                <img
+                  class="AppsImg"
+                  [src]="tab.icon"
+                  [style.width]="tab?.imgWidth"
+                  alt="logo"
+                  />
+                  <h3 class="cardText text-sm font-medium">{{ tab.name }}</h3>
+                  @if(tab.id !== 'importexcel'){
+                    <h1 class="text-sm font-medium">
+                      Connected
+                    </h1>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+
+          <!--New Connect App-->
+          <section class="flex flex-col" [ngClass]="{ skelton: loading }">
+            <div class="header2 mb-3">Connect New</div>
+            <section class="sub_cont">
+              <div class="flexContainer flex flex-wrap gap-2.5 mb-[2rem]">
+                @for(tab of tabsNotconenctedArrays(); track tab; let i =$index){
+                  <div role="presentation"
+                    class="each-ConnectCard rounded p-2.5 flex flex-col items-center justify-center relative cursor-pointer overflow-hidden"
+                    #customTab
+                    [attr.isSelected]="selectedTab?.tab?.id === tab?.id ? true : false"
+                  [ngClass]="
+                    selectedTab?.tab?.id === tab?.id
+                      ? 'tab-selected'
+                      : 'tab-not-selected'
+                  "
+                    (click)="selectTab(tab, i)"
+                    (click)="activeLink = tab?.name"
+                    >
+                    <img
+                      class="AppsImg"
+                      [src]="tab.icon"
+                      [style.width]="tab?.imgWidth"
+                      alt="logo"
+                      />
+                      <h3 class="cardText text-sm font-medium">{{ tab.name }}</h3>
+                      <h1 class="text-sm underline">Connect</h1>
+                    </div>
+                  }
+                  @for(tab of comingSoonApp; track tab){
+                    <div
+                      class="comingsoon-card flex flex-col justify-center items-center p-2.5 relative rounded overflow-hidden cursor-pointer"
+                      #customTab
+                      (click)="requestIntegrationModal(tab)"
+                      >
+                      <img
+                        class="AppsImg"
+                        [src]="tab.icon"
+                        alt="logo"
+                        />
+                        <h3 class="cardText text-sm font-medium">{{ tab.title }}</h3>
+                        <h1 class="text-sm underline cardText cursor-pointer">Connect</h1>
+                      </div>
+                    }
+              </div>
+            </section>
+          </section>
+            </div>
+            <section class="newConnect pl-5 mt-auto">
+              <div class="flex justify-between">
+                <div>
+                  <div class="text-lg font-semibold pt-4">Connect New App</div>
+                  <h5 class="text-sm font-light my-1">
+                    Import payments effortlessly from various sources.
+                  </h5>
+                </div>
+                <div class="self-center">
+                  <button
+                    class="ocw-btn ocw-btn-pay-v3 connect-btn mr-7"
+                    (click)="newConnect()"
+                    >
+                    Connect New
+                  </button>
+                </div>
+              </div>
+            </section>
+          </section>
+        }
+
+        <section [style.display]="isTabClicked ? 'block' : 'none'">
+          @for (tabItem of tabsArray; track tabItem) {
+            @if (tabItem?.name === 'QuickBooks Online') {
+              <app-qbonline-import
+                [hidden]="selectedTab.tab?.id !== 'qbo'"
+                (connectionStatus)="onConnectionStatus($event, 'qbo')"
+                (clickBackButton)="back()"
+                [selectedType]="data.type"
+              ></app-qbonline-import>
+            }
+            @if (tabItem?.name === 'QuickBooks Desktop') {
+              <app-qbdesktop-import
+                [hidden]="selectedTab.tab?.id !== 'qbd'"
+                (connectionStatus)="onConnectionStatus($event, 'qbd')"
+                (clickBackButton)="back()"
+              ></app-qbdesktop-import>
+            }
+            @if (tabItem?.id === 'zoho') {
+              <app-zoho-import
+                [hidden]="selectedTab.tab?.id !== 'zoho'"
+                (connectionStatus)="onConnectionStatus($event, 'zoho')"
+                (clickBackButton)="back()"
+              ></app-zoho-import>
+            }
+            @if (tabItem?.id === 'bill.com') {
+              <app-import-from-bill-dot-com
+                [hidden]="selectedTab.tab?.id !== 'bill.com'"
+                (connectionStatus)="onConnectionStatus($event, 'bill.com')"
+                (clickBackButton)="back()"
+              ></app-import-from-bill-dot-com>
+            }
+            @if (tabItem?.id === 'xero') {
+              <app-xero-import
+                [hidden]="selectedTab.tab?.id !== 'xero'"
+                (connectionStatus)="onConnectionStatus($event, 'xero')"
+                (clickBackButton)="back()"
+              ></app-xero-import>
+            }
+            @if (tabItem?.id === 'sage') {
+              <app-sage-business-import
+                [hidden]="selectedTab.tab?.id !== 'sage'"
+                (connectionStatus)="onConnectionStatus($event, 'sage')"
+                (clickBackButton)="back()"
+              ></app-sage-business-import>
+            }
+            @if (tabItem?.id === 'freshbooks') {
+              <app-freshbooks-import
+                [hidden]="selectedTab.tab?.id !== 'freshbooks'"
+                (connectionStatus)="onConnectionStatus($event, 'freshbooks')"
+                (clickBackButton)="back()"
+              ></app-freshbooks-import>
+            }
+            @if (tabItem?.id === 'wave') {
+              <app-wave-import
+                [hidden]="selectedTab.tab?.id !== 'wave'"
+                (connectionStatus)="onConnectionStatus($event, 'wave')"
+                (clickBackButton)="back()"
+              ></app-wave-import>
+            }
+            @if (tabItem?.id === 'netsuite') {
+              <app-netsuite-import
+                [hidden]="selectedTab.tab?.id !== 'netsuite'"
+                (connectionStatus)="onConnectionStatus($event, 'netsuite')"
+                (clickBackButton)="back()"
+                (compelteImport)="onCompleteImport($event)"
+                [selectedType]="data.type"
+              ></app-netsuite-import>
+            }
+            @if (tabItem?.id === 'odoo') {
+              <app-odoo-import
+                [hidden]="selectedTab.tab?.id !== 'odoo'"
+                (connectionStatus)="onConnectionStatus($event, 'odoo')"
+                (clickBackButton)="back()"
+                (completeImport)="onCompleteImport($event)"
+              ></app-odoo-import>
+            }
+            <!-- @if (tabItem?.id === 'freeagent') {
+              <app-freeagent-imports
+                [hidden]="selectedTab.tab?.id !== 'freeagent'"
+                (connectionStatus)="onConnectionStatus($event, 'freeagent')"
+                (clickBackButton)="back()"
+              ></app-freeagent-imports>
+            }
+            @if (tabItem?.id === 'microsoft365') {
+              <app-ms-dynamics-import
+                [hidden]="selectedTab.tab?.id !== 'microsoft365'"
+                (connectionStatus)="onConnectionStatus($event, 'microsoft365')"
+                (clickBackButton)="back()"
+              ></app-ms-dynamics-import>
+            }
+            @if (tabItem?.id === 'clearbooks') {
+              <app-clearbooks-import
+                [hidden]="selectedTab.tab?.id !== 'clearbooks'"
+                (connectionStatus)="onConnectionStatus($event, 'clearbooks')"
+                (clickBackButton)="back()"
+              ></app-clearbooks-import>
+            }
+            @if (tabItem?.id === 'sageintacct') {
+              <app-sage-intacct-import
+                [hidden]="selectedTab.tab?.id !== 'sageintacct'"
+                (connectionStatus)="onConnectionStatus($event, 'sageintacct')"
+                (clickBackButton)="back()"
+              ></app-sage-intacct-import>
+            } -->
+            @if (tabItem?.id === 'workday') {
+              <app-workday-import
+                [hidden]="selectedTab.tab?.id !== 'workday'"
+                (connectionStatus)="onConnectionStatus($event, 'workday')"
+                (clickBackButton)="back()"
+              ></app-workday-import>
+            }
+          }
+        </section>
+      </div>

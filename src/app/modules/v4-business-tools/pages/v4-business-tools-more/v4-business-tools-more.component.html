@@ -1,0 +1,203 @@
+<!-- Removed min-h-screen: 100vh ignores the header, it forces a page scroll on tall screens. -->
+<div class="bg-v4-main-background-color">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col items-center space-y-4">
+      <h1
+        class="text-2xl font-bold text-v4-main-text-color font-funnel"
+      >
+        Business Tools
+      </h1>
+
+      <!-- Search Bar -->
+      <div class="w-full max-w-lg relative">
+        <span
+          class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-v4-subtle-text-color"
+        >
+          <lucide-icon name="search" [size]="20" />
+        </span>
+        <input
+          type="text"
+          placeholder="Search"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          class="w-full pl-12 pr-4 py-3 text-sm rounded-lg border border-v4-border-color bg-v4-secondary-background-color text-v4-main-text-color placeholder:text-v4-subtle-text-color focus:outline-none focus:ring-2 focus:ring-v4-primary-brand-color/30 focus:border-v4-primary-brand-color transition-all font-peridot shadow"
+        />
+      </div>
+    </div>
+
+    <!-- Skeleton Loader -->
+    @if (!isDataLoaded()) {
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+      >
+        @for (card of dummyCards; track $index) {
+          <div
+            class="tool-card rounded-xl border border-v4-border-color bg-v4-secondary-background-color p-6 animate-pulse"
+          >
+            <div
+              class="w-14 h-14 rounded-2xl bg-v4-input-background-color mb-4"
+            ></div>
+            <div
+              class="h-5 w-3/4 rounded bg-v4-input-background-color mb-2"
+            ></div>
+            <div
+              class="h-4 w-full rounded bg-v4-input-background-color mb-1"
+            ></div>
+            <div
+              class="h-4 w-2/3 rounded bg-v4-input-background-color mb-4"
+            ></div>
+            <div
+              class="h-10 w-full rounded-lg bg-v4-input-background-color"
+            ></div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Available Tools -->
+    @if (isDataLoaded() && filteredAvailable().length > 0) {
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-v4-main-text-color font-peridot">
+          Available Tools
+        </h2>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+        >
+          @for (card of filteredAvailable(); track card.id) {
+            <div
+              class="tool-card bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-6 flex flex-col transition-all duration-200 cursor-pointer group"
+              role="button"
+              tabindex="0"
+              (click)="checkBusinessToolsStatus(card)"
+              (keydown)="onCardKeydown($event, card)"
+            >
+              <!-- Icon -->
+              <div class="flex items-start justify-between mb-4">
+                <div
+                  class="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  [style.background]="getToolIcon(card).iconBgLight"
+                >
+                  <lucide-icon
+                    [name]="getToolIcon(card).icon"
+                    [size]="28"
+                    [style.color]="getToolIcon(card).iconBg"
+                  />
+                </div>
+              </div>
+
+              <!-- Title -->
+              <h3
+                class="text-lg font-bold text-v4-main-text-color font-peridot mb-2"
+              >
+                {{
+                  card.product_name === "Document Vault"
+                    ? "Document Storage"
+                    : card.product_name
+                }}
+              </h3>
+
+              <!-- Description -->
+              <p
+                class="text-sm text-v4-secondary-text-color font-peridot mb-4 flex-1 line-clamp-2"
+              >
+                {{ card.description }}
+              </p>
+
+              <!-- Open Tool Button -->
+              <app-common-button-v4
+                text="Open Tool"
+                [type]="{ style: 'primary', name: 'main' }"
+                width="100%"
+                (clickEvent)="checkBusinessToolsStatus(card)"
+              />
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Upcoming Tools -->
+    @if (isDataLoaded() && filteredUpcoming().length > 0) {
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-v4-main-text-color font-peridot">
+          Upcoming Tools
+        </h2>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+        >
+          @for (card of filteredUpcoming(); track card.id) {
+            <div
+              class="tool-card bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-6 flex flex-col opacity-90"
+            >
+              <!-- Icon + Coming Soon Badge -->
+              <div class="flex items-start justify-between mb-4">
+                <div
+                  class="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  [style.background]="getToolIcon(card).iconBgLight"
+                >
+                  <lucide-icon
+                    [name]="getToolIcon(card).icon"
+                    [size]="28"
+                    [style.color]="getToolIcon(card).iconBg"
+                  />
+                </div>
+                <div
+                  class="flex items-center gap-1 px-2.5 py-1 bg-v4-input-background-color text-v4-primary-brand-bold-color text-xs font-semibold rounded-full font-peridot"
+                >
+                  <lucide-icon name="clock" [size]="12" />
+                  Coming Soon
+                </div>
+              </div>
+
+              <!-- Title -->
+              <h3
+                class="text-lg font-bold text-v4-main-text-color font-peridot mb-2"
+              >
+                {{
+                  card.product_name === "Document Vault"
+                    ? "Document Storage"
+                    : card.product_name
+                }}
+              </h3>
+
+              <!-- Description -->
+              <p
+                class="text-sm text-v4-secondary-text-color font-peridot flex-1 line-clamp-2"
+              >
+                {{ card.description }}
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- No Results -->
+    @if (
+      isDataLoaded() &&
+      filteredAvailable().length === 0 &&
+      filteredUpcoming().length === 0
+    ) {
+      <div
+        class="col-span-full flex flex-col items-center justify-center py-16 text-center"
+      >
+        <lucide-icon
+          name="search"
+          [size]="40"
+          class="text-v4-subtle-text-color mb-3"
+        />
+        <p
+          class="text-sm font-medium text-v4-secondary-text-color font-peridot"
+        >
+          No tools found
+        </p>
+        @if (searchQuery()) {
+          <p class="text-xs text-v4-tertiary-text-color font-peridot mt-1">
+            No results matching "{{ searchQuery() }}"
+          </p>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,431 @@
+<section
+  class="main_common_module max-xl:flex-col max-xl:items-center !px-[10px]"
+>
+  <!-- left section -->
+  <div class="main_left_wrapper max-xl:!w-[70%] max-xl:!max-w-[70%]">
+    <div
+      class="module_top_section bg-main-background-color rounded-[5px] w-full !p-2 mt-4"
+      [ngClass]="{ skelton: isLoading() }"
+    >
+      <!-- header area -->
+      <div
+        class="mb-2 px-2 bg-secondary-background-color rounded-tl-[5px] rounded-tr-[5px] border-b border-input-border-color flex justify-between items-center"
+      >
+        <div class="flex items-center gap-3 py-3">
+          <div class="!bg-main-background-color rounded-full w-fit h-fit">
+            <app-common-back-button-v35></app-common-back-button-v35>
+          </div>
+          <h3 class="text-main-text-color font-inter text-base font-medium">
+            Credit Memo Details
+          </h3>
+        </div>
+        <div class="header-right-btn main-buttn flex justify-between gap-2">
+          <div class="flex gap-2">
+            <app-common-button-v35
+              text="Edit"
+              [disabled]="disable || isDisableAllActions || isUnVoid"
+              [ngClass]="{
+                'disable-btn': disable || isDisableAllActions || isUnVoid
+              }"
+              [isAddIcon]="true"
+              [icon]="['fas', 'pen-to-square']"
+              [type]="{ style: 'green', name: 'money-action' }"
+              (clickEvent)="editCreditMemo()"
+              [loading]="isEditing"
+            ></app-common-button-v35>
+            @if (isVoid) {
+              <app-common-button-v35
+                text="Void"
+                [ngClass]="{ 'disable-btn': disable }"
+                [isAddIcon]="true"
+                [icon]="['fas', 'ban']"
+                [type]="{ style: 'green', name: 'money-action' }"
+                backGroundInput="var(--common-yellow-color)"
+                (clickEvent)="voidCreditMemo()"
+                [loading]="isVoidLoading"
+              >
+              </app-common-button-v35>
+            }
+            @if (isUnVoid) {
+              <app-common-button-v35
+                text="Unvoid"
+                [ngClass]="{ 'disable-btn': disable }"
+                [isAddIcon]="true"
+                [icon]="['fas', 'ban']"
+                [type]="{ style: 'green', name: 'money-action' }"
+                backGroundInput="var(--common-yellow-color)"
+                [loading]="isVoidLoading"
+                (clickEvent)="unVoidCreditMemo()"
+              ></app-common-button-v35>
+            }
+          </div>
+          <app-common-button-v35
+            text="Delete"
+            [isAddIcon]="true"
+            [icon]="['fas', 'trash']"
+            [type]="{ style: 'green', name: 'money-action' }"
+            backGroundInput="var(--common-red-color)"
+            [loading]="isDeleteLoading"
+            (clickEvent)="deleteCreditMemo()"
+          ></app-common-button-v35>
+        </div>
+      </div>
+      <div class="pb-2 min-h-[278px]">
+        <table class="new-table">
+          <thead>
+            <tr>
+              @for (
+                head of [
+                  "#",
+                  "ITEM NAME",
+                  "DESCRIPTION",
+                  "UNIT PRICE",
+                  "QTY",
+                  "SUB TOTAL"
+                ];
+                track $index
+              ) {
+                <th [ngClass]="{ '!basis-[10%]': head === '#' }">{{ head }}</th>
+              }
+            </tr>
+          </thead>
+          @if (data) {
+            <tbody>
+              @for (item of viewtable; track item; let i = $index) {
+                <tr>
+                  <td class="!basis-[10%]">{{ i + 1 }}</td>
+                  <td class="break-all">{{ item?.itemName }}</td>
+                  <td class="break-all">{{ item?.note }}</td>
+                  <td>$ {{ item?.unitPrice }}</td>
+                  <td>{{ item?.units }}</td>
+                  <td>$ {{ item?.total }}</td>
+                </tr>
+              }
+            </tbody>
+          }
+        </table>
+      </div>
+      <div class="flex my-1 max-h-40 overflow-y-auto">
+        <span
+          class="font-inter text-secondary-text-color font-normal text-xs !w-40"
+          >Memo:
+        </span>
+        <span
+          class="w-full text-wrap break-words overflow-hidden font-inter text-main-text-color font-semibold text-xs"
+          >{{ memo }}</span
+        >
+      </div>
+    </div>
+    <!-- header area -->
+    <div
+      class="module_bottom_section !p-2 min-h-[300px]"
+      [ngClass]="{ skelton: isLoading() }"
+    >
+      <div>
+        <mat-tab-group>
+          <!-- FIRST TAB -->
+          <mat-tab label="Payment Summary">
+            @if (ViewList?.items.length > 0 && !isLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "Amount", "Reference"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                @if (ViewList.invoicePayments) {
+                  <tbody>
+                    @for (item of ViewList.invoicePayments; track $index) {
+                      <tr>
+                        <td>{{ item.paymentDate }}</td>
+                        <td>{{ item.amount }}</td>
+                        <td>{{ item.reference }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                }
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Data Found!!',
+                    isLoading: isLoading()
+                  }
+                "
+              ></ng-container>
+            }
+          </mat-tab>
+          <!-- FIRST TAB -->
+
+          <!-- SECOND TAB -->
+          <mat-tab label="Attachment">
+            @if (attachmentsList?.length > 0 && !isAttachmentLoading()) {
+              <table class="new-table h-[193px]">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "User", "File", "Action"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (attachment of attachmentsList; track $index) {
+                    <tr>
+                      <td>{{ attachment?.formated_date }}</td>
+                      <td>{{ attachment?.user_name }}</td>
+                      <td class="break-all">
+                        <button
+                          class="under"
+                          type="button"
+                          (click)="openAttachment(attachment)"
+                        >
+                          <fa-icon [icon]="faArrowUp"></fa-icon
+                          >{{ attachment?.file_name.split("/")[2] }}
+                        </button>
+                      </td>
+                      <td class="icon">
+                        <span title="Delete">
+                          <fa-icon
+                            class="cursor-pointer text-common-red-color"
+                            [icon]="faTrash"
+                            (click)="deleteAttachment(attachment?.encrypted_id)"
+                          ></fa-icon>
+                        </span>
+                        @if (attachment?.status?.status_text) {
+                          <a
+                            class="cursor-pointer pl-2 hover:underline hover:text-common-blue-color"
+                          >
+                            <fa-icon
+                              [icon]="faEnvelope"
+                              title="{{ attachment?.status?.status_text }}"
+                            ></fa-icon>
+                          </a>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Attachments Found!!',
+                    isLoading: isAttachmentLoading()
+                  }
+                "
+              ></ng-container>
+            }
+            <div class="flex justify-end mt-3">
+              <app-common-button-v35
+                (clickEvent)="onAddAttachmentRow()"
+                [type]="{ style: 'blue', name: 'money-action' }"
+                text="Add Attachments"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+          <!-- SECOND TAB -->
+
+          <!-- THIRD TAB -->
+          <mat-tab label="Comments">
+            @if (commentsList?.length > 0 && !isCommentsLoading()) {
+              <table class="new-table h-[193px]">
+                <thead>
+                  <tr>
+                    @for (head of ["Date", "User", "Comment"]; track $index) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (comment of commentsList; track $index) {
+                    <tr>
+                      <td>{{ comment.formated_date }}</td>
+                      <td>{{ comment.user_name }}</td>
+                      <td class="break-all">
+                        {{ comment.comments }}
+                        @if (comment?.status?.status_text) {
+                          <a
+                            class="cursor-pointer pl-2 hover:underline hover:text-common-blue-color"
+                          >
+                            <fa-icon
+                              [icon]="faEnvelope"
+                              title="{{ comment?.status?.status_text }}"
+                            ></fa-icon>
+                          </a>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Comments Found!!',
+                    isLoading: isCommentsLoading()
+                  }
+                "
+              ></ng-container>
+            }
+
+            <div class="flex justify-end mt-3">
+              <app-common-button-v35
+                [type]="{ style: 'blue', name: 'money-action' }"
+                text="Add Comments"
+                (clickEvent)="onAddCommentRow()"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+
+          <!-- THIRD TAB -->
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+
+  <!-- right section -->
+  <div class="main_right_section">
+    <!-- main header -->
+    <div
+      class="module_bottom_section !p-2"
+      [ngClass]="{ 'skelton h-[272px]': isLoading() }"
+    >
+      <div
+        class="main__header bg-secondary-background-color p-2 py-3 border-b border-input-border-color"
+      >
+        <div class="left">
+          <h3 class="font-inter text-main-text-color !font-medium text-[15px]">
+            Summary
+          </h3>
+        </div>
+      </div>
+
+      <div>
+        <table>
+          @if (ViewList) {
+            <tbody class="flex flex-col gap-4">
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">
+                  Credit Memo #
+                </td>
+                <td>{{ ViewList.creditMemoNo }}</td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">
+                  Credit Memo From
+                </td>
+                <td>{{ ViewList.bankAccountName }}</td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">
+                  Client Name
+                </td>
+                <td class="!max-w-[260px] !break-words">
+                  {{ ViewList.payeeName }}
+                </td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">
+                  Credit Memo Date
+                </td>
+                <td>{{ ViewList.creditMemoDate }}</td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">
+                  Purchase Order #
+                </td>
+                <td>{{ rowFromGrid?.po_no || "-" }}</td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">Total</td>
+                <td>{{ ViewList.amount }}</td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">Used</td>
+                <td>{{ ViewList.amount }}</td>
+              </tr>
+              <tr class="flex gap-2 !text-main-text-color !font-inter !text-sm">
+                <td class="!min-w-[130px] text-secondary-text-color">
+                  Available Balance
+                </td>
+                <td>{{ ViewList.balance }}</td>
+              </tr>
+            </tbody>
+          }
+        </table>
+      </div>
+
+      @if (transactions.length) {
+        <div class="module_bottom_section !p-2 mt-2">
+          <div
+            class="main__header bg-secondary-background-color p-2 py-3 border-b border-input-border-color"
+          >
+            <h3 class="font-inter text-main-text-color !font-medium text-[15px]">
+              Transactions
+            </h3>
+          </div>
+          <table class="new-table">
+            <thead>
+              <tr>
+                @for (
+                  head of ["Payment Date", "Amount", "Reference", "Invoice No"];
+                  track $index
+                ) {
+                  <th>{{ head }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (txn of transactions; track $index) {
+                <tr>
+                  <td>{{ txn.payment_date }}</td>
+                  <td>{{ txn.amount }}</td>
+                  <td>{{ txn.reference }}</td>
+                  <td>{{ txn.invoice_no }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+<ng-template #noDataTemplate let-message="message" let-isLoading="isLoading">
+  @if (isLoading) {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <fa-icon
+        [icon]="faSpinner"
+        animation="spin"
+        class="text-common-green-color"
+      ></fa-icon>
+    </div>
+  } @else {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <img
+        ngSrc="/assets/images/no_activity.svg"
+        alt="No data"
+        width="120"
+        height="100"
+      />
+      <span class="font-roboto font-normal text-main-text-color text-sm">
+        {{ message }}
+      </span>
+    </div>
+  }
+</ng-template>

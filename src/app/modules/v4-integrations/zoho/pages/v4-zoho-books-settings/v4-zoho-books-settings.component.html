@@ -1,0 +1,204 @@
+<div class="space-y-4 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  }
+
+  @if (!loading().dataLoading) {
+    @if (isConnected()) {
+      <!-- Status banner -->
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl bg-v4-badge-success-bg-color"
+      >
+        <lucide-icon
+          name="circle-check"
+          [size]="24"
+          class="flex-shrink-0 text-v4-badge-success-text-color"
+        ></lucide-icon>
+        <div>
+          <p class="font-semibold text-v4-badge-success-text-color">Connected</p>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">
+          Connection Settings
+        </h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Manage your Zoho Books integration settings.
+        </p>
+      </div>
+
+      <!-- Actions row -->
+      <div class="grid grid-cols-2 gap-2">
+        <app-common-button-v4
+          [type]="{ style: 'destructive', name: 'main' }"
+          text="Disconnect"
+          [width]="'100%'"
+          (clickEvent)="onDisconnect()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Import Companies"
+          [width]="'100%'"
+          [isAddIcon]="true"
+          [icon]="['fas', 'arrow-down']"
+          [loading]="loading().importCompany"
+          [disabled]="loading().importCompany"
+          (clickEvent)="onImportCompanies()"
+        />
+      </div>
+
+      <!-- Settings stack -->
+      <div class="flex flex-col gap-4">
+        <!-- Select companies -->
+        <div
+          class="border border-v4-input-border-color rounded-xl bg-main-background p-4 flex flex-col max-h-64"
+        >
+          <div class="flex items-center justify-between gap-3 flex-shrink-0">
+            <h4 class="text-sm font-bold text-v4-main-text-color">
+              Select Companies to Import Checks
+            </h4>
+            @if (companies().length) {
+              <span class="text-xs text-v4-tertiary-text-color">
+                {{ selectedCompanies().length }} of {{ companies().length }} selected
+              </span>
+            }
+          </div>
+
+          @if (companies().length) {
+            <div class="flex flex-col min-h-0 mt-3">
+              <div
+                class="flex items-center pb-2 border-b border-v4-input-border-color flex-shrink-0"
+              >
+                <mat-checkbox
+                  class="v4-mat-check-box v4-checkbox text-sm text-v4-main-text-color"
+                  [checked]="
+                    selectedCompanies().length === companies().length &&
+                    companies().length > 0
+                  "
+                  (change)="toggleSelectAll($event.checked)"
+                >
+                  <span class="ml-1 text-sm">Select All</span>
+                </mat-checkbox>
+              </div>
+
+              <div class="overflow-y-auto space-y-1 pr-1 mt-2">
+                @for (company of companies(); track company.companyId) {
+                  <div class="flex items-center py-0.5">
+                    <mat-checkbox
+                      class="v4-mat-check-box v4-checkbox text-sm text-v4-main-text-color"
+                      [checked]="
+                        selectedCompanies().includes(company.companyId)
+                      "
+                      (change)="
+                        toggleCompany(company.companyId, $event.checked)
+                      "
+                    >
+                      <span class="ml-1 text-sm truncate">
+                        {{ company.companyName }}
+                      </span>
+                    </mat-checkbox>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <p class="text-sm text-v4-tertiary-text-color mt-3">
+              No companies found. Click <strong>Import Companies</strong> to
+              sync Zoho organizations.
+            </p>
+          }
+        </div>
+
+        <!-- Import data in last -->
+        <div
+          class="border border-v4-input-border-color rounded-xl bg-main-background p-4 space-y-5"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <h4 class="text-sm font-bold text-v4-main-text-color">
+              Import Data From Last
+            </h4>
+            <span class="text-xs text-v4-tertiary-text-color">
+              Choose a time range
+            </span>
+          </div>
+          <app-v4-radio-group
+            class="block"
+            [formControl]="form.controls.importDataInLast"
+            [options]="importTimeOptions"
+            [columns]="4"
+            ariaLabel="Import Data From Last"
+          />
+        </div>
+
+        <!-- Import data type -->
+        <div
+          class="border border-v4-input-border-color rounded-xl bg-main-background p-4 space-y-5"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <h4 class="text-sm font-bold text-v4-main-text-color">
+              Import Data Type
+            </h4>
+            <span class="text-xs text-v4-tertiary-text-color">
+              What to pull
+            </span>
+          </div>
+          <app-v4-radio-group
+            class="block"
+            [formControl]="form.controls.importDataType"
+            [options]="importDataTypeOptions"
+            layout="vertical"
+            ariaLabel="Import Data Type"
+          />
+        </div>
+      </div>
+
+      <!-- Bottom actions -->
+      <div class="flex flex-col gap-3 pt-2">
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Import Checks"
+          [width]="'100%'"
+          [loading]="loading().startImporting"
+          [disabled]="loading().startImporting"
+          (clickEvent)="onImportChecks()"
+        />
+
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="View Bank Account Mapping"
+          [width]="'100%'"
+          (clickEvent)="onViewBankAccountMapping()"
+        />
+      </div>
+    } @else {
+      <!-- Disconnected state -->
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl"
+        style="background-color: var(--v4-badge-error-bg-color)"
+      >
+        <lucide-icon
+          name="x-circle"
+          [size]="20"
+          [color]="'var(--v4-badge-error-text-color)'"
+        ></lucide-icon>
+        <span
+          class="text-sm font-semibold"
+          style="color: var(--v4-badge-error-text-color)"
+        >
+          Status: <span class="font-bold">Disconnected</span>
+        </span>
+      </div>
+      <p class="text-sm text-v4-tertiary-text-color">
+        Connect to Zoho Books from the Overview tab to see integration settings.
+      </p>
+    }
+  }
+</div>

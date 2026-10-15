@@ -1,0 +1,197 @@
+<div class="close_btn_header">
+  <div class="close_btn" [mat-dialog-close]="false">
+    <i class="fa fa-times text-secondary-text-color" aria-hidden="true"></i>
+  </div>
+</div>
+@if (dialogData.type === "refill") {
+  <div class="flex justify-center items-center flex-col">
+    <div class="flex justify-center items-center flex-col gap-2">
+      <img src="../../../../../assets/images/decorations.svg" alt="" />
+      <span class="font-bold heading">Congrats!</span>
+      <span class="font-medium text-base"
+        >You got
+        <span class="font-semibold total-credit">{{
+          dialogData.amount | currency
+        }}</span>
+        credits</span
+      >
+    </div>
+    <div class="w-full mt-10">
+      @if (
+        dialogData?.shared_features?.length && dialogData?.credit_type === 3
+      ) {
+        <ng-container>
+          <div class="grid grid-cols-12 px-5">
+            <span class="col-span-6">Features</span>
+            <span class="col-span-3">Credit</span>
+            <span class="col-span-3">Validity</span>
+          </div>
+          <div class="mt-2 features !h-auto">
+            <div class="flex flex-col col-span-6">
+              @for (item of dialogData?.shared_features; track $index) {
+                <span
+                  class="flex items-center"
+                  [matTooltip]="
+                    item.feature_name.length > 20 ? item.feature_name : ''
+                  "
+                  >{{ item.feature_name }}</span
+                >
+              }
+            </div>
+            <span class="col-span-3 flex items-center">{{
+              dialogData.amount | currency
+            }}</span>
+            <span class="col-span-3 flex items-center"
+              >{{ dialogData?.validity }}
+              {{ dialogData?.validity === 1 ? "day" : "days" }}</span
+            >
+          </div>
+        </ng-container>
+      }
+      @if (dialogData?.features?.length && dialogData?.credit_type !== 3) {
+        <ng-container>
+          <div class="grid grid-cols-12 px-5">
+            <span class="col-span-6">Features</span>
+            <span class="col-span-3">Credit</span>
+            <span class="col-span-3">Validity</span>
+          </div>
+          @for (item of dialogData?.features; track $index) {
+            <div class="mt-2 features">
+              <span class="col-span-6 flex items-center">{{
+                item.feature
+              }}</span>
+              <span class="col-span-3 flex items-center">{{
+                item.amount | currency
+              }}</span>
+              <span class="col-span-3 flex items-center"
+                >{{ dialogData?.validity }}
+                {{ dialogData?.validity === 1 ? "day" : "days" }}</span
+              >
+            </div>
+          }
+        </ng-container>
+      }
+      @if (
+        !dialogData?.features?.length && !dialogData?.shared_features?.length
+      ) {
+        <ng-container>
+          <div class="features">
+            <span class="col-span-6 flex items-center">All Features</span>
+            <span class="col-span-3 flex items-center">{{
+              dialogData?.amount | currency
+            }}</span>
+            <span class="col-span-3 flex items-center"
+              >{{ dialogData?.validity }}
+              {{ dialogData?.validity === 1 ? "day" : "days" }}</span
+            >
+          </div>
+        </ng-container>
+      }
+    </div>
+    <div class="w-full pt-2">
+      <app-common-button-v35
+        width="100%"
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Grab it"
+        (clickEvent)="onGrab()"
+        [loading]="isLoading"
+      ></app-common-button-v35>
+    </div>
+  </div>
+}
+
+@if (dialogData.type !== "refill") {
+  <div class="flip-card overflow-hidden">
+    <div
+      class="flip-card-inner relative h-full w-full text-center"
+      [ngClass]="{ flip: showFeatures }"
+    >
+      <div class="flip-card-front">
+        <div class="flex flex-col relative">
+          <div class="flex items-center pb-1 justify-center">
+            <h1 class="text-main-text-color font-inter font-bold main-header">
+              Have you tried our new feature?
+            </h1>
+          </div>
+          <div
+            class="rounded flex flex-col gap- px-8 pb-4 pt-10 font-inter text-white items-center reward-info justify-between"
+          >
+            <div class="text-xl font-semibold">Here is</div>
+            <div class="flex flex-row gap-1">
+              <div class="font-bold credits">${{ dialogData.amount }}</div>
+              <div class="flex flex-col justify-center">
+                <span
+                  class="bg-common-green-color rounded-sm text-center text-xl font-medium"
+                  >Free</span
+                >
+                <span class="text-xl font-medium">Credits</span>
+              </div>
+            </div>
+            <div class="w-full pt-2 grab-btn">
+              <app-common-button-v35
+                width="100%"
+                textColorInput="var(--common-violet-color)"
+                backGroundInput="#FFFFFF"
+                [type]="{ style: 'general', name: 'main' }"
+                text="Grab It"
+                (clickEvent)="onGrab()"
+                [loading]="isLoading"
+                boxshadow="0px 4px 4px 0px rgba(0, 0, 0, 0.25)"
+              ></app-common-button-v35>
+            </div>
+          </div>
+          <div class="absolute reward-img">
+            <img src="./../../../../../assets/images/reward.svg" alt="reward" />
+          </div>
+        </div>
+      </div>
+      <div class="flip-card-back">
+        <div class="flex justify-center items-center flex-col h-full">
+          <div class="flex justify-center items-center flex-col gap-2">
+            <img src="../../../../../assets/images/decorations.svg" alt="" />
+            <span class="font-bold heading">Congrats!</span>
+          </div>
+          <div class="flex flex-col justify-between h-full w-full">
+            <div class="w-full p-2">
+              <div class="grid grid-cols-12 px-5">
+                <span class="col-span-6 text-start font-bold text-lg"
+                  >Features</span
+                >
+                <span class="col-span-3 text-start font-bold text-lg"
+                  >Credit</span
+                >
+                <span class="col-span-3 text-start font-bold text-lg"
+                  >Validity</span
+                >
+              </div>
+              @for (
+                item of dialogData?.features;
+                track dialogData?.features.feature
+              ) {
+                <div class="mt-2 features">
+                  <span class="col-span-6 flex items-center text-start">{{
+                    item.feature
+                  }}</span>
+                  <span class="col-span-3 flex items-center">{{
+                    item.amount | currency
+                  }}</span>
+                  <span class="col-span-3 flex items-center"
+                    >{{ dialogData?.validity }}
+                    {{ dialogData?.validity === 1 ? "day" : "days" }}</span
+                  >
+                </div>
+              }
+            </div>
+            <div class="w-full pt-2 done-btn" [mat-dialog-close]="false">
+              <app-common-button-v35
+                width="100%"
+                [type]="{ style: 'modal', name: 'main' }"
+                text="Done"
+              ></app-common-button-v35>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

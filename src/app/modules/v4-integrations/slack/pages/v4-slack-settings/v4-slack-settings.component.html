@@ -1,0 +1,260 @@
+<div class="space-y-6 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  }
+
+  @if (!loading().dataLoading) {
+    @if (isConnected()) {
+
+      <!-- Status banner -->
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl border border-v4-badge-success-text-color bg-v4-badge-success-bg-color"
+      >
+        <lucide-icon
+          name="circle-check"
+          [size]="24"
+          class="flex-shrink-0 text-v4-badge-success-text-color"
+        ></lucide-icon>
+        <div>
+          <p class="font-semibold text-v4-badge-success-text-color">Connected</p>
+          @if (workspaceName()) {
+            <p class="text-xs text-v4-badge-success-text-color opacity-80 mt-0.5">
+              Workspace: {{ workspaceName() }}
+            </p>
+          }
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <div>
+        <h3 class="text-lg font-bold text-v4-main-text-color font-funnel">Connection Settings</h3>
+        <p class="text-sm text-v4-tertiary-text-color mt-1">
+          Manage your Slack workspace integration.
+        </p>
+      </div>
+
+      <!-- Actions row -->
+      <div class="grid grid-cols-2 gap-2">
+        <app-common-button-v4
+          [type]="{ style: 'destructive', name: 'main' }"
+          text="Disconnect"
+          [width]="'100%'"
+          [loading]="loading().disconnecting"
+          [disabled]="loading().disconnecting"
+          (clickEvent)="onDisconnect()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Sync Employees"
+          [width]="'100%'"
+          [loading]="loading().syncingEmployees"
+          [disabled]="loading().syncingEmployees"
+          (clickEvent)="onSyncEmployees()"
+        />
+      </div>
+
+      <!-- Employees Table -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-bold text-v4-main-text-color flex items-center gap-2 font-funnel">
+            <lucide-icon
+              name="users"
+              [size]="20"
+              class="text-v4-primary-brand-color"
+            ></lucide-icon>
+            Slack Employees
+            @if (pagination().totalEmployees > 0) {
+              <span class="text-sm font-normal text-v4-tertiary-text-color">
+                ({{ pagination().totalEmployees }})
+              </span>
+            }
+          </h3>
+        </div>
+
+        <!-- Loading employees -->
+        @if (loading().syncingEmployees) {
+          <div class="flex justify-center py-8">
+            <lucide-icon
+              name="loader-circle"
+              [size]="24"
+              class="text-v4-primary-brand-color animate-spin"
+            ></lucide-icon>
+          </div>
+        }
+
+        <!-- Employees Table -->
+        @if (!loading().syncingEmployees && paginatedEmployees.length > 0) {
+          <div
+            class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color overflow-hidden"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-v4-input-border-color bg-v4-secondary-background-color">
+                    <th class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider">
+                      Workspace
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-v4-tertiary-text-color uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-v4-input-border-color">
+                  @for (employee of paginatedEmployees; track employee.id) {
+                    <tr class="hover:bg-v4-secondary-background-color transition-colors">
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                          @if (employee.avatar) {
+                            <img
+                              [src]="employee.avatar"
+                              [alt]="getDisplayName(employee)"
+                              class="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                            />
+                          } @else {
+                            <div
+                              class="w-7 h-7 rounded-full bg-v4-primary-brand-color flex items-center justify-center flex-shrink-0"
+                            >
+                              <span class="text-xs font-bold text-white">
+                                {{ getDisplayName(employee).charAt(0).toUpperCase() }}
+                              </span>
+                            </div>
+                          }
+                          <span class="font-medium text-v4-main-text-color">
+                            {{ getDisplayName(employee) }}
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 text-v4-secondary-text-color">
+                        {{ employee.email || '-' }}
+                      </td>
+                      <td class="px-4 py-3">
+                        <span
+                          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                          [ngClass]="{
+                            'text-v4-badge-error-text-color bg-v4-badge-error-bg-color': employee.is_owner,
+                            'text-v4-badge-info-text-color bg-v4-badge-info-bg-color': employee.is_admin && !employee.is_owner,
+                            'text-v4-badge-success-text-color bg-v4-badge-success-bg-color': !employee.is_admin && !employee.is_owner
+                          }"
+                        >
+                          {{ getUserRole(employee) }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-v4-secondary-text-color">
+                        {{ employee.workspace_name || '-' }}
+                      </td>
+                      <td class="px-4 py-3">
+                        <app-common-button-v4
+                          [type]="{ style: 'primary', name: 'compact' }"
+                          text="Issue Check"
+                          customHeight="32px"
+                          [loading]="loading().issuingCheck === employee.id"
+                          [disabled]="!!loading().issuingCheck || employee.is_bot || employee.deleted"
+                          (clickEvent)="onIssueCheck(employee)"
+                        />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (pagination().totalPages > 1) {
+              <div
+                class="flex items-center justify-between px-4 py-3 border-t border-v4-input-border-color"
+              >
+                <p class="text-xs text-v4-tertiary-text-color">
+                  Showing
+                  {{ (pagination().currentPage - 1) * pagination().perPage + 1 }}
+                  -
+                  {{
+                    pagination().currentPage * pagination().perPage > pagination().totalEmployees
+                      ? pagination().totalEmployees
+                      : pagination().currentPage * pagination().perPage
+                  }}
+                  of {{ pagination().totalEmployees }} employees
+                </p>
+                <div class="flex items-center gap-2">
+                  <app-common-button-v4
+                    [type]="{ style: 'outline', name: 'compact' }"
+                    text="Previous"
+                    [width]="'90px'"
+                    customHeight="32px"
+                    [disabled]="pagination().currentPage <= 1"
+                    (clickEvent)="onPrevPage()"
+                  />
+                  <span class="text-xs text-v4-tertiary-text-color px-2">
+                    Page {{ pagination().currentPage }} of {{ pagination().totalPages }}
+                  </span>
+                  <app-common-button-v4
+                    [type]="{ style: 'outline', name: 'compact' }"
+                    text="Next"
+                    [width]="'90px'"
+                    customHeight="32px"
+                    [disabled]="pagination().currentPage >= pagination().totalPages"
+                    (clickEvent)="onNextPage()"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- No employees -->
+        @if (!loading().syncingEmployees && paginatedEmployees.length === 0) {
+          <div
+            class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color p-8 text-center"
+          >
+            <lucide-icon
+              name="users"
+              [size]="32"
+              class="text-v4-tertiary-text-color mx-auto mb-3"
+            ></lucide-icon>
+            <p class="text-sm text-v4-tertiary-text-color">
+              No employees found. Click "Sync Employees" to import workspace members.
+            </p>
+          </div>
+        }
+      </div>
+
+    } @else {
+
+      <!-- Disconnected state -->
+      <div
+        class="flex items-center gap-3 p-4 rounded-xl"
+        style="background-color: var(--v4-badge-error-bg-color)"
+      >
+        <lucide-icon
+          name="x-circle"
+          [size]="20"
+          [color]="'var(--v4-badge-error-text-color)'"
+        ></lucide-icon>
+        <span
+          class="text-sm font-semibold"
+          style="color: var(--v4-badge-error-text-color)"
+        >
+          Status: <span class="font-bold">Disconnected</span>
+        </span>
+      </div>
+      <p class="text-sm text-v4-tertiary-text-color">
+        Connect to Slack from the Overview tab to start syncing your workspace employees.
+      </p>
+
+    }
+  }
+</div>

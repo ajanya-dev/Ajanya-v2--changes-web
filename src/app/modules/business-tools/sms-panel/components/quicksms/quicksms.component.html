@@ -1,0 +1,116 @@
+<div
+  class="send-sms-container flex justify-start mt-3"
+  (click)="onOuterContainerClicked()"
+>
+  <div class="grid grid-cols-1 gap-5 w-full" [formGroup]="smsForm">
+    <div class="single_input">
+      <select class="form-select input_style" formControlName="fromNumber">
+        <option selected disabled value="">Select From Phone Number</option>
+        <option *ngFor="let item of fromNumbers" [ngValue]="item">
+          {{ item.fromNumber }}-({{ item.name }})
+        </option>
+      </select>
+      <label class="floating_label_field"
+        >From Phone Number<span class="required">*</span></label
+      >
+      <app-control-message
+        [control]="smsForm.controls.fromNumber"
+      ></app-control-message>
+    </div>
+    <div class="phno-contact-customfield">
+      <div class="flex">
+        <div class="grow single_input">
+          <input
+            type="text"
+            class="input_style"
+            formControlName="toNumber"
+            mask="(000) 000-0000"
+            placeholder="(xxx) xxx-xxxx"
+          />
+          <label class="floating_label_field"
+            >To Phone Number<span class="required">*</span></label
+          >
+        </div>
+        <div
+          class="select-contact-btn cursor-pointer"
+          (click)="openContactSearch($event)"
+        >
+          <!-- Select Contact -->
+          <img
+            src="./../../../../../assets/icon/icons8-search-contacts-30.png"
+            alt="Search Contacts"
+          />
+        </div>
+      </div>
+      <div class="dropdown-container">
+        <div
+          class="dropdown shadow-lg"
+          *ngIf="showDropDown"
+          (click)="onDropdownClicked($event)"
+        >
+          <div class="flex flex-col h-full">
+            <div class="py-2 w-100">
+              <input
+                type="text"
+                class="input_style"
+                (input)="onSearchInput($event)"
+                placeholder="Search by name or phonenumber"
+              />
+            </div>
+            <div class="grow overflow-auto dropdown-item-container">
+              <ng-container *ngIf="contactList?.length > 0; else emptytemplate">
+                <div
+                  class="dropdown-item flex items-center px-2 cursor-pointer"
+                  (click)="selectDropDownItem(contact)"
+                  *ngFor="let contact of contactList"
+                >
+                  <div class="mr-3"><i class="fa-solid fa-user"></i></div>
+                  <div>{{ contact.name }} - {{ contact.phone }}</div>
+                </div>
+              </ng-container>
+              <ng-template #emptytemplate>
+                <div class="dropdown-item flex items-center px-2">
+                  No contact matches
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+      <app-control-message
+        [control]="smsForm.controls.toNumber"
+      ></app-control-message>
+    </div>
+    <div class="single_input message-text-area-wrapper">
+      <textarea
+        class="input_style"
+        formControlName="message"
+        id="messagetext"
+        maxlength="160"
+        #messagetext
+        placeholder=""
+      ></textarea>
+      <label class="floating_label_field"
+        >Message<span class="required">*</span></label
+      >
+      <app-control-message
+        [control]="smsForm.controls.message"
+      ></app-control-message>
+
+      <span class="message-count-text" *ngIf="smsForm.controls.message.value">{{
+        getMessageCoutText()
+      }}</span>
+    </div>
+    <div class="flex justify-end">
+      <button
+        type="submit"
+        class="ocw-btn-light-green ocw-btn send-btn px-4"
+        (click)="sendMessage()"
+        [disabled]="isLoading"
+      >
+        <i class="fa-solid fa-paper-plane"></i>
+        Send
+      </button>
+    </div>
+  </div>
+</div>

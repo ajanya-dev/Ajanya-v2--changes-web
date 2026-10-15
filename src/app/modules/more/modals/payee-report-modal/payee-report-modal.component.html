@@ -1,0 +1,182 @@
+<div class="ocw_man_modal_wrapper">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >Download/Send Report</span
+        >
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="['fas', 'xmark']"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="ocw_modal_body" [formGroup]="reportForm">
+    @if (!isNextStep) {
+      <ng-container>
+        <div class="row">
+          <div class="items_name">{{'Payee' | whiteLabel: 'payeeName'}}</div>
+          <div class="select_items">
+            <app-drop-down-payee-multi-select
+              (selectionEvent)="payeeSelectionEvent($event)"
+              [placeholder]="'All ' + ('Payee' | whiteLabel: 'payeeName')+'s'"
+            ></app-drop-down-payee-multi-select>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 20px">
+          <div class="items_name">Payment Source</div>
+          <div class="select_items">
+            <mat-radio-group
+              aria-labelledby="radio-label"
+              class="radio-group flex justify-between gap-2"
+              (change)="changePaymentSource($event.value)"
+            >
+              @for (item of source; track $index) {
+                <mat-radio-button
+                  class="radio-button"
+                  [value]="item.id"
+                  [checked]="selectedPaymentSource === item.id"
+                >
+                  {{ item.name }}
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          </div>
+        </div>
+        <div class="row pt-5 justify-end">
+          <div class="w-8/12">
+            @if (selectedPaymentSource === 1) {
+              <app-drop-down-bank-multi-select
+                [placeholder]="'All Bank Accounts'"
+                (selectionEvent)="bankSlectionEvent($event)"
+              ></app-drop-down-bank-multi-select>
+            } @else if (selectedPaymentSource === 2) {
+              <app-card-dropdown-multi-select
+                [dropdownIconNeeded]="false"
+                placeholder="All Cards"
+                [enableAddNew]="false"
+                [labelIconNeeded]="false"
+                formControlName="card"
+              >
+              </app-card-dropdown-multi-select>
+            } @else if (selectedPaymentSource === 3) {
+              <app-wallet-dropdown-multi-select
+                [dropdownIconNeeded]="false"
+                placeholder="All Wallets"
+                [enableAddNew]="false"
+                [labelIconNeeded]="false"
+                formControlName="wallet"
+              ></app-wallet-dropdown-multi-select>
+            }
+          </div>
+        </div>
+        <div class="row" style="margin-top: 20px">
+          <div class="items_name">Date Range</div>
+          <div class="select_items">
+            <app-date-range-selector-v35
+              (dateEmiter)="selectedRange($event)"
+              selectDate="this-year"
+            ></app-date-range-selector-v35>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 15px">
+          <div class="items_name">Category</div>
+          <div class="select_items">
+            <app-drop-down-category-multi-select
+              [placeholder]="'All Categories'"
+              (selectionEvent)="categorySelectionEvent($event)"
+            ></app-drop-down-category-multi-select>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 20px">
+          <div class="items_name">File Format</div>
+          <div class="v35-button-switch">
+            @for (item of fileFormat; track item) {
+              <div
+                role="presentation"
+                [ngClass]="{ selected: item.id === selectedFormate }"
+                (click)="selectFileFormate(item.id)"
+              >
+                <h1>
+                  {{ item.name }}
+                </h1>
+              </div>
+            }
+          </div>
+        </div>
+      </ng-container>
+    }
+    @if (isNextStep) {
+      <ng-container>
+        <div class="email_section">
+          <p>Confirm to send report to email id below</p>
+          <div class="single_input">
+            <input
+              type="text"
+              class="input_style"
+              placeholder=" "
+              formControlName="email"
+            />
+            <span class="floating_label_field"
+              >Email <span class="required">*</span></span
+            >
+            <app-control-message
+              [control]="reportForm?.controls?.email"
+            ></app-control-message>
+          </div>
+        </div>
+      </ng-container>
+    }
+  </div>
+  <!-- modal body end -->
+  <div>
+    @if (!isNextStep) {
+      <div class="footer flex justify-end gap-3">
+        <app-common-button-v35
+          width="150px"
+          [disabled]="loadingEmail"
+          [loading]="loadingEmail"
+          [type]="{ style: 'modal', name: 'main' }"
+          text="Send to Email"
+          (clickEvent)="generateReport('email')"
+          [isAddIcon]="!loadingEmail"
+          [icon]="['fas', 'paper-plane-top']"
+        >
+        </app-common-button-v35>
+        <app-common-button-v35
+          width="150px"
+          [disabled]="loadingDownLoad"
+          [loading]="loadingDownLoad"
+          [type]="{ style: 'modal', name: 'main' }"
+          text="Download"
+          (clickEvent)="generateReport('download')"
+          [icon]="['fas', 'download']"
+          [isAddIcon]="!loadingDownLoad"
+        >
+        </app-common-button-v35>
+      </div>
+    }
+    @if (isNextStep) {
+      <div class="flex justify-center">
+        <app-common-button-v35
+          width="180px"
+          [disabled]="loadingEmailSubmit"
+          [loading]="loadingEmailSubmit"
+          [type]="{ style: 'modal', name: 'main' }"
+          text="Continue to Email"
+          (clickEvent)="emailSublit()"
+          [icon]="['fas', 'paper-plane-top']"
+          [isAddIcon]="!loadingEmailSubmit"
+        >
+        </app-common-button-v35>
+      </div>
+    }
+  </div>
+</div>

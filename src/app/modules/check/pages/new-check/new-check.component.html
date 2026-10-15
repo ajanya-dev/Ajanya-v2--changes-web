@@ -1,0 +1,2594 @@
+<section class="main_common_module">
+  <!-- left section -->
+  <div class="main_left_wrapper">
+    <div class="module_top_section">
+      <!-- header area -->
+      <div class="module_main_header">
+        <div class="header_title">
+          <h3 *ngIf="!cloneCheckVal && !thirdParty">
+            {{ !editMode ? "New Payment" : "Update Check" }}
+          </h3>
+          <h3 *ngIf="cloneCheckVal === 'Yes'">Clone Check</h3>
+          <h3 *ngIf="thirdParty">Bank account Mapping</h3>
+        </div>
+
+        <app-demo-video slug="newcheck"></app-demo-video>
+      </div>
+      <!-- body area -->
+      <div class="module_main_body">
+        <!-- Payment options start -->
+        <div
+          class="payment_options"
+          *ngIf="!editMode"
+          appWhiteLabel
+          hiddenIf="isCompassRequirement"
+        >
+          <div class="sub_heading">
+            <p>Pay From</p>
+          </div>
+
+          <div class="flex gap-5 text-sm">
+            <!-- Card -->
+            <div
+              class="rounded border border-common-violet-color text-common-violet-color cursor-pointer border-solid"
+            >
+              <button
+                type="button"
+                class="btn payment-btn card-btn px-[25px] py-[5px]"
+                (click)="navigateToPaymentPage('card')"
+              >
+                <i class="fas fa-credit-card text--common-violet-color"></i>
+                Card
+              </button>
+            </div>
+
+            <!-- Wallet -->
+            <div
+              class="rounded border border-common-violet-color text-common-violet-color cursor-pointer border-solid"
+            >
+              <button
+                type="button"
+                class="btn payment-btn wallet-btn px-[25px] py-[5px]"
+                (click)="navigateToPaymentPage('wallet')"
+              >
+                <i class="fas fa-wallet"></i> Wallet
+              </button>
+            </div>
+
+            <!-- Bank Account -->
+            <div class="rounded border bg-common-violet-color text-white">
+              <button
+                cursor-pointer
+                type="button"
+                class="btn payment-btn wallet-btn px-[25px] py-[5px]"
+              >
+                <i class="fas fa-bank"></i> Bank Account
+              </button>
+            </div>
+
+            <!-- <div
+              *ngFor="let item of paymentProcessLabels"
+              #singleTab
+              id="singleTab_{{ item.value }}"
+              (click)="changePaymentType(singleTab, item)"
+              role="presentation"
+            >
+              <input
+                type="radio"
+                [id]="item.value"
+                [value]="item.value"
+                [(ngModel)]="paymentProcessType"
+                [checked]="true"
+              />
+              <p>{{ item.name }}</p>
+            </div> -->
+          </div>
+        </div>
+        <!-- Payment options end -->
+
+        <form [formGroup]="checkForm">
+          <!-- input group start -->
+          <div class="input_group check_form_intro">
+            <!-- Card drop down start -->
+            <ng-container *ngIf="paymentProcessType === 'card'">
+              <div class="single_input card_wrapper">
+                <ng-select
+                  class="card-select"
+                  id="drop_down_card_select"
+                  placeholder="Select Card"
+                  [(ngModel)]="selectedCreditCardName"
+                  [ngModelOptions]="{ standalone: true }"
+                  #cardNgSelect
+                  (change)="onSelectCreditCard($event)"
+                >
+                  <ng-option
+                    *ngFor="let item of creditCardList"
+                    [value]="item.cardId"
+                  >
+                    <div class="label_wrapper flex justify-start items-center">
+                      <p class="itemname">{{ item.nickName }}</p>
+                      <span></span>
+                    </div>
+                  </ng-option>
+                </ng-select>
+
+                <div
+                  class="add_modal_btn"
+                  (click)="addNewCreditCard()"
+                  role="presentation"
+                >
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="far"
+                    data-icon="plus"
+                    class="svg-inline--fa fa-plus fa-w-12"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 384 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M368 224H224V80c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v144H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h144v144c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V288h144c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+            </ng-container>
+            <!-- Card drop down end -->
+
+            <!-- Wallet list start -->
+            <ng-container *ngIf="paymentProcessType === 'wallet'">
+              <div class="single_input">
+                <app-drop-down-wallet
+                  class="drop_style"
+                  (selectionEvent)="walletDropDownChange($event)"
+                  #walletDropDown
+                  id="new_check_wallet_drop"
+                  [isRequired]="controlErrors.required['wallet']"
+                >
+                </app-drop-down-wallet>
+              </div>
+            </ng-container>
+            <!-- Wallet list end -->
+
+            <!-- Bank account down start -->
+            <ng-container *ngIf="paymentProcessType === 'bank'">
+              <div class="single_input skelton" id="bank_drop_single_input">
+                <app-drop-down-bank
+                  (selectionEvent)="bankDropDownChange($event)"
+                  [displayCreditCardAd]="!editMode"
+                  [showACHBadge]="true"
+                  id="new_check_bank_drop"
+                  [isRequired]="controlErrors.required['bankAccount']"
+                  class="drop_style"
+                  appendTo="ng-select"
+                  [shouldReload]="shouldReloadBankAccounts()"
+                  [payload]="{ forPayment: true }"
+                >
+                </app-drop-down-bank>
+                <div
+                  class="add_modal_btn"
+                  (click)="openBankAccModal()"
+                  role="presentation"
+                >
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="far"
+                    data-icon="plus"
+                    class="svg-inline--fa fa-plus fa-w-12"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 384 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M368 224H224V80c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v144H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h144v144c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V288h144c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+            </ng-container>
+            <!-- Bank account down end -->
+
+            <div
+              [matTooltip]="
+                'Untick Process without ' +
+                ('Payee' | whiteLabel: 'payeeName') +
+                ' checkbox to change ' +
+                ('Payee' | whiteLabel: 'payeeName') +
+                '.'
+              "
+              [matTooltipDisabled]="!isPayeeChecked"
+              class="single_input skelton"
+              id="disable_payee"
+            >
+              <app-drop-down-payee
+                (selectionEvent)="payeeDropDownChange($event)"
+                (clearEvent)="clearPayeeSelection()"
+                class="drop_style"
+                #payeeDropDown
+                id="new_check_payee_drop"
+                [isRequired]="controlErrors.required['payee']"
+              >
+              </app-drop-down-payee>
+              <div
+                class="add_modal_btn"
+                (click)="openPayeeModal()"
+                role="presentation"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  data-prefix="far"
+                  data-icon="plus"
+                  class="svg-inline--fa fa-plus fa-w-12"
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 384 512"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M368 224H224V80c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v144H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h144v144c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V288h144c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <!-- 2nd line -->
+            <div
+              matTooltip="Untick Process without Amount checkbox to change Amount."
+              [matTooltipDisabled]="!isAmountChecked"
+              class="single_input skelton relative"
+              id="disable_amount"
+            >
+              @if (
+                paymentProcessType !== "card" &&
+                creditCardToastShown &&
+                checkForm.controls.checkAmount.value &&
+                !loading &&
+                !loadingOptional &&
+                !editMode
+              ) {
+                <app-pay-by-cc-toast
+                  (onClose)="closePayByCC()"
+                  (onClick)="payByCcClick()"
+                  class="absolute left-[65%] top-1/2 -translate-y-1/2 z-[9999]"
+                />
+              }
+              <app-amount-input
+                class="relative"
+                [maxLength]="15"
+                fieldLabel="Amount"
+                (keyup)="onClearVendorCreditInput('amount')"
+                [attr.disabled]="isAmountChecked ? true : undefined"
+                formControlName="checkAmount"
+                (blurEvent)="autoSelectQBAmount($event)"
+              ></app-amount-input>
+              <div
+                class="add_modal_btn"
+                [ngStyle]="isAmountChecked ? { 'pointer-events': 'none' } : ''"
+                (click)="openCalculator()"
+                role="presentation"
+              >
+                <fa-icon [icon]="['fas', 'calculator']"></fa-icon>
+              </div>
+            </div>
+
+            <div
+              matTooltip="Untick Process without date checkbox to change date."
+              [matTooltipDisabled]="!isDateChecked"
+              class="single_input skelton date-sec no_modal_btn"
+              id="disable_date"
+            >
+              <input
+                type="date"
+                class="input_style"
+                placeholder="Issue date"
+                formControlName="checkDate"
+              />
+              <label class="floating_label_field"
+                >Issue date<span
+                  class="required"
+                  *ngIf="controlErrors.required['checkDate']"
+                  >*</span
+                ></label
+              >
+            </div>
+
+            <div class="single_input skelton">
+              <app-drop-down-category
+                (selectionEvent)="catagoryDropDownChange($event)"
+                id="input_catagory"
+                class="drop_style category-ng"
+              ></app-drop-down-category>
+              <div
+                class="add_modal_btn"
+                (click)="openCategoryModal()"
+                role="presentation"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  data-prefix="far"
+                  data-icon="plus"
+                  class="svg-inline--fa fa-plus fa-w-12"
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 384 512"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M368 224H224V80c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v144H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h144v144c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V288h144c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+
+            <div class="single_input skelton no_modal_btn" id="check_number">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="check_no"
+                maxlength="12"
+                (keypress)="numberOnly($event)"
+              />
+              <label class="floating_label_field"
+                >Check #<span
+                  class="required"
+                  *ngIf="controlErrors.required['check_no']"
+                  >*</span
+                ></label
+              >
+            </div>
+            <!-- 3rd line -->
+            <div class="single_input skelton no_modal_btn">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="acc_no"
+                maxlength="30"
+              />
+              <label class="floating_label_field"
+                >{{ "Payee" | whiteLabel: "payeeName" }} ID</label
+              >
+              <span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 512 512"
+                  [matTooltip]="
+                    'A unique number that identifies your ' +
+                    ('Payee' | whiteLabel: 'payeeName') +
+                    ' in your system'
+                  "
+                >
+                  <path
+                    d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 400c-18 0-32-14-32-32s13.1-32 32-32c17.1 0 32 14 32 32S273.1 400 256 400zM325.1 258L280 286V288c0 13-11 24-24 24S232 301 232 288V272c0-8 4-16 12-21l57-34C308 213 312 206 312 198C312 186 301.1 176 289.1 176h-51.1C225.1 176 216 186 216 198c0 13-11 24-24 24s-24-11-24-24C168 159 199 128 237.1 128h51.1C329 128 360 159 360 198C360 222 347 245 325.1 258z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="single_input skelton no_modal_btn" id="invoiceNo">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="inv_no"
+                maxlength="30"
+              />
+              <label class="floating_label_field"
+                >Invoice Number<span
+                  class="required"
+                  *ngIf="controlErrors.required['inv_no']"
+                  >*</span
+                ></label
+              >
+              <span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 512 512"
+                  [matTooltip]="'• Enter number from your bill/invoice. \n• Leave blank if you don\'t have one. \n• Helps track your payment later.'"
+                >
+                  <path
+                    d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 400c-18 0-32-14-32-32s13.1-32 32-32c17.1 0 32 14 32 32S273.1 400 256 400zM325.1 258L280 286V288c0 13-11 24-24 24S232 301 232 288V272c0-8 4-16 12-21l57-34C308 213 312 206 312 198C312 186 301.1 176 289.1 176h-51.1C225.1 176 216 186 216 198c0 13-11 24-24 24s-24-11-24-24C168 159 199 128 237.1 128h51.1C329 128 360 159 360 198C360 222 347 245 325.1 258z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="single_input skelton no_modal_btn">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                maxlength="155"
+                formControlName="comment"
+              />
+              <label class="floating_label_field">Internal Note</label>
+            </div>
+            <!-- 4th line -->
+            <div class="single_input no_modal_btn skelton">
+              <input
+                type="text"
+                class="input_style memo-input-with-icon"
+                id="inputMemo"
+                placeholder=" "
+                maxlength="155"
+                formControlName="memo"
+              />
+              <label class="floating_label_field"
+                >Memo<span
+                  class="required"
+                  *ngIf="controlErrors.required['memo']"
+                  >*</span
+                ></label
+              >
+          <fa-icon
+          [icon]="faCircleQuestion"
+          [matTooltip]="'• Brief note about this payment.\n• Example: \'Office rent\' or \'Supplies\'.'"
+          [matTooltipPosition]="'right'"
+          [matTooltipShowDelay]="300"
+          class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default tooltip-question-icon"
+        ></fa-icon>
+            </div>
+          </div>
+          <!-- input group end -->
+
+          <!-- process section start -->
+          <div class="proc_btn_area">
+            <p class="main_text">Process without</p>
+
+            <div
+              class="text__checks"
+              [ngClass]="{ disable: paymentProcessType !== 'bank' }"
+            >
+              <div class="checked_wrapper skelton">
+                <input
+                  type="checkbox"
+                  for=""
+                  id="amount"
+                  (change)="checkedAmount()"
+                />
+                <label for="amount">Amount</label>
+              </div>
+              <div class="checked_wrapper skelton">
+                <input type="checkbox" id="sign" (change)="checkedSign()" />
+                <label for="sign">Sign</label>
+              </div>
+              <div class="checked_wrapper skelton">
+                <input type="checkbox" id="payee" (change)="checkedPayee()" />
+                <label for="payee">{{
+                  "Payee" | whiteLabel: "payeeName"
+                }}</label>
+              </div>
+              <div class="checked_wrapper skelton">
+                <input type="checkbox" id="date" (change)="checkedDate()" />
+                <label for="date">Date</label>
+              </div>
+            </div>
+          </div>
+          <!-- process section end -->
+
+          <div
+            class="button_group_wrapper payment_button_intro"
+            [ngClass]="{ disable: paymentProcessType !== 'bank' }"
+          >
+            <div class="left-btn">
+              <!-- Save Button Start -->
+              <button
+                type="button"
+                (click)="onSubmit('save')"
+                [matTooltip]="
+                  !editMode ? 'Save the check.' : 'Update the check.'
+                "
+                [ngStyle]="{
+                  'pointer-events':
+                    loadingOptional || loading ? 'none' : 'inherit'
+                }"
+                class="ocw-btn ocw-btn-dark-green to_disable single_btn skelton"
+              >
+                <ng-container
+                  *ngIf="
+                    !loading || this.buttonType !== 'save';
+                    else saveLoading
+                  "
+                >
+                  <span class="icon">
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      data-prefix="fas"
+                      data-icon="save"
+                      class="svg-inline--fa fa-save fa-w-14"
+                      role="img"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 448 512"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"
+                      ></path>
+                    </svg>
+                  </span>
+                </ng-container>
+
+                <ng-template #saveLoading>
+                  <span class="loadingSpinner"></span>
+                </ng-template>
+
+                <span class="text"
+                  >{{
+                    !editMode
+                      ? !loading || this.buttonType !== "save"
+                        ? "Save"
+                        : "Generating.."
+                      : !loading || this.buttonType !== "save"
+                        ? "Update"
+                        : "Updating.."
+                  }}
+                </span>
+              </button>
+              <!-- Save Button End -->
+
+              <!-- Save Naw New Button Start -->
+              <button
+                type="button"
+                (click)="onSubmit('saveAndNew')"
+                [matTooltip]="
+                  !editMode
+                    ? 'Save and create new check.'
+                    : 'Update and create new check.'
+                "
+                [ngStyle]="{
+                  'pointer-events':
+                    loadingOptional || loading ? 'none' : 'inherit'
+                }"
+                class="ocw-btn ocw-btn-light-green to_disable single_btn skelton"
+              >
+                <ng-container
+                  *ngIf="
+                    !loading || this.buttonType !== 'saveAndNew';
+                    else saveAndNewLoading
+                  "
+                >
+                  <span class="icon">
+                    <svg
+                      *ngIf="!editMode; else editIcon"
+                      aria-hidden="true"
+                      focusable="false"
+                      data-prefix="fas"
+                      data-icon="plus-square"
+                      class="svg-inline--fa fa-plus-square fa-w-14"
+                      role="img"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 448 512"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zm-32 252c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92H92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"
+                      ></path>
+                    </svg>
+                    <ng-template #editIcon>
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="edit"
+                        class="svg-inline--fa fa-edit fa-w-18"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 576 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M402.6 83.2l90.2 90.2c3.8 3.8 3.8 10 0 13.8L274.4 405.6l-92.8 10.3c-12.4 1.4-22.9-9.1-21.5-21.5l10.3-92.8L388.8 83.2c3.8-3.8 10-3.8 13.8 0zm162-22.9l-48.8-48.8c-15.2-15.2-39.9-15.2-55.2 0l-35.4 35.4c-3.8 3.8-3.8 10 0 13.8l90.2 90.2c3.8 3.8 10 3.8 13.8 0l35.4-35.4c15.2-15.3 15.2-40 0-55.2zM384 346.2V448H64V128h229.8c3.2 0 6.2-1.3 8.5-3.5l40-40c7.6-7.6 2.2-20.5-8.5-20.5H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V306.2c0-10.7-12.9-16-20.5-8.5l-40 40c-2.2 2.3-3.5 5.3-3.5 8.5z"
+                        ></path>
+                      </svg>
+                    </ng-template>
+                  </span>
+                </ng-container>
+
+                <ng-template #saveAndNewLoading>
+                  <span class="loadingSpinner"></span>
+                </ng-template>
+
+                <span class="text">
+                  {{
+                    !editMode
+                      ? !loading || this.buttonType !== "saveAndNew"
+                        ? "Save"
+                        : "Generating.."
+                      : !loading || this.buttonType !== "saveAndNew"
+                        ? "Update"
+                        : "Updating.."
+                  }}
+                  {{
+                    !loading || this.buttonType !== "saveAndNew" ? "& New" : ""
+                  }}</span
+                >
+              </button>
+              <!-- Save Naw New Button End -->
+
+              <!-- Print Button Start -->
+              <div
+                class="print_btn_container"
+                [ngClass]="{
+                  expanded_white_paper_btn: expandedWhiteCheckPapperBtn
+                }"
+              >
+                <button
+                  [ngClass]="{ '!rounded': whiteLabelPayeeName === 'vendor' }"
+                  type="button"
+                  (click)="onSubmit('printCheck')"
+                  [matTooltip]="
+                    !editMode
+                      ? 'Save and print the check.'
+                      : 'Update and print the check.'
+                  "
+                  [ngStyle]="{
+                    'pointer-events':
+                      loadingOptional || loading ? 'none' : 'inherit'
+                  }"
+                  class="ocw-btn ocw-btn-dark-blue to_disable single_btn print_btn skelton"
+                >
+                  <span
+                    class="icon"
+                    *ngIf="
+                      !loadingOptional || this.buttonType !== 'printCheck';
+                      else printLoading
+                    "
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      data-prefix="far"
+                      data-icon="print"
+                      class="svg-inline--fa fa-print fa-w-16"
+                      role="img"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 512 512"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M400 264c-13.25 0-24 10.74-24 24 0 13.25 10.75 24 24 24s24-10.75 24-24c0-13.26-10.75-24-24-24zm32-88V99.88c0-12.73-5.06-24.94-14.06-33.94l-51.88-51.88c-9-9-21.21-14.06-33.94-14.06H110.48C93.64 0 80 14.33 80 32v144c-44.18 0-80 35.82-80 80v128c0 8.84 7.16 16 16 16h64v96c0 8.84 7.16 16 16 16h320c8.84 0 16-7.16 16-16v-96h64c8.84 0 16-7.16 16-16V256c0-44.18-35.82-80-80-80zM128 48h192v48c0 8.84 7.16 16 16 16h48v64H128V48zm256 416H128v-64h256v64zm80-112H48v-96c0-17.64 14.36-32 32-32h352c17.64 0 32 14.36 32 32v96z"
+                      ></path>
+                    </svg>
+                  </span>
+
+                  <ng-template #printLoading>
+                    <span class="loadingSpinner"></span>
+                  </ng-template>
+
+                  <span class="text"
+                    >{{
+                      !loadingOptional || this.buttonType !== "printCheck"
+                        ? "Print"
+                        : "Loading..."
+                    }}<span class="mob_hide">{{
+                      !loadingOptional || this.buttonType !== "printCheck"
+                        ? " on Check Paper"
+                        : ""
+                    }}</span>
+                  </span>
+                </button>
+                <div
+                  appWhiteLabel
+                  hiddenIf="isCompassRequirement"
+                  role="presentation"
+                  class="print_btn_expand"
+                  (click)="
+                    expandedWhiteCheckPapperBtn = !expandedWhiteCheckPapperBtn
+                  "
+                >
+                  <p>
+                    <svg
+                      id="expand_icon"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 384 512"
+                    >
+                      <path
+                        d="M360.5 217.5l-152 143.1C203.9 365.8 197.9 368 192 368s-11.88-2.188-16.5-6.562L23.5 217.5C13.87 208.3 13.47 193.1 22.56 183.5C31.69 173.8 46.94 173.5 56.5 182.6L192 310.9l135.5-128.4c9.562-9.094 24.75-8.75 33.94 .9375C370.5 193.1 370.1 208.3 360.5 217.5z"
+                      />
+                    </svg>
+                  </p>
+                </div>
+
+                <!--  Print White check paper start -->
+                <div
+                  class="print_white_papper_btn"
+                  appWhiteLabel
+                  hiddenIf="isCompassRequirement"
+                >
+                  <button
+                    type="button"
+                    (click)="onSubmit('printWhiteCheck')"
+                    [matTooltip]="
+                      !editMode
+                        ? 'Save and print the White check Paper'
+                        : 'Update and White check'
+                    "
+                    [ngStyle]="{
+                      'pointer-events':
+                        loadingOptional || loading ? 'none' : 'auto'
+                    }"
+                    class="ocw-btn ocw-btn-dark-blue to_disable single_btn print_white_btn skelton"
+                  >
+                    <span
+                      class="icon"
+                      *ngIf="
+                        !loadingOptional ||
+                          this.buttonType !== 'printWhiteCheck';
+                        else printLoading
+                      "
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="far"
+                        data-icon="print"
+                        class="svg-inline--fa fa-print fa-w-16"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 512 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M400 264c-13.25 0-24 10.74-24 24 0 13.25 10.75 24 24 24s24-10.75 24-24c0-13.26-10.75-24-24-24zm32-88V99.88c0-12.73-5.06-24.94-14.06-33.94l-51.88-51.88c-9-9-21.21-14.06-33.94-14.06H110.48C93.64 0 80 14.33 80 32v144c-44.18 0-80 35.82-80 80v128c0 8.84 7.16 16 16 16h64v96c0 8.84 7.16 16 16 16h320c8.84 0 16-7.16 16-16v-96h64c8.84 0 16-7.16 16-16V256c0-44.18-35.82-80-80-80zM128 48h192v48c0 8.84 7.16 16 16 16h48v64H128V48zm256 416H128v-64h256v64zm80-112H48v-96c0-17.64 14.36-32 32-32h352c17.64 0 32 14.36 32 32v96z"
+                        ></path>
+                      </svg>
+                    </span>
+
+                    <ng-template #printLoading>
+                      <span class="loadingSpinner"></span>
+                    </ng-template>
+
+                    <span class="text"
+                      >{{
+                        !loadingOptional ||
+                        this.buttonType !== "printWhiteCheck"
+                          ? "Print on White"
+                          : "Loading..."
+                      }}<span class="mob_hide">{{
+                        !loadingOptional ||
+                        this.buttonType !== "printWhiteCheck"
+                          ? " Paper"
+                          : ""
+                      }}</span>
+                    </span>
+                  </button>
+                </div>
+                <!--  Print White check paper end -->
+              </div>
+
+              <!-- Print Button End -->
+              <!-- </div> -->
+
+              <!-- <div class="right-btn"> -->
+              <!-- Mail Button Start -->
+              <button
+                type="button"
+                matTooltip="We print and mail this check via USPS directly to your recipient."
+                (click)="onSubmit('mail')"
+                [ngStyle]="{
+                  'pointer-events':
+                    loadingOptional || loading ? 'none' : 'inherit'
+                }"
+                class="ocw-btn ocw-btn-dark to_disable single_btn skelton"
+              >
+                <span
+                  class="icon"
+                  *ngIf="
+                    !loading || this.buttonType !== 'mail';
+                    else mailLoading
+                  "
+                >
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="fas"
+                    data-icon="envelope"
+                    class="svg-inline--fa fa-envelope fa-w-16"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M502.3 190.8c3.9-3.1 9.7-.2 9.7 4.7V400c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V195.6c0-5 5.7-7.8 9.7-4.7 22.4 17.4 52.1 39.5 154.1 113.6 21.1 15.4 56.7 47.8 92.2 47.6 35.7.3 72-32.8 92.3-47.6 102-74.1 131.6-96.3 154-113.7zM256 320c23.2.4 56.6-29.2 73.4-41.4 132.7-96.3 142.8-104.7 173.4-128.7 5.8-4.5 9.2-11.5 9.2-18.9v-19c0-26.5-21.5-48-48-48H48C21.5 64 0 85.5 0 112v19c0 7.4 3.4 14.3 9.2 18.9 30.6 23.9 40.7 32.4 173.4 128.7 16.8 12.2 50.2 41.8 73.4 41.4z"
+                    ></path>
+                  </svg>
+                </span>
+
+                <ng-template #mailLoading>
+                  <span class="loadingSpinner"></span>
+                </ng-template>
+
+                <span class="text">{{
+                  !loading || this.buttonType !== "mail"
+                    ? "Mail Check"
+                    : "Loading..."
+                }}</span>
+              </button>
+              <!-- Mail Button End -->
+
+              <!-- Email Button Start -->
+              <button
+                type="button"
+                (click)="onSubmit('email')"
+                [disabled]="loading"
+                [matTooltip]="
+                  !editMode
+                    ? 'Save and email check to the ' +
+                      ('Payee' | whiteLabel: 'payeeName') +
+                      '.'
+                    : 'Update and email check to the ' +
+                      ('Payee' | whiteLabel: 'payeeName') +
+                      '.'
+                "
+                [ngStyle]="{
+                  'pointer-events':
+                    loadingOptional || loading ? 'none' : 'inherit'
+                }"
+                class="ocw-btn ocw-btn-dark to_disable single_btn skelton"
+              >
+                <span
+                  class="icon"
+                  *ngIf="
+                    !loading || this.buttonType !== 'email';
+                    else emailLoading
+                  "
+                >
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="far"
+                    data-icon="envelope"
+                    class="svg-inline--fa fa-envelope fa-w-16"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"
+                    ></path>
+                  </svg>
+                </span>
+
+                <ng-template #emailLoading>
+                  <span class="loadingSpinner"></span>
+                </ng-template>
+
+                <span class="text">{{
+                  !loading || buttonType !== "email"
+                    ? "Email Check"
+                    : "Loading..."
+                }}</span>
+              </button>
+              <!-- Email Button End -->
+
+              <!-- ACH Button Start -->
+              <button
+                type="button"
+                (click)="onSubmit('ACH')"
+                matTooltip="Direct deposit to bank account."
+                [ngStyle]="{
+                  'pointer-events':
+                    loadingOptional || loading ? 'none' : 'inherit'
+                }"
+                class="ocw-btn ocw-btn-dark single_btn skelton"
+              >
+                <span
+                  class="icon"
+                  *ngIf="
+                    !loading || this.buttonType !== 'ACH';
+                    else emailLoading
+                  "
+                >
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="fas"
+                    data-icon="university"
+                    class="svg-inline--fa fa-university fa-w-16"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M496 128v16a8 8 0 0 1-8 8h-24v12c0 6.627-5.373 12-12 12H60c-6.627 0-12-5.373-12-12v-12H24a8 8 0 0 1-8-8v-16a8 8 0 0 1 4.941-7.392l232-88a7.996 7.996 0 0 1 6.118 0l232 88A8 8 0 0 1 496 128zm-24 304H40c-13.255 0-24 10.745-24 24v16a8 8 0 0 0 8 8h464a8 8 0 0 0 8-8v-16c0-13.255-10.745-24-24-24zM96 192v192H60c-6.627 0-12 5.373-12 12v20h416v-20c0-6.627-5.373-12-12-12h-36V192h-64v192h-64V192h-64v192h-64V192H96z"
+                    ></path>
+                  </svg>
+                </span>
+
+                <ng-template #achLoading>
+                  <span class="loadingSpinner"></span>
+                </ng-template>
+
+                <span class="text">{{
+                  !loading || buttonType !== "ACH"
+                    ? "Send via ACH"
+                    : "Loading..."
+                }}</span>
+              </button>
+              <!-- ACH Button End -->
+            </div>
+          </div>
+        </form>
+
+        <!-- custom field section start -->
+        <div *ngIf="customFieldFlag" class="custom_field">
+          <p class="main_text">Custom fields</p>
+          <div class="custom_element_group">
+            <div
+              *ngFor="let ele of custom_elements; let i = index"
+              class="custom_elements"
+            >
+              <div class="custom_element single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  maxlength="150"
+                  placeholder=" "
+                  [(ngModel)]="customElementGroup[i][ele.custom_element]"
+                />
+                <span class="floating_label_field">{{
+                  ele.custom_element
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- custom field section end -->
+
+        <div>
+          <div
+            class="add__btn__wrapper not_link mb-2.5"
+            [ngClass]="{ disable: paymentProcessType !== 'bank' }"
+          >
+            <a
+              (click)="showRemittence()"
+              role="presentation"
+              class="add_remittance skelton to_disable"
+              matTooltip="Add remittance to check."
+            >
+              <span> Attach Remittance </span>
+              <span class="icon" *ngIf="isRemittanceSaved">
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  width="13"
+                  data-prefix="fas"
+                  data-icon="check"
+                  class="svg-inline--fa fa-check fa-w-16"
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                  ></path>
+                </svg>
+              </span>
+            </a>
+            <a
+              (click)="openAttachment()"
+              role="presentation"
+              class="skelton to_disable"
+              matTooltip="Add attachment to check."
+            >
+              <span> Add Attachment</span>
+            </a>
+            <a
+              (click)="openComments()"
+              role="presentation"
+              class="skelton to_disable"
+              matTooltip="Add comment to check."
+            >
+              <span> Add Note </span>
+            </a>
+          </div>
+          <hr class="text-input-border-color" />
+          <div class="mt-2.5">
+            <div
+              class="quickbook-export-frame !mb-4"
+              *ngIf="isPushBackExportBtn && isPushBackQBDExportBtn"
+            >
+              <div class="flex">
+                <img
+                  src="../../../../assets/images/integration/qb-logo-stacked.svg"
+                  alt="Quickbooks Export"
+                  class="w-[120px]"
+                />
+                <div class="divider-line"></div>
+                <div class="mt-[14px] flex flex-col">
+                  <span class="font-semibold">
+                    Export Check To QuickBooks
+                  </span>
+                  <span class="font-light text-sm">
+                    To enable this feature, please
+                    <a
+                      (click)="openExportCheckEnableInfo()"
+                      role="presentation"
+                      class="hover:underline font-medium cursor-pointer ancher-tag"
+                      >contact</a
+                    >
+                    our support team.
+                  </span>
+                </div>
+              </div>
+            </div>
+            @if (!isEnableNetSuiteExport && isNetSuiteConnected) {
+              <div class="quickbook-export-frame pb-2">
+                <div class="flex">
+                  <img
+                    src="./../../../../../assets/images/integration/oracle-netsuite.png"
+                    alt="NetSuite Export"
+                    class="w-20"
+                  />
+                  <div class="divider-line"></div>
+                  <div class="mt-[14px] flex flex-col">
+                    <span class="font-semibold">
+                      Export Check To NetSuite
+                    </span>
+                    <span class="font-light text-sm">
+                      To enable this feature, please
+                      <a
+                        role="presentation"
+                        (click)="openExportCheckEnableInfo()"
+                        class="hover:underline font-medium cursor-pointer ancher-tag"
+                        >contact</a
+                      >
+                      our support team.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+            @if (isPushBack || isQBDPushback || isNetSuitePushBackEnable) {
+              <p class="font-semibold">Export check to</p>
+            }
+
+            <div class="flex">
+              <div
+                *ngIf="isPushBack"
+                class="pushBack"
+                [ngClass]="{ disable: paymentProcessType !== 'bank' }"
+              >
+                <input
+                  type="checkbox"
+                  id="Qbopushback"
+                  (click)="showCategory()"
+                  [checked]="isCategory"
+                />
+                <label for="Qbopushback">QuickBooks online</label>
+                <span class="icon" *ngIf="isCategorySaved">
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    width="13"
+                    data-prefix="fas"
+                    data-icon="check"
+                    class="svg-inline--fa fa-check fa-w-16 fill-green-300"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                    ></path>
+                  </svg>
+                </span>
+              </div>
+
+              <div
+                *ngIf="isQBDPushback"
+                class="pushBack"
+                [ngClass]="{ disable: paymentProcessType !== 'bank' }"
+              >
+                <input
+                  type="checkbox"
+                  id="Qbdpushback"
+                  (click)="showExpense()"
+                  [checked]="isExpense"
+                />
+                <label for="Qbdpushback">QuickBooks Desktop</label>
+                <span class="icon" *ngIf="isExpenseSaved">
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    width="13"
+                    data-prefix="fas"
+                    data-icon="check"
+                    class="svg-inline--fa fa-check fa-w-16 fill-green-300"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                    ></path>
+                  </svg>
+                </span>
+              </div>
+              @if (isNetSuitePushBackEnable && isEnableNetSuiteExport && netSuiteBankName) {
+                <div
+                  class="pushBack"
+                  [ngClass]="{ disable: paymentProcessType !== 'bank' }"
+                >
+                  <input
+                    type="checkbox"
+                    id="Qbdpushback"
+                    (click)="showNetSuite()"
+                    [checked]="isShowNetSuite"
+                    [disabled]="isShowNetSuite && isWiygulEnterPrise"
+                  />
+                  <label for="Qbdpushback">NetSuite</label>
+                  @if (isNetSuiteSaved) {
+                    <span class="icon">
+                      <fa-icon [icon]="faTick"></fa-icon>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- process section start -->
+      <div class="remittance__wrapper" *ngIf="isRemittence">
+        <!-- remittance tab start -->
+        <form [formGroup]="checkForm">
+          <div class="remittance__wrapper" *ngIf="isRemittence">
+            <div class="remittance_heading">
+              <h3 class="sub_head">REMITTANCE</h3>
+              <div
+                class="toggle-format"
+                (click)="toggleFormat()"
+                role="presentation"
+              >
+                <span *ngIf="newTableFormatEnabled === 'true'">
+                  Switch to old format <i class="fa-solid fa-right-left"></i
+                ></span>
+                <span *ngIf="newTableFormatEnabled === 'false'">
+                  Switch to new format <i class="fa-solid fa-right-left"></i
+                ></span>
+                <!-- <i _ngcontent-xvi-c510="" class="fa-solid fa-right-left"></i> -->
+              </div>
+            </div>
+            <div class="remittance_table">
+              <table>
+                <thead>
+                  <tr>
+                    <td *ngIf="newTableFormatEnabled === 'true'">
+                      INVOICE DATE
+                    </td>
+                    <td>INVOICE #</td>
+                    <td *ngIf="newTableFormatEnabled === 'false'">ITEM</td>
+                    <td>DESCRIPTION</td>
+                    <td *ngIf="newTableFormatEnabled === 'false'">QUANTITY</td>
+                    <td *ngIf="newTableFormatEnabled === 'false'">UNIT COST</td>
+                    <td *ngIf="newTableFormatEnabled === 'false'">TOTAL</td>
+                    <td *ngIf="newTableFormatEnabled === 'true'">GROSS</td>
+                    <td *ngIf="newTableFormatEnabled === 'true'">DISCOUNT</td>
+                    <td *ngIf="newTableFormatEnabled === 'true'">NET</td>
+                    <td *ngIf="newTableFormatEnabled === 'true'">
+                      THIS PAYMENT
+                    </td>
+                    <td>ACTION</td>
+                  </tr>
+                </thead>
+                <tbody formArrayName="remittance">
+                  <tr
+                    *ngFor="
+                      let data of getRemittanceFormControl()['controls'];
+                      let i = index
+                    "
+                    [formGroupName]="i"
+                  >
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'true'">
+                      <input
+                        class="dateInput"
+                        type="date"
+                        formControlName="invoiceDate"
+                      />
+                    </td>
+                    <td width="8%">
+                      <input type="text" formControlName="invoiceNumber" />
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'false'">
+                      <ng-select
+                        formControlName="itemName"
+                        class="remittence_item"
+                        [ngModelOptions]="{ standalone: true }"
+                        (scrollToEnd)="onScrollItems()"
+                        (keyup)="onSearchItems($event)"
+                        addTag="true"
+                        (change)="OnItemChange($event)"
+                        [items]="remittanceItem"
+                        bindValue="remittanceItem"
+                        bindLabel="remittanceItem"
+                        placeholder="Select items"
+                        appendTo="ng-select"
+                      >
+                      </ng-select>
+                    </td>
+                    <td width="8%">
+                      <input
+                        type="text"
+                        formControlName="itemDescription"
+                        maxlength="45"
+                      />
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'false'">
+                      <input
+                        type="text"
+                        formControlName="itemQuantity"
+                        maxlength="10"
+                        (keypress)="utils.numberOnly($event, 'numeric')"
+                        thousandSeparator=","
+                        (keyup)="total(i)"
+                      />
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'false'">
+                      <app-amount-input
+                        customClass="!border-0"
+                        formControlName="itemUnitCost"
+                        [maxLength]="10"
+                        (keyup)="total(i)"
+                      ></app-amount-input>
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'false'">
+                      <app-amount-input
+                        customClass="!border-0"
+                        formControlName="totalSingleRow"
+                        [isReadOnly]="true"
+                      ></app-amount-input>
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'true'">
+                      <app-amount-input
+                        customClass="!border-0"
+                        formControlName="grossAmount"
+                        [maxLength]="10"
+                        (keyup)="total(i)"
+                      ></app-amount-input>
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'true'">
+                      <app-amount-input
+                        customClass="!border-0"
+                        formControlName="discountAmount"
+                        [maxLength]="10"
+                        (keyup)="total(i)"
+                      ></app-amount-input>
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'true'">
+                      <app-amount-input
+                        customClass="!border-0"
+                        formControlName="netAmount"
+                        [isReadOnly]="true"
+                      ></app-amount-input>
+                    </td>
+                    <td width="8%" *ngIf="newTableFormatEnabled === 'true'">
+                      <app-amount-input
+                        customClass="!border-0"
+                        formControlName="thisPayment"
+                        [maxLength]="10"
+                      ></app-amount-input>
+                    </td>
+                    <td width="5%" (click)="removeSelectedRow(i, '')">
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="trash"
+                        class="trash_btn svg-inline--fa fa-trash fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.72 23.72 0 0 0-21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"
+                        ></path>
+                      </svg>
+                    </td>
+                  </tr>
+                  <tr></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="remi_bottom_area">
+              <div class="top_sec">
+                <div class="left">
+                  <div class="control_table_btn">
+                    <button
+                      class="add_btn ocw-btn"
+                      (click)="addNewRow('')"
+                      [ngClass]="!disableRemitAddBtn && 'dislble_btn'"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="plus"
+                        class="svg-inline--fa fa-plus fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button class="minus_btn ocw-btn" (click)="removeRow('')">
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="minus"
+                        class="svg-inline--fa fa-minus fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M416 208H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h384c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button class="clear_btn" (click)="clearAllRow('')">
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="right">
+                  <div
+                    *ngIf="!isPushBack"
+                    class="insert_area"
+                    (click)="insertRemiValueToCheck()"
+                    role="presentation"
+                  >
+                    <p class="text">Insert to check</p>
+                    <span class="icon">
+                      <div (click)="somthing()" role="presentation">
+                        <svg
+                          aria-hidden="true"
+                          focusable="false"
+                          data-prefix="fas"
+                          data-icon="level-up"
+                          class="svg-inline--fa fa-level-up fa-w-11"
+                          role="img"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 352 512"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M345.04 144l-136-136.901c-9.388-9.465-24.691-9.465-34.079 0L38.96 144c-9.307 9.384-9.277 24.526.069 33.872l22.056 22.056c9.619 9.619 25.301 9.329 34.557-.639L152 138.84V432H68.024a11.996 11.996 0 0 0-8.485 3.515l-56 56C-4.021 499.074 1.333 512 12.024 512H208c13.255 0 24-10.745 24-24V138.84l56.357 60.448c9.256 9.968 24.938 10.258 34.557.639l22.056-22.056c9.346-9.345 9.377-24.487.07-33.871z"
+                          ></path>
+                        </svg>
+                      </div>
+                    </span>
+                  </div>
+                  <div class="total_val">
+                    <p *ngIf="newTableFormatEnabled === 'true'">
+                      Total :{{ paymentTotal | currency }}
+                    </p>
+                    <p *ngIf="newTableFormatEnabled === 'false'">
+                      Total :{{ grandTotal | currency }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="save_remi_btn">
+                <button
+                  type="button"
+                  (click)="onSaveRemittance()"
+                  class="ocw-btn ocw-btn-dark-green"
+                >
+                  <span>SAVE TO REMITTANCE</span>
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="fas"
+                    data-icon="save"
+                    class="svg-inline--fa fa-save fa-w-14"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 448 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <!-- remittance tab end -->
+
+      <div class="remittance__wrapper" *ngIf="isCategory && isPushBack">
+        <p>QuickBooks online</p>
+        <!-- remittance tab start -->
+        <form [formGroup]="checkForm">
+          <div class="remittance__wrapper" *ngIf="isCategory">
+            <div class="w-full flex items-center justify-between">
+              <div class="flex items-center single_input" style="width: 49%">
+                <input
+                  type="text"
+                  class="input_style"
+                  [(ngModel)]="QBCompanyName"
+                  [ngModelOptions]="{ standalone: true }"
+                  id=""
+                  disabled
+                  placeholder=" "
+                  maxlength="155"
+                />
+                <label class="floating_label_field">
+                  QuickBooks Company<span class="required">*</span></label
+                >
+              </div>
+              <div class="flex items-center single_input" style="width: 49%">
+                <input
+                  type="text"
+                  class="input_style"
+                  [(ngModel)]="QBBankAccountName"
+                  [ngModelOptions]="{ standalone: true }"
+                  id=""
+                  disabled
+                  placeholder=" "
+                  maxlength="155"
+                />
+                <label class="floating_label_field"
+                  >QuickBooks Bank Accounts<span class="required"
+                    >*</span
+                  ></label
+                >
+              </div>
+            </div>
+            @if (isLocation) {
+              <div
+                class="flex items-center justify-between mt-5"
+                style="width: 49%"
+              >
+                <ng-select
+                  class="location_item"
+                  placeholder="Select Location"
+                  appendTo="ng-select"
+                  formControlName="locationId"
+                >
+                  @for (item of QBLocation; track item) {
+                    <ng-option [value]="item.id">
+                      {{ item.name }}
+                    </ng-option>
+                  }
+                </ng-select>
+              </div>
+            }
+
+            <h3 class="sub_head ml-1.5 mt-2">CATEGORY DETAILS</h3>
+
+            <div class="remittance_table">
+              <table>
+                <thead>
+                  <tr>
+                    <!-- <td>SL </td> -->
+                    <td>CATEGORY</td>
+                    <td>DESCRIPTION</td>
+                    <td>CUSTOMER</td>
+                    <td>CLASS</td>
+                    <td>AMOUNT</td>
+                    <td>ACTION</td>
+                  </tr>
+                </thead>
+                <tbody formArrayName="categoryDetails">
+                  <tr
+                    *ngFor="
+                      let data of getCategoryFormControl()['controls'];
+                      let i = index
+                    "
+                    [formGroupName]="i"
+                  >
+                    <!-- <td width="10%">{{i+1}}</td> -->
+                    <td width="10%">
+                      <ng-select
+                        class="category_item"
+                        (scrollToEnd)="onScrollCompanyDetails('category-items')"
+                        (keyup)="
+                          onSearchItemsCompanyDetails($event, 'category-items')
+                        "
+                        (change)="OnItemChangeCategoryDetails($event, i)"
+                        bindLabel="name"
+                        placeholder="select Items"
+                        [(ngModel)]="QBCategoryItemName[i]"
+                        [ngModelOptions]="{ standalone: true }"
+                        appendTo="ng-select"
+                      >
+                        <ng-option
+                          *ngFor="let item of QBCategoryItem"
+                          [value]="item.id"
+                        >
+                          {{ item.name }}
+                        </ng-option>
+                      </ng-select>
+                    </td>
+                    <td width="10%">
+                      <input type="text" formControlName="description" />
+                    </td>
+                    <td width="10%">
+                      <div class="single_input">
+                        <ng-select
+                          class="category_item"
+                          (scrollToEnd)="onScrollCompanyDetails('customers')"
+                          (keyup)="
+                            onSearchItemsCompanyDetails($event, 'customers')
+                          "
+                          (change)="OnItemChangeCustomerDetails($event, i)"
+                          bindLabel="name"
+                          [(ngModel)]="QBCustomerItemName[i]"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="select Items"
+                          appendTo="ng-select"
+                        >
+                          <ng-option
+                            *ngFor="let item of QBCustomerItem"
+                            [value]="item.id"
+                          >
+                            {{ item.name }}
+                          </ng-option>
+                        </ng-select>
+                      </div>
+                    </td>
+                    <td width="10%">
+                      <ng-select
+                        class="category_item"
+                        (scrollToEnd)="onScrollCompanyDetails('classes')"
+                        (keyup)="onSearchItemsCompanyDetails($event, 'classes')"
+                        (change)="OnItemChangeClassDetails($event, i)"
+                        bindLabel="name"
+                        [(ngModel)]="QBClassItemName[i]"
+                        [ngModelOptions]="{ standalone: true }"
+                        placeholder="select Items"
+                        appendTo="ng-select"
+                      >
+                        <ng-option
+                          *ngFor="let item of QBClassItem"
+                          [value]="item.id"
+                        >
+                          {{ item.name }}
+                        </ng-option>
+                      </ng-select>
+                    </td>
+                    <td width="10%">
+                      <input
+                        type="text"
+                        formControlName="amount"
+                        maxlength="10"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        separatorLimit="10000000"
+                        [allowNegativeNumbers]="true"
+                        (keyup)="CategoryTotal()"
+                        (input)="validateInput($event)"
+                      />
+                    </td>
+                    <td width="10%" (click)="removeSelectedRow(i, 'category')">
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="trash"
+                        class="trash_btn svg-inline--fa fa-trash fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.72 23.72 0 0 0-21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"
+                        ></path>
+                      </svg>
+                    </td>
+                  </tr>
+                  <tr></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="remi_bottom_area">
+              <div class="top_sec">
+                <div class="left">
+                  <div class="control_table_btn">
+                    <button
+                      class="add_btn ocw-btn"
+                      (click)="addNewRow('category')"
+                      [ngClass]="!disableCategoryAddBtn && 'dislble_btn'"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="plus"
+                        class="svg-inline--fa fa-plus fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button
+                      class="minus_btn ocw-btn"
+                      (click)="removeRow('category')"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="minus"
+                        class="svg-inline--fa fa-minus fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M416 208H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h384c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button class="clear_btn" (click)="clearAllRow('category')">
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="right">
+                  <div class="total_val">
+                    <p>Total :{{ categoryTotal | currency }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="save_remi_btn">
+                <button
+                  type="button"
+                  (click)="onSaveCategory()"
+                  class="ocw-btn ocw-btn-dark-green"
+                >
+                  <span>SAVE DETAILS</span>
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="fas"
+                    data-icon="save"
+                    class="svg-inline--fa fa-save fa-w-14"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 448 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="remittance__wrapper" *ngIf="isExpense && isQBDPushback">
+        <p>QuickBooks Desktop</p>
+        <!-- remittance tab start -->
+        <form [formGroup]="checkForm">
+          <div class="remittance__wrapper" *ngIf="isExpense">
+            <div class="w-full flex items-center justify-between">
+              <div class="flex items-center single_input" style="width: 49%">
+                <!-- <ng-select
+                  class="customer_list"
+                  (scrollToEnd)="onScrollItemsQB()"
+                  (keyup)="onSearchItemsQB($event )"
+                  (change)="OnItemChangeQB($event )"
+                  bindLabel="companyName"
+                  [ngModelOptions]="{standalone: true}"
+                  [(ngModel)]="QBCompanyName"
+                  (clear)="clear('')"
+                  placeholder="Select QuickBooks Company"
+                  appendTo="ng-select">
+                <ng-option *ngFor="let item of companies" [value]="item.realmId">
+                  {{item.companyName}}
+                </ng-option>
+              </ng-select> -->
+                <input
+                  type="text"
+                  class="input_style"
+                  [(ngModel)]="QBDCompanyName"
+                  [ngModelOptions]="{ standalone: true }"
+                  id=""
+                  disabled
+                  placeholder=" "
+                  maxlength="155"
+                />
+                <label class="floating_label_field"
+                  >QuickBooks Company<span class="required">*</span></label
+                >
+                <span class="ml-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="Category_svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 512 512"
+                    matTooltip="Select a bank account mapped with QuickBooks to list the companies"
+                  >
+                    <path
+                      d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 400c-18 0-32-14-32-32s13.1-32 32-32c17.1 0 32 14 32 32S273.1 400 256 400zM325.1 258L280 286V288c0 13-11 24-24 24S232 301 232 288V272c0-8 4-16 12-21l57-34C308 213 312 206 312 198C312 186 301.1 176 289.1 176h-51.1C225.1 176 216 186 216 198c0 13-11 24-24 24s-24-11-24-24C168 159 199 128 237.1 128h51.1C329 128 360 159 360 198C360 222 347 245 325.1 258z"
+                    />
+                  </svg>
+                </span>
+              </div>
+              <div class="flex items-center single_input" style="width: 49%">
+                <!-- <ng-select
+              class="customer_list"
+              (scrollToEnd)="onScrollItemsQBBank()"
+              (keyup)="onSearchItemsQBBank($event )"
+              (change)="OnItemChangeQBBank($event )"
+              bindLabel="name" (clear)="clear('bank')"
+              [(ngModel)]="QBBankAccountName"
+              [ngModelOptions]="{standalone: true}"
+              placeholder="Select QuickBooks Bank Accounts"
+              appendTo="ng-select">
+            <ng-option *ngFor="let item of QBBankAccounts" [value]="item.id">
+              {{item.name}}
+            </ng-option>
+          </ng-select> -->
+                <input
+                  type="text"
+                  class="input_style"
+                  [(ngModel)]="QBDBankAccountName"
+                  [ngModelOptions]="{ standalone: true }"
+                  id=""
+                  disabled
+                  placeholder=" "
+                  maxlength="155"
+                />
+                <label class="floating_label_field"
+                  >QuickBooks Bank Account<span class="required">*</span></label
+                >
+                <span class="ml-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 512 512"
+                    class="Category_svg"
+                    matTooltip="Choose the bank account listed from your QuickBooks account."
+                  >
+                    <path
+                      d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 400c-18 0-32-14-32-32s13.1-32 32-32c17.1 0 32 14 32 32S273.1 400 256 400zM325.1 258L280 286V288c0 13-11 24-24 24S232 301 232 288V272c0-8 4-16 12-21l57-34C308 213 312 206 312 198C312 186 301.1 176 289.1 176h-51.1C225.1 176 216 186 216 198c0 13-11 24-24 24s-24-11-24-24C168 159 199 128 237.1 128h51.1C329 128 360 159 360 198C360 222 347 245 325.1 258z"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <h3 class="sub_head ml-1.5 mt-1.5">EXPENSE DETAILS</h3>
+
+            <div class="remittance_table">
+              <table class="expense">
+                <thead>
+                  <tr>
+                    <!-- <td>SL </td> -->
+                    <td>EXPENSE</td>
+                    <td>DESCRIPTION</td>
+                    <td>CUSTOMER</td>
+                    <td>CLASS</td>
+                    <td>AMOUNT</td>
+                    <td>ACTION</td>
+                  </tr>
+                </thead>
+                <tbody formArrayName="expenseDetails">
+                  <tr
+                    *ngFor="
+                      let data of getExpenseFormControl()['controls'];
+                      let i = index
+                    "
+                    [formGroupName]="i"
+                  >
+                    <!-- <td width="10%">{{i+1}}</td> -->
+                    <td width="10%">
+                      <ng-select
+                        class="category_item"
+                        (scrollToEnd)="
+                          onQBDScrollCompanyDetails('expense-items')
+                        "
+                        (keyup)="
+                          onQBDSearchItemsCompanyDetails(
+                            $event,
+                            'expense-items'
+                          )
+                        "
+                        (change)="OnQBDItemChangeExpenseDetails($event, i)"
+                        bindLabel="name"
+                        placeholder="select Items"
+                        [(ngModel)]="QBDExpenseItemName[i]"
+                        [ngModelOptions]="{ standalone: true }"
+                        appendTo="ng-select"
+                      >
+                        <ng-option
+                          *ngFor="let item of QBDExpenseItem"
+                          [value]="item.id"
+                        >
+                          {{ item.name }}
+                        </ng-option>
+                      </ng-select>
+                    </td>
+                    <td width="10%">
+                      <input type="text" formControlName="description" />
+                    </td>
+                    <td width="10%">
+                      <div class="single_input">
+                        <ng-select
+                          class="category_item"
+                          (scrollToEnd)="onQBDScrollCompanyDetails('customers')"
+                          (keyup)="
+                            onQBDSearchItemsCompanyDetails($event, 'customers')
+                          "
+                          (change)="OnQBDItemChangeCustomerDetails($event, i)"
+                          bindLabel="name"
+                          [(ngModel)]="QBDCustomerItemName[i]"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="select Items"
+                          appendTo="ng-select"
+                        >
+                          <ng-option
+                            *ngFor="let item of QBDcustomersItem"
+                            [value]="item.id"
+                          >
+                            {{ item.name }}
+                          </ng-option>
+                        </ng-select>
+                      </div>
+                    </td>
+                    <td width="10%">
+                      <ng-select
+                        class="category_item"
+                        (scrollToEnd)="onQBDScrollCompanyDetails('classes')"
+                        (keyup)="
+                          onQBDSearchItemsCompanyDetails($event, 'classes')
+                        "
+                        (change)="OnQBDItemChangeClassDetails($event, i)"
+                        bindLabel="name"
+                        [(ngModel)]="QBDClassItemName[i]"
+                        [ngModelOptions]="{ standalone: true }"
+                        placeholder="select Items"
+                        appendTo="ng-select"
+                      >
+                        <ng-option
+                          *ngFor="let item of QBDClassItem"
+                          [value]="item.id"
+                        >
+                          {{ item.name }}
+                        </ng-option>
+                      </ng-select>
+                    </td>
+                    <td width="10%">
+                      <input
+                        type="text"
+                        formControlName="amount"
+                        maxlength="10"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        (keypress)="utils.numberOnly($event, 'decimal')"
+                        (keyup)="ExpenseTotal()"
+                      />
+                    </td>
+                    <td width="10%" (click)="removeSelectedRow(i, 'expense')">
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="trash"
+                        class="trash_btn svg-inline--fa fa-trash fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.72 23.72 0 0 0-21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"
+                        ></path>
+                      </svg>
+                    </td>
+                  </tr>
+                  <tr></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="remi_bottom_area">
+              <div class="top_sec">
+                <div class="left">
+                  <div class="control_table_btn">
+                    <button
+                      class="add_btn ocw-btn"
+                      (click)="addNewRow('expense')"
+                      [ngClass]="!disableCategoryAddBtn && 'dislble_btn'"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="plus"
+                        class="svg-inline--fa fa-plus fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button
+                      class="minus_btn ocw-btn"
+                      (click)="removeRow('expense')"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        data-prefix="fas"
+                        data-icon="minus"
+                        class="svg-inline--fa fa-minus fa-w-14"
+                        role="img"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M416 208H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h384c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button class="clear_btn" (click)="clearAllRow('expense')">
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="right">
+                  <!-- <div *ngIf="!isPushBack" class="insert_area" (click)="insertRemiValueToCheck()">
+                    <p class="text">Insert to check</p>
+                    <span class="icon">
+                      <div (click)="somthing()">
+                        <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="level-up"
+                          class="svg-inline--fa fa-level-up fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 352 512">
+                          <path fill="currentColor"
+                            d="M345.04 144l-136-136.901c-9.388-9.465-24.691-9.465-34.079 0L38.96 144c-9.307 9.384-9.277 24.526.069 33.872l22.056 22.056c9.619 9.619 25.301 9.329 34.557-.639L152 138.84V432H68.024a11.996 11.996 0 0 0-8.485 3.515l-56 56C-4.021 499.074 1.333 512 12.024 512H208c13.255 0 24-10.745 24-24V138.84l56.357 60.448c9.256 9.968 24.938 10.258 34.557.639l22.056-22.056c9.346-9.345 9.377-24.487.07-33.871z">
+                          </path>
+                        </svg>
+                      </div>
+                    </span>
+                  </div> -->
+                  <div class="total_val">
+                    <p>Total :{{ expenseTotal | currency }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="save_remi_btn">
+                <button
+                  type="button"
+                  (click)="onSaveExpense()"
+                  class="ocw-btn ocw-btn-dark-green"
+                >
+                  <span>SAVE DETAILS</span>
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="fas"
+                    data-icon="save"
+                    class="svg-inline--fa fa-save fa-w-14"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 448 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      @if (isNetSuitePushBackEnable && isShowNetSuite && netSuiteBankName) {
+        <div class="remittance__wrapper">
+          <p>NetSuite</p>
+          <form [formGroup]="checkForm">
+            @if (isShowNetSuite) {
+              <div class="remittance__wrapper">
+                <div class="w-full flex items-center justify-between">
+                  <div
+                    class="flex items-center single_input"
+                    style="width: 49%"
+                  >
+                    <input
+                      type="text"
+                      class="input_style"
+                      [(ngModel)]="netSuiteBankName"
+                      [ngModelOptions]="{ standalone: true }"
+                      id=""
+                      disabled
+                      placeholder=" "
+                      maxlength="155"
+                    />
+                    <label class="floating_label_field" for="account"
+                      >NetSuite Bank Account<span class="required"
+                        >*</span
+                      ></label
+                    >
+                    <span class="ml-2">
+                      <fa-icon
+                        matTooltip="Choose the bank account listed from your NetSuite account."
+                        [icon]="faCircle"
+                      ></fa-icon>
+                    </span>
+                  </div>
+                </div>
+                <h3 class="sub_head ml-1.5 mt-1.5">EXPENSE DETAILS</h3>
+
+                <div class="remittance_table">
+                  <table class="expense">
+                    <thead>
+                      <tr>
+                        <td>EXPENSE</td>
+                        <td>DESCRIPTION</td>
+                        <td>CUSTOMER</td>
+                        <td>CLASS</td>
+                        <td>LOCATION</td>
+                        <td>AMOUNT</td>
+                        <td>ACTION</td>
+                      </tr>
+                    </thead>
+                    <tbody formArrayName="netsuiteExpenseDetails">
+                      @for (
+                        data of getNetSuiteFormControl()["controls"];
+                        track data;
+                        let i = $index
+                      ) {
+                        <tr [formGroupName]="i">
+                          <td width="10%">
+                            <ng-select
+                              [ngClass]="{'skelton':netSuiteExpenseLoading()}"
+                              class="category_item"
+                              (scrollToEnd)="
+                                onScrollNetSuiteDetails('expense-accounts')
+                              "
+                              (keyup)="
+                                onNetSuiteDetails(
+                                  'expense-accounts',
+                                  $event?.target?.value
+                                )
+                              "
+                              bindLabel="name"
+                              placeholder="select Items"
+                              appendTo="ng-select"
+                              formControlName="expenseId"
+                            >
+                              @for (item of netSuiteExpense; track item?.id) {
+                                <ng-option [value]="item.id">
+                                  {{ item.name }}
+                                </ng-option>
+                              }
+                            </ng-select>
+                          </td>
+                          <td width="10%">
+                            <input type="text" formControlName="description" />
+                          </td>
+                          <td width="10%">
+                            <div class="single_input">
+                              <ng-select
+                                class="category_item"
+                                (scrollToEnd)="
+                                  onScrollNetSuiteDetails('payees')
+                                "
+                                (keyup)="
+                                  onNetSuiteDetails(
+                                    'payees',
+                                    $event?.target?.value
+                                  )
+                                "
+                                bindLabel="name"
+                                formControlName="customerId"
+                                placeholder="select Items"
+                                appendTo="ng-select"
+                              >
+                                @for (item of netSuitePayee; track item) {
+                                  <ng-option [value]="item.id">
+                                    {{ item.name }}
+                                  </ng-option>
+                                }
+                              </ng-select>
+                            </div>
+                          </td>
+                          <td width="10%">
+                            <ng-select
+                              class="category_item"
+                              (scrollToEnd)="onScrollNetSuiteDetails('classes')"
+                              (keyup)="
+                                onNetSuiteDetails(
+                                  'classes',
+                                  $event?.target?.value
+                                )
+                              "
+                              bindLabel="name"
+                              placeholder="select Items"
+                              appendTo="ng-select"
+                              formControlName="classId"
+                            >
+                              @for (item of netSuiteClass; track item) {
+                                <ng-option [value]="item.id">
+                                  {{ item.name }}
+                                </ng-option>
+                              }
+                            </ng-select>
+                          </td>
+                          <td width="10%">
+                            <ng-select
+                              class="category_item"
+                              bindLabel="name"
+                              placeholder="Select Location"
+                              appendTo="ng-select"
+                              formControlName="locationId"
+                            >
+                              @for (item of netSuiteLocations; track item) {
+                                <ng-option [value]="item.id">
+                                  {{ item.name }}
+                                </ng-option>
+                              }
+                            </ng-select>
+                          </td>
+                          <td width="10%">
+                            <input
+                              type="text"
+                              formControlName="amount"
+                              maxlength="10"
+                              mask="separator.2"
+                              thousandSeparator=","
+                              (keypress)="utils.numberOnly($event, 'decimal')"
+                              (keyup)="updateNetSuiteExpenseTotal()"
+                            />
+                          </td>
+                          <td width="10%">
+                            <div>
+                              <fa-icon
+                                (click)="removeSelectedRow(i, 'netsuite')"
+                                class="cursor-pointer text-common-red-color"
+                                [icon]="faTrash"
+                              ></fa-icon>
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                      <tr></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="remi_bottom_area">
+                  <div class="top_sec">
+                    <div class="left">
+                      <div class="control_table_btn">
+                        <button
+                          class="add_btn ocw-btn"
+                          (click)="addNewRow('netsuite')"
+                          [ngClass]="!disableCategoryAddBtn && 'dislble_btn'"
+                        >
+                          <fa-icon class="text-white" [icon]="faPlus"></fa-icon>
+                        </button>
+                        <button
+                          class="minus_btn ocw-btn"
+                          (click)="removeRow('netsuite')"
+                        >
+                          <fa-icon
+                            class="text-white"
+                            [icon]="faMinus"
+                          ></fa-icon>
+                        </button>
+                        <button
+                          class="clear_btn"
+                          (click)="clearAllRow('netsuite')"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="right">
+                      <div class="total_val">
+                        <p>Total :{{ netSuiteTotal | currency }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="save_remi_btn">
+                    <button
+                      type="button"
+                      (click)="netSuiteSaveExpense()"
+                      class="ocw-btn ocw-btn-dark-green"
+                    >
+                      <span>SAVE DETAILS</span>
+                      <fa-icon [icon]="faSave" class="text-white"></fa-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </form>
+        </div>
+      }
+    </div>
+
+    <!-- remittance tab end -->
+    <div class="module_bottom_section">
+      <p class="sub_head">Quick Links</p>
+
+      <div class="add__btn__wrapper">
+        <a
+          (click)="openBlankCheckModal()"
+          role="presentation"
+          class="skelton"
+          matTooltip="Create multiple blank checks."
+        >
+          <span>Blank Check</span>
+        </a>
+        <a
+          (click)="goToMultipleCheck()"
+          role="presentation"
+          class="skelton"
+          matTooltip="Create multiple checks."
+        >
+          <span>Multiple Check</span>
+        </a>
+        <a
+          (click)="goToGroupCheck()"
+          role="presentation"
+          class="skelton"
+          matTooltip="Create group check in single click."
+        >
+          <span>Group Check</span>
+        </a>
+        <a
+          (click)="openImportCheckModal()"
+          role="presentation"
+          class="skelton"
+          matTooltip="Import from excel/Csv."
+        >
+          <span>Import Check</span>
+        </a>
+        <a
+          class="skelton"
+          matTooltip="Open Deposit slip list."
+          routerLink="/manage/depositslips"
+        >
+          <span>Deposit Slip</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- right section -->
+  <div class="main_right_section">
+    <!-- main header -->
+    <!-- Payee Details Section -->
+    <div class="module_top_section">
+      <div class="main__header">
+        <div class="left">
+          <p class="sub_head">
+            {{ "Payee" | whiteLabel: "payeeName" }} Details
+          </p>
+        </div>
+        <div class="right">
+          <a
+            class="edit_head"
+            (click)="openPayeeModal(selectedPayee?.id, true)"
+            role="presentation"
+            *ngIf="payeeId"
+            >Edit</a
+          >
+        </div>
+      </div>
+
+      <div class="module_body">
+        <div class="address__wrapper skelton">
+          <h6>
+            {{ selectedPayee?.name != null ? selectedPayee?.name : "" + " " }}
+          </h6>
+          <p>
+            {{
+              selectedPayee?.nickName != null
+                ? selectedPayee?.nickName
+                : "" + " "
+            }}
+          </p>
+          <p>
+            {{
+              selectedPayee?.addressLine1 != null
+                ? selectedPayee?.addressLine1
+                : "" + ""
+            }}
+          </p>
+          <p>
+            {{
+              selectedPayee?.addressLine2 != null
+                ? selectedPayee?.addressLine2
+                : "" + ""
+            }}
+          </p>
+          <p>
+            {{ selectedPayee?.city != null ? selectedPayee?.city : "" + "" }}
+            {{ selectedPayee?.state != null ? selectedPayee?.state : "" + "" }}
+            {{ selectedPayee?.zip != null ? selectedPayee?.zip : "" }}
+          </p>
+          <p>
+            {{
+              selectedPayee?.country != null ? selectedPayee?.country : "" + ""
+            }}
+          </p>
+          <p>{{ payeePhone }}</p>
+          <p>{{ selectedPayee?.email != null ? selectedPayee?.email : "" }}</p>
+        </div>
+
+        <!-- payee bank drop down start -->
+        <ng-container *ngIf="paymentProcessType === 'wallet' && payeeId">
+          <div class="payee_bank_container">
+            <p class="sub_head">Bank Acounts</p>
+            <div class="single_input flex">
+              <app-drop-down-payee-bank
+                class="w-full"
+                [data]="payeeBankDetails"
+                [payeeDetails]="payeeBankDetails"
+                [selectedPayeeName]="defaultCDPayeeBank?.bankName"
+                (selectionChange)="getSelectedPayeeBank($event)"
+              >
+              </app-drop-down-payee-bank>
+              <div
+                class="add_modal_btn"
+                *ngIf="(selectedPayeeBank | json) !== '{}'; else addPayeeBank"
+                (click)="editBankAccountToPayeeModal()"
+                role="presentation"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                  <path
+                    d="M490.3 40.4C512.2 62.27 512.2 97.73 490.3 119.6L460.3 149.7L362.3 51.72L392.4 21.66C414.3-.2135 449.7-.2135 471.6 21.66L490.3 40.4zM172.4 241.7L339.7 74.34L437.7 172.3L270.3 339.6C264.2 345.8 256.7 350.4 248.4 353.2L159.6 382.8C150.1 385.6 141.5 383.4 135 376.1C128.6 370.5 126.4 361 129.2 352.4L158.8 263.6C161.6 255.3 166.2 247.8 172.4 241.7V241.7zM192 63.1C209.7 63.1 224 78.33 224 95.1C224 113.7 209.7 127.1 192 127.1H96C78.33 127.1 64 142.3 64 159.1V416C64 433.7 78.33 448 96 448H352C369.7 448 384 433.7 384 416V319.1C384 302.3 398.3 287.1 416 287.1C433.7 287.1 448 302.3 448 319.1V416C448 469 405 512 352 512H96C42.98 512 0 469 0 416V159.1C0 106.1 42.98 63.1 96 63.1H192z"
+                  />
+                </svg>
+              </div>
+              <ng-template #addPayeeBank>
+                <div
+                  class="add_modal_btn"
+                  (click)="addBankAccountToPayeeModal()"
+                  role="presentation"
+                >
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="far"
+                    data-icon="plus"
+                    class="svg-inline--fa fa-plus fa-w-12"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 384 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M368 224H224V80c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v144H16c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h144v144c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V288h144c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16z"
+                    ></path>
+                  </svg>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </ng-container>
+        <!-- payee bank drop down end -->
+      </div>
+    </div>
+    <!-- END-->
+
+    <!-- Vendor Credit Section -->
+    <ng-container *ngIf="isVendorCreditApplied != 1">
+      <div
+        class="middle_section module_bottom_section"
+        *ngIf="payeeVendorCredit && payeeVendorCredit != 0"
+      >
+        <div class="main__header">
+          <div class="left">
+            <p class="sub_head">Vendor Credit</p>
+          </div>
+        </div>
+
+        <div class="vendor_credit">
+          <div class="vendor_credit_top_span">
+            <p>
+              Vendor Credit &nbsp;<span
+                >${{ payeeVendorCredit ? payeeVendorCredit : "0.00" }}</span
+              >
+              Available
+            </p>
+          </div>
+
+          <div class="vendor_credit_input_wrapper">
+            <div class="single_input">
+              <input
+                type="text"
+                maxlength="10"
+                (keypress)="utils.numberOnly($event, 'decimal')"
+                [disabled]="getPayeeVendorCredit != 0"
+                mask="separator.2"
+                thousandSeparator=","
+                (keyup)="onClearVendorCreditInput('vendorCredit')"
+                id="vendorCreditInput"
+                class="input_style"
+                placeholder="Enter Credit $0.00"
+              />
+            </div>
+            <div
+              class="vendor_credit_add_btn ocw-btn ocw-btn-dark-green"
+              (click)="onAddVendorCredit()"
+              role="presentation"
+              [ngStyle]="{
+                'pointer-events': getPayeeVendorCredit != 0 ? 'none' : 'auto'
+              }"
+            >
+              <p>Apply</p>
+            </div>
+          </div>
+          <p class="vendor_credit_error_msg" id="vendorCredit_err"></p>
+        </div>
+      </div>
+    </ng-container>
+    <!-- END-->
+
+    <!-- Payee Summary Section -->
+    <div class="module_bottom_section">
+      <div class="main__header">
+        <div class="left">
+          <p class="sub_head">
+            {{ "Payee" | whiteLabel: "payeeName" }} Summary
+          </p>
+        </div>
+        <div class="right">
+          <a
+            class="edit_head"
+            (click)="onShowAllPayee()"
+            *ngIf="payeeId"
+            role="presentation"
+            >Show All</a
+          >
+        </div>
+      </div>
+
+      <div class="payee_summary_list ocw_table_wrapper">
+        <table class="skelton ocw-table ocw-table-striped">
+          <tbody>
+            <tr>
+              <td>Total Paid This Month</td>
+              <td>{{ selectedPayeeSummary?.other?.total_paid_in_month }}</td>
+            </tr>
+            <tr>
+              <td>Total Paid This Year</td>
+              <td>{{ selectedPayeeSummary?.other?.total_paid_in_year }}</td>
+            </tr>
+            <tr>
+              <td>Total Paid (All - Time)</td>
+              <td>{{ selectedPayeeSummary?.other?.total_paid }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="payee_summary_table ocw_table_wrapper">
+        <table
+          class="ocw-table ocw-table-base mt-4"
+          *ngIf="selectedPayeeSummary?.data != null"
+        >
+          <thead>
+            <tr>
+              <td>Date</td>
+              <td>Memo</td>
+              <td>Amount</td>
+              <td>A/C</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of selectedPayeeSummary?.data | slice: 0 : 6">
+              <td>{{ item.date }}</td>
+              <td>{{ item.memo }}</td>
+              <td (click)="onCheckView(item.id)">{{ item.amount }}</td>
+              <td>{{ item.account }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- END -->
+
+    <!--Data From Thrid Party Section -->
+    <div class="module_bottom_section" *ngIf="thirdParty">
+      <div class="main__header">
+        <div class="left">
+          <p class="sub_head">Data From Third Party Software</p>
+        </div>
+      </div>
+
+      <div class="quickBookData ocw_table_wrapper">
+        <table class="skelton ocw-table ocw-table-striped">
+          <tbody>
+            <tr>
+              <td>Account Name</td>
+              <td>{{ quickBookImportedData?.accountName }}</td>
+            </tr>
+            <tr>
+              <td>Payee Name</td>
+              <td>{{ quickBookImportedData?.payeeName }}</td>
+            </tr>
+            <tr>
+              <td>Payee Address</td>
+              <td>
+                {{ quickBookImportedData?.payeeAddressLine1 }}
+                {{ quickBookImportedData?.payeeAddressLine2 }}
+              </td>
+            </tr>
+            <tr>
+              <td>Trans Id</td>
+              <td>{{ quickBookImportedData?.transId }}</td>
+            </tr>
+
+            <tr>
+              <td>Amount</td>
+              <td>{{ quickBookImportedData?.Amount }}</td>
+            </tr>
+
+            <tr>
+              <td>Memo</td>
+              <td>{{ quickBookImportedData?.memo }}</td>
+            </tr>
+
+            <tr>
+              <td>Date</td>
+              <td>{{ quickBookImportedData?.date | date: "MM/dd/YYYY" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!--END-->
+  </div>
+</section>

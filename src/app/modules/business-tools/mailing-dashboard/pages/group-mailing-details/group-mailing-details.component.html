@@ -1,0 +1,289 @@
+<div class="w-full flex pb-3 justify-center bg-main-background-color rounded-t-md font-roboto overflow-x-auto">
+  <div class="w-10/12 xl:w-8/12 text-main-text-color mt-2">
+    
+    <!-- Main Content Wrapper with Support Options -->
+    <div class="wrapper p-3 rounded-xl border border-secondary-background-color mt-5">
+      
+      <!-- Page Header -->
+      <div class="pt-5 pb-5 rounded-lg pl-5" [ngClass]="{'skelton h-[120px]': loading}">
+        @if(!loading) {
+        <div class="flex items-center gap-4 mb-3">
+          <app-ocw-back-button
+            (click)="goBack()"
+          ></app-ocw-back-button>
+          <h1 class="font-semibold text-lg">
+            Group Mailing Details - {{ groupMailingData?.group_name || groupMailingId }}
+          </h1>
+        </div>
+        <span class="text-sm font-medium mt-5">View and manage your group mailing information</span>
+        }
+      </div>
+
+      <div class="relative flex gap-3 justify-center">
+        
+        <!-- Main Content Area -->
+        <div class="rounded-lg p-3 w-full mb-5">
+          <!-- Summary Info Card -->
+          <div class="bg-secondary-background-color rounded-lg p-5 shadow-sm mb-5" [ngClass]="{'skelton h-[200px]': loading}">
+            @if(!loading && groupMailingData) {
+            <!-- Main Details Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div class="bg-main-background-color p-3 rounded shadow-sm">
+                <div class="block text-xs font-medium text-secondary-text-color uppercase tracking-wide">Total Group Items</div>
+                <span class="text-lg font-semibold text-main-text-color">{{ groupMailingData.count_group_items }}</span>
+              </div>
+              <div class="bg-main-background-color p-3 rounded shadow-sm">
+                <div class="block text-xs font-medium text-secondary-text-color uppercase tracking-wide">Total Attachments</div>
+                <span class="text-lg font-semibold text-main-text-color">{{ groupMailingData.count_attachment }}</span>
+              </div>
+              <div class="bg-main-background-color p-3 rounded shadow-sm">
+                <div class="block text-xs font-medium text-secondary-text-color uppercase tracking-wide">Envelope Type</div>
+                <span class="text-lg font-semibold text-main-text-color">{{ groupMailingData.is_individual_envelope === 1 ? 'Individual' : 'Bulk' }}</span>
+              </div>
+              <div class="bg-main-background-color p-3 rounded shadow-sm">
+                <div class="block text-xs font-medium text-secondary-text-color uppercase tracking-wide">Shipping Type</div>
+                <span class="text-lg font-semibold text-main-text-color">{{ groupMailingData.shipment_name || 'N/A' }}</span>
+              </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
+              <div>
+                <div class="block font-medium text-main-text-color mb-2">From Address:</div>
+                <div class="bg-main-background-color p-3 rounded shadow-sm">
+                  <div class="text-main-text-color" [innerHTML]="formatAddress(groupMailingData.sender_info?.sender)"></div>
+                </div>
+              </div>
+              <div>
+                <div class="block font-medium text-main-text-color mb-2">To Address:</div>
+                <div class="bg-main-background-color p-3 rounded shadow-sm">
+                  <div class="text-main-text-color" [innerHTML]="formatAddress(groupMailingData.sender_info?.receiver)"></div>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+
+          <!-- Error State -->
+          @if(!loading && !groupMailingData) {
+          <div class="bg-main-background-color rounded-lg p-5 shadow-md mb-5">
+            <div class="flex items-center justify-center py-8">
+              <fa-icon [icon]="faExclamationTriangle" class="text-common-red-color text-xl mr-3"></fa-icon>
+              <span class="text-main-text-color">Failed to load group mailing details</span>
+            </div>
+          </div>
+          }
+          <!-- Data Table -->
+          <div class="bg-main-background-color rounded-lg p-3 shadow-md" [ngClass]="{'skelton h-[400px]': loading}">
+            @if(!loading) {
+            <app-v3-data-table
+              [columnDefs]="columnDefs"
+              [tableId]="tableId"
+              [frameworkComponents]="frameWorkComponents"
+              [isRowSelectable]="isRowSelectable"
+              [defaultColumnFields]="defaultColumnFields"
+              [deselectedColumns]="deselectedColumns"
+              [dynamicHeaderText]="'Group Mailing Items'"
+              [additionalPayload]="getAdditionalPayload()"
+            ></app-v3-data-table>
+            }
+          </div>
+
+          <!-- Bottom Section with Activity Log and Attachments -->
+          <div class="mt-5 space-y-4">
+            
+            <!-- Activity Log Table -->
+            <div class="w-full bg-main-background-color rounded-lg shadow-md" [ngClass]="{'skelton h-[300px]': loadingActivityLogs}">
+              @if(!loadingActivityLogs) {
+              <div class="p-4 border-b border-input-border-color">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                  <fa-icon [icon]="faHistory" class="text-common-blue-color"></fa-icon>
+                  Activity Log
+                </h3>
+              </div>
+              <div class="p-4">
+                <!-- Empty State -->
+                @if(!loadingActivityLogs && activityLogs.length === 0) {
+                <div class="text-center py-8 text-secondary-text-color">
+                  <fa-icon [icon]="faHistory" class="text-4xl mb-3"></fa-icon>
+                  <p>No activity log available</p>
+                </div>
+                }
+                <!-- Activity Table -->
+                @if(!loadingActivityLogs && activityLogs.length > 0) {
+                <div class="max-h-[300px] overflow-y-auto overflow-x-auto">
+                  <table class="w-full border-collapse bg-main-background-color">
+                    <thead>
+                      <tr>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">Date</th>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">Description</th>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">IP</th>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for(log of activityLogs; track log.id) {
+                      <tr class="transition-colors duration-200 hover:bg-tertiary-background-color">
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">{{ log.created_at }}</td>
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">{{ log.description }}</td>
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">{{ log.ip }}</td>
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">{{ log.note }}</td>
+                      </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                }
+              </div>
+              }
+            </div>
+
+            <!-- Attachments Table - Always show, with conditional content -->
+            <div class="w-full bg-main-background-color rounded-lg shadow-md" [ngClass]="{'skelton h-[300px]': loading}">
+              @if(!loading) {
+              <div class="p-4 border-b border-input-border-color">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                  <fa-icon [icon]="faPaperclip" class="text-common-green-color"></fa-icon>
+                  Attachments
+                  <span class="text-sm font-normal text-secondary-text-color">({{ groupMailingData?.count_attachment || 0 }})</span>
+                </h3>
+              </div>
+              <div class="p-4">
+                <!-- Loading State -->
+                @if(loadingAttachments) {
+                  <div class="flex items-center justify-center py-8">
+                    <div class="loader"></div>
+                    <span class="ml-3 text-secondary-text-color">Loading attachments...</span>
+                  </div>
+                  }
+                <!-- Empty State -->
+                @if(!loadingAttachments && (uniqueAttachments.length === 0 || !groupMailingData?.count_attachment)) {
+                <div class="text-center py-8 text-secondary-text-color">
+                  <fa-icon [icon]="faPaperclip" class="text-4xl mb-3"></fa-icon>
+                  <p>No attachments available</p>
+                </div>
+                }
+                <!-- Attachments Table -->
+                @if(!loadingAttachments && uniqueAttachments.length > 0 && groupMailingData?.count_attachment > 0) {
+                <div class="max-h-[300px] overflow-y-auto overflow-x-auto">
+                  <table class="w-full border-collapse bg-main-background-color">
+                    <thead>
+                      <tr>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">#</th>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">File Name</th>
+                        <th class="p-3 text-left border-b border-input-border-color bg-secondary-background-color font-medium text-xs text-secondary-text-color">Pages</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for(attachment of uniqueAttachments; track attachment.id) {
+                      <tr class="transition-colors duration-200 hover:bg-tertiary-background-color">
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">{{ $index + 1 }}</td>
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">
+                          <div class="flex items-center gap-2">
+                            <a
+                              role="presentation"
+                              (click)="viewAttachment(attachment)"
+                              tabindex="0"
+                              class="cursor-pointer hover:text-blue-600 hover:underline"
+                              [title]="attachment.file_name"
+                            >
+                              {{ attachment.file_name }}
+                            </a>
+                            <fa-icon
+                              [icon]="faExternalLink"
+                              aria-hidden="true"
+                              (click)="viewAttachment(attachment)"
+                              class="cursor-pointer text-blue-600 hover:text-blue-800 text-xs ml-1"
+                              [title]="'Open ' + attachment.file_name"
+                            ></fa-icon>
+                          </div>
+                        </td>
+                        <td class="p-3 text-left border-b border-input-border-color text-sm font-normal text-main-text-color">{{ attachment.page_count }}</td>
+                      </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Support Options Sidebar -->
+        <div
+          [hidden]="loading"
+          class="absolute min-w-[120px] overflow-visible -right-[150px] top-[-115px]"
+        >
+          <div class="flex flex-col justify-center">
+            <a
+              class="group relative mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center shadow-xl flex items-center justify-center"
+            >
+              <fa-icon
+                (click)="goToLiveChat()"
+                class="text-common-blue-color text-base cursor-pointer"
+                [icon]="faMessage"
+              ></fa-icon>
+              <div
+                class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[105px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[70px]"
+              >
+                <span class="text-xs font-inter !text-common-blue-color pl-2">Live Chat</span>
+              </div>
+            </a>
+            <a
+              class="group relative mt-2.5 bg-secondary-background-color w-8 h-8 flex items-center justify-center rounded-full text-center shadow-xl border border-main-background-color"
+              [href]="'mailto:' + staticWhiteLabelConditions.customerSupportEmail"
+            >
+              <fa-icon
+                class="text-common-blue-color text-base cursor-pointer"
+                [icon]="faEnvelope"
+              ></fa-icon>
+              <div
+                class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[220px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[200px]"
+              >
+                <span class="text-xs font-inter !text-common-blue-color pl-2">{{ staticWhiteLabelConditions.customerSupportEmail }}</span>
+              </div>
+            </a>
+            @if(staticWhiteLabelConditions.customerSupportNo) {
+            <a
+              [href]="'tel:' + staticWhiteLabelConditions.customerSupportNo"
+              class="group relative flex justify-center items-center mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center shadow-xl"
+            >
+              <fa-icon
+                class="text-common-blue-color text-base cursor-pointer"
+                [icon]="faHeadSet"
+              ></fa-icon>
+              <div
+                class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[180px] bg-main-background-color group-hover:opacity-100 top-0 rounded-md w-[145px]"
+              >
+                <span class="text-xs font-inter !text-common-blue-color pl-2">
+                  Call at {{ staticWhiteLabelConditions.customerSupportNo }}</span>
+              </div>
+            </a>
+            } @else {
+            <a
+              [href]="staticWhiteLabelConditions.helpWebsite"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group relative flex justify-center items-center mt-2.5 bg-secondary-background-color w-8 h-8 rounded-full text-center shadow-xl border border-main-background-color"
+            >
+              <fa-icon
+                class="text-common-blue-color text-base cursor-pointer"
+                [icon]="faHeadSet"
+              ></fa-icon>
+              <div
+                class="absolute shadow-common-box-shadow z-10 text-main-text-color opacity-0 !ml-[180px] bg-main-background-color group-hover:opacity-100 top rounded-md w-[145px]"
+              >
+                <span class="text-xs font-inter !text-common-blue-color pl-2">
+                  Contact Us</span
+                  >
+                </div>
+            </a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

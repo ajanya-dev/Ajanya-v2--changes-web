@@ -1,0 +1,166 @@
+<div>
+
+  <!-- ==================== STEP 1: Form ==================== -->
+  @if (currentStep() === 1) {
+
+    <!-- Modal Header -->
+    <div class="flex justify-between px-6 py-4 bg-v4-popup-header-footer-color border-b border-v4-border-color">
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">Import Checks from Excel File</h1>
+        <h2 class="text-xs text-v4-subtle-text-color">Upload an xlsx file to import checks</h2>
+      </div>
+      <div [mat-dialog-close]="false" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 bg-v4-tertiary-background-color space-y-5">
+
+        <!-- Bank Account -->
+        <div>
+          <p class="block text-sm font-medium text-v4-main-text-color pb-2.5">
+            Select Account <span class="text-v4-common-red-color">*</span>
+          </p>
+          <app-bank-ac-dropdown-v4
+            [formControl]="selectedBankControl"
+            (clearEvent)="onClearBank()"
+          />
+        </div>
+
+        <!-- xlsx File Upload -->
+        <div class="space-y-1.5">
+          <p class="text-sm font-medium text-v4-main-text-color">
+            Select File <span class="text-v4-common-red-color">*</span>
+          </p>
+
+          <input #fileInput type="file" class="hidden" accept=".xlsx" (change)="onFileSelected($event)" />
+
+          <div class="flex items-center gap-3">
+            <div
+              class="flex-1 min-w-0 flex items-center justify-between gap-2 h-11 px-4 rounded-xl border transition-colors"
+              [class.border-v4-common-green-color]="selectedFileName()"
+              [class.bg-v4-badge-success-bg-color]="selectedFileName()"
+              [class.border-v4-border-color]="!selectedFileName()"
+              [class.bg-v4-secondary-background-color]="!selectedFileName()"
+            >
+              <span class="flex items-center gap-2 min-w-0">
+                @if (selectedFileName()) {
+                  <lucide-icon [img]="FileTextIcon" [size]="16" class="text-v4-common-green-color shrink-0" />
+                }
+                <span
+                  class="truncate text-sm"
+                  [class.text-v4-common-green-color]="selectedFileName()"
+                  [class.text-v4-subtle-text-color]="!selectedFileName()"
+                >
+                  {{ selectedFileName() || 'No file selected' }}
+                </span>
+              </span>
+              @if (selectedFileName()) {
+                <button
+                  type="button"
+                  class="shrink-0 w-6 h-6 rounded-md hover:bg-v4-secondary-background-color flex items-center justify-center"
+                  (click)="removeFile()"
+                >
+                  <lucide-icon [img]="XIcon" [size]="14" class="text-v4-subtle-text-color" />
+                </button>
+              }
+            </div>
+            <button
+              type="button"
+              class="shrink-0 flex items-center gap-2 h-11 px-5 rounded-xl border border-v4-primary-brand-bold-color text-v4-primary-brand-bold-color text-sm font-semibold hover:bg-v4-tertiary-background-color transition-colors"
+              (click)="triggerFileInput()"
+            >
+              <lucide-icon [img]="UploadIcon" [size]="16" />
+              BROWSE
+            </button>
+          </div>
+
+          <!-- Hint -->
+          <div class="flex items-center gap-1.5 text-xs text-v4-common-blue-color pt-1">
+            <lucide-icon [img]="InfoIcon" [size]="13" class="text-v4-common-blue-color shrink-0" />
+            <span>We only support xlsx file</span>
+          </div>
+        </div>
+
+        <!-- Download Sample — space always reserved to prevent layout shift -->
+        <div class="h-6 flex items-center">
+          @if (loadingSampleFile()) {
+            <div class="w-40 h-4 rounded bg-v4-border-color animate-pulse"></div>
+          } @else if (sampleFileUrl()) {
+            <a
+              [href]="sampleFileUrl()"
+              class="inline-flex items-center gap-2 text-sm text-v4-primary-brand-bold-color hover:underline cursor-pointer"
+            >
+              <lucide-icon [img]="DownloadIcon" [size]="15" />
+              Download Sample File
+            </a>
+          }
+        </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="flex justify-end gap-3 p-6 bg-v4-popup-header-footer-color border-t border-v4-border-color">
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="100px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+      />
+      <app-common-button-v4
+        width="140px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Import"
+        [loading]="submitting()"
+        [disabled]="submitting()"
+        (clickEvent)="importChecks()"
+      />
+    </div>
+
+  }
+
+  <!-- ==================== STEP 2: Success ==================== -->
+  @if (currentStep() === 2) {
+
+    <!-- Modal Header -->
+    <div class="flex justify-between px-6 py-4 bg-v4-popup-header-footer-color border-b border-v4-border-color">
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">Import Complete</h1>
+        <h2 class="text-xs text-v4-subtle-text-color">Your checks have been imported successfully</h2>
+      </div>
+      <div [mat-dialog-close]="false" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+        <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-10 bg-v4-tertiary-background-color flex flex-col items-center gap-4 text-center">
+      <div class="w-16 h-16 rounded-full bg-v4-badge-success-bg-color flex items-center justify-center">
+        <lucide-icon [img]="CircleCheckIcon" [size]="32" class="text-v4-badge-success-text-color" />
+      </div>
+      <div>
+        <p class="text-base font-semibold text-v4-main-text-color">Checks imported successfully</p>
+        <p class="text-sm text-v4-subtle-text-color mt-1">Your checks are now being processed and will appear in your records.</p>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="flex justify-end gap-3 p-6 bg-v4-popup-header-footer-color border-t border-v4-border-color">
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="100px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Close"
+      />
+      <app-common-button-v4
+        width="130px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="View Checks"
+        (clickEvent)="viewChecks()"
+      />
+    </div>
+
+  }
+
+</div>

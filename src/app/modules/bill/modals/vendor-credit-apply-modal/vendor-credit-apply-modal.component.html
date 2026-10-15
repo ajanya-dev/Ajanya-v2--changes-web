@@ -1,0 +1,95 @@
+<div class="px-[6px] pb-[6px] font-roboto">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div class="mt-18 w-full text-base font-bold text-main-text-color align-middle flex items-center">
+        Apply Vendor Credit
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon class="text-secondary-text-color cursor-pointer" [icon]="faXmark"></fa-icon>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <form [formGroup]="applyVendorCreditForm">
+    <div>
+      <!-- Vendor Credit Section -->
+      <div class="flex flex-col gap-3 mb-4">
+        <div class="text-sm font-semibold text-gray-900">
+          Vendor Credit
+          <span class="text-common-green-color font-semibold">${{ data.availableCredit | number:'1.2-2' }} </span> Available
+        </div>
+        
+        <div class="text-sm text-secondary-text-color mb-3">
+          Enter the amount of vendor credit to apply to this bill
+        </div>
+
+        <div class="w-full">
+          <app-amount-input
+            [isRequired]="true"
+            [maxLength]="13"
+            formControlName="creditAmount"
+            fieldLabel="Enter Credit"
+            customClass="!h-[39px]"
+          ></app-amount-input>
+          <app-control-message-v35 
+            [control]="applyVendorCreditForm.controls.creditAmount"
+            label="Credit Amount is required"
+          >
+          </app-control-message-v35>
+          @if (applyVendorCreditForm.controls.creditAmount.hasError('creditExceeded')) {
+            <div class="text-xs text-common-red-color mt-1">
+              Amount cannot exceed the Bill amount or Credit Amount
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Summary Section -->
+      <div class="w-full rounded-lg overflow-hidden mt-6">
+        <div class="bg-secondary-background-color rounded-lg text-sm">
+          <div class="flex justify-between items-center px-3 lg:px-4 py-2">
+            <span class="text-xs text-secondary-text-color">Original Bill Amount</span>
+            <span class="font-medium text-right text-xs text-secondary-text-color">${{ data.billAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between items-center px-3 lg:px-4 py-2">
+            <span class="text-xs text-secondary-text-color">Credit Applied</span>
+            <span class="font-medium text-right text-xs text-common-green-color">
+              -${{ (applyVendorCreditForm.controls.creditAmount.value || 0) | number:'1.2-2' }}
+            </span>
+          </div>
+          <div class="border-b border-input-border-color mx-3 lg:mx-4"></div>
+          <div class="flex justify-between items-center px-3 lg:px-4 py-3">
+            <span class="font-bold text-sm">Remaining Amount</span>
+            <span class="font-bold text-right text-sm" 
+                  [class.text-common-red-color]="remainingBillAmount <= 0"
+                  [class.text-main-text-color]="remainingBillAmount > 0">
+              ${{ remainingBillAmount | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+  <!-- modal body end -->
+
+  <!-- modal footer start -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35 
+      width="125px"
+      (clickEvent)="onCancel()"
+      [type]="{style:'bordered', name: 'main' }" 
+      text="Not Now"
+      [disabled]="loading()">
+    </app-common-button-v35>
+    <app-common-button-v35 
+      width="125px"
+      [type]="{style:'modal', name: 'main' }" 
+      text="Apply Credit"
+      (clickEvent)="onSubmit()"
+      [disabled]="applyVendorCreditForm.invalid || loading()"
+      [loading]="loading()"
+      backGroundInput="var(--common-blue-color)">
+    </app-common-button-v35>
+  </div>
+  <!-- modal footer end -->
+</div>

@@ -1,0 +1,238 @@
+<div
+  appWhiteLabel hiddenIf="isCSNHCRequirement"
+  class="flex h-full items-center"
+  [ngClass]="{ 'w-52': !isFieldReadOnly }"
+  (mouseenter)="showFilterIconForRow(true)"
+  (mouseleave)="showFilterIconForRow()"
+>
+  <!--- SOURCE TYPE SECTION  STARTS--->
+  <div
+    *ngIf="!isFieldReadOnly"
+    class="flex flex-row source-type-dropdown pr-1 ng-dropdown-arrow"
+  >
+    <ng-select
+      #typeDropDown
+      class="ng-dropdown-panel-v35 payment-source-type-dropdown payment-source"
+      [items]="paymentSourceTypes"
+      placeholder="Select a payment Type"
+      appendTo=".ag-center-cols-container"
+      [ngClass]="isFieldReadOnly ? 'disabled-field' : 'selected-field'"
+      [readonly]="isFieldReadOnly"
+      [(ngModel)]="currentPaymentSourceType"
+      (ngModelChange)="typeValueChanged()"
+      (click)="$event.stopPropagation()"
+      [clearable]="false"
+    >
+      <ng-template ng-label-tmp let-item="item">
+        <fa-icon
+          class="text-secondary-text-color"
+          [icon]="['fas', selectedIcon]"
+        >
+        </fa-icon>
+      </ng-template>
+      <ng-template ng-option-tmp let-item="item" let-index="index">
+        <div
+          class="rounded-full mr-2 text-sm"
+          [ngClass]="
+            'w-8 h-8 flex justify-center items-center bg-tertiary-background-color text-common-green-color'
+          "
+        >
+          <fa-icon
+            *ngIf="item.sourceType === 'CARD'"
+            class="px-2"
+            class="text-common-yellow-color"
+            [icon]="['fas', 'credit-card']"
+          >
+          </fa-icon>
+          <fa-icon
+            *ngIf="item.sourceType === 'WALLET'"
+            class="px-2"
+            class="text-common-violet-color"
+            [icon]="['fas', 'wallet']"
+          >
+          </fa-icon>
+          <fa-icon
+            *ngIf="item.sourceType === 'BANK'"
+            class="px-2"
+            class="text-common-blue-color"
+            [icon]="['fas', 'bank']"
+          >
+          </fa-icon>
+        </div>
+        <div class="flex-1 justify-between flex">
+          <div>
+            <p class="main-text-highlight text-ellipsis">
+              {{ item?.sourceType }}
+            </p>
+          </div>
+        </div>
+      </ng-template>
+    </ng-select>
+  </div>
+  <div *ngIf="isFieldReadOnly" class="pr-1">
+    <fa-icon
+      class="pl-[10px] text-[14px] text-secondary-text-color"
+      [icon]="['fas', selectedIcon]"
+    >
+    </fa-icon>
+  </div>
+  <!--- SOURCE TYPE SECTION ENDS --->
+
+  <div *ngIf="!isFieldReadOnly" class="grow">
+    <!--- SOURCE LIST STARTS --->
+    <div
+      *ngIf="isSourceBank; else cardDrop"
+      class="angular-ocw-v35-ng-select-dropdown w-[130px] ng-dropdown-arrow"
+    >
+      <ng-select
+        #sourceDropdown
+        appendTo=".ag-center-cols-container"
+        class="ng-dropdown-panel-v35 text-sm payment-source"
+        [(ngModel)]="selectedItem"
+        (clear)="clear()"
+        (ngModelChange)="valueChangedSource()"
+        [clearable]="false"
+        [searchFn]="searchFn"
+        [loading]="(bankSearchLoading$ | async) ?? false"
+        (scrollToEnd)="onGetBankAccounts()"
+        (search)="onBankSearch($event)"
+        [ngClass]="isFieldReadOnly ? 'disabled-field' : 'selected-field'"
+        [readonly]="isFieldReadOnly"
+        (click)="$event.stopPropagation()"
+        (close)="onDropdownClose()"
+        placeholder="Select Bank"
+        [notFoundText]="
+          (bankAccountsState$ | async)?.isLoading
+            ? 'Loading...'
+            : !paymentsService.hasPermission.bank
+              ? 'Permission Denied'
+              : 'No banks found'
+        "
+        >>
+        <ng-option
+          *ngFor="let item of bankAccountsToList$ | async"
+          [value]="item.id"
+          trackBy:trackBySource
+        >
+          {{ item.nickName ? item.nickName : item.name
+          }}{{ addTag === true && item.verified === 1 ? "[MANUAL ACH ]" : "" }}
+        </ng-option>
+        <ng-template ng-footer-tmp>
+          <div
+            class="skelton p-1.5 -mt-1"
+            *ngIf="(bankAccountsState$ | async)?.isLoading"
+          ></div>
+        </ng-template>
+      </ng-select>
+    </div>
+
+    <ng-template #cardDrop>
+      <div
+        *ngIf="isSourceCard; else walletDrop"
+        class="angular-ocw-v35-ng-select-dropdown w-[130px] ng-dropdown-arrow"
+      >
+        <ng-select
+          #sourceDropdown
+          appendTo=".ag-center-cols-container"
+          class="ng-dropdown-panel-v35 text-sm payment-source"
+          [(ngModel)]="selectedItem"
+          [ngClass]="isFieldReadOnly ? 'disabled-field' : 'selected-field'"
+          [readonly]="isFieldReadOnly"
+          (click)="$event.stopPropagation()"
+          (clear)="clear()"
+          (ngModelChange)="valueChangedSource()"
+          placeholder="Select Card"
+          [clearable]="false"
+          [notFoundText]="
+            !paymentsService.hasPermission.card
+              ? 'Permission Denied'
+              : 'No cards found'
+          "
+        >
+          <ng-option
+            [value]="card"
+            *ngFor="let card of cards"
+            trackBy:trackBySource
+          >
+            {{ card?.nickName }}
+          </ng-option>
+          <ng-template ng-footer-tmp>
+            <div
+              class="skelton p-1.5 -mt-1 mx-1"
+              *ngIf="selectIsCardsLoading$ | async"
+            ></div>
+          </ng-template>
+        </ng-select>
+      </div>
+    </ng-template>
+
+    <ng-template #walletDrop>
+      <div
+        *ngIf="isSourceWallet"
+        class="angular-ocw-v35-ng-select-dropdown w-[130px] ng-dropdown-arrow"
+      >
+        <ng-select
+          #sourceDropdown
+          appendTo=".ag-center-cols-container"
+          class="ng-dropdown-panel-v35 text-sm payment-source"
+          [(ngModel)]="selectedItem"
+          [ngClass]="isFieldReadOnly ? 'disabled-field' : 'selected-field'"
+          [readonly]="isFieldReadOnly"
+          (click)="$event.stopPropagation()"
+          (close)="onDropdownClose()"
+          [searchFn]="searchFn"
+          [loading]="(walletSearchLoading$ | async) ?? false"
+          (scrollToEnd)="onGetWallets()"
+          (search)="onWalletSearch($event)"
+          (clear)="clear()"
+          (ngModelChange)="valueChangedSource()"
+          placeholder="Select wallet"
+          [clearable]="false"
+          [notFoundText]="
+            (selectIsWalletsLoading$ | async) === false &&
+            (walletsToList$ | async)?.length === 0
+              ? !paymentsService.hasPermission.wallet
+                ? 'Permission Denied'
+                : 'No Wallets Found'
+              : 'Loading...'
+          "
+        >
+          <ng-option
+            [value]="item"
+            *ngFor="let item of walletsToList$ | async"
+            trackBy:trackBySource
+          >
+            {{ item.walletName ?? item.bankAccountNickName }}
+          </ng-option>
+          <ng-template ng-footer-tmp>
+            <div
+              class="skelton p-1.5"
+              *ngIf="selectIsWalletsLoading$ | async"
+            ></div>
+          </ng-template>
+        </ng-select>
+      </div>
+    </ng-template>
+    <!--- SOURCE LIST ENDS --->
+  </div>
+  <div class="w-[130px]" *ngIf="isFieldReadOnly && isMapping">
+    <span
+      class="map-field"
+      [ngClass]="{ 'text-common-red-color': isMapNow }"
+      [innerHTML]="selectedItem"
+    ></span>
+  </div>
+  <h2
+    [matTooltip]="'' + selectedItem"
+    *ngIf="isFieldReadOnly && !isMapping"
+    class="map-field text-ellipsis overflow-hidden"
+  >
+    {{ selectedItem }}
+  </h2>
+  @if (showFilterIcon) {
+    <app-common-filter-icon (filterEvent)="onFilterClicked()" />
+  }
+</div>
+<div appWhiteLabel shownIf="isCSNHCRequirement" class="flex h-full items-center">
+  <h2 class="map-field text-ellipsis overflow-hidden">{{ selectedItem }}</h2>
+</div>

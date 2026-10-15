@@ -1,0 +1,966 @@
+<div class="main-v3-data-table-container">
+  @if(showPermssionDenied()){
+    <app-permission-denied [actAsChildCompoent]="true" />
+  }@else{
+    <div
+      class="header-buttons-container flex-col"
+      [ngClass]="{ flex: !headerElements() }"
+    >
+      @if (dynamicHeaderText) {
+        <div class="flex justify-between items-start mb-3 w-full">
+          <div class="flex justify-start gap-2">
+            <div class="text-base text-main-text-color font-semibold font-inter" [ngClass]="{'!hidden':isFromPaymentsV3()}">
+              @if (backButtonEnabled()) {
+                <app-common-back-button-v35
+                  type="takeEvent"
+                  (backEvent)="onBackButtonClick()"
+                ></app-common-back-button-v35>
+              }
+              {{ dynamicHeaderText }}
+            </div>
+            <div>
+              @if (
+                dynamicHeaderText === "Payees" || dynamicHeaderText === "Vendors" ||
+                dynamicHeaderText === "Bank Accounts"
+              ) {
+                <app-list-view-toggle
+                  (viewToggleEvent)="viewToggle($event)"
+                  [isGridView]="false"
+                ></app-list-view-toggle>
+              }
+            </div>
+            @if (headerElements() && headerElements()?.panelButtons) {
+              <div
+                class="v35-small-tabs rounded flex gap-3 cursor-pointer text-sm font-semibold filter-item bg-tertiary-background-color"
+              >
+                @for (item of headerElements()?.panelButtons; track $index) {
+                  @if (!item?.options?.isItButton) {
+                    <div
+                      role="presentation"
+                      (click)="onPanelButtonClick(item.id)"
+                      [ngClass]="{
+                        selected: item.id === selectedPanelButton()
+                      }"
+                    >
+                      <h1>
+                        {{ item.name }}
+                      </h1>
+                    </div>
+                  }
+                }
+              </div>
+              @for (item of headerElements()?.panelButtons; track $index) {
+                @if (item?.options?.isItButton) {
+                  <div
+                    class="cursor-pointer font-roboto font-semibold text-xs text-secondary-text-color text-center rounded"
+                    [ngClass]="{
+                      is_button: item?.options?.isItButton
+                    }"
+                  >
+                    <div
+                      class="flex items-center"
+                      role="presentation"
+                      (click)="onPanelButtonClick(item.id)"
+                    >
+                      <h1>
+                        {{ item.name }}
+                      </h1>
+                    </div>
+                  </div>
+                }
+              }
+            }
+            @if (
+              headerElements() &&
+              headerElements()?.pendingItems &&
+              headerElements()?.pendingItems?.pendingCount !== 0
+            ) {
+              <div
+                class="flex items-center px-2 rounded cursor-pointer text-sm font-medium bg-common-secondary-blue-color text-common-blue-color"
+              >
+                <div
+                  class="flex gap-2"
+                  role="presentation"
+                  (click)="onPanelButtonClick(headerElements()?.pendingItems.id)"
+                >
+                  <fa-icon [icon]="['fas', 'circle-info']"></fa-icon>
+                  <div>
+                    Awaiting pending
+                    {{ headerElements()?.pendingItems?.itemName }} approval
+                    request ({{ headerElements()?.pendingItems?.pendingCount }})
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="flex justify-end gap-2">
+            <!-- HEADER BUTTONS -->
+            @if (headerElements() && headerElements()?.topRightButtons) {
+              <div class="flex justify-start gap-2" id="ocw-btns-action">
+                @for (btn of headerElements()?.topRightButtons; track $index) {
+                  @if (!btn.menu) {
+                    <app-common-button-v35
+                      (clickEvent)="onHeaderButtonClick(btn.id)"
+                      class="whitespace-nowrap"
+                      [text]="btn.text"
+                      [type]="btn.type"
+                      [width]="btn.width"
+                      [textColorInput]="btn.textColorInput"
+                      [disableHoverEffect]="btn.disableHoverEffect"
+                      [customClasses]="btn.customClasses"
+                      [disableHoverEffect]="btn.disableHoverEffect"
+                      [customClasses]="btn.customClasses"
+                      [loading]="btn.loading ?? false"
+                      [disabled]="btn.disabled ?? false"
+                      [ngClass]="{
+                        'pointer-events-none opacity-40': btn.disabled
+                      }"
+                      [suffix]="btn.suffix ?? false"
+                      [suffixIcon]="btn.suffixIcon ?? faCaretDown"
+                      [backGroundInput]="btn.backGroundInput"
+                      [isAddIcon]="btn.isAddIcon ?? false"
+                      [icon]="btn.icon ?? ['fas', 'plus']"
+                      [toolTip]="btn.toolTip ?? ''"
+                      [boxshadow]="btn.boxshadow ?? ''"
+                    ></app-common-button-v35>
+                  } @else {
+                    <app-common-button-v35
+                      mat-button
+                      [matMenuTriggerFor]="tabsMenu"
+                      class="whitespace-nowrap"
+                      [text]="btn.text"
+                      [type]="btn.type"
+                      [width]="btn.width"
+                      [textColorInput]="btn.textColorInput"
+                      [disableHoverEffect]="btn.disableHoverEffect"
+                      [customClasses]="btn.customClasses"
+                      [disableHoverEffect]="btn.disableHoverEffect"
+                      [customClasses]="btn.customClasses"
+                      [loading]="btn.loading ?? false"
+                      [disabled]="btn.disabled ?? false"
+                      [ngClass]="{
+                        'pointer-events-none opacity-40': btn.disabled
+                      }"
+                      [suffix]="btn.suffix ?? false"
+                      [suffixIcon]="btn.suffixIcon ?? faCaretDown"
+                      [backGroundInput]="btn.backGroundInput"
+                      [isAddIcon]="btn.isAddIcon ?? false"
+                      [icon]="btn.icon ?? ['fas', 'plus']"
+                      [toolTip]="btn.toolTip ?? ''"
+                      [boxshadow]="btn.boxshadow ?? ''"
+                    >
+                    </app-common-button-v35>
+                    <mat-menu #tabsMenu="matMenu">
+                      @for (item of btn.menu; track $index) {
+                        <button
+                          mat-menu-item
+                          class="flex justify-start items-center gap-2 p-2"
+                          (click)="onHeaderButtonClick(item.id)"
+                          id="{{ item.id }}"
+                        >
+                          @if (item.icon) {
+                            <fa-icon
+                              [icon]="item.icon"
+                              aria-hidden="true"
+                              class="m-r-5"
+                            ></fa-icon>
+                          }
+                          {{ item.name }}
+                        </button>
+                      }
+                    </mat-menu>
+                  }
+                }
+              </div>
+            }
+            <!------------------>
+            @if (dynamicHeaderText === "Payments") {
+              <div class="help-video">
+                <app-demo-video slug="v3Payment"></app-demo-video>
+              </div>
+            }
+            @if (headerElements()?.videoButton) {
+              <div class="help-video">
+                <app-demo-video
+                  [slug]="headerElements()?.videoButton[0].slug"
+                ></app-demo-video>
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if(showActionButtonContainer)
+      {<div class="action-button-container">
+        <div class="flex justify-start gap-2 items-center">
+          @if (dynamicHeaderButtonText) {
+            <app-common-button-v35
+              width="72px"
+              type="list"
+              [text]="dynamicHeaderButtonText"
+              [isAddIcon]="iconClass ? true : false"
+              (clickEvent)="headerButtonClick(dynamicHeaderButtonRoute)"
+            ></app-common-button-v35>
+          }
+          <!-- HEADER BUTTONS -->
+          @if (headerElements() && headerElements()?.buttons) {
+            <div class="flex justify-start gap-2 h-8" id="ocw-btns-action">
+              @for (btn of headerElements()?.buttons; track $index) {
+                @if (!btn.isHidden) {
+                  @if (!btn.menu && !btn.roundIcon) {
+                    <app-common-button-v35
+                      class="whitespace-nowrap"
+                      (clickEvent)="onHeaderButtonClick(btn.id)"
+                      [text]="btn.text"
+                      [type]="btn.type"
+                      [width]="btn.width"
+                      [textColorInput]="btn.textColorInput"
+                      [disableHoverEffect]="btn.disableHoverEffect"
+                      [customClasses]="btn.customClasses"
+                      [loading]="btn.loading ?? false"
+                      [disabled]="btn.disabled ?? false"
+                      [ngClass]="{
+                        'pointer-events-none opacity-40': btn.disabled
+                      }"
+                      [suffix]="btn.suffix ?? false"
+                      [suffixIcon]="btn.suffixIcon ?? faCaretDown"
+                      [backGroundInput]="btn.backGroundInput"
+                      [isAddIcon]="btn.isAddIcon ?? false"
+                      [icon]="btn.icon ?? ['fas', 'plus']"
+                      [toolTip]="btn.toolTip ?? ''"
+                      [toolTipClass]="btn.toolTipClass ?? ''"
+                      [boxshadow]="btn.boxshadow ?? ''"
+                    ></app-common-button-v35>
+                  } @else if (btn.roundIcon) {
+                    <div [matTooltip]="btn.toolTip ?? ''">
+                      <button
+                        class="h-8 w-8 rounded-full"
+                        [class]="btn.customClasses"
+                        (click)="onHeaderButtonClick(btn.id)"
+                        [disabled]="btn.disabled"
+                        [ngClass]="{
+                          'pointer-events-none opacity-40': btn.disabled
+                        }"
+                      >
+                        <fa-icon [icon]="btn.roundIcon"></fa-icon>
+                      </button>
+                    </div>
+                  } @else {
+                    <app-common-button-v35
+                      mat-button
+                      [matMenuTriggerFor]="tabsMenu"
+                      class="whitespace-nowrap"
+                      [text]="btn.text"
+                      [type]="btn.type"
+                      [width]="btn.width"
+                      [textColorInput]="btn.textColorInput"
+                      [disableHoverEffect]="btn.disableHoverEffect"
+                      [customClasses]="btn.customClasses"
+                      [loading]="btn.loading ?? false"
+                      [disabled]="btn.disabled ?? false"
+                      [ngClass]="{
+                        'pointer-events-none opacity-40': btn.disabled
+                      }"
+                      [suffix]="btn.suffix ?? false"
+                      [suffixIcon]="btn.suffixIcon ?? faCaretDown"
+                      [backGroundInput]="btn.backGroundInput"
+                      [isAddIcon]="btn.isAddIcon ?? false"
+                      [icon]="btn.icon ?? ['fas', 'plus']"
+                      [toolTip]="btn.toolTip ?? ''"
+                      [toolTipClass]="btn.toolTipClass ?? ''"
+                      [boxshadow]="btn.boxshadow ?? ''"
+                    >
+                    </app-common-button-v35>
+                    <mat-menu #tabsMenu="matMenu">
+                      @for (item of btn.menu; track $index) {
+                        <button
+                          mat-menu-item
+                          class="flex justify-start items-center gap-2 p-2"
+                          (click)="onHeaderButtonClick(item.id)"
+                          id="{{ item.id }}"
+                        >
+                          @if (item.icon) {
+                            <fa-icon
+                              [icon]="item.icon"
+                              aria-hidden="true"
+                              class="m-r-5"
+                            ></fa-icon>
+                          }
+                          {{ item.name }}
+                        </button>
+                      }
+                    </mat-menu>
+                  }
+                }
+              }
+              <!-- Number of selected Rows -->
+              @if (selectedRowCount > 0 && tablesNames[tableId]) {
+                <div
+                  class="flex-1 flex flex-col justify-between items-start pl-3 max-lg:pl-0 text-xs"
+                >
+                  <p
+                    class="font-normal"
+                    style="color: var(--secondary-text-color)"
+                  >
+                    Selected
+                  </p>
+
+                  <p class="font-semibold" style="color: var(--main-text-color)">
+                    <span class="font-bold">{{ selectedRowCount }}</span>
+                    {{
+                      tablesNames[tableId]
+                        ? tablesNames[tableId] + (selectedRowCount > 1 ? "s" : "")
+                        : "Items"
+                    }}
+                  </p>
+                </div>
+              }
+            </div>
+          }
+          <!------------------>
+        </div>
+        <div class="v3-data-table-filter-buttons-container hidden laptop:flex" [ngClass]="{'!hidden': !isPaymentTableHavePermission}">
+          <div class="filter-button">
+            <i
+              role="presentation"
+              matTooltip="Refresh Table"
+              class="fa-solid fa-arrows-rotate"
+              [ngClass]="{ 'fa-spin': isV3DataTableLoading }"
+              (click)="refreshV3DataTable()"
+            ></i>
+          </div>
+          <select
+            matTooltip="Select Rows Displayed"
+            class="filter-button cursor-pointer"
+            aria-label="Select Rows Displayed"
+            [(ngModel)]="paginationSizeSelection"
+            (ngModelChange)="goToSpecificPage(1)"
+          >
+            <option
+              *ngFor="let item of paginationSizeFilterOptions"
+              [value]="item"
+            >
+              {{ item }}
+            </option>
+          </select>
+          <div class="filter-button">
+            <button
+              title="Filter"
+              [matMenuTriggerFor]="columnFilterMatMenu"
+              matTooltip="Filter Columns"
+            >
+              <i class="fa-solid fa-filter-list"></i>
+            </button>
+          </div>
+          <div class="filter-button">
+            <button
+              title="Filter"
+              [matMenuTriggerFor]="exportTableMatMenu"
+              (menuClosed)="exportMenuClosed()"
+              matTooltip="Export Table"
+            >
+              @if (!filterAndExportLoading && !filterAndExportLoadingInput()) {
+                <fa-icon [icon]="['fas', 'arrow-up-to-line']"></fa-icon>
+              }
+              @if (filterAndExportLoading || filterAndExportLoadingInput()) {
+                <mat-spinner [diameter]="20"></mat-spinner>
+              }
+            </button>
+          </div>
+        </div>
+        <div class="-mt-1 laptop:hidden">
+          <div
+            class="flex justify-center items-center w-8 h-8 bg-secondary-background-color rounded"
+          >
+            <div
+              role="presentation"
+              class="flex justify-center items-center gap-1"
+              [matMenuTriggerFor]="filterMenu"
+            >
+              <fa-icon
+                [icon]="['fas', 'ellipsis-vertical']"
+                class="text-lg"
+              ></fa-icon>
+            </div>
+          </div>
+          <mat-menu
+            #filterMenu="matMenu"
+            xPosition="before"
+            class="minimum-width-40px"
+          >
+            <div class="flex flex-col items-center gap-4 w-10">
+              <div
+                class="filter-button flex justify-center hover:bg-secondary-background-color"
+              >
+                <fa-icon
+                  [icon]="['fas', 'arrows-rotate']"
+                  role="presentation"
+                  matTooltip="Refresh Table"
+                  [ngClass]="{ 'fa-spin': isV3DataTableLoading }"
+                  (click)="refreshV3DataTable()"
+                ></fa-icon>
+              </div>
+              <select
+                (click)="$event.stopPropagation()"
+                matTooltip="Select Rows Displayed"
+                class="filter-button cursor-pointer flex justify-center hover:bg-secondary-background-color"
+                aria-label="Select Rows Displayed"
+                [(ngModel)]="paginationSizeSelection"
+                (ngModelChange)="goToSpecificPage(1)"
+              >
+                <option
+                  *ngFor="
+                    let item of paginationSizeFilterOptions;
+                    trackBy: identity
+                  "
+                  [value]="item"
+                >
+                  {{ item }}
+                </option>
+              </select>
+              <div
+                role="presentation"
+                class="filter-button flex justify-center hover:bg-secondary-background-color"
+                (click)="$event.stopPropagation()"
+              >
+                <button
+                  title="Filter"
+                  [matMenuTriggerFor]="columnFilterMatMenu"
+                  matTooltip="Filter Columns"
+                >
+                  <fa-icon [icon]="['fas', 'filter-list']"></fa-icon>
+                </button>
+              </div>
+              <div
+                role="presentation"
+                class="filter-button flex justify-center hover:bg-secondary-background-color"
+                (click)="$event.stopPropagation()"
+              >
+                <button
+                  title="Filter"
+                  [matMenuTriggerFor]="exportTableMatMenu"
+                  (menuClosed)="exportMenuClosed()"
+                  matTooltip="Export Table"
+                >
+                  <fa-icon
+                    [icon]="['fas', 'arrow-up-to-line']"
+                    *ngIf="!filterAndExportLoading"
+                  ></fa-icon>
+                  <ng-container *ngIf="filterAndExportLoading">
+                    <mat-spinner [diameter]="20"></mat-spinner>
+                  </ng-container>
+                </button>
+              </div>
+            </div>
+          </mat-menu>
+        </div>
+      </div>}
+    </div>
+    <div [ngStyle]="tableHeight ? {'height': tableHeight} : null" class="w-full v3-data-table-grid-container">
+      <ng-container *ngIf="isPaymentTableHavePermission; else noPermission">
+        <ag-grid-angular
+          class="ag-theme-v3 ag-theme-material w-full"
+          [ngClass]="{'body-view-scroll': !tableHeight, 'body-view-no-scroll': tableHeight}"
+          *ngIf="gridOptions"
+          [suppressColumnVirtualisation]="true"
+          [gridOptions]="gridOptions"
+          [columnDefs]="columnDefs"
+          [rowModelType]="rowModelType"
+          (gridReady)="onGridReady($event)"
+          [domLayout]="domLayout"
+          [defaultColDef]="defaultColDef"
+          [pagination]="true"
+          [suppressPaginationPanel]="true"
+          [paginationPageSize]="paginationPageSize"
+          (paginationChanged)="onPaginationChanged($event)"
+          (rowSelected)="onRowSelected($event)"
+          [isRowSelectable]="isRowSelectable"
+          (sortChanged)="onSortChange($event)"
+          [rowSelection]="rowSelection"
+          [rowMultiSelectWithClick]="true"
+          [rowHeight]="rowHeight"
+          [rowBuffer]="paginationSizeSelection"
+          (columnMoved)="onColumnMoved()"
+          (rowClicked)="onRowClick($event)"
+        >
+        </ag-grid-angular>
+      </ng-container>
+
+      <ng-template #noPermission>
+        <div class="flex w-full h-full justify-center items-center">
+          <div class="">
+            <div class="permission-denied-case">
+              <div>
+                <img
+                  class="denied-img"
+                  src="../../../../assets/images/access denied.svg"
+                  alt="Permission Denied"
+                />
+              </div>
+              <div>
+                <p class="text">Permission Denied!</p>
+              </div>
+              <div>
+                <p class="text2">
+                  Sorry! You don't have permission to view the page now.<br />
+                  Please contact your administrator.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="pagination" [ngClass]="{'!hidden': !isPaymentTableHavePermission}">
+      <div class="results">
+        <h2 *ngIf="paginationTotalRowCount === 1">Showing 1 of 1 result</h2>
+        <h2 *ngIf="paginationTotalRowCount !== 1">
+          Showing {{ v3DataTableService.defaultPayload?.startRow + 1 }} to
+          {{
+            v3DataTableService?.defaultPayload?.endRow < paginationTotalRowCount
+              ? v3DataTableService.defaultPayload?.endRow
+              : paginationTotalRowCount
+          }}
+          of {{ paginationTotalRowCount }} results
+        </h2>
+      </div>
+
+      <div class="controls" *ngIf="paginationTotalRowCount !== 0">
+        <!-- Previous Page -->
+        <button
+          title="Previous Page"
+          class="control-item"
+          [ngClass]="{
+            disabled: isV3DataTableLoading || paginationCurrentPageNumber === 1
+          }"
+          (click)="goToPreviousPage()"
+          [disabled]="isV3DataTableLoading || paginationCurrentPageNumber === 1"
+        >
+          <i class="fa-solid fa-angle-left"></i>
+        </button>
+
+        <!-- Pagination Box One -->
+        <button
+          title="Go To Page"
+          class="control-item"
+          [ngClass]="{
+            'current-page': paginationBoxOneNumber === paginationCurrentPageNumber
+          }"
+          *ngIf="paginationBoxOneNumber"
+          (click)="goToSpecificPage(paginationBoxOneNumber)"
+        >
+          {{ paginationBoxOneNumber }}
+        </button>
+        <!-- Pagination Box Two -->
+        <button
+          title="Go To Page"
+          class="control-item"
+          *ngIf="paginationBoxTwoNumber"
+          (click)="goToSpecificPage(paginationBoxTwoNumber)"
+        >
+          {{ paginationBoxTwoNumber }}
+        </button>
+
+        <!-- Divider -->
+        <button
+          class="control-static-item"
+          *ngIf="
+            (paginationBoxThreeNumber || paginationBoxFourNumber) &&
+            (paginationCurrentPageNumber < paginationTotalPageCount - 3 ||
+              paginationCurrentPageNumber > paginationTotalPageCount - 2)
+          "
+        >
+          ...
+        </button>
+
+        <!-- Pagination Box 3 -->
+        <button
+          title="Go To Page"
+          class="control-item"
+          *ngIf="paginationBoxThreeNumber"
+          (click)="goToSpecificPage(paginationBoxThreeNumber)"
+          [ngClass]="{
+            'current-page':
+              paginationBoxThreeNumber === paginationCurrentPageNumber
+          }"
+        >
+          {{ paginationBoxThreeNumber }}
+        </button>
+        <!-- Pagination Box 4 -->
+        <button
+          title="Go To Page"
+          class="control-item"
+          *ngIf="paginationBoxFourNumber"
+          (click)="goToSpecificPage(paginationBoxFourNumber)"
+          [ngClass]="{
+            'current-page':
+              paginationBoxFourNumber === paginationCurrentPageNumber
+          }"
+        >
+          {{ paginationBoxFourNumber }}
+        </button>
+
+        <!-- Next Ppage -->
+        <button
+          title="Next Page"
+          class="control-item"
+          [ngClass]="{
+            disabled:
+              paginationCurrentPageNumber === paginationTotalPageCount ||
+              isV3DataTableLoading ||
+              paginationTotalPageCount <= 1
+          }"
+          [disabled]="
+            isV3DataTableLoading ||
+            paginationCurrentPageNumber >= paginationTotalPageCount ||
+            paginationTotalPageCount <= 1
+          "
+          (click)="goToNextPage()"
+        >
+          <i class="fa-solid fa-angle-right"></i>
+        </button>
+
+        <div
+          class="specific-page-input-container"
+          *ngIf="paginationTotalPageCount > 1"
+        >
+          <input
+            title="Go To Specific Page"
+            [(ngModel)]="specificPageInput"
+            type="number"
+            (keyup.enter)="goToSpecificPage()"
+          />
+          <button (click)="goToSpecificPage()">Go To Page</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<mat-menu #columnFilterMatMenu>
+  <div class="filter-options-container">
+    <div>
+      <h3>Column Filter</h3>
+    </div>
+    <div *ngFor="let field of filteredColumnFields; let i = index">
+      <div *ngIf="field && !field?.isDisabled">
+        <div
+          role="presentation"
+          class="filter-item"
+          (click)="preventEventPropagation($event)"
+        >
+          <label class="ocw-checkbox">
+            <input
+              type="checkbox"
+              [checked]="field.isChecked"
+              (change)="toggleColumnFields(field.id)"
+            />
+            <span>{{ field.name }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="filter-item" *ngFor="let field of filteredColumnFields">
+      <div>
+        <div *ngIf="field?.isDisabled">
+          <div role="presentation" (click)="preventEventPropagation($event)">
+            <label class="ocw-checkbox">
+              <input
+                type="checkbox"
+                [checked]="field.isChecked"
+                [disabled]="field.isDisabled"
+              />
+              <span>{{ field.name }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-btn-container">
+    <button class="filter-btn-reset" (click)="resetColumnDefs()">Reset</button>
+    <button
+      class="filter-btn-apply"
+      color="applyBtn"
+      (click)="updateColumnDefs()"
+    >
+      Apply
+    </button>
+  </div>
+</mat-menu>
+
+<mat-menu #exportTableMatMenu class="w-52 v3-export-mat-menu">
+  <div class="p-3">
+    @if (
+      (isPaymentTable ||
+       isShowFilterMenu(tableId)) &&
+      !isFilterAndExportShown
+    ) {
+      <ng-container>
+        @if (tableId !== 27 && tableId !== 29 && tableId !== 38) {
+          <div class="flex justify-between items-center" [ngClass]="{'!flex-col !items-start':tableId === 93 || tableId === 94}">
+            <h1 class="m-1 text-sm whitespace-nowrap">Export All data</h1>
+            <div>
+              <button
+                class="w-14 h-6 m-1 border border-input-border-color rounded shadow-md text-xs text-center font-medium"
+                [ngClass]="{'!w-20 !h-8':tableId === 93 || tableId === 94}"
+                (click)="filterAndExport('csv', true)"
+              >
+                CSV
+              </button>
+              @if(tableId === 93 || tableId === 94){
+                <button
+                  class="w-20 h-8 m-1 border border-input-border-color rounded shadow-md text-xs text-center font-medium"
+                  (click)="filterAndExport('xlsx', true)"
+                >Excel
+                </button>
+                <button
+                  class="w-20 h-8 m-1 border border-input-border-color rounded shadow-md text-xs text-center font-medium"
+                  (click)="filterAndExport('pdf', true)"
+                >PDF
+                </button>
+              }
+            </div>
+          </div>
+        }
+        @if(tableId !== 93 && tableId !== 94){
+          <a
+            role="presentation"
+            (click)="switchFilterAndExport($event)"
+            class="m-1 whitespace-nowrap text-[13px] font-medium cursor-pointer"
+          >
+            Filter and Export
+          </a>
+          <hr class="m-1 text-input-border-color" />
+        }
+      </ng-container>
+    }
+    @if (
+      (isPaymentTable ||
+      isShowFilterMenuOptions(tableId)
+      ) &&
+      isFilterAndExportShown
+    ) {
+      <ng-container>
+        <form [formGroup]="filterAndExportForm" class="p-1">
+          <div
+            role="presentation"
+            class="flex gap-2 items-center"
+            (click)="preventEventPropagation($event)"
+          >
+            <i
+              role="presentation"
+              class="fa-solid fa-angle-left cursor-pointer"
+              (click)="switchFilterAndExport($event)"
+            ></i>
+            <h1 class="m-1 text-sm whitespace-nowrap pt-0.5">
+              Filter and Export
+            </h1>
+          </div>
+          <div class="flex flex-col mt-3 gap-2">
+            @if (!isHideSourceType(tableId)) {
+              <select
+                formControlName="sourceType"
+                class="input_style"
+                (click)="preventEventPropagation($event)"
+              >
+                <option value="all">All</option>
+                <option value="BANK">Bank</option>
+                <option value="CARD">Card</option>
+                <option value="WALLET">Wallet</option>
+              </select>
+            }
+            @if (tableId === 86 || tableId === 87) {
+              <select
+                formControlName="statusType"
+                class="input_style"
+                (click)="preventEventPropagation($event)"
+              >
+                @for (item of achTransferStatus; track item.id) {
+                  <option [value]="item?.id">{{ item.status }}</option>
+                }
+              </select>
+            }
+            @if (filterAndExportForm.controls.sourceType.value === "BANK") {
+              <div class="single_input">
+                <app-drop-down-bank
+                  class="drop_style"
+                  (click)="preventEventPropagation($event)"
+                  (selectionEvent)="bankDropDownChange($event)"
+                  [placeholder]="'All Bank Accounts'"
+                >
+                </app-drop-down-bank>
+              </div>
+            }
+            @if (filterAndExportForm.controls.sourceType.value === "CARD") {
+              <div class="single_input">
+                <app-drop-down-card
+                  class="drop_style"
+                  (click)="preventEventPropagation($event)"
+                  (selectionEvent)="cardDropDownChange($event)"
+                  [placeholder]="'All Cards'"
+                >
+                </app-drop-down-card>
+              </div>
+            }
+            @if (filterAndExportForm.controls.sourceType.value === "WALLET") {
+              <div class="single_input">
+                <app-drop-down-wallet
+                  class="drop_style"
+                  (click)="preventEventPropagation($event)"
+                  (selectionEvent)="walletDropDownChange($event)"
+                  [placeholder]="'All Wallets'"
+                >
+                </app-drop-down-wallet>
+              </div>
+            }
+            @if(tableId === 3){
+              <div class="single_input w-full">
+                <select
+                [(ngModel)]="selectedStatus"
+                [ngModelOptions]="{ standalone: true }"
+                class="input_style"
+                (click)="preventEventPropagation($event)"
+              >
+                  @for (item of receivePaymentsStatus; track $index) {
+                    <option class="font-inter text-sm text-main-text-color" [ngValue]="item.value">{{item.name}}</option>
+                  }
+                </select>
+              </div>
+            }
+            @if(tableId === 29 || tableId === 38){
+              <div class="single_input w-full">
+                <app-drop-down-bank-cash
+                (selectionEvent)="bankDropDownChange($event)"
+                (click)="preventEventPropagation($event)"
+                class="drop_style"
+                [placeholder]="'All Accounts'"
+              />
+              </div>
+            }
+            <app-date-range-main
+              [enableCustom]="true"
+              (selectedRange)="filterAndExportDateChange($event)"
+              (click)="preventEventPropagation($event)"
+            ></app-date-range-main>
+            <div class="grid grid-cols-2 gap-2">
+              @if (tableId !== 2 && tableId !== 3 && tableId !== 4 && tableId !== 16 && tableId !== 21 ) {
+                <button
+                  class="h-8 border rounded shadow-md text-xs text-center font-medium col-span-2"
+                  (click)="filterAndExport('xlsx', false)"
+                >
+                  Excel
+                </button>
+              }
+              <button
+                type="button"
+                class="h-8 border rounded shadow-md text-xs text-center font-medium col-span-2"
+                (click)="filterAndExport('csv', false)"
+              >
+                CSV
+              </button>
+              @if (tableId === 85 || tableId === 2 || tableId === 3 || tableId === 4 || tableId === 16 || tableId === 21) {
+                <button
+                  type="button"
+                  class="h-8 border rounded shadow-md text-xs text-center font-medium col-span-2"
+                  (click)="filterAndExport('pdf', false)"
+                >
+                  PDF
+                </button>
+              }
+            </div>
+          </div>
+        </form>
+      </ng-container>
+    }
+
+    <ng-container *ngIf="!isFilterAndExportShown">
+      @if (tableId === 8) {
+        <div>
+          <div
+            role="presentation"
+            class="m-1 text-sm"
+            (click)="preventEventPropagation($event)"
+          >
+            Export All data
+          </div>
+          <table class="w-full">
+            <tr>
+              <td>
+                <button
+                  class="w-20 h-8 m-1 common-border-color rounded shadow-md text-xs text-center font-medium"
+                  (click)="importFilteredPayeeData('pdf')"
+                >
+                  PDF
+                </button>
+              </td>
+              <td>
+                <button
+                  class="w-20 h-8 m-1 common-border-color rounded shadow-md text-xs text-center font-medium"
+                  (click)="importFilteredPayeeData('csv')"
+                >
+                  CSV
+                </button>
+              </td>
+            </tr>
+          </table>
+        </div>
+      }
+      <div
+        role="presentation"
+        class="m-1 text-sm"
+        (click)="preventEventPropagation($event)"
+      >
+        Export Current Table
+      </div>
+      <table class="w-full">
+        <tr>
+          <td>
+            <button
+              class="w-20 h-8 m-1 common-border-color rounded shadow-md text-xs text-center font-medium"
+              (click)="exportExcel()"
+            >
+              Excel
+            </button>
+          </td>
+          <td>
+            <button
+              class="w-20 h-8 m-1 common-border-color rounded shadow-md text-xs text-center font-medium"
+              (click)="exportCsv()"
+            >
+              CSV
+            </button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button
+              class="w-20 h-8 m-1 common-border-color rounded shadow-md text-xs text-center font-medium"
+              (click)="exportPdf('download')"
+            >
+              PDF
+            </button>
+          </td>
+          <td>
+            <button
+              class="w-20 h-8 m-1 common-border-color rounded shadow-md text-xs text-center font-medium"
+              (click)="exportPdf('print')"
+            >
+              Print
+            </button>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <button
+              class="common-border-color w-44 h-8 m-1 shadow-md text-xs text-center font-medium"
+              (click)="sendEmail()"
+            >
+              Email
+            </button>
+          </td>
+        </tr>
+      </table>
+    </ng-container>
+  </div>
+</mat-menu>

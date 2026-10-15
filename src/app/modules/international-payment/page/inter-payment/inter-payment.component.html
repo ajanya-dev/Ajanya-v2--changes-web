@@ -1,0 +1,104 @@
+@if(complianceFreeze()) {
+  <app-compliance-freeze />
+}@else {
+<div class="px-6 py-1 bg-main-background-color ml-3 min-h-screen">
+  @if ((currentTab() === "new-payment" && currentStep === "country-amount" && isFromRecentTransactions()) || (existsTransaction() && currentTab() !== "recent-transactions")) {
+    <div class="mb-2 mt-1">
+      <app-common-back-button-v35
+        type="takeEvent"
+        (backEvent)="navigateToRecentTransactions()"
+      ></app-common-back-button-v35>
+    </div>
+  }
+  @if (isLoading() || (currentTab() === undefined)) {
+    <div
+      class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
+    >
+      <div class="flex flex-col items-center gap-4">
+        <div
+          class="flex items-center justify-center bg-common-blue-color rounded p-2"
+        >
+          <div
+            class="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"
+          ></div>
+        </div>
+        <p class="text-main-text-color text-base font-medium font-roboto">
+          Getting ready...
+        </p>
+      </div>
+    </div>
+  }
+  @if (!isLoading() && !isInternationalPaymentEnabled()) {
+    <app-inter-welcome />
+  }
+  @if (!isLoading() && isInternationalPaymentEnabled()) {
+    @if (currentTab() === "new-payment") {
+      <div class="relative flex justify-end gap-[15%] max-xl:gap-4">
+        <div
+          class="w-[640px] bg-main-background-color shadow-common-box-shadow rounded-lg max-laptop:!ml-auto max-h-fit"
+          [ngClass]="{
+            'max-2xl:!ml-0': walletDataService.interSelectedRecipientSignal()
+          }"
+        >
+          <div class="mx-auto pt-10 px-9 flex flex-col gap-8">
+            <!-- Header Section -->
+            <div
+              class="flex text-center flex-col items-center bg-common-secondary-blue-color px-10 py-7 rounded"
+            >
+              <div class="flex items-center gap-2">
+                <h1 class="font-roboto font-bold text-2xl text-common-blue-color">
+                  International Payment
+                </h1>
+              </div>
+              <div class="flex items-center gap-2 rounded-full py-2 mt-2 px-4 wave-animation">
+                <fa-icon [icon]="faPartyHorn" class="text-white text-sm"></fa-icon>
+                <span class="text-sm text-white font-roboto font-medium">No platform fee - Save more with every transfer!</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div class="w-full px-6 pb-10 overflow-x-auto">
+              @if (currentStep === "country-amount") {
+                <app-inter-country-list
+                  [paymentId]="paymentId()"
+                  (complete)="onNextClick($event)"
+                  (back)="onNextClick($event)"
+                  (editPayee)="onEditPayee()"
+                  (editBank)="onEditBank()"
+                />
+              }
+              @if (currentStep === "payee-confirm") {
+                <app-inter-receipient
+                  (complete)="onNextClick($event)"
+                  (back)="onNextClick($event)"
+                />
+              }
+            </div>
+          </div>
+        </div>
+        <div>
+          <app-inter-recipient-sidebar
+          [selectedRecipient]="walletDataService.interSelectedRecipientSignal()"
+          [selectedBank]="walletDataService.interSelectedRecipientSignal()?.bank"
+          (onEditPayee)="onEditPayee()"
+          (onEditBank)="onEditBank()"
+        />
+        </div>
+        
+      </div>
+    }
+    @if (currentTab() === "recent-transactions") {
+      <div class="w-full mx-auto bg-main-background-color rounded-lg">
+        <div class="mx-auto py-2 px-3 flex flex-col gap-8">
+          @if (
+            isInternationalPaymentEnabled() &&
+            currentTab() === "recent-transactions"
+          ) {
+            <app-inter-transactions />
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
+}

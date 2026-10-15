@@ -1,0 +1,176 @@
+<!-------- main_common_module start -------->
+<section class="main_common_module">
+  <!-------- main_left_wrapper start -------->
+  <div class="main_left_wrapper">
+    <!--------top section start -------->
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title flex items-center gap-1">
+          <app-ocw-back-button backUrl="manage/thirdparty_app/index">
+          </app-ocw-back-button>
+          <h3>Third Party Integration</h3>
+        </div>
+        <app-demo-video slug="salesforce"></app-demo-video>
+      </div>
+
+      <div class="module_main_body">
+        <form [formGroup]="salesForceForm">
+          <!-------- top-box start -------->
+          <section
+            class="top-box mt-6 border-solid border-2 border-input-border-color relative"
+          >
+            <div class="logo-bg"></div>
+            <div class="top-twobox">
+              <div class="top-box-centr main-bx-padding">
+                <p class="main-p">Salesforce</p>
+                <div class="status-color">
+                  <p>
+                    <span>Status:</span>
+                    <span [ngClass]="isConnected ? 'green-clr' : 'red-clr'">
+                      {{ isConnected ? "Connected" : "Disconnected" }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div class="top-box-right main-bx-padding mr-8 buton-desk">
+                <button
+                  type="button"
+                  class="ocw-btn ocw-btn-dark-green single_btn mr-4"
+                  (click)="onConnectToSalesforce()"
+                  [ngStyle]="{
+                    'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                  }"
+                >
+                  @if (!loading.defaultLoading) {
+                    <span>{{ isConnected ? 'Add Account' : 'Connect' }}</span>
+                  } @else {
+                    <div class="btn_spinner_wrapper">
+                      <span class="loadingSpinner"></span>
+                      <span>Connecting</span>
+                    </div>
+                  }
+                </button>
+              </div>
+            </div>
+            <div class="top-box-img !bg-secondary-background-color"></div>
+            <div class="top-box-img-2 !bg-common-secondary-blue-color"></div>
+            <div class="logo-sec">
+              <img
+                src="/assets/images/integration/salesforce_thirdparty.svg"
+                alt="Salesforce Logo"
+                width="120"
+                height="120"
+              />
+            </div>
+          </section>
+
+          <!-- Default loader for accounts -->
+          @if (loading.accountsLoading) {
+            <div class="flex justify-center py-8">
+              <div class="data_spinner"></div>
+            </div>
+          }
+
+          <!-------- Accounts Table -------->
+          @if (!loading.accountsLoading && isConnected) {
+            <div class="table-main-sec mt-6">
+              <h4 class="text-lg font-semibold mb-4">Connected Accounts</h4>
+              <div class="overflow-x-auto mb-6">
+                <table class="table-auto w-full ocw-table">
+                  <thead class="text-xs font-semibold uppercase ocw-table-light">
+                    <tr>
+                      <th class="p-2 whitespace-nowrap text-left">Username</th>
+                      <th class="p-2 whitespace-nowrap text-left">Instance</th>
+                      <th class="p-2 whitespace-nowrap text-left">Status</th>
+                      <th class="p-2 whitespace-nowrap text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-sm">
+                    @for (account of salesforceAccounts; track account.id; let i = $index) {
+                      <tr
+                        [ngClass]="{'selected-row': selectedAccount?.id === account.id}"
+                        class="cursor-pointer hover:bg-gray-50"
+                        (click)="selectAccount(account)"
+                      >
+                        <td class="p-2">{{ account.username }}</td>
+                        <td class="p-2">{{ account.instanceUrl }}</td>
+                        <td class="p-2">
+                          <span [ngClass]="account.isConnected ? 'status_connect' : 'status_disconnect'">
+                            {{ account.isConnected ? 'Connected' : 'Disconnected' }}
+                          </span>
+                        </td>
+                        <td class="p-2">
+                          <div class="action_buttons flex gap-2">
+                            <button
+                              type="button"
+                              class="ocw-btn ocw-btn-trash text-xs"
+                              (click)="ondisconnectToSalesforce(account, i); $event.stopPropagation()"
+                              [disabled]="loading.disconnecting === i"
+                            >
+                              @if (loading.disconnecting !== i) {
+                                <span>Disconnect</span>
+                              } @else {
+                                <div class="btn_spinner_wrapper">
+                                  <span class="loadingSpinner"></span>
+                                </div>
+                              }
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Contacts Section -->
+              @if (selectedAccount) {
+                <app-salesforce-contacts-table
+                  [contacts]="contacts"
+                  [pagination]="pagination"
+                  [loading]="{
+                    contactsLoading: loading.contactsLoading,
+                    syncingContacts: loading.syncingContacts,
+                    issuingCheck: loading.issuingCheck
+                  }"
+                  [accountUsername]="selectedAccount.username"
+                  (syncContacts)="syncContacts()"
+                  (issueCheck)="issueCheck($event)"
+                  (nextPage)="nextPage()"
+                  (prevPage)="prevPage()"
+                ></app-salesforce-contacts-table>
+              }
+            </div>
+          }
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-------- main_right_section start -------->
+  <div class="main_right_section">
+    <div class="module_top_section">
+      <div class="main__header">
+        <div class="left">
+          <p class="sub_head">Instructions</p>
+        </div>
+      </div>
+      <div class="module_body">
+        @for (instruction of instructions; track instruction) {
+          <div class="p-arrow">
+            <div class="p-arrow-text">
+              <span>
+                <p>{{ instruction }}</p>
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    <!--------module_bottom_section start -------->
+    <div class="module_bottom_section">
+      <app-customer-support></app-customer-support>
+    </div>
+  </div>
+</section>
+<!-------- main_common_module end -------->

@@ -1,0 +1,132 @@
+<div class="ocw-modal">
+  <!-- modal header -->
+  <div class="flex justify-between items-center pb-4 flex-shrink-0">
+    <div>
+      <span class="flex items-center">
+        <span class="font-inter text-base font-semibold text-main-text">Confirm your Bank Accounts</span>
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon class="cursor-pointer text-secondary-text-color text-lg" [icon]="faXmark"></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="flex flex-col flex-1 overflow-hidden min-h-0">
+    <div class="flex-1 overflow-auto mb-0">
+      <table class="new-table">
+        <thead>
+          <tr>
+            @for (head of ["Bank Account Name","Virtual Account Number", "Account Number", "Confirm Account Number", "Routing Number", "Action"]; track $index) {
+              <th class="text-left p-2 text-sm">{{ head }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @if(!isLoading()) {
+            @for (account of bankAccounts; track account.bankAccountName) {
+              <tr>
+                <!-- Bank Account Name Column -->
+                <td class="p-2 mt-2">
+                  <span>{{ account.bankAccountName }}</span>
+                </td>
+
+                <!-- Virtual Account Number Column -->
+                <td class="p-2 mt-2">
+                  <span>{{ account.accountNumber }}</span>
+                </td>
+
+                <!-- Account Number Column -->
+                <td class="p-2">
+                  @if (account.isConfirmed) {
+                    <div class="mt-2"><span>{{ account.formGroup.value.AccountNumber }}</span></div>
+                  } @else {
+                    <div [formGroup]="account.formGroup" class="input-group">
+                      <app-common-input-field
+                        [inputId]="account.accountNumber + '-account-number'"
+                        placeholder="Account Number"
+                        formControlName="AccountNumber"
+                        [maxlength]="20"
+                        [isNumberOnly]="true"
+                        [type]="'text'"
+                        (blur)="onAccountNumberBlur(account.formGroup)"
+                        (focus)="onAccountNumberFocus(account.formGroup)"
+                      />
+                      <app-control-message-v35 [control]="account.formGroup.controls.AccountNumber" />
+                    </div>
+                  }
+                </td>
+
+                <!-- Confirm Account Number Column -->
+                <td class="p-2">
+                  @if (account.isConfirmed) {
+                    <div class="mt-2"><span>{{ account.formGroup.value.ConfirmAccountNumber }}</span></div>
+                  } @else {
+                    <div [formGroup]="account.formGroup" class="input-group">
+                      <app-common-input-field
+                        [inputId]="account.accountNumber + '-confirm-account-number'"
+                        placeholder="Confirm Account Number"
+                        formControlName="ConfirmAccountNumber"
+                        [maxlength]="20"
+                        [isNumberOnly]="true"
+                        [type]="'text'"
+                      />
+                      <app-control-message-v35 [control]="account.formGroup.controls.ConfirmAccountNumber" />
+                    </div>
+                  }
+                </td>
+
+                <!-- Routing Number Column -->
+                <td class="p-2">
+                  @if (account.isConfirmed) {
+                    <div class="mt-2"><span>{{ account.formGroup.value.routingNumber }}</span></div>
+                  } @else {
+                    <div [formGroup]="account.formGroup" class="input-group">
+                      <app-common-input-field
+                        [inputId]="account.accountNumber + '-routing-number'"
+                        placeholder="Routing Number"
+                        formControlName="routingNumber"
+                        maxLength="9"
+                        [isNumberOnly]="true"
+                      />
+                      <app-control-message-v35 [control]="account.formGroup.controls.routingNumber" />
+                    </div>
+                  }
+                </td>
+
+                <!-- Status Column -->
+                <td class="p-2">
+                  @if (account.isConfirmed) {
+                    <fa-icon [icon]="faCheck" class="text-common-green-color text-xl"></fa-icon>
+                  } @else {
+                    <app-common-button-v35
+                      customClasses="bg-common-secondary-green-color text-common-green-color"
+                      [type]="{ style: 'general', name: 'money-action' }"
+                      text="Update"
+                      [disabled]="account.isLoading"
+                      [loading]="account.isLoading"
+                      (clickEvent)="confirmAccount($index)"
+                    ></app-common-button-v35>
+                  }
+                </td>
+              </tr>
+            }
+          } @else {
+            <tr>
+                <span class="data_spinner"></span>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- modal body end -->
+  <div class="flex justify-end pt-4 flex-shrink-0 mt-0">
+    <app-common-button-v35
+      width="125px"
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Close"
+      (clickEvent)="onCloseModal()"
+      [disabled]="isAnyAccountLoading()"
+    ></app-common-button-v35>
+  </div>
+</div>

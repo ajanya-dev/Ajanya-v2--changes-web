@@ -1,0 +1,1072 @@
+<div class="ocw_man_modal_wrapper">
+  <div
+    class="ocw_modal_header flex justify-between items-center relative !py-5 gap-5"
+  >
+    <div class="ocw_modal_title mail-modal-heading !pb-0 flex justify-between">
+      <div class="flex items-center gap-2">
+        <p>Mail Your Checks</p>
+        <div class="video_icon_wrapper mr-6">
+          <app-demo-video
+            [disableText]="true"
+            [slug]="'checkmailing'"
+          ></app-demo-video>
+        </div>
+      </div>
+      @if(showCheckMailNotification() && !isSubscribed) {
+        <div
+        class="font-inter rounded-md px-2 py-1 shadow-common-button flex flex-col gap-6 relative"
+        >
+        <div class="flex items-center gap-3 flex-wrap z-10">
+          <div>
+            <img ngSrc="assets/images/check/check-mail-dark.svg" alt="check-mail" width="38" height="42">
+          </div>
+          <div class="font-inter flex flex-col gap-1">
+            <span class="font-inter text-common-blue-color text-[13px] font-medium uppercase">First Check Mail is Free</span>
+            <p class="font-inter text-main-text-color text-xs font-normal">First Class, No Charge</p>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div class="flex items-center">
+        <fa-icon
+          matTooltip="Set your Default Shipping type from here"
+          [icon]="faGear"
+          class="text-main-text-color cursor-pointer text-lg"
+          (click)="goToSetting()"
+        />
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span
+            class="text-sm font-medium text-main-text-color whitespace-nowrap"
+            >MY CREDITS</span
+          >
+          <span
+            class="amount-recharge text-lg font-semibold text-common-blue-color"
+            >{{ currentCredit | currency }}</span
+          >
+        </div>
+
+        <app-common-button-v35
+          [text]="'Recharge Now'"
+          [type]="{ style: 'green', name: 'money-action' }"
+          (clickEvent)="openRechargeModal()"
+          [disabled]="isDisable || visibleLoading"
+          width="120px"
+          customClasses="!h-[44px]"
+        ></app-common-button-v35>
+      </div>
+      <div class="" (click)="close()" [mat-dialog-close]="false">
+        <fa-icon
+          [icon]="faTimes"
+          class="w-4 h-6 text-main-text-color cursor-pointer"
+        ></fa-icon>
+      </div>
+    </div>
+
+    @if (nonmail) {
+      <div class="toast absolute top-5">
+        <div class="toast-header">
+          <fa-icon [icon]="faWarning"></fa-icon>
+          <p class="mr-auto">
+            Check #<span>{{ nonmailcheck() }}</span> are not eligible for check
+            mailing
+          </p>
+          <button
+            type="button"
+            class="close toast_close"
+            data-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="ocw_modal_body">
+    <form [formGroup]="mailForm">
+      <div
+        class="w-full flex justify-between items-center mb-5 flex-col md:flex-row"
+      >
+        <div class="mb-3 flex gap-3 md:mb-0">
+          <app-common-button-v35
+            [text]="'Select Shipping Method'"
+            [type]="{ style: 'bordered', name: 'main' }"
+            (clickEvent)="selectShippingTypeForAll()"
+            width="120px"
+            suffix=true
+          ></app-common-button-v35>
+
+          @if (payeeall) {
+            <button
+              type="button"
+              class="edit-payee-address ocw-btn text-sm"
+              [ngClass]="{ disable: disabled }"
+              (click)="updateAllPayeeAddressModal()"
+            >
+              Edit Payee Address
+            </button>
+          }
+
+          @if (bankall) {
+            <button
+              type="button"
+              class="edit-from-address ocw-btn text-sm"
+              [ngClass]="{ disable: disabled }"
+              (click)="updateAllBankAddressModal()"
+            >
+              Edit From Address
+            </button>
+          }
+        </div>
+      </div>
+      <div class="table-responsive skelton">
+        @if (isDisable) {
+          <span class="data_spinner"></span>
+        }
+        <table class="check-mail-modal-table ocw-table">
+          <thead>
+            @if (fmails.length > 1) {
+              <th style="width: 3%; padding-right: 0.2em !important">
+                <input
+                  type="checkbox"
+                  id="mail_select_all"
+                  class="cursor-pointer"
+                  [ngClass]="{ disable: disabled }"
+                  [checked]="isAllRowsSelected"
+                  (change)="selectAllRowsForMailing($event.target.checked)"
+                />
+              </th>
+            }
+            <th style="width: 5%">#</th>
+            <th style="width: 25%">SHIPPING METHOD</th>
+            <th style="width: 58%">PAYEE NAME</th>
+            @if (fromValid) {
+              <th>Bank Account</th>
+            }
+            <th style="width: 10%">
+              <fa-icon
+                [icon]="faCreditCard"
+                class="w-4 h-4 ml-1 text-common-blue-color"
+              ></fa-icon>
+              CHECK NO
+            </th>
+            <th style="padding-right: 0.2em !important">
+              <input
+                type="checkbox"
+                class="cursor-pointer"
+                name="sms"
+                id="sms"
+                [ngClass]="{ disable: disabled }"
+                (change)="checkAllSms($event)"
+              />
+            </th>
+            <th style="width: 10%; padding-left: 0.2em !important">
+              <fa-icon
+                [icon]="faMessage"
+                class="w-4 h-4 ml-1 text-common-green-color"
+              ></fa-icon>
+              SMS
+            </th>
+            <th style="width: 10%">
+              <input
+                type="checkbox"
+                name="email"
+                id="email"
+                class="mr-2 cursor-pointer"
+                [ngClass]="{ disable: disabled }"
+                (change)="checkAllEmail($event)"
+              />
+              <fa-icon
+                [icon]="faEnvelope"
+                class="w-4 h-4 ml-1 text-common-blue-color"
+              ></fa-icon>
+              EMAIL
+            </th>
+            <th style="width: fit-content">
+              <fa-icon
+                [icon]="faCircleDollarToSlot"
+                class="w-4 h-4 text-common-yellow-color"
+              ></fa-icon>
+              COST
+            </th>
+            <th style="width: fit-content">
+              <fa-icon
+                [icon]="faPaperclip"
+                class="w-4 h-4 ml-1 text-common-violet-color"
+              ></fa-icon>
+              ATTACHMENT
+            </th>
+          </thead>
+
+          <tbody formArrayName="mails">
+            <tr
+              *ngFor="
+                let item of mailForm?.controls['mails']['controls'];
+                let i = index
+              "
+              [formGroupName]="i"
+            >
+              @if (fmails.length > 1) {
+                <td>
+                  <input
+                    type="checkbox"
+                    id="mail_select_{{ i }}"
+                    class="cursor-pointer"
+                    formControlName="isSelectedForPayment"
+                    (change)="toggleRowForMailing($event.target.checked, i)"
+                  />
+                </td>
+              }
+              <td>{{ i + 1 }}</td>
+              <td class="!text-justify">
+                <div class="single_input">
+                  @if (item.value.country) {
+                    <select
+                      id="sms_{{ item.value.enc_id }}"
+                      class="input_style"
+                      (change)="
+                        shippingTypecostchange(
+                          $event,
+                          item.value.enc_id,
+                          i,
+                          item.value.country
+                        )
+                      "
+                      [ngClass]="{ disable: disabled || shipdisabled }"
+                    >
+                      <option value="" disabled selected>
+                        Select Shipping Method
+                      </option>
+                      @for (
+                        shipping_type of sortedoption(item.value.country);
+                        track shipping_type.id
+                      ) {
+                        <option
+                          id="type_{{ shipping_type.id }}"
+                          [selected]="
+                            selctedShippingType[item.value.enc_id] ===
+                            shipping_type.id
+                          "
+                          value="{{ shipping_type.id }}"
+                        >
+                          {{ shipping_type.name }}
+                        </option>
+                      }
+                    </select>
+                  }
+                </div>
+                @if (
+                  invalidMailTypeChecks.includes(item.value.enc_id) &&
+                  customAddress
+                ) {
+                  <div
+                    class="error-message text-common-red-color pt-0.5 font-semibold"
+                  >
+                    <fa-icon class="pr-0.5" [icon]="faRequired"></fa-icon> This
+                    field is required.
+                  </div>
+                }
+                @if (!item.value.country) {
+                  <select
+                    class="select-down"
+                    matTooltip="Enter valid To address"
+                  >
+                    <option id="ShipTypeOption" value=" " selected>
+                      &nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;&nbsp;
+                    </option>
+                  </select>
+                }
+              </td>
+              <td>
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="flex justify-start items-center w-full payee-name"
+                    [ngClass]="{ disable: disabled || editDisable }"
+                    [matTooltip]="
+                      item.value.payee_name.length > 30
+                        ? item.value.payee_name
+                        : ''
+                    "
+                    (click)="
+                      openEditPayeeAdress(
+                        item.value.enc_payee_id,
+                        item.value.cheque_serial_number,
+                        item.value.enc_id
+                      )
+                    "
+                  >
+                    {{ item.value.payee_name | truncate: 30 }}
+                    <fa-icon class="ml-2" [icon]="faPencil"></fa-icon>
+                  </button>
+                  <div class="flex">
+                    <!-- Driven solely by the payee-validation API verdict. `=== false`
+                         keeps a row that has not been validated yet from flashing the
+                         badge before the response lands. -->
+                    @if (
+                      customAddress &&
+                      selectedChecksPayeeInfo?.[item.value.enc_id]?.success ===
+                        false
+                    ) {
+                      <div
+                        role="presentation"
+                        class="invalid-data-container"
+                        [ngClass]="{ disable: disabled || editDisable }"
+                        (click)="
+                          openEditPayeeAdress(
+                            item.value.enc_payee_id,
+                            item.value.cheque_serial_number,
+                            item.value.enc_id
+                          )
+                        "
+                      >
+                        Invalid To Address
+                      </div>
+                    }
+                  </div>
+                </div>
+              </td>
+              @if (fromValid) {
+                <td>
+                  @if (validatedBankIds.includes(item.value.enc_id)) {
+                    <div class="flex flex-col">
+                      <div class="flex text-common-blue-color">
+                        <span
+                          [matTooltip]="
+                            selectedCheksBankInfo[item.value.enc_id]?.cheque
+                              ?.bank_account?.bank_account_nick_name?.length >
+                            20
+                              ? selectedCheksBankInfo[item.value.enc_id]?.cheque
+                                  ?.bank_account?.bank_account_nick_name
+                              : ''
+                          "
+                        >
+                          {{
+                            selectedCheksBankInfo[item.value.enc_id]?.cheque
+                              ?.bank_account?.bank_account_nick_name
+                              | truncate: 20
+                          }}
+                        </span>
+                        <fa-icon
+                          class="ml-2 cursor-pointer"
+                          [icon]="faPencil"
+                          (click)="
+                            InvFromAddress(
+                              item.value.enc_bank_account_id,
+                              item.value.cheque_serial_number
+                            )
+                          "
+                        ></fa-icon>
+                      </div>
+                      <div
+                        role="presentation"
+                        class="invalid-data-container"
+                        [ngClass]="{ disable: disabled }"
+                        (click)="
+                          InvFromAddress(
+                            item.value.enc_bank_account_id,
+                            item.value.cheque_serial_number
+                          )
+                        "
+                        id="invalidFrom_{{ item.value.enc_id }}"
+                      >
+                        Invalid From Address
+                      </div>
+                    </div>
+                  }
+                </td>
+              }
+              <td>{{ item.value.cheque_serial_number }}</td>
+              <td>
+                <input
+                  type="checkbox"
+                  id="sms_{{ i }}"
+                  (change)="
+                    smscheck($event, i);
+                    smscheckchange($event, item.value.enc_id, i)
+                  "
+                  formControlName="informed_payee_sms"
+                  class="p-1 cursor-pointer"
+                />
+              </td>
+              <td>
+                <div class="relative">
+                  <div
+                    [ngClass]="{
+                      'border border-common-red-color rounded':
+                        isPhoneNumberRequired[i]
+                    }"
+                  >
+                    <app-new-phone-input
+                      type="text"
+                      id="phone_{{ i }}"
+                      [showCountryFlag]="false"
+                      [inputHeight]="'25px'"
+                      [inputWidth]="'100px'"
+                      [inputPadding]="'5px'"
+                      formControlName="payee_phone"
+                      [inputFontSize]="'12px'"
+                      (keyup)="
+                        onValidateError($event, i, 'phone', item.value.enc_id)
+                      "
+                      (keypress)="utils.numberOnly($event, 'numeric')"
+                    ></app-new-phone-input>
+                  </div>
+                  @if (isPhoneNumberRequired[i]) {
+                    <app-control-message-v35
+                      class="absolute flex justify-start"
+                      [control]="fmails?.controls[i]?.controls?.payee_phone"
+                      label="Required"
+                      marginTopOverride="!mt-0"
+                      tooltip="Phone number is required for FedEx shipping."
+                    ></app-control-message-v35>
+                  }
+                </div>
+              </td>
+              <td>
+                <div class="flex justify-center items-center">
+                  <input
+                    type="checkbox"
+                    id="email_checkBox_{{ i }}"
+                    [ngClass]="{ disable: disabled }"
+                    formControlName="informed_payee_email"
+                    (change)="emailcheck($event, i, item.value.enc_id)"
+                    class="p-1 mr-2 cursor-pointer"
+                  />
+                  <div class="flex flex-col">
+                    <input
+                      type="text"
+                      id="email_{{ i }}"
+                      class="check-mail-modal-input p-1"
+                      formControlName="payee_email"
+                      (keyup)="
+                        onValidateError($event, i, 'email', item.value.enc_id)
+                      "
+                    />
+                    <span
+                      class="error_msg whitespace-nowrap"
+                      id="email_err_msg{{ i }}"
+                    ></span>
+                  </div>
+                </div>
+              </td>
+              <td id="singleCost_{{ item.value.enc_id }}">
+                @if (item.value.enc_id) {
+                  <ng-container>
+                    <span class="">
+                      $
+                      {{
+                        shippingCalculation?.single_items?.[item.value.enc_id]
+                          ? shippingCalculation.single_items[
+                              item.value.enc_id
+                            ].toFixed(2)
+                          : "0.00"
+                      }}
+                    </span>
+                  </ng-container>
+                }
+              </td>
+              <td [ngClass]="{ disable: disabled }">
+                <div class="flex justify-center items-center">
+                  <div class="flex-1">
+                    @if (
+                      item.value.is_exisiting_attach &&
+                      !attachments[item.value.enc_id]?.length
+                    ) {
+                      <span
+                        class="fa-light fa-circle-info"
+                        matTooltip="You have attachments with this check. Click on “Add” and select to mail them with the check."
+                      ></span>
+                    }
+                  </div>
+                  <div class="flex-1">
+                    <button
+                      [matTooltip]="attachments.fileName"
+                      class="attachment-btn cursor-pointer relative flex items-center gap-1"
+                      type="button"
+                      (click)="
+                        openAttachmentModal(i, item.value.enc_id, smsvalue)
+                      "
+                    >
+                      <fa-icon
+                        [icon]="faPlus"
+                        class="cursor-pointer text-white"
+                        matTooltip="Select to mail attached documents with the check."
+                      ></fa-icon>
+                      <span>Add</span>
+                    </button>
+                  </div>
+                  <div class="flex-1">
+                    @if (
+                      !attachments[item.value.enc_id] &&
+                      item.value.added_attachments > 0
+                    ) {
+                      <ng-container>
+                        <span class="attachment-count">
+                          {{ item.value.added_attachments }}
+                        </span>
+                      </ng-container>
+                    } @else if (attachments[item.value.enc_id]?.length > 0) {
+                      <ng-container>
+                        <span class="attachment-count">
+                          {{ attachments[item.value.enc_id]?.length }}
+                        </span>
+                      </ng-container>
+                    }
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              @if (trans) {
+                <td colspan="3">
+                  <button
+                    type="button"
+                    class="my-2 last-trans-btn"
+                    [ngClass]="{ disable: disabled }"
+                    (click)="openLastTrans()"
+                  >
+                    Last 10 Transactions
+                  </button>
+                </td>
+              }
+              <td [attr.colspan]="mailTableColumnCount - (trans ? 6 : 3)">
+                @if (bankall || payeeall) {
+                  <button class="my-last-trans-btn">
+                    <a
+                      href="https://tools.usps.com/zip-code-lookup.htm?byaddress"
+                      target="_blank"
+                    >
+                      Verify Address Details
+                    </a>
+                  </button>
+                }
+              </td>
+              @if (trans) {
+                <td colspan="3" class="text-right !pr-2 subtotal-cell">
+                  <p class="whitespace-nowrap">
+                    SUB TOTAL :
+                    <span class="amount"
+                      >$ {{ subtotal ? subtotal : "0.00" }}</span
+                    >
+                  </p>
+                </td>
+              }
+              @if (trans === false) {
+                <td colspan="3" class="text-right subtotal-cell">
+                  <p class="whitespace-nowrap">
+                    SUB TOTAL :
+                    <span class="amount"
+                      >$ {{ subtotal ? subtotal : "0.00" }}</span
+                    >
+                  </p>
+                </td>
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex flex-col gap-2 shipping-selection-container my-5">
+        <div
+          class="flex flex-col gap-2 border border-solid border-input-border-color rounded-lg p-4"
+        >
+          <div class="flex justify-start shipping-details-container">
+            <div class="flex payee-address-types gap-3">
+              <div class="payee-address flex gap-4">
+                <div class="flex items-center">
+                  <div class="custom-radio-wrapper">
+                    <input
+                      type="radio"
+                      name="payee-address"
+                      id="to-payee-address"
+                      [ngClass]="{ disable: disabled }"
+                      class="custom-radio-input cursor-pointer"
+                      (change)="onShippingAddressChange($event)"
+                      checked
+                    />
+                  </div>
+                  <label
+                    for="to-payee-address"
+                    class="ml-2 text-sm cursor-pointer"
+                  >
+                    Ship to Payee Address</label
+                  >
+                </div>
+                <div class="flex justify-start items-center">
+                  <div class="custom-radio-wrapper">
+                    <input
+                      type="radio"
+                      name="payee-address"
+                      id="to-custom-address"
+                      [ngClass]="{ disable: disabled }"
+                      class="custom-radio-input cursor-pointer"
+                      (change)="onShippingAddressChange($event)"
+                    />
+                  </div>
+                  <label
+                    for="to-custom-address"
+                    class="whitespace-nowrap ml-2 text-sm !normal-case cursor-pointer"
+                  >
+                    Ship to Custom Address
+                  </label>
+                  <fa-icon
+                    [icon]="faCircleQuestion"
+                    class="cursor-pointer text-secondary-text-color ml-1"
+                    matTooltip="Send checks to a different address, such as an office, or mail multiple checks to one address. For privacy, each check can be sealed in its own envelope, then combined into one large envelope."
+                  ></fa-icon>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-1 items-center ml-2 justify-end">
+              <div
+                class="flex items-center  bg-common-secondary-blue-color px-2 py-1 rounded-lg "
+                [ngClass]="{
+                  'pointer-events-none cursor-no-drop opacity-70 ': !shipdisabled
+                }"
+              >
+                <input
+                  type="checkbox"
+                  class="cursor-pointer"
+                  id="individual-envelope"
+                  (change)="onChangeEnvelope($event)"
+                  [ngClass]="{ disable: disabled }"
+                  [(ngModel)]="isEnvelopeChecked"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <label
+                  for="individual-envelope"
+                  class="cursor-pointer font-inter font-normal text-main-text-color text-sm transfor !normal-case ml-2 "
+                  >Individual Envelope Option</label
+                >
+                <fa-icon
+                  [icon]="faCircleQuestion"
+                  class="cursor-pointer text-secondary-text-color ml-1"
+                  matTooltip="For privacy, we seal each check in separate envelopes, then combine them into one envelope."
+                ></fa-icon>
+              </div>
+            </div>
+          </div>
+
+          @if (!customAddress) {
+
+            <div class="custom-shipping-wrapper items-center my-2">
+              <div
+                class="flex w-full items-center justify-between gap-2"
+                [ngClass]="{ disable: disabled }"
+              >
+                <div class="flex flex-col flex-1 gap-1 min-w-0">
+                  <label for="mail-from" class="text-xs font-medium">MAIL FROM</label>
+                  <div class="flex w-full gap-2 items-center mt-1">
+                    <app-v35-common-dropdown
+                      #mailFromDropdown
+                      [config]="mailFromConfig"
+                      [listData]="shippingAddressFrom"
+                      [(ngModel)]="currentMailFrom"
+                      [ngModelOptions]="{ standalone: true }"
+                      appendTo="body"
+                      class="flex-1 min-w-0"
+                      [disabled]="disabled"
+                      (buttonClick)="openAddMailAddressModal('mail-from')"
+                      (ngModelChange)="onMailFromChange($event, 'mail-from')"
+                    ></app-v35-common-dropdown>
+                    <div class="flex-shrink-0">  
+                      @if (isMailFromEditable) {
+                      <button
+                      type="button "
+                      class="ocw-btn-skyblue ocw-btn ml-2"
+                      value="mail-from"
+                      (click)="openAddMailAddressModal('mail-from')"
+                    >
+                      <i
+                        [ngClass]="
+                            'fa fa-pencil'
+                        "
+                      ></i>
+                    </button>
+                    }
+
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col flex-1 gap-1 min-w-0">
+                  <label for="mail-to" class="text-xs font-medium">MAIL TO</label>
+                  <div class="flex gap-2 items-center mt-1" [ngClass]="{ skelton: isPayeeLoading }">
+                    <app-v35-common-dropdown
+                      #mailToDropdown
+                      [config]="mailToConfig"
+                      [listData]="shippingAddressTo"
+                      [(ngModel)]="currentMailTo"
+                      [ngModelOptions]="{ standalone: true }"
+                      appendTo="body"
+                      class="flex-1 min-w-0"
+                      [loading]="isPayeeLoading"
+                      [disabled]="disabled"
+                      (buttonClick)="openAddMailAddressModal('mail-to')"
+                      (ngModelChange)="onMailToChange($event, 'mail-to')"
+                    ></app-v35-common-dropdown>
+                    <div class="flex-shrink-0">
+                      @if (isMailToEditable) {
+                      <button
+                      type="button "
+                      class="ocw-btn-skyblue ocw-btn ml-2"
+                      value="mail-to"
+                      (click)="openAddMailAddressModal('mail-to')"
+                    >
+                      <i
+                        [ngClass]="
+                            'fa fa-pencil'
+                        "
+                      ></i>
+                    </button>
+                    }
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col flex-1 single-option min-w-0">
+                  <label for="shipping-type" class="text-xs font-medium"
+                    >SHIPPING TYPE</label
+                  >
+                  <div class="flex select-wrapper shipping-type flex-col mt-2">
+                    <div class="w-full">
+                      <mat-select
+                        id="shipping-type"
+                        class="!rounded-md w-full truncate"
+                        (ngModelChange)="customShipingTypeChange($event)"
+                        [(ngModel)]="customShippingType"
+                        [ngModelOptions]="{ standalone: true }"
+                        placeholder="Select shipping type"
+                        name="shipping-type-select"
+                        [ngClass]="{ disable: disabled }"
+                      >
+                        <mat-option [value]="" disabled> Select </mat-option>
+                        <mat-option
+                          *ngFor="
+                            let shipping_type of shippingvar;
+                            trackBy: trackByShippingType
+                          "
+                          [value]="shipping_type.id"
+                          id="customtype_{{ shipping_type.id }}"
+                        >
+                          {{ shipping_type.name }}
+                        </mat-option>
+                      </mat-select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="my-2 mr-[10px]">
+              <div>
+                <div id="group_total" class="ship-custom-adrs2">
+                  <p align="right" class="whitespace-nowrap text-sm">
+                    Shipping Fee : <span class="amount">{{ shippingFee }}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (bottomSection) {
+        <div
+          class="mail-types-container p-2 border border-solid border-input-border-color rounded-lg"
+          [ngClass]="{ disable: disabled }"
+        >
+          <div class="mail-types-input-wrapper flex flex-col">
+            <div class="w-full flex mail-types-input">
+              <div
+                class="mail-types-option p-2 border border-solid border-input-border-color rounded-lg"
+              >
+                <div class="custom-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="mail-type"
+                    id="mail-now"
+                    value="mail now"
+                    (change)="mailTypeChange($event?.target?.value)"
+                    [checked]="selectedType === 'mail now'"
+                    class="custom-radio-input"
+                  />
+                </div>
+                <label for="mail-now cursor-pointer" class="text-sm ml-1"
+                  >Send Now</label
+                >
+              </div>
+              @if (customAddress) {
+                <div class="flex mail-types">
+                  <div
+                    class="mail-types-option p-2 border border-solid border-input-border-color rounded-lg"
+                  >
+                    <div class="custom-radio-wrapper">
+                      <input
+                        type="radio"
+                        name="mail-type"
+                        id="schedule"
+                        value="schedule-it"
+                        class="custom-radio-input"
+                        (change)="mailTypeChange($event?.target?.value)"
+                        [checked]="selectedType === 'schedule-it'"
+                      />
+                    </div>
+                    <label for="schedule" class="text-sm ml-1 cursor-pointer"
+                      >Schedule Payment</label
+                    >
+                  </div>
+                  <div
+                    class="mail-types-option p-2 border border-solid border-input-border-color rounded-lg"
+                  >
+                    <div class="custom-radio-wrapper">
+                      <input
+                        type="radio"
+                        name="mail-type"
+                        id="recurring"
+                        class="custom-radio-input"
+                        value="recurring"
+                        (change)="mailTypeChange($event?.target?.value)"
+                        [checked]="selectedType === 'recurring'"
+                      />
+                    </div>
+                    <label for="recurring" class="text-sm ml-1 cursor-pointer"
+                      >Recurring Payment</label
+                    >
+                  </div>
+                </div>
+              }
+            </div>
+            @if (recurring) {
+              <div
+                class="mail-types-recurring-option w-full flex flex-wrap border border-solid border-input-border-color my-4 rounded-lg"
+              >
+                <div class="recurring_left flex w-full gap-2">
+                  <div class="flex flex-col mail-types-option-container flex-1">
+                    <p class="datename">Frequency</p>
+                    <select
+                      name="frequency"
+                      id="frequency"
+                      formControlName="frequency"
+                      class="freq-data border-color-1 border-radius-4 cursor-pointer"
+                    >
+                      <option value="1">Weekly</option>
+                      <option value="2">Bi-Weekly</option>
+                      <option value="3">Monthly</option>
+                      <option value="4">Quarterly</option>
+                      <option value="5">Yearly</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-col mail-types-option-container flex-1">
+                    <p class="datename">Start Date</p>
+                    <input
+                      type="date"
+                      name="recurring-types"
+                      formControlName="start_date"
+                      id="start_date"
+                      [min]="mindate"
+                      class="freq-data text-sm border-color-1 border-radius-4"
+                    />
+                    @if (startdatevalid) {
+                      <span class="error_msg"> &nbsp;&nbsp;Invalid Date</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="recurring_right flex flex-col gap-2">
+                  <div class="flex items-center mail-types-option-container">
+                    <div class="custom-radio-wrapper">
+                      <input
+                        type="radio"
+                        name="recurring-types"
+                        id="transaction_months"
+                        checked
+                        value="transaction"
+                        (change)="Recurring($event)"
+                        class="custom-radio-input"
+                      />
+                    </div>
+                    <label
+                      for="transaction_months"
+                      class="mail-types-recurring-sub-option ml-2 w-40 cursor-pointer"
+                      >Number of occurrences</label
+                    >
+                    <input
+                      type="number"
+                      name="transaction_count"
+                      id="transaction_count"
+                      formControlName="count"
+                      class="freq-data transaction-months-input w-32"
+                    />
+                  </div>
+                  <div class="flex items-center mail-types-option-container">
+                    <div class="custom-radio-wrapper">
+                      <input
+                        type="radio"
+                        name="recurring-types"
+                        value="Specific-date"
+                        (change)="Recurring($event)"
+                        id="specific_date"
+                        class="custom-radio-input"
+                      />
+                    </div>
+                    <label
+                      for="specific_date"
+                      class="mail-types-recurring-sub-option ml-2 w-40 cursor-pointer"
+                    >
+                      Specific Date (Until)</label
+                    >
+                    <input
+                      type="date"
+                      formControlName="until"
+                      name="specific_date_value"
+                      [min]="mindate"
+                      id="specific_date_value"
+                      class="freq-data text-sm border-color-1 border-radius-4 w-32"
+                    />
+                    @if (enddatevalid) {
+                      <span class="error_msg ml-2"> Invalid Date</span>
+                    }
+                  </div>
+                  <div class="flex items-center mail-types-option-container">
+                    <div class="custom-radio-wrapper">
+                      <input
+                        type="radio"
+                        name="recurring-types"
+                        value="until"
+                        (change)="Recurring($event)"
+                        id="until-i-cancel"
+                        class="custom-radio-input cursor-pointer"
+                      />
+                    </div>
+                    <label
+                      for="until-i-cancel"
+                      class="mail-types-recurring-sub-option ml-2 w-40 cursor-pointer"
+                    >
+                      Until Canceled
+                    </label>
+                  </div>
+                </div>
+
+                @if (recurring) {
+                  <div class="is_include flex items-center ml-auto">
+                    <input
+                      type="checkbox"
+                      name="mail-type"
+                      id="is_include"
+                      formControlName="recurring_include_check"
+                      checked
+                    />
+                    <label for="is_include" class="text-sm ml-2"
+                      >Include This Payment</label
+                    >
+                    <i
+                      title=""
+                      class="fa fa-question-circle helptip ml-2"
+                      aria-hidden="true"
+                      matTooltip=" Include this check in recurring mail. This check will be mailed on the first occurrence of recurring"
+                      [matTooltipPosition]="position.value"
+                    >
+                    </i>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (scheduleIt) {
+              <div
+                class="mail-types-schedule-option w-full p-4 border border-solid border-input-border-color rounded-lg"
+              >
+                <label for="" class="mr-3 mb-2"> Select Date</label>
+                <div
+                  class="border-color-1 border-radius-4 px-2 py-2 max-w-[170px]"
+                >
+                  <input
+                    type="date"
+                    id="select-date"
+                    class="border-color-1"
+                    formControlName="scheduleDate"
+                    [min]="mindate"
+                    class="date"
+                  />
+                </div>
+                @if (datevalid) {
+                  <span class="error_msg"> &nbsp;&nbsp;Invalid Date</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </form>
+    @if (autoAttachmentForMail) {
+      <div class="note_message">
+        Note: To include attachments, click 'Add' before sending the check.
+      </div>
+    }
+  </div>
+  <div class="ocw_modal_footer">
+    <mat-dialog-actions class="mr-auto">
+      @if (skipprocess) {
+        <button
+          class="ocw-btn ocw-btn-dark-blue mr-auto"
+          class="ocw-btn ocw-btn-dark-blue mr-auto"
+          (click)="skip()"
+        >
+          Skip
+        </button>
+      }
+    </mat-dialog-actions>
+    <mat-dialog-actions align="end">
+      <p class="mr-4">
+        TOTAL : <span class="amount">$ {{ total ? total : "0.00" }}</span>
+      </p>
+
+      @if (!recurring && !scheduleIt) {
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Send Now"
+          [loading]="loading"
+          [disabled]="isDisable || loading || !hasSelectedRows"
+          (clickEvent)="MailNow('')"
+          width="120px"
+        >
+        </app-common-button-v35>
+      }
+
+      @if (scheduleIt) {
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Schedule Payment"
+          [loading]="loading"
+          [disabled]="loading || !hasSelectedRows"
+          (clickEvent)="MailNow('schedule')"
+          width="140px"
+        >
+        </app-common-button-v35>
+      }
+
+      @if (recurring) {
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Set Recurring Payment"
+          [loading]="loading"
+          [disabled]="loading || !hasSelectedRows"
+          (clickEvent)="MailNow('recurring')"
+          width="180px"
+        >
+        </app-common-button-v35>
+      }
+    </mat-dialog-actions>
+  </div>
+</div>
+@if (isChangeMailType()) {
+  <div class="absolute left-0 top-0 h-full w-full overflow-hidden z-10">
+    <div class="data_spinner"></div>
+  </div>
+}

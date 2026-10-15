@@ -1,0 +1,112 @@
+<div class="h-full">
+  <div class="laptop:hidden">
+    <app-v35-common-dropdown
+      [loading]="loading() ?? false"
+      [config]="{
+        placeholder: loading()
+          ? 'Loading..'
+          : (selectedCard?.cardHolder?.name ?? 'Select Card' | truncate: 20),
+        enableAddNew: true,
+        displayField: 'cardHolder.name',
+        displaySubField: 'last4',
+        style: {
+          size: 3,
+          enableLabelIcon: true,
+          labelIconData: {
+            icon_fa: ['fas', 'credit-card'],
+            color: 'common-blue-color'
+          }
+        },
+        commons: {
+          iconColor: {
+            background: 'common-secondary-blue-color',
+            text: 'common-blue-color'
+          },
+          iconData: ['fas', 'credit-card']
+        }
+      }"
+      [listData]="cardList() ?? []"
+      [(ngModel)]="selectorSelectedValue"
+      (buttonClick)="addNewButtonClick()"
+    ></app-v35-common-dropdown>
+  </div>
+
+  <div
+    [ngClass]="
+      resize ? '!min-w-[150px] !w-[150px]' : '!min-w-[280px] !w-[280px]'
+    "
+    class="h-full hidden laptop:flex laptop:flex-col border-t border-input-border-color"
+  >
+    <div class="flex flex-col h-full overflow-y-auto thin-scroll">
+      @for (item of cardList() | searchFilter: searchKey(); track $index) {
+        <ng-container>
+          <button
+            class="single-card border-b hover:bg-secondary-background-color"
+            [ngClass]="
+              item?.id === selectedCard?.id
+                ? 'selected-card bg-secondary-background-color border border-common-blue-color rounded'
+                : 'border-input-border-color'
+            "
+            (click)="selectCard(item)"
+          >
+            <div class="pl-4 pr-3 py-2 flex gap-3">
+              @if (!resize) {
+                <div class="flex items-center justify-center">
+                  <div
+                    class="flex justify-center items-center h-7 w-7 bg-common-secondary-blue-color rounded-full"
+                  >
+                    <fa-icon
+                      class="text-common-blue-color text-xs"
+                      [icon]="['fas', 'credit-card']"
+                    ></fa-icon>
+                  </div>
+                </div>
+              }
+              <div class="w-full">
+                <h1
+                  class="font-roboto text-xs font-medium text-main-text-color text-left"
+                >
+                  {{ item.cardHolder.name | truncate: 18 }}
+                </h1>
+                <div class="flex justify-between pt-1">
+                  <h2
+                    class="font-roboto text-xs font-normal text-secondary-text-color text-left"
+                  >
+                    *******{{ item.last4 }}
+                  </h2>
+                </div>
+              </div>
+            </div>
+          </button>
+        </ng-container>
+      }
+      @if (
+        (cardList() | searchFilter: searchKey() | json) === "[]" &&
+        !loading() &&
+        cardList().length
+      ) {
+        <div class="h-full w-full flex items-center justify-center">
+          Sorry! No Cards Found.
+        </div>
+      }
+
+      @if (cardList().length === 0) {
+        <ng-container>
+          @if (loading()) {
+            <app-common-list-skelton [items]="14"></app-common-list-skelton>
+          } @else {
+            <div
+              class="h-full w-full flex items-center text-center justify-center"
+            >
+              Sorry!
+              @if (resize) {
+                <br />
+              }
+              No Cards Found.
+            </div>
+          }
+        </ng-container>
+      }
+    </div>
+  </div>
+</div>

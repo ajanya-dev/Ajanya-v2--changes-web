@@ -1,0 +1,484 @@
+<div class="px-5 pt-2 flex flex-col h-full">
+  <div
+    class="flex justify-between border-b-input-border-color border-b h-9 items-center pr-2.5"
+    [ngClass]="{ 'shadow-common-tab-bottom z-50': tabBottomShadow }"
+  >
+    <div class="tab-group flex h-full">
+      <ng-container>
+        @for (tab of tabs; track tab) {
+          <div
+            role="presentation"
+            class="tab-item"
+            (click)="toggleAccountDetails(tab.value)"
+            [ngClass]="{
+              'border-b-common-blue-color border-b-4': currentTab === tab.value
+            }"
+          >
+            {{ tab.label }}
+          </div>
+        }
+      </ng-container>
+    </div>
+  </div>
+  @if (currentTab === "account") {
+    <div
+      (scroll)="onScroll()"
+      #mainSection
+      class="account-details flex flex-col h-full overflow-auto"
+      appScrollListener
+    >
+      <div class="actions flex gap-4 py-2.5 items-center">
+        <div class="basic-details flex flex-col gap-2 min-h-full grow">
+          <div class="buttons flex gap-2">
+            <app-common-button-v35
+              [ngClass]="{
+                skelton: cloudListV35Service.airWallexLoadingSignal(),
+                'opacity-10 pointer-events-none':
+                  cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+                  'ACTIVE'
+              }"
+              text="Send"
+              (clickEvent)="sendMoney()"
+              width="80px"
+              [disabled]="
+                cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+                'ACTIVE'
+              "
+              [type]="{ style: 'green', name: 'money-action' }"
+              class="!opacity-50 !cursor-default"
+              toolTip="Currtly not available"
+            ></app-common-button-v35>
+            <app-common-button-v35
+              [type]="{ style: 'violet', name: 'money-action' }"
+              [ngClass]="{
+                skelton: cloudListV35Service.airWallexLoadingSignal(),
+                'opacity-10 pointer-events-none':
+                  cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+                  'ACTIVE'
+              }"
+              (clickEvent)="transferMoney()"
+              text="Transfer"
+              width="100%"
+              class="w-24 max-sm:w-full !opacity-50 !cursor-default"
+              [disabled]="
+                cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+                'ACTIVE'
+              "
+              toolTip="Currtly not available"
+            >
+            </app-common-button-v35>
+          </div>
+          @if (
+            cloudListV35Service.selectedAccountSignal();
+            as selectedAccount
+          ) {
+            <div class="flex gap-2 grow">
+              @if (selectedAccount.accountStatus === "ACTIVE") {
+                <div
+                  class="basic-details grow flex justify-between gap-2 bg-secondary-background-color p-4 rounded-[3px]"
+                  [ngClass]="{
+                    skelton: cloudListV35Service.airWallexLoadingSignal()
+                  }"
+                >
+                  <div class="flex flex-col justify-between">
+                    <div class="flex gap-4 items-center">
+                      <span class="flex gap-2 items-center">
+                        <span
+                          class="font-medium text-base text-secondary-text-color rounded-md bg-main-background-color py-0.5 px-2 min-w-[90px] whitespace-nowrap"
+                          [matTooltip]="
+                            selectedAccount?.accountName?.length ?? 0 > 24
+                              ? selectedAccount.accountName
+                              : ''
+                          "
+                        >
+                          {{
+                            selectedAccount?.accountName ?? "" | truncate: 24
+                          }}
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex gap-4 items-center">
+                      <div class="flex flex-col">
+                        <span
+                          class="font-inter font-normal text-xs text-secondary-text-color"
+                          >Total Balance</span
+                        >
+                        <span
+                          [ngClass]="{
+                            'skelton h-6 w-20':
+                              cloudListV35Service.accountBalanceLoadingSignal()
+                          }"
+                          class="font-inter font-semibold text-lg text-main-text-color"
+                        >
+                          {{
+                            cloudListV35Service.accountBalanceSignal()
+                              | currency
+                          }}
+                        </span>
+                      </div>
+                      <app-common-button-v35
+                        type="list"
+                        text="Add Fund"
+                        (clickEvent)="openAddFundPage()"
+                        class="opacity-50"
+                        toolTip="Currtly not available"
+                      ></app-common-button-v35>
+                      <div class="flex flex-col">
+                        <span
+                          class="font-inter font-normal text-xs text-secondary-text-color"
+                          >Nick Name</span
+                        >
+                        @if (selectedAccount?.accountNickName) {
+                          <span
+                            [matTooltip]="
+                              selectedAccount?.accountNickName?.length > 24
+                                ? selectedAccount.accountNickName
+                                : ''
+                            "
+                            class="font-inter font-semibold text-lg text-main-text-color"
+                          >
+                            {{ selectedAccount.accountNickName }}
+                            <fa-icon
+                              class="text-xs text-common-blue-color opacity-50 cursor-default"
+                              (click)="
+                                addNickNameModal(
+                                  selectedAccount?.id,
+                                  'edit',
+                                  selectedAccount.accountNickName
+                                )
+                              "
+                              [icon]="faPenToSquare"
+                            ></fa-icon>
+                          </span>
+                        } @else {
+                          <p
+                            role="presentation"
+                            (click)="
+                              addNickNameModal(selectedAccount?.id, 'add')
+                            "
+                            class="v35-labels opacity-50 !cursor-default"
+                          >
+                            <fa-icon class="text-xs" [icon]="faPlus"></fa-icon
+                            >Add Nick Name
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-1 items-end justify-between">
+                    <span
+                      role="presentation"
+                      (click)="accountInfo(selectedAccount)"
+                      class="gap-1 v35-labels items-center hidden max-2xl:flex"
+                      >Account Info</span
+                    >
+                    <span
+                      role="presentation"
+                      (click)="downloadStatement()"
+                      class="gap-1 v35-labels items-center flex text-end"
+                      >Download Statement</span
+                    >
+                  </div>
+                </div>
+              } @else {
+                <div
+                  class="basic-details grow flex justify-between gap-2 bg-secondary-background-color p-4 rounded-[3px]"
+                  [ngClass]="{
+                    skelton: cloudListV35Service.airWallexLoadingSignal()
+                  }"
+                >
+                  <div class="grow flex justify-center">
+                    <div class="flex items-center gap-2">
+                      <div>
+                        <fa-icon
+                          class="text-common-red-color text-4xl"
+                          [icon]="['fas', 'ban']"
+                        ></fa-icon>
+                      </div>
+                      <div>
+                        <div class="text-base font-semibold font-inter">
+                          Your account is currently suspended
+                        </div>
+                        <div class="text-[13px]">
+                          Please
+                          <span
+                            role="presentation"
+                            class="text-common-blue-color cursor-pointer underline pr-1"
+                            (click)="contactNow()"
+                            >contact customer support</span
+                          >for further information.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-1 items-end justify-between">
+                    <span
+                      role="presentation"
+                      (click)="downloadStatement()"
+                      class="gap-1 v35-labels items-center flex text-end"
+                      >Download Statement</span
+                    >
+                  </div>
+                </div>
+              }
+              <div
+                class="basic-details flex-col min-w-[350px] justify-between bg-secondary-background-color p-4 font-inter rounded-[3px] hidden 2xl:flex"
+                [ngClass]="{
+                  skelton: cloudListV35Service.airWallexLoadingSignal()
+                }"
+              >
+                <div
+                  class="w-full flex justify-between text-base font-semibold gap-2 items-center"
+                >
+                  Account Info
+                </div>
+                <div class="flex flex-col text-sm">
+                  <div class="flex gap-2 items-center">
+                    <span
+                      class="font-normal text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+                      >Account Name</span
+                    >:
+                    <span
+                      [matTooltip]="
+                        selectedAccount?.accountName?.length ?? 0 > 24
+                          ? selectedAccount.accountName
+                          : ''
+                      "
+                      class="font-semibold text-xs text-main-text-color min-w-[20px]"
+                      >{{
+                        selectedAccount?.accountName ?? "" | truncate: 24
+                      }}</span
+                    >
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <span
+                      class="font-normal text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+                      >Routing Number </span
+                    >:
+                    <span
+                      class="font-semibold text-xs text-main-text-color min-w-[20px]"
+                      >{{ selectedAccount?.routingNumber }}</span
+                    >
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <span
+                      class="font-normal text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+                      >Account Number </span
+                    >:
+                    @if (!showAccountNumber) {
+                      <span
+                        class="font-semibold text-xs text-main-text-color min-w-[20px] w-1/3"
+                        >{{
+                          "XXXXXX" +
+                            (selectedAccount?.accountNumber | slice: -4)
+                        }}</span
+                      >
+                      <fa-icon
+                        class="cursor-pointer"
+                        [icon]="['fas', 'eye']"
+                        (click)="showAccountNumber = !showAccountNumber"
+                      ></fa-icon>
+                    } @else {
+                      <span
+                        class="font-semibold text-xs text-main-text-color min-w-[20px] w-1/3"
+                        >{{ selectedAccount?.accountNumber }}</span
+                      >
+                      <fa-icon
+                        class="cursor-pointer"
+                        [icon]="['fas', 'eye-slash']"
+                        (click)="showAccountNumber = !showAccountNumber"
+                      ></fa-icon>
+                    }
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <span
+                      class="font-normal text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+                      >Account Type </span
+                    >:
+                    <span
+                      class="font-semibold text-xs text-main-text-color min-w-[20px]"
+                      >{{ selectedAccount?.accountType | titlecase }}</span
+                    >
+                  </div>
+
+                  <div class="more-info">
+                    <span
+                      class="text-xs text-common-blue-color underline opacity-50 cursor-default"
+                      role="presentation"
+                      [ngClass]="{
+                        'pointer-events-none':
+                          cloudListV35Service.selectedAccountSignal()
+                            ?.accountStatus !== 'ACTIVE'
+                      }"
+                      (click)="accountInfo(selectedAccount)"
+                      >More info</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        <div
+          [ngStyle]="{ fontSize: cardSize }"
+          class="card-zil !relative flex flex-col mt-4 justify-between bg-contain bg-no-repeat shrink-0"
+          [ngClass]="{
+            skelton: cloudListV35Service.airWallexLoadingSignal(),
+            'opacity-10':
+              cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+              'ACTIVE'
+          }"
+        >
+          @if (
+            cloudBankDetailsDataV35Service.selectedCardSignal() &&
+            cloudListV35Service.selectedAccountSignal()?.accountStatus ===
+              "ACTIVE"
+          ) {
+            <div
+              role="presentation"
+              class="cursor-pointer"
+              (click)="toggleAccountDetails('card')"
+            >
+              <div
+                class="top-all flex justify-between"
+                [ngClass]="{
+                  'opacity-50':
+                    cloudBankDetailsDataV35Service.selectedCardSignal()
+                }"
+              >
+                <span></span>
+                <img
+                  class="!w-14"
+                  [ngSrc]="
+                    '/assets/images/zil-with-logo.svg'
+                      | whiteLabel: 'cloudAppLogo'
+                  "
+                  alt=""
+                  width="20"
+                  height="20"
+                />
+              </div>
+              <div class="spacer"></div>
+              <div
+                class="card-number flex flex-col gap-1"
+                [ngClass]="{
+                  'opacity-50':
+                    cloudBankDetailsDataV35Service.selectedCardSignal()
+                }"
+              >
+                <img
+                  class="chip"
+                  ngSrc="assets/images/card-chip.svg"
+                  alt="card-chip"
+                  width="20"
+                  height="20"
+                />
+                <span
+                  class="text-white font-normal font-inter w-fit"
+                  [ngClass]="{
+                    skelton: cloudBankDetailsDataV35Service.cardLoadingSignal()
+                  }"
+                  >**** **** ****
+                  {{
+                    cloudBankDetailsDataV35Service.selectedCardSignal()
+                      ? cloudBankDetailsDataV35Service.selectedCardSignal()
+                          ?.last4
+                      : "****"
+                  }}</span
+                >
+              </div>
+              <div class="spacer"></div>
+              <div
+                class="flex items-end justify-center date"
+                [ngClass]="{
+                  'opacity-50':
+                    cloudBankDetailsDataV35Service.selectedCardSignal()
+                }"
+              >
+                <span class="font-inter font-normal text-white"
+                  >Exp. <br />Date</span
+                >
+              </div>
+              <div
+                class="bottom flex justify-between items-end"
+                [ngClass]="{
+                  'opacity-50':
+                    cloudBankDetailsDataV35Service.selectedCardSignal()
+                }"
+              >
+                <div
+                  class="name text-white font-roboto text-xs font-medium truncate"
+                >
+                  {{
+                    cloudBankDetailsDataV35Service.selectedCardSignal()?.label
+                  }}
+                </div>
+                <div class="flex flex-col items-end">
+                  <span class="font-inter font-normal text-white">Debit</span>
+                  <img
+                    ngSrc="assets/images/cloud-bank/only-visa.svg"
+                    alt="visa-logo"
+                    width="20"
+                    height="20"
+                  />
+                </div>
+              </div>
+            </div>
+          }
+          @if (
+            cloudListV35Service.selectedAccountSignal()?.accountStatus !==
+            "ACTIVE"
+          ) {
+            <div
+              class="!absolute w-full h-full pb-4 pr-4 flex justify-center items-center"
+            >
+              <div
+                class="h-full w-full flex justify-center items-center pointer-events-none"
+              >
+                <app-common-button-v35
+                  text="Create First Card"
+                  [type]="{ name: 'main', style: 'filled' }"
+                  class="pointer-events-none opacity-50"
+                ></app-common-button-v35>
+              </div>
+            </div>
+          }
+          @if (
+            !cloudBankDetailsDataV35Service.selectedCardSignal() &&
+            cloudListV35Service.selectedAccountSignal()?.id
+          ) {
+            <div
+              class="!absolute w-full h-full pb-4 pr-4 flex justify-center items-center"
+            >
+              <div class="h-full w-full flex justify-center items-center">
+                <app-common-button-v35
+                  text="Create First Card"
+                  [type]="{ name: 'main', style: 'filled' }"
+                  (clickEvent)="
+                    createCardPage(
+                      cloudListV35Service.selectedAccountSignal()?.id ?? ''
+                    )
+                  "
+                  class="pointer-events-none opacity-50"
+                ></app-common-button-v35>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="h-4"></div>
+      <div
+        class="grow h-auto"
+        [ngClass]="{ skelton: cloudListV35Service.airWallexLoadingSignal() }"
+      >
+        <app-cloud-account-data-table-v3></app-cloud-account-data-table-v3>
+      </div>
+    </div>
+  }
+
+  @if (currentTab === "card") {
+    <div class="h-full overflow-hidden">
+      <app-manage-cloud-card-v35></app-manage-cloud-card-v35>
+    </div>
+  }
+</div>

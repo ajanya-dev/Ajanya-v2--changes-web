@@ -1,0 +1,246 @@
+<div class="main-container" [formGroup]="paymentForm">
+    <div class="flex flex-col items-center">
+      <div class="w-full flex justify-center">
+        <app-amount-input
+          [isDisabled]="
+            paymentForm.controls.amount.disabled || amountInputDisabled
+          "
+          [ngClass]="
+            paymentForm.controls.amount.disabled || amountInputDisabled
+              ? 'disable_field_amt cursor-no-drop bg-check-input-disabled-color'
+              : ''
+          "
+          formControlName="amount"
+          [maxLength]="15"
+          customClass="amount-input-v3"
+        ></app-amount-input>
+      </div>
+      <app-control-message-v35
+        [control]="paymentForm.controls.amount"
+        label="Amount is required"
+      ></app-control-message-v35>
+    </div>
+    <div class="w-full flex flex-col justify-center items-center mt-8">
+      @if (payeeDataService.payeeDataSignal()) {
+        <div class="w-full flex justify-end items-end mb-1 text-main-text-color">
+          <button
+            matTooltip="View Payee Summary"
+            (click)="payeeDataService.openTransactionHistoryModal()"
+          >
+            <fa-icon [icon]="faHistory"></fa-icon>
+          </button>
+        </div>
+      }
+      <div class="w-full flex justify-center items-center">
+        <div class="custom-input-v3-wrapper flex grow shadow max-w-[340px]">
+          <div class="w-full flex justify-center items-center">
+            <app-wallet-dropdown-v3
+              class="w-full"
+              formControlName="wallet"
+              (ready)="
+                populateOnEdit(
+                  $event,
+                  paymentConfig?.paymentFormValue?.wallet?.id
+                )
+              "
+              append="ng-select"
+              customHeight="3"
+            ></app-wallet-dropdown-v3>
+          </div>
+        </div>
+        <div class="arrow-wrapper flex justify-center items-center">
+          <div class="arrow flex justify-center items-center">
+            <fa-icon [icon]="['fas', 'arrow-right-long']"></fa-icon>
+          </div>
+        </div>
+        <div class="custom-input-v3-wrapper flex grow shadow max-w-[340px]">
+          <app-payee-dropdown-v3
+            [blockFrozenPayee]="true"
+            class="w-full"
+            customHeight="3"
+            [enableAddNew]="true"
+            formControlName="payee"
+            (ready)="
+              populateOnEdit(
+                $event,
+                paymentConfig?.paymentFormValue?.payee?.encryptedId
+              )
+            "
+            (ngModelChange)="selectPayee($event, true)"
+            (clearEvent)="clearPayee()"
+            (newPayeeAdded)="newPayeeAdd($event)"
+          ></app-payee-dropdown-v3>
+        </div>
+      </div>
+    </div>
+    <div class="flex">
+      <app-control-message-v35
+        [control]="paymentForm.controls.wallet"
+        class="w-full"
+      ></app-control-message-v35>
+      <app-control-message-v35
+        [control]="paymentForm.controls.payee"
+        class="w-full pl-7"
+      ></app-control-message-v35>
+    </div>
+    <div class="grid grid-cols-2 gap-6 mt-5">
+      <div class="single_input">
+        <input
+          id="payeeEmail"
+          type="text"
+          class="input_style"
+          placeholder=" "
+          formControlName="payeeEmail"
+        />
+        <label for="payeeEmail" class="floating_label_field"
+          >Payee Email<span class="error_msg">*</span></label
+        >
+        <app-control-message-v35
+          [control]="paymentForm.controls.payeeEmail"
+        ></app-control-message-v35>
+      </div>
+  
+      <div class="single_input">
+        <input
+          id="invoiceNo"
+          type="text"
+          class="input_style"
+          placeholder=" "
+          formControlName="invoiceNumber"
+        />
+        <label for="invoiceNo" class="floating_label_field">Invoice Number</label>
+        <fa-icon
+          [icon]="faCircleQuestion"
+          [matTooltip]="'• Enter number from your bill/invoice. \n• Leave blank if you don\'t have one. \n• Helps track your payment later.'"
+          [matTooltipPosition]="'right'"
+          [matTooltipShowDelay]="300"
+          class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+        ></fa-icon>
+      </div>
+      <div class="single_input">
+        <input
+          id="payeeId"
+          type="text"
+          class="input_style"
+          placeholder=" "
+          formControlName="payeeIdNumber"
+          maxlength="30"
+        />
+        <label for="payeeId" class="floating_label_field"
+          >Payee ID/Account Number</label
+        >
+        <app-control-message-v35
+          [control]="paymentForm.controls.payeeIdNumber"
+        />
+      </div>
+  
+      <div class="single_input">
+        <div class="flex w-full">
+          <app-category-dropdown-v3
+            class="w-full"
+            formControlName="category"
+          ></app-category-dropdown-v3>
+        </div>
+        <app-control-message-v35 [control]="paymentForm.controls.category">
+        </app-control-message-v35>
+      </div>
+      <div class="single_input col-span-2 mb-2">
+        <input
+          id="memo"
+          type="text"
+          class="input_style memo-input-with-icon"
+          placeholder=" "
+          formControlName="memo"
+          maxlength="100"
+        />
+        <label for="memo" class="floating_label_field">Memo</label>
+        <fa-icon
+        [icon]="faCircleQuestion"
+        [matTooltip]="'• Brief note about this payment.\n• Example: \'Office rent\' or \'Supplies\'.'"
+        [matTooltipPosition]="'right'"
+        [matTooltipShowDelay]="300"
+        class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+    ></fa-icon>
+      </div>
+    </div>
+  
+    <!-- <div class="flex gap-2 mt-3">
+      <button
+        class="add-attachment h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md"
+        [matBadge]="attachmentCount"
+        matBadgeSize="small"
+        [matBadgeHidden]="attachmentCount < 1 ? true : false"
+        matTooltip="Add attachments to the payment"
+        (click)="openAddAttachment()"
+      >
+        <fa-icon [icon]="['fas', 'paperclip']"></fa-icon>
+      </button>
+  
+      <button
+        class="add-comment h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md"
+        [matBadge]="commentsCount"
+        matBadgeSize="small"
+        [matBadgeHidden]="commentsCount < 1 ? true : false"
+        matTooltip="Add comments to the payment"
+        (click)="openAddComment()"
+      >
+        <fa-icon [icon]="['fas', 'comment-plus']" class="w-full"></fa-icon>
+      </button>
+  
+      <button
+        class="add-remittance h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md"
+        [matBadge]="hasRemittance ? '✔' : ''"
+        matBadgeSize="small"
+        matTooltip="Add remittance to the payment"
+        (click)="openAddRemitance()"
+      >
+        <fa-icon [icon]="['fas', 'square-list']"></fa-icon>
+      </button>
+    </div> -->
+  
+    <div class="pt-6 flex gap-2 justify-between">
+      @if (paymentConfig.mode === "EDIT") {
+        <app-common-button-v35
+          class="flex-1"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Update"
+          width="100%"
+          (clickEvent)="submitPayment('update')"
+          [loading]="loading && paymentProcessingContext === 'update'"
+          [disabled]="loading"
+        ></app-common-button-v35>
+      } @else if (
+        paymentConfig.mode === "CREATE" || paymentConfig.mode === "CLONE"
+      ) {
+        <app-common-button-v35
+          class="flex-1"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Save"
+          width="100%"
+          (clickEvent)="submitPayment('save')"
+          [loading]="loading && paymentProcessingContext === 'save'"
+          [disabled]="loading"
+        ></app-common-button-v35>
+      }
+      <app-common-button-v35
+      class="flex-1"
+      [type]="{ style: 'filled', name: 'main' }"
+      text="Email"
+      width="100%"
+      (clickEvent)="
+        submitPayment(
+          paymentConfig?.mode === 'CREATE' || paymentConfig?.mode === 'CLONE'
+            ? 'pay'
+            : 'updateAndPay'
+        )
+      "
+      [loading]="
+      loading &&
+      (paymentProcessingContext === 'pay' ||
+        paymentProcessingContext === 'updateAndPay')
+    "
+      [disabled]="loading"
+    ></app-common-button-v35>
+    </div>
+  </div>
+  

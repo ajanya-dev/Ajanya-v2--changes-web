@@ -1,0 +1,143 @@
+<div class="relative flex flex-col font-funnel rounded-2xl overflow-hidden bg-v4-tertiary-background-color">
+
+  <!-- Close Button -->
+  <button
+    type="button"
+    class="absolute top-4 right-4 z-10 flex items-center justify-center w-8 h-8 rounded-full text-v4-tertiary-text-color transition-colors hover:bg-v4-secondary-background-color hover:text-v4-main-text-color"
+    (click)="onViewPayment()"
+  >
+    <lucide-icon [img]="XIcon" [size]="18" />
+  </button>
+
+  <div class="flex flex-col items-center px-6 pt-8 pb-6">
+
+    <!-- Success Icon -->
+    <div
+      class="flex items-center justify-center w-[72px] h-[72px] rounded-full bg-v4-primary-brand-color-neon mb-5"
+    >
+      <lucide-icon
+        [img]="CircleCheckIcon"
+        [size]="36"
+        class="text-v4-secondary-brand-color"
+      />
+    </div>
+
+    <!-- Title -->
+    <h2 class="text-xl font-bold text-v4-main-text-color font-funnel mb-2">
+      {{ title }}
+    </h2>
+
+    <!-- Subtitle -->
+    <p class="text-sm text-v4-tertiary-text-color mb-6 text-center">
+      {{ subtitle }}
+    </p>
+
+    <!-- Summary Card (send/receive only) -->
+    @if (data.mode !== 'saved' && data.mode !== 'approval_required') {
+    <div class="w-full border border-v4-border-color rounded-xl bg-v4-secondary-background-color px-5 py-4 mb-6">
+
+      @if (data.mode === 'send') {
+
+        @if (data.payeeName) {
+          <div class="flex items-start py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">To</span>
+            <span class="text-sm font-semibold text-v4-main-text-color w-1/2 text-right">{{ data.payeeName }}</span>
+          </div>
+        }
+
+        @if (data.paymentMethod) {
+          <div class="flex items-start py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">Payment Method</span>
+            <span class="text-sm font-semibold text-v4-main-text-color w-1/2 text-right">{{ paymentMethodLabel }}</span>
+          </div>
+        }
+
+        @if (data.bankName) {
+          <div class="flex items-start py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">From</span>
+            <span class="text-sm font-semibold text-v4-main-text-color w-1/2 text-right">{{ data.bankName }} @if (data.sourceAccountDisplay) { {{ data.sourceAccountDisplay }} }</span>
+          </div>
+        }
+
+        <div class="flex items-start py-2.5 border-t border-v4-border-color mt-1 pt-3">
+          <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">Payment Amount</span>
+          <span class="text-base font-bold text-v4-main-text-color w-1/2 text-right">${{ formattedAmount }}</span>
+        </div>
+
+        <!-- Schedule/recurring summary row hidden for now (e.g. "Schedule: Weekly from 07/05/2026 1 occurrences") -->
+        @if (hasProcessingTime && processingTimeLabel !== 'Schedule') {
+          <div class="flex items-start py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">{{ processingTimeLabel }}</span>
+            <span class="text-sm font-semibold text-v4-main-text-color w-1/2 text-right">{{ processingTime }}</span>
+          </div>
+        }
+
+        @if (referenceId) {
+          <div class="flex items-start py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color w-1/2 shrink-0">Reference ID</span>
+            <span class="text-sm font-semibold text-v4-main-text-color w-1/2 text-right">{{ referenceId }}</span>
+          </div>
+        }
+
+      }
+
+      @if (data.mode === 'receive') {
+
+        @if (data.from) {
+          <div class="flex justify-between items-center py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color">To</span>
+            <span class="text-sm font-semibold text-v4-main-text-color">{{ data.from }}</span>
+          </div>
+        }
+
+        @if (data.toBankAccount) {
+          <div class="flex justify-between items-center py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color">To Bank Account</span>
+            <span class="text-sm font-semibold text-v4-main-text-color">{{ data.toBankAccount }}</span>
+          </div>
+        }
+
+        <div class="flex justify-between items-center py-2.5 border-t border-v4-border-color mt-1 pt-3">
+          <span class="text-sm text-v4-tertiary-text-color">Request Amount</span>
+          <span class="text-base font-bold text-v4-main-text-color">${{ formattedAmount }}</span>
+        </div>
+
+        @if (data.recurring) {
+          <div class="flex justify-between items-center py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color">Recurring</span>
+            <span class="text-sm font-semibold text-v4-main-text-color">{{ data.recurring }}</span>
+          </div>
+        }
+
+        @if (data.duration) {
+          <div class="flex justify-between items-center py-2.5">
+            <span class="text-sm text-v4-tertiary-text-color">Duration</span>
+            <span class="text-sm font-semibold text-v4-main-text-color">{{ data.duration }}</span>
+          </div>
+        }
+
+      }
+
+    </div>
+    }
+
+    <div class="flex gap-3 w-full">
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="data.mode === 'receive' ? 'View Request' : 'View Payment'"
+        width="100%"
+        (clickEvent)="onViewPayment()"
+      />
+      <app-common-button-v4
+        class="flex-1"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="New Payment"
+        width="100%"
+        (clickEvent)="onNewPayment()"
+      />
+    </div>
+
+  </div>
+
+</div>

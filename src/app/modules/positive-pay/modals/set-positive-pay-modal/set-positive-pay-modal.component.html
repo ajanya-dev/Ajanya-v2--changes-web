@@ -1,0 +1,338 @@
+<div class="px-[6px] pb-[6px]">
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >Set Positive Pay Details</span
+        >
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <div [formGroup]="positivePayForm" class="flex flex-col gap-6">
+    <div class="flex items-center gap-2">
+      <div class="w-full">
+        <div
+          class="select-all text-main-text-color text-sm font-inter font-normal"
+        >
+          <input
+            type="checkbox"
+            [(ngModel)]="isSelectAll"
+            (change)="selectAll($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          Select All
+          <span class="font-inter font-normal text-xs text-secondary-text-color"
+            >(Select the bank accounts you want to set up for Positive
+            Pay)</span
+          >
+        </div>
+        <div class="single_input">
+          <app-drop-down-bank-multi-select
+            [routingNumber]="injectData.bank_routing_number"
+            [selectedBankAccounts]="bankAccounts"
+            [selectAll]="isChecked()"
+            placeholder="All Bank Accounts"
+            (selectionEvent)="bankSlectionEvent($event)"
+          ></app-drop-down-bank-multi-select>
+          <app-control-message-v35
+            [control]="positivePayForm.controls.bankAccounts"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      @if(isLoadingFileTypes()){
+        <div class="skelton w-full h-[38px]"></div>
+        <div class="skelton w-full h-[38px]"></div>
+      }@else{
+        <div class="w-full relative">
+          <fa-icon
+            class="text-common-blue-color text-sm absolute top-[-22px] z-10"
+            matTooltip="How would you like your bank to receive check information"
+            [icon]="faCircleInfo"
+          />
+          <div class="single_input">
+            <select name="" id="" class="input_style" formControlName="driver">
+              <option value="" selected disabled>Select setup method</option>
+              @for (option of driverOptions | keyvalue; track $index) {
+                <option [value]="option.key">
+                  {{ option.value }}
+                </option>
+              }
+            </select>
+            <span class="floating_label_field"
+              >Select setup method<span class="required">*</span></span
+            >
+            <app-control-message-v35
+              [control]="positivePayForm.controls.driver"
+            />
+          </div>
+        </div>
+        <div class="w-full">
+          <div class="single_input">
+            <select name="" id="" class="input_style" formControlName="fileType">
+              <option value="" selected disabled>Select file type</option>
+              @for (option of fileTypes | keyvalue; track $index) {
+                <option [value]="option.key">
+                  {{ option.value }}
+                </option>
+              }
+            </select>
+            <span class="floating_label_field"
+              >Select file type<span class="required">*</span></span
+            >
+            <app-control-message-v35
+              [control]="positivePayForm.controls.fileType"
+            />
+          </div>
+        </div>
+      }
+    </div>
+    @if (positivePayForm.controls.driver.value?.toString() === "3") {
+      <div class="w-full">
+        <app-common-input-field
+          placeholder="Email"
+          formControlName="email"
+          maxlength="40"
+        />
+        <app-control-message-v35 [control]="positivePayForm.controls.email" />
+      </div>
+    } @else {
+      <div>
+        <div
+          class="flex p-1 bg-secondary-background-color items-center mb-2 rounded"
+        >
+          <p class="font-inter font-normal text-secondary-text-color text-xs">
+            The following details will be provided by your bank
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <div class="w-full">
+            <app-common-input-field placeholder="Host" formControlName="host" />
+            <app-control-message-v35
+              [control]="positivePayForm.controls.host"
+            />
+          </div>
+          <div class="w-full">
+            <app-common-input-field placeholder="Port" formControlName="port" />
+            <app-control-message-v35
+              [control]="positivePayForm.controls.port"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="flex">
+        <div class="w-full">
+          <app-common-input-field
+            placeholder="Username"
+            formControlName="userName"
+          />
+          <app-control-message-v35
+            [control]="positivePayForm.controls.userName"
+          />
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <div class="single_input w-full">
+          <select
+            name=""
+            id=""
+            class="input_style"
+            formControlName="logonType"
+            (change)="onChange($event?.target?.value)"
+          >
+            <option value="1">Password</option>
+            <option value="2">SSH</option>
+          </select>
+          <span class="floating_label_field"
+            >Auth type <span class="required">*</span></span
+          >
+          <app-control-message-v35
+            [control]="positivePayForm.controls.logonType"
+          />
+        </div>
+        @if (showPasswordField()) {
+          <div class="w-full">
+            <app-common-input-field
+              placeholder="Password"
+              formControlName="password"
+              type="password"
+            />
+            <app-control-message-v35
+              [control]="positivePayForm.controls.password"
+            />
+          </div>
+        }
+        @if (showSshField()) {
+          <div class="w-full">
+            <app-v35-common-dropdown
+              [(ngModel)]="sshItem"
+              (ngModelChange)="onChangeSsh($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [required]="true"
+              [config]="{
+                placeholder: 'Select SSH',
+                displayField: 'nickName',
+                style: {
+                  enableLabelIcon: false,
+                  size: 0
+                },
+                enableAddNew: true
+              }"
+              [listData]="sshList"
+              (buttonClick)="AddNewSSH()"
+            />
+            <app-control-message-v35 [control]="positivePayForm.controls.ssh" />
+          </div>
+        }
+      </div>
+    }
+    <div>
+      <div class="flex p-1 bg-secondary-background-color mb-1 rounded">
+        <p class="font-inter font-normal text-secondary-text-color text-xs">
+          Please specify your bank's preferred times to receive checks. You can select multiple time slots, though most banks prefer a single time, often in the evening.
+        </p>
+      </div>
+      <div class="single_input">
+        <ng-select
+          class="text-sm"
+          [(ngModel)]="timezone"
+          formControlName="time_zone"
+          placeholder="Select Time Zone"
+        >
+          @for (item of timeZoneList; track $index) {
+            <ng-option [value]="item.value">{{ item.name }}</ng-option>
+          }
+        </ng-select>
+      </div>
+    </div>
+    <div class="single_input">
+      <input
+        type="time"
+        class="input_style"
+        id="timeToUpload"
+        placeholder=" "
+        formControlName="timeToUpload"
+        maxlength="40"
+      />
+      <span class="floating_label_field"
+        >Time 1<span class="required">*</span></span
+      >
+      <app-control-message-v35
+        [control]="positivePayForm.controls.timeToUpload"
+      />
+    </div>
+    <div class="mb-1">
+      <div class="flex items-center gap-2 pb-3">
+        <input
+          type="checkbox"
+          [(ngModel)]="showMoreEmails"
+          (change)="toggleMoreEmails()"
+          [ngModelOptions]="{ standalone: true }"
+          id="addMoreEmails"
+          class="cursor-pointer"
+        />
+        <label for="addMoreEmails" class="cursor-pointer font-inter font-normal text-sm text-main-text-color">
+          Positive Pay Email Notifications
+        </label>
+        <fa-icon [icon]="faCircleInfo" class="text-common-blue-color text-sm" matTooltip="Positive Pay files sent securely to all listed emails, across all setup methods." />
+      </div>
+      @if (showMoreEmails) {
+        <div class="flex w-full gap-3 max-h-[156px] overflow-y-auto pt-2">
+          <div formArrayName="additionalEmails" class="w-full">
+            @for (email of additionalEmailsArray.controls; track email; let i = $index) {
+              <div class="flex items-start gap-2 mb-3">
+                <div class="w-full">
+                  <app-common-input-field
+                    [formControlName]="i"
+                    [placeholder]="'Email ' + (i + 1)"
+                    type="email"
+                  />
+                  <app-control-message-v35 [control]="additionalEmailsArray.at(i)" />
+                </div>
+                <div class="flex items-center gap-2 justify-center p-2">
+                  <button
+                    type="button"
+                    (click)="addEmailField()"
+                    class="text-common-blue-color transition-colors"
+                    matTooltip="Add another email address"
+                  >
+                    <fa-icon [icon]="faPlus" class="text-sm"/>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="removeEmailField(i)"
+                    class="text-common-red-color transition-colors"
+                    matTooltip="Remove email address"
+                  >
+                    <fa-icon [icon]="faTrash" class="text-sm"/>
+                  </button>
+
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    <div role="presentation" class="flex items-center justify-between">
+      <span
+        role="presentation"
+        (click)="extraTimesToUpload()"
+        class="v35-labels hover:underline"
+        >{{ !showScheduleTime() ? "Add" : "Remove" }} Schedule Time</span
+      >
+      <span
+        role="presentation"
+        (click)="openSettingModal()"
+        class="v35-labels hover:underline"
+        >Settings</span
+      >
+    </div>
+
+    @if (showScheduleTime()) {
+      <div class="w-full grid grid-cols-2 gap-2 max-h-[190px] overflow-y-auto px-1 py-4">
+        @for (slot of extraTimeSlots; track slot.index) {
+          <div class="single_input w-full">
+            <input
+              type="time"
+              class="input_style"
+              placeholder=" "
+              (change)="selectDate($event, slot.index)"
+              maxlength="40"
+              [value]="uploadTimesArray[slot.index]"
+            />
+            <span class="floating_label_field">Time {{ slot.label }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      mat-dialog-close
+      width="120px"
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      width="120px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Save"
+      (clickEvent)="submit()"
+      [loading]="loading()"
+      [disabled]="loading()"
+    ></app-common-button-v35>
+  </div>
+</div>
+@if (fetchData()) {
+  <div class="data_spinner absolute w-full h-full"></div>
+}

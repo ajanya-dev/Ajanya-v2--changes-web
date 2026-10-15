@@ -1,0 +1,91 @@
+<div
+  class="flex justify-center cursor-pointer items-center h-10 bg-v4-badge-info-bg-color rounded relative"
+  [style.width]="inputWidth()"
+  role="presentation"
+  (click)="chooseImage(uploadedFileHTMLInput)"
+  [class.bg-v4-tertiary-background-color]="internalFile?.name"
+  [class.border]="isDrageFile || isHovered"
+  [class.border-v4-common-blue-color]="isDrageFile || isHovered"
+  [class.border-dashed]="isDrageFile || isHovered"
+  (dragover)="handleDragOver($event)"
+  (dragleave)="handleDragLeave($event)"
+  (drop)="handleDrop($event)"
+  (mouseenter)="handleMouseEnter()"
+  (mouseleave)="handleMouseLeave()"
+>
+  @if (internalFile === null || !internalFile?.name) {
+    <div
+      [matTooltip]="buttonText()?.length > 50 ? buttonText() : ''"
+      class="flex items-center justify-center w-full px-2"
+    >
+      @if (!isHovered) {
+        <lucide-icon
+          class="text-v4-common-blue-color"
+          [img]="UploadIcon"
+          [size]="14"
+        />
+      }
+      <span class="pl-1 text-v4-common-blue-color text-sm font-medium">{{
+        isHovered
+          ? "Choose File or Drag and Drop"
+          : (buttonText() | truncate: 50)
+      }}</span>
+    </div>
+  } @else {
+    <div class="flex w-full px-3 justify-between">
+      <div class="flex gap-2 items-center">
+        <lucide-icon
+          class="text-v4-common-green-color"
+          [img]="CircleCheckIcon"
+          [size]="14"
+        />
+        <span
+          class="font-normal text-v4-main-text-color text-sm"
+          [matTooltip]="
+            internalFile.name?.length > fileNameMaxLength()
+              ? internalFile.name
+              : ''
+          "
+          >{{ internalFile.name | truncate: fileNameMaxLength() }}</span
+        >
+      </div>
+      <div class="flex gap-2 items-center">
+        @if (isPreviewNeed() || isCustomePreviewNeed()) {
+          <lucide-icon
+            class="cursor-pointer text-v4-main-text-color"
+            [img]="EyeIcon"
+            [size]="14"
+            matTooltip="Preview"
+            role="presentation"
+            (click)="previewImage()"
+          />
+        }
+        <lucide-icon
+          class="cursor-pointer text-v4-main-text-color"
+          [img]="XIcon"
+          [size]="14"
+          role="presentation"
+          (click)="removeImage(uploadedFileHTMLInput, $event)"
+        />
+      </div>
+    </div>
+  }
+
+  <input
+    [id]="inputId()"
+    class="hidden"
+    (change)="imagePicked($event)"
+    type="file"
+    [accept]="acceptedFileTypes()"
+    #uploadedFileHTMLInput
+    title=""
+  />
+
+  @if (internalFile?.name && buttonHeader()) {
+    <div
+      class="bg-v4-main-background-color absolute left-3 top-[-8px] text-v4-secondary-text-color font-normal text-xs"
+    >
+      {{ buttonHeader() }}
+    </div>
+  }
+</div>

@@ -1,0 +1,92 @@
+<div class="angular-ocw-v35-ng-select-dropdown relative">
+  <div
+    *ngIf="labelIconNeeded"
+    [class]="labelIconNeeded ? 'height-' + customHeight : ''"
+    class="height-0 absolute top-0 z-[999]"
+  >
+    <div
+      class="flex justify-center items-center v35-dropdown-labeled-icon border-r border-input-border-color"
+    >
+      @if (walletLogo()) {
+        <img [ngSrc]="walletLogo()" alt="logo" class="rounded-full" width="32" height="32" />
+      }
+      @else {
+      <fa-icon
+        class="text-common-violet-color"
+        [icon]="['fas', 'wallet']"
+        ></fa-icon>
+      }
+    </div>
+  </div>
+  <ng-select
+    [appendTo]="append"
+    id="payee_drop_down_{{ id }}"
+    placeholder="{{ placeholder }}"
+    [formControl]="selectedWallet"
+    (scrollToEnd)="onScrollToEnd()"
+    (keyup)="search($event)"
+    (focus)="search($event)"
+    [loading]="isLoadingWithId"
+    (open)="isDropdownOpen = true; dropdownOpenChange.emit(true)"
+    (close)="isDropdownOpen = false; dropdownOpenChange.emit(false)"
+    (clear)="clear()"
+    (blur)="onTouched(); touch.emit()"
+    [notFoundText]="
+    !paymentsService.hasPermission.wallet 
+    ? 'Permission Denied'
+    : (selectIsWalletsLoading$ | async) === false &&
+      (walletsToList$ | async).length === 0
+        ? 'No Wallets Found'
+        : 'Loading...'
+    "
+    class="ng-dropdown-panel-v35 text-sm height-0"
+    [class]="labelIconNeeded ? 'height-' + customHeight : ''"
+    [dropdownPosition]="dropdownPosition()"
+  >
+    <ng-option
+      [value]="item"
+      *ngFor="let item of walletsToList$ | async; trackBy: trackByWallet"
+    >
+      <div class="min-w-full flex justify-between items-center">
+        <div
+          *ngIf="dropdownIconNeeded"
+          class="rounded-full mr-2 text-sm text-common-violet-color w-8 h-8 flex justify-center items-center bg-common-secondary-violet-color"
+        >
+          @if (item.logo) {
+            <img [ngSrc]="item.logo" alt="logo" class=" rounded-full" width="32" height="32" />
+          }
+          @else {
+            <fa-icon class="px-2" [icon]="['fas', 'wallet']"></fa-icon>
+          }
+        </div>
+        <div class="flex-1 flex flex-col items-start overflow-hidden">
+          <div
+            class="main-text-highlight text-ellipsis overflow-hidden font-medium text-sm"
+          >
+            {{ item.walletName ?? item.bankAccountNickName}}
+          </div>
+          <div class="flex justify-between w-full">
+            <div
+              class="text-sm font-normal text-secondary-text-color text-ellipsis overflow-hidden"
+            >
+              {{ item.bankAccountNumber }}
+            </div>
+            <div
+              class="text-sm font-normal text-secondary-text-color text-ellipsis overflow-hidden"
+            >
+              {{ item.availableBalance | currency }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-option>
+    <ng-template ng-label-tmp let-item="item">
+      {{ item.walletName ?? item.bankAccountNickName }} ({{
+        item.availableBalance
+      }}) - {{ item.bankAccountNumber }}
+    </ng-template>
+    <ng-template ng-footer-tmp>
+      <div class="skelton p-1.5" *ngIf="selectIsWalletsLoading$ | async"></div>
+    </ng-template>
+  </ng-select>
+</div>

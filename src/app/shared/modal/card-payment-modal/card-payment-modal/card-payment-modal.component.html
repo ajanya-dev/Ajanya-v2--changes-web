@@ -1,0 +1,262 @@
+<div class="ocw_man_modal_wrapper">
+  <!-- modal header -->
+  <div class="ocw_modal_header">
+    <div class="ocw_modal_title">Payment</div>
+    <div class="close_btn" [mat-dialog-close]="false">
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        data-prefix="fal"
+        data-icon="times"
+        class="svg-inline--fa fa-times fa-w-10"
+        role="img"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 320 512"
+      >
+        <path
+          fill="currentColor"
+          d="M193.94 256L296.5 153.44l21.15-21.15c3.12-3.12 3.12-8.19 0-11.31l-22.63-22.63c-3.12-3.12-8.19-3.12-11.31 0L160 222.06 36.29 98.34c-3.12-3.12-8.19-3.12-11.31 0L2.34 120.97c-3.12 3.12-3.12 8.19 0 11.31L126.06 256 2.34 379.71c-3.12 3.12-3.12 8.19 0 11.31l22.63 22.63c3.12 3.12 8.19 3.12 11.31 0L160 289.94 262.56 392.5l21.15 21.15c3.12 3.12 8.19 3.12 11.31 0l22.63-22.63c3.12-3.12 3.12-8.19 0-11.31L193.94 256z"
+        ></path>
+      </svg>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="ocw_modal_body">
+    <div class="amount_row">
+      <span
+        >Amount :
+        <span class="font-medium">{{ fundWallet?.data?.amount }}</span></span
+      >
+      <span
+        >Transaction Fee :
+        <span class="font-medium">{{
+          fundWallet?.data?.transaction_fee
+        }}</span></span
+      >
+      <span
+        >Total :
+        <span class="font-medium">{{ fundWallet?.data?.total }}</span></span
+      >
+    </div>
+
+    <mat-tab-group
+      animationDuration="300ms"
+      (selectedTabChange)="onTabChange($event)"
+    >
+      <mat-tab label="Existing Cards" *ngIf="fundWallet?.data?.cards?.length">
+        <div class="existing_cards">
+          <div
+            class="card"
+            *ngFor="let card of fundWallet?.data?.cards; let i = index"
+          >
+            <div
+              (click)="cardChange(card)"
+              [ngClass]="{ active: selectedCard?.id === card.id }"
+            >
+              <input
+                type="radio"
+                id="{{ card.id }}"
+                name="selected-card"
+                [value]="card.id"
+                [checked]="selectedCard?.id === card.id"
+              />
+              <img
+                class="brand_icon"
+                src="../../../../../assets/icon/svg/credit-cards/{{
+                  card.brand
+                }}.svg"
+                alt="{{ card.brand }}"
+              />
+              <span class="flex items-center"
+                >**** **** **** {{ card.last4 }}
+                <span class="text-sm"
+                  >(Expires {{ card.exp_month }} / {{ card.exp_year }})</span
+                >
+              </span>
+            </div>
+
+            <svg
+              (click)="deleteCardClick(card.id, i)"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 320 512"
+            >
+              <path
+                d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"
+              />
+            </svg>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Add New">
+        <div class="heading">Enter Card Details :</div>
+        <form [formGroup]="cardDetailsForm" *ngIf="cardDetailsForm">
+          <div class="input_group">
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="name"
+                maxlength="25"
+              />
+              <span class="floating_label_field"
+                >Card holder name<span class="required">*</span></span
+              >
+              <app-control-message
+                [control]="cardDetailsForm.controls.name"
+              ></app-control-message>
+            </div>
+
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="email"
+                maxlength="50"
+              />
+              <span class="floating_label_field"
+                >Email<span class="required">*</span></span
+              >
+              <app-control-message
+                [control]="cardDetailsForm.controls.email"
+              ></app-control-message>
+            </div>
+
+            <ng-container formGroupName="address">
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  #bankHolderAddressSearch
+                  (focus)="loadGoogleAddress(bankHolderAddressSearch)"
+                  formControlName="line1"
+                  maxlength="70"
+                />
+                <span class="floating_label_field"
+                  >Address<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="cardDetailsForm.controls.address.get('line1')"
+                ></app-control-message>
+              </div>
+
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="city"
+                  maxlength="25"
+                />
+                <span class="floating_label_field"
+                  >City<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="cardDetailsForm.controls.address.get('city')"
+                ></app-control-message>
+              </div>
+
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="state"
+                  maxlength="50"
+                />
+                <span class="floating_label_field"
+                  >State<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="cardDetailsForm.controls.address.get('state')"
+                ></app-control-message>
+              </div>
+
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  formControlName="postal_code"
+                  maxlength="10"
+                />
+                <span class="floating_label_field"
+                  >Zip<span class="required">*</span></span
+                >
+                <app-control-message
+                  [control]="
+                    cardDetailsForm.controls.address.get('postal_code')
+                  "
+                ></app-control-message>
+              </div>
+            </ng-container>
+
+            <div class="single_input">
+              <div
+                type="text"
+                id="card-number"
+                #cardNumber
+                class="input_style"
+                placeholder=" "
+              ></div>
+              <span class="floating_label_field"
+                >Card Number<span class="required">*</span></span
+              >
+            </div>
+
+            <div class="single_input">
+              <div
+                type="text"
+                id="card-expiry"
+                #cardExpiry
+                class="input_style"
+                placeholder=" "
+              ></div>
+              <span class="floating_label_field"
+                >Expiry<span class="required">*</span></span
+              >
+            </div>
+
+            <div class="single_input">
+              <div
+                type="text"
+                id="card-cvc"
+                #cardCvc
+                class="input_style"
+                placeholder=" "
+              ></div>
+              <span class="floating_label_field"
+                >CVC<span class="required">*</span></span
+              >
+            </div>
+
+            <div class="error_msg" id="card-errors" role="alert" *ngIf="error">
+              {{ error }}
+            </div>
+          </div>
+        </form>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+  <!-- modal body end -->
+  <div class="ocw_modal_footer">
+    <mat-dialog-actions align="end">
+      <!-- <button mat-dialog-close class="ocw-btn ocw-btn-gray">Cancel</button> -->
+      <button
+        type="submit"
+        class="ocw-btn ocw-btn-modal-blue add_btn"
+        (click)="createPaymentBody()"
+      >
+        <span>Pay ${{ fundWallet?.data?.total }}</span>
+      </button>
+    </mat-dialog-actions>
+  </div>
+
+  <!-- SPINNER -->
+  <div class="spinner_container" [hidden]="!loading">
+    <div class="spinner"></div>
+  </div>
+  <div class="spinner_overlay" [hidden]="!loading"></div>
+</div>

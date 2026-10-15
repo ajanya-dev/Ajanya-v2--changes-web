@@ -1,0 +1,118 @@
+<div
+  class="px-[6px] pb-[6px] transition-all duration-500 overflow-hidden"
+  [ngClass]="isCountryDropdownOpened() ? 'min-h-[330px]' : 'min-h-[160px]'"
+>
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        @if (proofType === "email" || proofType === "sms") {
+          <fa-icon
+            class="!text-[16px] cursor-pointer mr-3"
+            (click)="back()"
+            [icon]="faArrowLeft"
+          ></fa-icon>
+        }
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5">
+          Send {{ injectData.type === "receipt" ? "Receipt" : "Payment Proof" }}
+        </span>
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <div>
+    @if (proofType === "email" || proofType === "sms") {
+      @if (proofType === "email") {
+        <div class="flex justify-center gap-2 mt-4">
+          <div class="single_input">
+            <input
+              id="email"
+              type="text"
+              class="input_style !w-[250px]"
+              [formControl]="sendEmail"
+              placeholder=" "
+            />
+            <label for="email" class="floating_label_field"
+              >Enter Email <span class="required">*</span></label
+            >
+            <app-control-message [control]="sendEmail"></app-control-message>
+          </div>
+          <div>
+            <app-common-button-v35
+              [type]="{ style: 'modal', name: 'main' }"
+              text="Send Email"
+              (clickEvent)="emailProof()"
+              [loading]="isEmailProofLoading()"
+              [disabled]="isEmailProofLoading()"
+            ></app-common-button-v35>
+          </div>
+        </div>
+      } @else if (proofType === "sms") {
+        <div class="flex justify-center gap-2 mt-4">
+          <div class="single_input">
+            <app-new-phone-input
+              type="text"
+              id="phone_2"
+              [formControl]="sendPhoneNumber"
+              [inputWidth]="'150px'"
+              mask="(000) 000-0000"
+              (countryDropdown)="countryChange($event)"
+            ></app-new-phone-input>
+            <app-control-message
+              [control]="sendPhoneNumber"
+            ></app-control-message>
+            <p class="text-sm font-semibold">
+              Cost:
+              <span class="text-common-green-color">
+                ${{ sendPhoneNumber.value ? "0.50" : "0.00" }}
+              </span>
+            </p>
+          </div>
+          <div>
+            <app-common-button-v35
+              [type]="{ style: 'modal', name: 'main' }"
+              text="Send SMS"
+              (clickEvent)="smsProof()"
+              [loading]="isSMSProofLoading()"
+              [disabled]="isSMSProofLoading()"
+            ></app-common-button-v35>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="w-full h-full flex justify-start flex-wrap gap-3">
+        @for (item of proofsList; track item) {
+          <div
+            role="presentation"
+            (click)="onClickAction(item.action)"
+            class="w-[213px] bg-secondary-background-color rounded-md min-h-10 px-5 flex gap-6 items-center cursor-pointer group hover:shadow-common-box-shadow"
+          >
+            <div>
+              <fa-icon
+                class="group-hover:pl-1 text-common-blue-color"
+                [icon]="item.icon"
+              ></fa-icon>
+            </div>
+            <div
+              class="text-common-blue-color font-inter text-sm font-semibold group-hover:pl-1"
+            >
+              @if (item.name === "Copy Link" && isCopyProofLoading()) {
+                Copying..
+              } @else if (item.name === "Download" && isDownload()) {
+                Downloading..
+              } @else {
+                {{ item.name }}
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

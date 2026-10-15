@@ -1,0 +1,251 @@
+<div class="flex flex-col max-h-[85vh]">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        QuickBooks Settings
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon name="x" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div
+    class="flex-1 overflow-y-auto p-6 space-y-4 bg-v4-tertiary-background-color"
+  >
+    <!-- CHECK TYPE + DOWNLOAD FILTER -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Check Type Card -->
+      <div
+        class="border border-v4-input-border-color rounded-xl p-4 bg-v4-secondary-background-color"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <h4
+            class="text-xs font-bold tracking-wider text-v4-secondary-text-color uppercase"
+          >
+            Check Type
+          </h4>
+          <lucide-icon
+            name="info"
+            [size]="14"
+            class="text-v4-primary-brand-bold-color cursor-pointer flex-shrink-0"
+            matTooltip="Set your default payment type to import."
+          ></lucide-icon>
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center min-h-[32px]">
+            <mat-checkbox
+              [formControl]="check"
+              class="v4-qb-settings-checkbox"
+              [class.pointer-events-none]="loading().defaultLoading"
+              (change)="updateSettings(false)"
+            >
+              <span class="text-sm text-v4-main-text-color">Check</span>
+            </mat-checkbox>
+          </div>
+          <div class="flex items-center min-h-[32px]">
+            <mat-checkbox
+              [formControl]="billPayment"
+              class="v4-qb-settings-checkbox"
+              [class.pointer-events-none]="loading().defaultLoading"
+              (change)="updateSettings(false)"
+            >
+              <span class="text-sm text-v4-main-text-color"
+                >Bill Payment (Check)</span
+              >
+            </mat-checkbox>
+          </div>
+          <div class="flex items-center min-h-[32px]">
+            <mat-checkbox
+              [formControl]="payroll"
+              class="v4-qb-settings-checkbox"
+              [class.pointer-events-none]="loading().defaultLoading"
+              (change)="updateSettings(false)"
+            >
+              <span class="text-sm text-v4-main-text-color">Payroll</span>
+            </mat-checkbox>
+          </div>
+        </div>
+      </div>
+
+      <!-- Download Filter Card -->
+      <div
+        class="border border-v4-input-border-color rounded-xl p-4 bg-v4-secondary-background-color"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <h4
+            class="text-xs font-bold tracking-wider text-v4-secondary-text-color uppercase"
+          >
+            Download Filter
+          </h4>
+          <lucide-icon
+            name="info"
+            [size]="14"
+            class="text-v4-primary-brand-bold-color cursor-pointer flex-shrink-0"
+            matTooltip="Set your default download filter to import."
+          ></lucide-icon>
+        </div>
+        <mat-radio-group
+          class="flex flex-col gap-3"
+          [formControl]="downloadFilter"
+          (change)="updateSettings(false)"
+        >
+          @for (radio of downloadFilters; track radio.value) {
+            <mat-radio-button
+              [value]="radio.value"
+              class="v4-qb-settings-radio"
+            >
+              <span class="text-sm text-v4-main-text-color">{{
+                radio.name
+              }}</span>
+            </mat-radio-button>
+          }
+        </mat-radio-group>
+      </div>
+    </div>
+
+    <!-- DEFAULT TIME SPAN -->
+    <div
+      class="border border-v4-input-border-color rounded-xl p-4 bg-v4-secondary-background-color"
+    >
+      <div class="flex items-center gap-2 mb-3">
+        <h4
+          class="text-xs font-bold tracking-wider text-v4-secondary-text-color uppercase"
+        >
+          Default Time Span
+        </h4>
+        <lucide-icon
+          name="info"
+          [size]="14"
+          class="text-v4-primary-brand-bold-color cursor-pointer flex-shrink-0"
+          matTooltip="Set your default time span to import."
+        ></lucide-icon>
+      </div>
+      <mat-radio-group
+        class="grid grid-cols-5"
+        [formControl]="defaultTimeSpan"
+        (change)="updateSettings(false)"
+      >
+        @for (item of timeSpans; track item.value) {
+          <mat-radio-button [value]="item.value" class="v4-qb-settings-radio">
+            <span class="text-sm text-v4-main-text-color">{{ item.name }}</span>
+          </mat-radio-button>
+        }
+      </mat-radio-group>
+    </div>
+
+    <!-- EXPORT SETTINGS -->
+    @if (ispushbackEnable) {
+      <div
+        class="border border-v4-input-border-color rounded-xl p-4 space-y-4 bg-v4-secondary-background-color"
+      >
+        <!-- Enable Pushback -->
+        <div class="flex items-center min-h-[36px]">
+          <mat-checkbox
+            [formControl]="pushbackEnable"
+            class="v4-qb-settings-checkbox"
+            [class.pointer-events-none]="loading().defaultLoading"
+            (change)="EnablePushBack()"
+          >
+            <span class="text-sm text-v4-main-text-color">Enable Pushback</span>
+          </mat-checkbox>
+        </div>
+
+        <!-- Import Data Section -->
+        <div class="pt-2 border-t border-v4-input-border-color">
+          <div class="mb-3">
+            <div class="flex items-center gap-2">
+              <lucide-icon
+                name="download"
+                [size]="16"
+                class="text-v4-primary-brand-bold-color"
+              ></lucide-icon>
+              <span class="text-sm font-semibold text-v4-main-text-color">
+                Import Data from QuickBooks
+              </span>
+            </div>
+            <p class="text-xs text-v4-tertiary-text-color mt-0.5">
+              Click on any item below to sync from your QuickBooks account
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <app-common-button-v4
+              [type]="{ style: 'filled-blue', name: 'action' }"
+              [backGroundInput]="'var(--v4-primary-brand-color)'"
+              [text]="'Bank'"
+              (clickEvent)="ImportData('Bank')"
+              [loading]="quickBooksLoading().bank"
+              [disabled]="quickBooksLoading().bank"
+              matTooltip="Click here to import bank accounts from QuickBooks"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'filled-blue', name: 'action' }"
+              [backGroundInput]="'var(--v4-primary-brand-color)'"
+              [text]="'Payee' | whiteLabel: 'payeeName'"
+              (clickEvent)="ImportData('Payee')"
+              [loading]="quickBooksLoading().payee"
+              [disabled]="quickBooksLoading().payee"
+              matTooltip="Click here to import payees from QuickBooks"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'filled-blue', name: 'action' }"
+              [backGroundInput]="'var(--v4-primary-brand-color)'"
+              [text]="'Expense'"
+              (clickEvent)="ImportData('Expense')"
+              [loading]="quickBooksLoading().category"
+              [disabled]="quickBooksLoading().category"
+              matTooltip="Click here to import expense from QuickBooks"
+            />
+            <app-common-button-v4
+              [type]="{ style: 'filled-blue', name: 'action' }"
+              [backGroundInput]="'var(--v4-primary-brand-color)'"
+              [text]="'Class'"
+              (clickEvent)="ImportData('Class')"
+              [loading]="quickBooksLoading().class"
+              [disabled]="quickBooksLoading().class"
+              matTooltip="Click here to import classes from QuickBooks"
+            />
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-between items-center p-6 bg-v4-secondary-background-color border-t border-v4-border-color flex-shrink-0"
+  >
+    <button
+      type="button"
+      class="text-sm text-v4-primary-brand-bold-color hover:underline cursor-pointer transition-colors"
+      [disabled]="loading().defaultLoading"
+      (click)="resetToRecommended()"
+    >
+      Reset To Recommended Settings
+    </button>
+    <div class="flex gap-3">
+      <app-common-button-v4
+        mat-dialog-close=""
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+      />
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Update'"
+        [disabled]="loading().defaultLoading"
+        [loading]="loading().defaultLoading && isUpdate"
+        (clickEvent)="updateSettings(true)"
+      />
+    </div>
+  </div>
+</div>

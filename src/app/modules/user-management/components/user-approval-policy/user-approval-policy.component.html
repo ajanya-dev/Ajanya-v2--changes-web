@@ -1,0 +1,123 @@
+<div class="approval-policy">
+  <!---------------  HEADER START --------------->
+  <section class="approval-policy__header">
+    <div class="left">
+      <div class="main_header">
+        <app-ocw-back-button backUrl="manage/manage-users">
+        </app-ocw-back-button>
+        <h1 class="desk">Approval Policies</h1>
+      </div>
+    </div>
+  </section>
+
+  <section class="approval-policy__body h-full flex flex-col">
+    <div class="pb-3">
+      <button class="ocw-btn ocw-btn-violet h-9" (click)="addNewRule()">
+        <i class="fa-solid fa-plus"></i>New Rule
+      </button>
+    </div>
+    @if (!loading || !existingPolicies.length) {
+      <div class="policies-section flex flex-col w-full gap-3">
+        @for (rule of existingPolicies; track rule.id) {
+          <div class="w-full policy-item rounded flow-root py-3 px-5">
+            @if (!isMultiLevelRule(rule)) {
+              <div class="float-left flex">
+                <div>
+                  If
+                  {{
+                    rule.criteriaType +
+                      "  " +
+                      (rule.criteriaOperator === "==" ? "=" : rule.criteriaOperator)
+                  }}
+                  {{ rule.criteriaValue | currency }} then Approvers =
+                </div>
+                <div class="flex flex-col pl-5">
+                  <div class="flex flex-col">
+                    @for (item of rule.approverData; track item.userId) {
+                      <span>{{ item.username }}</span>
+                    }
+                  </div>
+                  <div class="pt-3">
+                    {{ rule.approvalType === "and" ? "Everyone" : "Any of One" }}
+                    Need to Approve
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="float-left flex flex-col gap-3 max-w-[80%]">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold text-base text-main-text-color">
+                    {{ rule.name }}
+                  </span>
+                  <span
+                    class="px-2 py-0.5 rounded text-xs bg-common-secondary-blue-color text-common-blue-color font-medium"
+                  >
+                    Multi-Level Rule
+                  </span>
+                </div>
+
+                <p class="text-sm text-main-text-color leading-relaxed">
+                  When
+                  <span class="font-semibold">{{ appliesToName(rule) }}</span>
+                  submits a payment, it must be approved in
+                  <span class="font-semibold">
+                    {{ asMultiLevel(rule).approvalRequiredData.levels.length }}
+                    step{{ asMultiLevel(rule).approvalRequiredData.levels.length === 1 ? '' : 's' }}</span>:
+                </p>
+
+                <ol class="flex flex-col gap-1.5 pl-1">
+                  @for (
+                    level of asMultiLevel(rule).approvalRequiredData.levels;
+                    track $index;
+                    let i = $index, isLastLevel = $last
+                  ) {
+                    <li class="flex items-center gap-1.5 flex-wrap text-sm text-main-text-color">
+                      <span class="font-medium text-secondary-text-color">
+                        Step {{ i + 1 }}:
+                      </span>
+                      <span>any one of</span>
+                      @for (
+                        approver of level.approvers;
+                        track approver.userId;
+                        let isLastApprover = $last
+                      ) {
+                        <span
+                          class="px-2 py-0.5 rounded text-xs bg-common-tertiary-violet-color text-main-text-color font-semibold"
+                        >
+                          {{ approver.username }}
+                        </span>
+                        @if (!isLastApprover) {
+                          <span class="text-secondary-text-color">or</span>
+                        }
+                      } @empty {
+                        <span class="text-secondary-text-color italic">
+                          no approvers configured
+                        </span>
+                      }
+                      @if (!isLastLevel) {
+                        <span class="text-secondary-text-color">&rarr; then</span>
+                      }
+                    </li>
+                  }
+                </ol>
+              </div>
+            }
+            <div class="float-right flex gap-3 text-2xl">
+              <button (click)="editPolicy(rule.id)">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="trash-button" (click)="deleteRule(rule.id)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @if (loading) {
+      <div class="policies-section w-full h-full min-h-60">
+        <div class="data_spinner absolute top-1/2 left-1/2"></div>
+      </div>
+    }
+  </section>
+</div>

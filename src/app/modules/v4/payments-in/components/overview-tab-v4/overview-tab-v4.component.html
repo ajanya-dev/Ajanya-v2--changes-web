@@ -1,0 +1,105 @@
+<div class="flex flex-1 flex-col gap-6 py-6">
+  @if (isLoading()) {
+    <!-- ── Section 1: Summary cards skeleton ─────────────────────────────── -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="flex flex-col gap-2 rounded-lg bg-card p-5 shadow-sm">
+          <div class="shimmer h-3 w-24"></div>
+          <div class="shimmer h-8 w-16"></div>
+          <div class="shimmer h-4 w-28"></div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Section 2: Charts row skeleton ────────────────────────────────── -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      @for (i of [1, 2]; track i) {
+        <div class="flex flex-col gap-3 rounded-lg bg-card p-4 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="flex flex-col gap-2">
+              <div class="shimmer h-4 w-36"></div>
+              <div class="shimmer h-3 w-52"></div>
+            </div>
+            <div class="shimmer h-7 w-24 rounded-lg"></div>
+          </div>
+          <div class="shimmer min-h-[250px] flex-1 rounded-lg"></div>
+          <div class="flex justify-center gap-6 pt-1">
+            <div class="shimmer h-4 w-12 rounded-full"></div>
+            <div class="shimmer h-4 w-16 rounded-full"></div>
+            <div class="shimmer h-4 w-12 rounded-full"></div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Section 3: Insights panel skeleton ────────────────────────────── -->
+    <div class="rounded-lg bg-card p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <div class="shimmer h-4 w-36"></div>
+        <div class="shimmer h-3 w-20"></div>
+      </div>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <div class="rounded-lg bg-gray-50 p-4">
+            <div class="mb-3 flex items-center gap-2">
+              <div class="shimmer h-4 w-4 rounded-full"></div>
+              <div class="shimmer h-3 w-20"></div>
+            </div>
+            <div class="shimmer mb-2 h-8 w-10"></div>
+            <div class="shimmer h-3 w-16"></div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3">
+      @for (card of summaryCards(); track card.title) {
+        <app-overview-cards-v4 [card]="card" />
+      }
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <app-payment-receipt-timeline-v4
+        title="Payment Receipt Timeline"
+        description="When payments were received relative to expected dates"
+        variant="comingSoon"
+        [data]="{
+          bars: [
+            { label: '-7+', value: 3 },
+            { label: '-3 to -6', value: 5 },
+            { label: '-1 to -2', value: 8 },
+            { label: '0', value: 1, isToday: true },
+            { label: '1 to 2', value: 2 },
+            { label: '3+', value: 1 }
+          ],
+          onTimePercent: 85,
+          earlyAmount: '$1.9k',
+          onTimeAmount: '$5.3k',
+          lateAmount: '$0.4k'
+        }"
+      />
+      <app-vendor-status-chart-v4
+        title="Top 5 Payers by Amount"
+        subtitle="Payment status breakdown per payer"
+        [data]="vendorData()"
+        [isLoading]="isLoadingVendors()"
+      />
+    </div>
+
+    @if (insights(); as data) {
+      <app-payment-insights-panel-v4 [insights]="data" />
+    } @else {
+      <app-payment-insights-panel-v4
+        [insights]="{
+          newCount: 0,
+          pendingCount: 0,
+          rejectedCount: 0,
+          highValueCount: 0,
+          highValueThreshold: 0,
+          recurringCount: 0
+        }"
+        [isLoading]="true"
+      />
+    }
+  }
+</div>

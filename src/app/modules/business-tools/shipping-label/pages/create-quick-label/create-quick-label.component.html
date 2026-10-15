@@ -1,0 +1,517 @@
+<div class="main_common_module">
+  <div class="main_left_wrapper">
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="header_title flex items-center gap-2">
+          <app-ocw-back-button backUrl="manage/business-tools/shipping-label">
+          </app-ocw-back-button>
+          <h3>Quick Label</h3>
+        </div>
+      </div>
+      <hr class="mt-2.5" />
+      <div class="module_main_body">
+        <div>
+          <h3>Choose the option that you would like to have shipped.</h3>
+        </div>
+        <div class="package">
+          <div
+            class="package_item"
+            *ngFor="let item of shipOptions"
+            (click)="selectPackage(item.code)"
+            [ngClass]="{ active: item.code === packageCode }"
+          >
+            <div class="items">
+              <img class="icon" src="{{ item.icon }}" />
+              <p class="label">{{ item.name }}</p>
+            </div>
+          </div>
+        </div>
+        <form [formGroup]="quickLabelForm">
+          <div
+            class="dimension-section flex flex-col gap-2 pb-5"
+            *ngIf="packageCode === 'SoftPack' || packageCode === 'box'"
+          >
+            <div class="heading">
+              <h3>Dimensions</h3>
+            </div>
+
+            <div class="package_box">
+              <div class="input_group flex gap-5">
+                <div class="single_input">
+                  <input
+                    type="text"
+                    class="input_style"
+                    placeholder=" "
+                    maxlength="5"
+                    mask="separator.2"
+                    #lengthInput
+                    (keypress)="utils.numberOnly($event, 'decimal')"
+                    formControlName="length"
+                    (input)="onDimensionChange(lengthInput.value, 'length')"
+                  />
+                  <span class="floating_label_field">Length(in)</span>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.length"
+                  ></app-control-message>
+                </div>
+
+                <div class="single_input">
+                  <input
+                    type="text"
+                    class="input_style"
+                    placeholder=" "
+                    maxlength="5"
+                    mask="separator.2"
+                    #widthInput
+                    (keypress)="utils.numberOnly($event, 'decimal')"
+                    formControlName="width"
+                    (input)="onDimensionChange(widthInput.value, 'width')"
+                  />
+                  <span class="floating_label_field">Width(in)</span>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.width"
+                  ></app-control-message>
+                </div>
+
+                <div class="single_input">
+                  <input
+                    type="text"
+                    class="input_style"
+                    placeholder=" "
+                    maxlength="5"
+                    mask="separator.2"
+                    #heightInput
+                    (keypress)="utils.numberOnly($event, 'decimal')"
+                    formControlName="height"
+                    (input)="onDimensionChange(heightInput.value, 'height')"
+                  />
+                  <span class="floating_label_field">Height(in)</span>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.height"
+                  ></app-control-message>
+                </div>
+
+                <div class="single_input weight">
+                  <input
+                    type="text"
+                    class="input_style"
+                    placeholder=" "
+                    maxlength="5"
+                    mask="separator.2"
+                    #weightInput
+                    (keypress)="utils.numberOnly($event, 'decimal')"
+                    formControlName="weight"
+                    (input)="onDimensionChange(weightInput.value, 'weight')"
+                  />
+                  <span class="floating_label_field">Weight</span>
+                  <select
+                    name="weight-unit"
+                    id="weight-unit"
+                    formControlName="unit"
+                    (change)="onChangeUnit($event?.target?.value)"
+                  >
+                    <option
+                      *ngFor="let item of weightUnitList"
+                      [value]="item.unit"
+                    >
+                      {{ item.unit }}
+                    </option>
+                  </select>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.weight"
+                  ></app-control-message>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="address-section flex gap-5 pb-3">
+            <div class="address">
+              <div class="heading">
+                <div class="flex">
+                  <h3>From Address</h3>
+                </div>
+              </div>
+              <div class="dropdown">
+                <div class="flex">
+                  <ng-select
+                    class="w-[200px]"
+                    placeholder="Select From Address"
+                    appendTo="ng-select"
+                    [(ngModel)]="itemName"
+                    [ngModelOptions]="{ standalone: true }"
+                    (clear)="changeFrom()"
+                    (change)="onSelectFrom($event)"
+                  >
+                    <ng-option
+                      *ngFor="let item of addressList"
+                      [value]="item.id"
+                    >
+                      {{ item.name }}
+                      {{ item?.nickName ? "(" + item?.nickName + ")" : "" }}
+                    </ng-option>
+                  </ng-select>
+                  <div
+                    class="add_modal_btn height-content"
+                    (click)="openAddressModal('Add', 'addfrom')"
+                    (keydown.enter)="openAddressModal('Add', 'addfrom')"
+                    tabindex="0"
+                  >
+                    <fa-icon [icon]="faPlus"></fa-icon>
+                  </div>
+                </div>
+                <div>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.fromAddress"
+                  ></app-control-message>
+                </div>
+              </div>
+            </div>
+            <div class="address">
+              <div class="heading">
+                <div class="flex">
+                  <h3>Delivery Address</h3>
+                </div>
+              </div>
+              <div class="dropdown">
+                <div class="flex">
+                  <div class="single_input contents">
+                    <app-drop-down-payee
+                      class="drop-style"
+                      placeholder="Select Payee"
+                      (selectionEvent)="onPayeeChange($event)"
+                      (clearEvent)="clearPayee()"
+                    ></app-drop-down-payee>
+                    <div
+                      class="add_modal_btn height-content"
+                      (click)="openPayeeModal()"
+                      (keydown.enter)="openPayeeModal()"
+                      tabindex="0"
+                    >
+                      <fa-icon [icon]="faPlus"></fa-icon>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.payeeId"
+                  ></app-control-message>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="returnAddress-section pb-2.5 w-fit">
+            <mat-radio-group
+              aria-label="Select an option"
+              class="flex flex-col gap-2"
+              (change)="setReturnAddress($event.value)"
+            >
+              <mat-radio-button value="1" [checked]="useSameReturnAddress"
+                >Return address same the from address</mat-radio-button
+              >
+              <mat-radio-button value="2"
+                >Add new return address
+                <p
+                  *ngIf="isViewReturn"
+                  (click)="editAddress(returnAddressData, 'Edit', 'viewreturn')"
+                >
+                  <img
+                    src="./../../../../../assets/images/quick-label/edit.svg"
+                    alt="edit"
+                  />
+                </p>
+              </mat-radio-button>
+            </mat-radio-group>
+          </div>
+          <div class="shipping-section flex gap-5 pb-3">
+            <div class="address" *ngIf="packageCode !== 'card'">
+              <div class="heading">
+                <div class="flex">
+                  <h3>Choose a Carrier Partner</h3>
+                </div>
+              </div>
+              <div class="dropdown">
+                <div class="flex">
+                  <ng-select
+                    class="w-[200px] ng-dropdown-section"
+                    placeholder="Select Shipping Type"
+                    appendTo="ng-select"
+                    [(ngModel)]="quickLabelShippingType"
+                    [ngModelOptions]="{ standalone: true }"
+                    (clear)="clear()"
+                    (change)="onSelectShippingType($event)"
+                    [disabled]="isDisable"
+                  >
+                    <ng-option
+                      *ngFor="let item of shippingTypes"
+                      [value]="item"
+                    >
+                      <div class="flex justify-between gap-2">
+                        <span> {{ item?.service }} </span>
+                        <span>{{ item?.carrier }} - ${{ item?.rate }}</span>
+                      </div>
+                    </ng-option>
+                  </ng-select>
+                </div>
+                <div>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.shippingType"
+                  ></app-control-message>
+                </div>
+              </div>
+            </div>
+            <div
+              class="address"
+              *ngIf="packageCode === 'SoftPack' || packageCode === 'box'"
+            >
+              <div class="heading">
+                <div class="flex">
+                  <h3>Print Size</h3>
+                </div>
+              </div>
+              <div class="dropdown">
+                <div class="flex">
+                  <ng-select
+                    class="w-[200px] ng-dropdown-section"
+                    placeholder="Select Print Size"
+                    appendTo="ng-select"
+                    [(ngModel)]="selectedSize"
+                    [ngModelOptions]="{ standalone: true }"
+                    (clear)="clearPrintSize()"
+                    (change)="onSelectPrintSize($event)"
+                    [disabled]="isDisablePrint"
+                  >
+                    <ng-option
+                      *ngFor="let item of printSizes"
+                      [value]="item.id"
+                    >
+                      {{ item.name }}
+                    </ng-option>
+                  </ng-select>
+                </div>
+                <div>
+                  <app-control-message
+                    [control]="quickLabelForm.controls.printSize"
+                  ></app-control-message>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="comment-section flex gap-5 flex-col">
+            <!-- <div class="heading">
+              <div class="flex">
+                <h5>Comment</h5>
+              </div>
+            </div> -->
+            <div class="input_group input-box">
+              <div class="single_input">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  maxlength="50"
+                  formControlName="comment"
+                />
+                <span class="floating_label_field">Comment</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="action_button">
+            <div>
+              <button
+                class="ocw-btn ocw-btn-light-blue"
+                (click)="printLabel()"
+                [disabled]="showNoResult || loading"
+                [ngClass]="{ btnDisabled: showNoResult || loading }"
+              >
+                <ng-container *ngIf="loading" class="loading_spinner">
+                  <span class="loadingSpinner"></span>
+                </ng-container>
+                <span>Print Label</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="main_right_section">
+    <div class="module_top_section flex flex-col gap-2">
+      <div>
+        <div class="main__header bottom-size">
+          <div class="left">
+            <p class="sub_head">Instructions</p>
+          </div>
+        </div>
+        <div class="module_body text-sm">
+          <div class="p-arrow">
+            <div class="p-arrow-text">
+              <span>
+                <p>
+                  Card and Letter dimensions are predefined. Soft Package and
+                  Boxes can be customized.
+                </p>
+              </span>
+            </div>
+          </div>
+          <div
+            class="image flex justify-center"
+            *ngIf="packageCode === 'SoftPack' || packageCode === 'box'"
+          >
+            <img
+              class="box-shape"
+              src="./../../../../../assets/images/quick-label/box-dimension.svg"
+            />
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="main_header bottom-size">
+          <div class="left">
+            <div class="sub_head">Shipping Details</div>
+          </div>
+        </div>
+
+        <div class="shipping_service">
+          <table>
+            <tbody *ngIf="quickLabelShippingType">
+              <tr>
+                <td>Service: {{ quickLabelShippingType?.service }}</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>
+                  Rate: ${{ quickLabelShippingType?.rate | number: "1.2-2" }}
+                </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>
+                  Delivery Day: {{ quickLabelShippingType?.deliveryDate }}
+                </td>
+                <td></td>
+              </tr>
+              <tr *ngIf="quickLabelShippingType?.descriptions">
+                <td>Description: {{ quickLabelShippingType?.descriptions }}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="from-address-section">
+        <div class="px-4 py-3.5">
+          <div class="main__header bottom-size">
+            <div class="left">
+              <p class="sub_head">From Address</p>
+            </div>
+            <div *ngIf="fromAddressData" class="right">
+              <p
+                class="edit_head"
+                (click)="editAddress(fromAddressData, 'Edit', 'from')"
+              >
+                <img
+                  src="./../../../../../assets/images/quick-label/edit.svg"
+                  alt="edit"
+                />
+              </p>
+            </div>
+          </div>
+          <div class="module_body text-sm">
+            <h6>
+              {{ fromAddressData?.name ? fromAddressData?.name : "" + " " }}
+            </h6>
+            <p>
+              {{
+                fromAddressData?.nickName ? fromAddressData?.nickName : "" + " "
+              }}
+            </p>
+            <p>
+              {{
+                fromAddressData?.company ? fromAddressData?.company : "" + " "
+              }}
+            </p>
+            <p>
+              {{
+                fromAddressData?.address1 ? fromAddressData?.address1 : "" + ""
+              }}
+            </p>
+            <p>
+              {{
+                fromAddressData?.address2 ? fromAddressData?.address2 : "" + ""
+              }}
+            </p>
+            <p>
+              {{ fromAddressData?.city ? fromAddressData?.city : "" + "" }}
+              {{ fromAddressData?.state ? fromAddressData?.state : "" + "" }}
+              {{ fromAddressData?.zip ? fromAddressData?.zip : "" }}
+            </p>
+            <p>
+              {{
+                fromAddressData?.country ? fromAddressData?.country : "" + ""
+              }}
+            </p>
+            <p>
+              {{
+                fromAddressData?.phone
+                  ? formatePhoneNum(fromAddressData?.phone)
+                  : ""
+              }}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="from-address-section">
+        <div class="px-4 py-3.5">
+          <div class="main__header bottom-size">
+            <div class="left">
+              <p class="sub_head">Delivery Address</p>
+            </div>
+            <div *ngIf="selectedPayee" class="right">
+              <p
+                class="edit_head"
+                (click)="openPayeeModal(selectedPayee?.id, true)"
+              >
+                <img
+                  src="./../../../../../assets/images/quick-label/edit.svg"
+                  alt="edit"
+                />
+              </p>
+            </div>
+          </div>
+          <div class="module_body text-sm">
+            <h6>{{ selectedPayee?.name ? selectedPayee?.name : "" + " " }}</h6>
+            <p>
+              {{ selectedPayee?.nickName ? selectedPayee?.nickName : "" + " " }}
+            </p>
+            <p>
+              {{
+                selectedPayee?.addressLine1
+                  ? selectedPayee?.addressLine1
+                  : "" + ""
+              }}
+            </p>
+            <p>
+              {{
+                selectedPayee?.addressLine2
+                  ? selectedPayee?.addressLine2
+                  : "" + ""
+              }}
+            </p>
+            <p>
+              {{ selectedPayee?.city ? selectedPayee?.city : "" + "" }}
+              {{ selectedPayee?.state ? selectedPayee?.state : "" + "" }}
+              {{ selectedPayee?.zip ? selectedPayee?.zip : "" }}
+            </p>
+            <p>
+              {{ selectedPayee?.country ? selectedPayee?.country : "" + "" }}
+            </p>
+            <p>{{ selectedPayee?.phone ? selectedPayee?.phone : "" }}</p>
+            <p>{{ selectedPayee?.email ? selectedPayee.email : "" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,117 @@
+<!-- Step 1: Bank account + file upload -->
+<div [style.display]="currentStep() === 1 ? 'block' : 'none'">
+  <!-- Header -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex items-center gap-3">
+      <button
+        (click)="close()"
+        class="w-8 h-8 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center border-none bg-transparent"
+      >
+        <lucide-icon [img]="ChevronLeftIcon" [size]="18" class="text-v4-subtle-text-color"></lucide-icon>
+      </button>
+      <div class="flex flex-col">
+        <h1 class="text-xl font-medium text-v4-main-text-color font-funnel">Check Reconciliation</h1>
+      </div>
+    </div>
+    <div
+      (click)="close()"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="p-6 bg-v4-tertiary-background-color overflow-y-auto max-h-[500px]">
+    <form [formGroup]="importForm" class="space-y-4">
+      <!-- Bank Account -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide">
+          Select Account: <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-bank-ac-dropdown-v4
+          [formControl]="selectedBank"
+          class="w-full"
+          [enableAddNew]="true"
+          append="body"
+          (clearEvent)="onRemoveBank()"
+        ></app-bank-ac-dropdown-v4>
+        <app-control-message-v4
+          [control]="importForm.controls.bankAccount"
+          label="Please select bank account"
+        />
+      </div>
+
+      <!-- File Upload -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-medium text-v4-subtle-text-color uppercase tracking-wide">
+          Select File: <span class="text-v4-common-red-color">*</span>
+        </label>
+        <app-common-upload-button-v4
+          buttonText="BROWSE"
+          [acceptedFileTypes]="['.csv', '.xlsx']"
+          (selectedFileEvent)="onFileSelect($event)"
+        />
+        <app-control-message-v4
+          [control]="importForm.controls.file"
+          label="Please select a file"
+        />
+      </div>
+    </form>
+
+    <!-- Import Button -->
+    <div class="flex justify-end mt-5">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Import'"
+        (clickEvent)="submit()"
+        [loading]="isSubmit()"
+        [disabled]="isSubmit()"
+      ></app-common-button-v4>
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-v4-border-color my-4"></div>
+
+    <!-- Helper Text -->
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2 text-v4-main-text-color">
+        <lucide-icon [img]="ChevronRightIcon" [size]="14" class="text-v4-primary-brand-bold-color"></lucide-icon>
+        <span>Please make sure date format is (mm/dd/yyyy or mm/dd/yy)</span>
+      </div>
+      <div class="flex items-center gap-2 text-v4-main-text-color">
+        <lucide-icon [img]="ChevronRightIcon" [size]="14" class="text-v4-primary-brand-bold-color"></lucide-icon>
+        <span>We only support csv/xlsx file</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color">
+    <button
+      class="flex items-center gap-2 text-v4-primary-brand-bold-color hover:underline text-sm border-none bg-transparent cursor-pointer p-0 font-semibold"
+      [disabled]="isSampleFileLoading()"
+      (click)="downloadSample()"
+    >
+      <lucide-icon [img]="DownloadIcon" [size]="14"></lucide-icon>
+      <span>Download Sample File</span>
+    </button>
+  </div>
+</div>
+
+<!-- Step 2: Column mapping -->
+@if (currentStep() === 2 && step2Data()) {
+  <app-v4-check-reconciliation-step2
+    [data]="step2Data()"
+    (onSuccess)="goToStep3()"
+    (onBack)="goToStep1()"
+  />
+}
+
+<!-- Step 3: Review & process -->
+@if (currentStep() === 3) {
+  <app-v4-check-reconciliation-step3
+    (onSuccess)="onComplete($event)"
+    (onBack)="goToStep2()"
+  />
+}

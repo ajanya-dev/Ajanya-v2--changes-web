@@ -1,0 +1,596 @@
+<ng-container>
+  <form class="main-container" [formGroup]="introService.introForm">
+    <div class="w-full flex flex-col items-center justify-center">
+      <app-amount-input
+        customClass="amount-input-v3 intro-home-payment-amount"
+        formControlName="amount"
+      ></app-amount-input>
+    </div>
+    <div class="intro-payment-wrapper-div">
+      <div class="w-full flex justify-center items-center mt-8 gap-1">
+        <div class="custom-input-v3-wrapper flex grow shadow !max-w-[340px]">
+          @if (
+            [
+              "bankaccount_check",
+              "bankaccount_ach",
+              "bankaccount_wire",
+              "bankaccount_virtual-card"
+            ].includes(formId())
+          ) {
+            <app-intro-common-dropdown
+              class="w-full"
+              customHeight="3"
+              [labelIconNeeded]="true"
+              dropdownType="bankAccount"
+              placeholder="Select Bank Account"
+              formControlName="selectedBankAccount"
+            ></app-intro-common-dropdown>
+          }
+          @if (
+            [
+              "card_ach",
+              "card_wire",
+              "card_virtual-card",
+              "card_check_mail"
+            ].includes(formId())
+          ) {
+            <app-intro-common-dropdown
+              class="w-full"
+              customHeight="3"
+              [labelIconNeeded]="true"
+              dropdownType="creditCard"
+              placeholder="Select Card"
+              formControlName="selectedCard"
+            ></app-intro-common-dropdown>
+          }
+          @if (
+            [
+              "wallet_wire",
+              "wallet_ach",
+              "wallet_virtual-card",
+              "wallet_check_mail"
+            ].includes(formId())
+          ) {
+            <app-intro-common-dropdown
+              class="w-full"
+              customHeight="3"
+              [labelIconNeeded]="true"
+              dropdownType="wallet"
+              placeholder="Select Wallet"
+              formControlName="selectedWallet"
+            ></app-intro-common-dropdown>
+          }
+          @if (
+            [
+              "cloud_ach",
+              "cloud_domestic",
+              "cloud_international",
+              "cloud_intra_bank"
+            ].includes(formId())
+          ) {
+            <app-intro-common-dropdown
+              class="w-full"
+              customHeight="3"
+              [labelIconNeeded]="true"
+              dropdownType="cloudBankAccount"
+              placeholder="Select Your Account"
+              formControlName="selectedCloudBank"
+            ></app-intro-common-dropdown>
+          }
+        </div>
+        <div class="arrow-wrapper flex justify-center items-center">
+          <div
+            class="arrow flex justify-center items-center text-sm opacity-60"
+          >
+            <fa-icon [icon]="['fas', 'arrow-right-long']"></fa-icon>
+          </div>
+        </div>
+        <div class="custom-input-v3-wrapper flex grow shadow max-w-[340px]">
+          <app-intro-common-dropdown
+            class="w-full"
+            customHeight="3"
+            [labelIconNeeded]="true"
+            dropdownType="payee"
+            placeholder="Select Your Payee"
+            formControlName="selectedPayee"
+          ></app-intro-common-dropdown>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5 mt-5">
+        @if (["bankaccount_check"].includes(formId())) {
+          <div class="single_input">
+            <input
+              id="checkNo"
+              type="text"
+              class="input_style"
+              placeholder=" "
+              (keypress)="utils.numberOnly($event)"
+              maxlength="12"
+              formControlName="checkNo"
+            />
+            <label for="checkNo" class="floating_label_field"
+              >Check No.<span class="error_msg">*</span></label
+            >
+          </div>
+        }
+        @if (
+          [
+            "bankaccount_ach",
+            "bankaccount_wire",
+            "bankaccount_virtual-card",
+            "card_ach",
+            "card_wire",
+            "card_virtual-card",
+            "card_check_mail",
+            "wallet_wire",
+            "wallet_ach",
+            "wallet_virtual-card",
+            "wallet_check_mail"
+          ].includes(formId())
+        ) {
+          <ng-container [ngTemplateOutlet]="invoiceNumInput"></ng-container>
+        }
+        <div class="single_input">
+          <input
+            type="text"
+            id="payeeId"
+            class="input_style"
+            maxlength="30"
+            placeholder=" "
+            formControlName="payeeAccNumber"
+          />
+          <label for="payeeId" class="floating_label_field"
+            >Payee ID/Acc Number<span class="error_msg"></span
+          ></label>
+        </div>
+        @if (["bankaccount_check"].includes(formId())) {
+          <div class="col-span-2">
+            <ng-container [ngTemplateOutlet]="invoiceNumInput"></ng-container>
+          </div>
+        }
+        @if (
+          [
+            "bankaccount_ach",
+            "bankaccount_wire",
+            "card_ach",
+            "card_wire",
+            "wallet_ach",
+            "wallet_wire"
+          ].includes(formId())
+        ) {
+          <div class="col-span-2">
+            <ng-container [ngTemplateOutlet]="payeeEmailInput"></ng-container>
+          </div>
+        }
+        <ng-template #invoiceNumInput>
+          <div class="single_input w-full">
+            <input
+              type="text"
+              id="invoiceNo"
+              class="input_style"
+              placeholder=" "
+              maxlength="30"
+              formControlName="invoiceNo"
+            />
+            <label for="invoiceNo" class="floating_label_field"
+              >Invoice No<span class="error_msg"></span
+            ></label>
+          </div>
+        </ng-template>
+        <ng-template #payeeEmailInput>
+          <div class="single_input w-full">
+            <input
+              type="text"
+              id="invoiceNo"
+              class="input_style"
+              placeholder=" "
+              maxlength="30"
+              formControlName="payeeEmail"
+            />
+            <label for="invoiceNo" class="floating_label_field"
+              >Payee Email<span class="error_msg">*</span></label
+            >
+          </div>
+        </ng-template>
+        @if (["bankaccount_check"].includes(formId())) {
+          <div
+            matTooltip="Untick Process without Date checkbox to change date."
+            class="single_input"
+          >
+            <input
+              type="date"
+              id="date"
+              class="input_style"
+              placeholder=" "
+              formControlName="issueDate"
+            />
+            <label for="date" class="floating_label_field"
+              >Issue Date<span class="error_msg">*</span></label
+            >
+            <fa-icon
+              class="absolute top-1.5 right-4 text-secondary-text-color pointer-events-none"
+              [icon]="['fas', 'calendar-days']"
+            ></fa-icon>
+          </div>
+        }
+        @if (
+          [
+            "bankaccount_virtual-card",
+            "card_virtual-card",
+            "card_check_mail",
+            "wallet_virtual-card",
+            "wallet_check_mail"
+          ].includes(formId())
+        ) {
+          <ng-container [ngTemplateOutlet]="payeeEmailInput"></ng-container>
+        }
+        @if (
+          [
+            "bankaccount_ach",
+            "bankaccount_wire",
+            "card_ach",
+            "card_wire",
+            "wallet_ach",
+            "wallet_wire",
+            "cloud_ach",
+            "cloud_domestic",
+            "cloud_international",
+            "cloud_intra_bank"
+          ].includes(formId())
+        ) {
+          <div class="single_input w-full">
+            <div class="flex w-full drop-down-app">
+              <app-intro-common-dropdown
+                class="w-full"
+                customHeight="3"
+                placeholder="Payee Bank Account"
+                dropdownType="payeeBank"
+                formControlName="payeeBankAc"
+              ></app-intro-common-dropdown>
+            </div>
+          </div>
+        }
+        @if (
+          [
+            "cloud_ach",
+            "cloud_domestic",
+            "cloud_international",
+            "cloud_intra_bank"
+          ].includes(formId())
+        ) {
+          <div class="col-span-2">
+            <ng-container [ngTemplateOutlet]="payeeEmailInput"></ng-container>
+          </div>
+        }
+        @if (
+          [
+            "bankaccount_check",
+            "bankaccount_ach",
+            "bankaccount_wire",
+            "bankaccount_virtual-card",
+            "card_ach",
+            "card_wire",
+            "card_virtual-card",
+            "card_check_mail",
+            "wallet_wire",
+            "wallet_ach",
+            "wallet_virtual-card",
+            "wallet_check_mail"
+          ].includes(formId())
+        ) {
+          <div class="single_input w-full">
+            <div class="flex w-full drop-down-app">
+              <app-intro-common-dropdown
+                class="w-full"
+                customHeight="3"
+                placeholder="Select category"
+                dropdownType="paymentCategory"
+                formControlName="category"
+              ></app-intro-common-dropdown>
+            </div>
+          </div>
+        }
+        <div class="single_input col-span-2 mb-2">
+          <input
+            type="text"
+            class="input_style memo-input-with-icon"
+            placeholder=" "
+            id="memo"
+            maxlength="100"
+            formControlName="memo"
+          />
+          <label for="memo" class="floating_label_field"
+            >Memo<span class="error_msg"></span
+          ></label>
+        </div>
+        <div class="col-span-2 flex gap-3">
+          <button
+            class="add-attachment h-10 w-10 bg-tertiary-background-color rounded-full flex items-center justify-center hover:shadow-md"
+            matTooltip="Add attachments to the payment"
+          >
+            <fa-icon [icon]="['fas', 'paperclip']"></fa-icon>
+          </button>
+          <button
+            class="add-comment h-10 w-10 bg-tertiary-background-color rounded-full flex items-center justify-center hover:shadow-md"
+            matTooltip="Add comments to the payment"
+          >
+            <fa-icon [icon]="['fas', 'comment-plus']" class="w-full"></fa-icon>
+          </button>
+          <button
+            class="add-remittance h-10 w-10 bg-tertiary-background-color rounded-full flex items-center justify-center hover:shadow-md"
+            matBadgeSize="small"
+            matTooltip="Add remittance to the payment"
+          >
+            <fa-icon [icon]="['fas', 'square-list']"></fa-icon>
+          </button>
+          @if (["bankaccount_check"].includes(formId())) {
+            <div class="w-full flex items-center justify-between">
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                text="Process Without"
+                [type]="{ name: 'list', style: 'blue' }"
+                [disableHoverEffect]="false"
+                customClasses="font-extralight p-0"
+                backGroundInput="transparent"
+              ></app-common-button-v35>
+              <app-common-button-v35
+                class="whitespace-nowrap"
+                text="Custom fields"
+                [type]="{ name: 'list', style: 'blue' }"
+                [disableHoverEffect]="false"
+                customClasses="font-extralight p-0"
+                backGroundInput="transparent"
+                [isAddIcon]="true"
+                [icon]="['fas', 'plus']"
+              ></app-common-button-v35>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (["bankaccount_check"].includes(formId())) {
+      <div class="pt-4">
+        <div
+          id="home-submit-button-wrapper"
+          class=" p-4 flex gap-2  intro-home-payment-button paymentButton"
+        >
+        <div class="w-1/4">
+          <app-common-button-v35
+            class="flex-1"
+            [type]="{ style: 'bordered', name: 'main' }"
+            [customClasses]="introService.currentIntroStep.selector === '.paymentButton' ? 'pointer-events-none opacity-50' : ''"
+            text="Save"
+            width="100%"
+            id="intro-home-payment-save-button"
+            (clickEvent)="saveButton()"
+          ></app-common-button-v35>
+        </div>
+        <div class=" w-3/4 flex gap-2">
+          <app-common-button-v35
+            class="flex-1 "
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Send"
+            width="100%"
+            [suffix]="true"
+            [matMenuTriggerFor]="sendBtnMenu"
+            (clickEvent)="send()"
+            [suffixIcon]="['fas', 'caret-down']"
+          ></app-common-button-v35>
+          <app-common-button-v35
+            class="flex-1"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Print"
+            width="100%"
+            [suffix]="true"
+            [matMenuTriggerFor]="printBtnMenu"
+            (clickEvent)="print()"
+            [suffixIcon]="['fas', 'caret-down']"
+          ></app-common-button-v35>
+          <app-common-button-v35
+            class="flex-1 "
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Direct Deposit"
+            width="100%"
+            (clickEvent)="paymentButton()"
+          ></app-common-button-v35>
+        </div>
+        </div>
+      </div>
+    }@else{
+    <div class="pt-4">
+      <div
+        id="home-submit-button-wrapper"
+        class="p-4 flex gap-2 justify-between intro-home-payment-button paymentButton"
+      >
+        
+        @if (
+          [
+            "bankaccount_ach",
+            "bankaccount_wire",
+            "bankaccount_wire",
+            "bankaccount_virtual-card",
+            "card_ach",
+            "card_wire",
+            "card_virtual-card",
+            "card_check_mail",
+            "wallet_ach",
+            "wallet_wire",
+            "wallet_virtual-card",
+            "wallet_check_mail"
+          ].includes(formId())
+        ) {
+          <app-common-button-v35
+            class="flex-1"
+            [type]="{ style: 'bordered', name: 'main' }"
+            text="Save"
+            [customClasses]="introService.currentIntroStep.selector === '.paymentButton' ? 'pointer-events-none opacity-50' : ''"
+            width="100%"
+            id="intro-home-payment-save-button"
+            (clickEvent)="saveButton()"
+          ></app-common-button-v35>
+        }
+        @if (["bankaccount_ach", "card_ach", "wallet_ach"].includes(formId())) {
+          <app-common-button-v35
+            class="flex-1 paymentButton"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="ACH / DD Now"
+            width="100%"
+            (clickEvent)="paymentButton()"
+          ></app-common-button-v35>
+        }
+        @if (["cloud_ach"].includes(formId())) {
+          <app-common-button-v35
+            class="flex-1 paymentButton"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="ACH Now"
+            width="100%"
+            id="intro-home-payment-save-button"
+            (clickEvent)="paymentButton()"
+          ></app-common-button-v35>
+        }
+        @if (
+          ["bankaccount_wire", "card_wire", "wallet_wire"].includes(formId())
+        ) {
+          <app-common-button-v35
+            class="flex-1 paymentButton"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Wire Now"
+            width="100%"
+            (clickEvent)="paymentButton()"
+          ></app-common-button-v35>
+        }
+        @if (["cloud_domestic", "cloud_international"].includes(formId())) {
+          <app-common-button-v35
+            class="flex-1"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Wire Now"
+            width="100%"
+            (clickEvent)="paymentButton()"
+            id="intro-home-payment-save-button"
+          ></app-common-button-v35>
+        }
+        @if (
+          [
+            "bankaccount_virtual-card",
+            "card_virtual-card",
+            "wallet_virtual-card"
+          ].includes(formId())
+        ) {
+          <app-common-button-v35
+            class="flex-1 paymentButton"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Send Card"
+            width="100%"
+            (clickEvent)="paymentButton()"
+          ></app-common-button-v35>
+        }
+        @if (["card_check_mail", "wallet_check_mail"].includes(formId())) {
+          <app-common-button-v35
+            class="flex-1 paymentButton"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Mail Now"
+            width="100%"
+          ></app-common-button-v35>
+        }
+        @if (["cloud_intra_bank"].includes(formId())) {
+          <app-common-button-v35
+            class="flex-1 paymentButton"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Pay Now"
+            width="100%"
+            (clickEvent)="paymentButton()"
+            id="intro-home-payment-save-button"
+          ></app-common-button-v35>
+        }
+      </div>
+    </div>
+    }
+  </form>
+</ng-container>
+
+
+
+@if (["bankaccount_check"].includes(formId())) {
+  <div class="others flex flex-col items-center w-full">
+    <div class="flex w-full gap-4 items-center">
+      <div class="flex justify-center gap-2.5 grow pt-5">
+        <button
+          class="ocw-btn flex justify-center items-center w-full bg-secondary-background-color py-2 text-sm font-semibold font-inter rounded text-main-text-color"
+        >
+          Blank Check
+        </button>
+        <button
+          class="ocw-btn flex justify-center items-center w-full bg-secondary-background-color py-2 text-sm font-semibold font-inter rounded text-main-text-color"
+        >
+          Multiple Check
+        </button>
+        <button
+          class="ocw-btn flex justify-center items-center w-full bg-secondary-background-color py-2 text-sm font-semibold font-inter rounded text-main-text-color"
+        >
+          Group Check
+        </button>
+        <button
+          class="ocw-btn flex justify-center items-center w-full bg-secondary-background-color py-2 text-sm font-semibold font-inter rounded text-main-text-color"
+        >
+          Import Check
+        </button>
+        <button
+          class="ocw-btn flex justify-center items-center w-full bg-secondary-background-color py-2 text-sm font-semibold font-inter rounded text-main-text-color"
+        >
+          Deposit Slip
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<mat-menu
+#sendBtnMenu="matMenu"
+class="send-menu"
+[hasBackdrop]="false"
+>
+  <div class="intro-home-send-button">
+    <button
+      mat-menu-item
+      (click)="openCheckMailModal()"
+    >
+      <fa-icon [icon]="['fas', 'envelope']" class="pr-2"></fa-icon>
+      <span class="text-main-text-color ">Mail</span>
+    </button>
+    <button
+      mat-menu-item
+      (click)="openCheckEmailModal()"
+    >
+      <fa-icon [icon]="['fas', 'envelope']" class="pr-2"></fa-icon>
+      <span class="text-main-text-color">Email</span>
+    </button>
+  </div>
+</mat-menu>
+
+<mat-menu
+#printBtnMenu="matMenu"
+class="check-paper-menu"
+>
+<div class="intro-home-print-button">
+  <button
+    mat-menu-item
+    (click)="openPdf('check-paper')"
+  >
+    <i class="fa-solid fa-print pr-2"></i> 
+    <span class="text-main-text-color whitespace-nowrap"
+      >Print-Check Paper</span
+    >
+  </button>
+  <button
+    mat-menu-item
+    (click)="openPdf('white-check-paper')"
+  
+  >
+  <i class="fa-solid fa-print pr-2"></i> 
+  <span class="text-main-text-color whitespace-nowrap"
+      >Print-White Paper</span
+    >
+  </button>
+</div>
+</mat-menu>

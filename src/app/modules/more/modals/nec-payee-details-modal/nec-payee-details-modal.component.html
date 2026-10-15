@@ -1,0 +1,137 @@
+<div class="ocw_man_modal_wrapper">
+  <!-- modal header -->
+  <div class="ocw_modal_header">
+    <div class="ocw_modal_title">Generate Form 1099-NEC</div>
+    <div class="close_btn" [mat-dialog-close]="false">
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        data-prefix="fal"
+        data-icon="times"
+        class="svg-inline--fa fa-times fa-w-10"
+        role="img"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 320 512"
+      >
+        <path
+          fill="currentColor"
+          d="M193.94 256L296.5 153.44l21.15-21.15c3.12-3.12 3.12-8.19 0-11.31l-22.63-22.63c-3.12-3.12-8.19-3.12-11.31 0L160 222.06 36.29 98.34c-3.12-3.12-8.19-3.12-11.31 0L2.34 120.97c-3.12 3.12-3.12 8.19 0 11.31L126.06 256 2.34 379.71c-3.12 3.12-3.12 8.19 0 11.31l22.63 22.63c3.12 3.12 8.19 3.12 11.31 0L160 289.94 262.56 392.5l21.15 21.15c3.12 3.12 8.19 3.12 11.31 0l22.63-22.63c3.12-3.12 3.12-8.19 0-11.31L193.94 256z"
+        ></path>
+      </svg>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="ocw_modal_body">
+    <ng-container>
+      <form [formGroup]="payeeDetailsForm">
+        <table id="payee-details">
+          <thead>
+            <tr>
+              <th>Payee Name</th>
+              <th>Tax ID Number</th>
+              <th>Address</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="payeeDetails">
+            <tr
+              *ngFor="
+                let item of getPayeeDetailsFormControl()['controls'];
+                let i = index
+              "
+              [formGroupName]="i"
+            >
+              <td>
+                <input
+                  type="text"
+                  formControlName="payeeName"
+                  readonly
+                  class="border-0"
+                />
+              </td>
+              <td>
+                <div id="taxIdNumber">
+                  <input
+                    type="text"
+                    placeholder=""
+                    [mask]="
+                      mask[i] ||
+                      getPayeeDetailsFormControl()['controls'][i].value
+                        .taxIdType === 'EIN'
+                        ? '00-0000000'
+                        : '000-00-0000'
+                    "
+                    formControlName="taxIdNumber"
+                    class="input_style ng-pristine relative"
+                  />
+                  <select
+                    class="taxt-id-dropdown"
+                    (change)="setMaskValue($event, i)"
+                    formControlName="taxIdType"
+                  >
+                    @if (
+                      getPayeeDetailsFormControl()["controls"][i].value
+                        .payeeTypeId !== 2
+                    ) {
+                      <option value="SSN">SSN</option>
+                    }
+                    @if (
+                      getPayeeDetailsFormControl()["controls"][i].value
+                        .payeeTypeId !== 3
+                    ) {
+                      <option value="EIN">EIN</option>
+                    }
+                  </select>
+                </div>
+              </td>
+              <td appOutsideClick (clickOutSide)="handleChange()">
+                <input
+                  [readonly]="isInputReadOnly[i]"
+                  (input)="disableOtherInputs(i)"
+                  (focus)="loadGoogleAddress(payeeAddress, i)"
+                  #payeeAddress
+                  type="text"
+                  placeholder=""
+                  maxlength="155"
+                  formControlName="payeeAddress"
+                  class="input_style ng-pristine"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder=""
+                  prefix="$"
+                  mask="separator.2"
+                  thousandSeparator=","
+                  maxlength="13"
+                  formControlName="payeeTotalAmount"
+                  class="input_style ng-pristine"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </ng-container>
+  </div>
+  <!-- modal body end -->
+  <div class="footer">
+    <mat-dialog-actions class="buttons">
+      <button
+        appOcwPreventMultiClick
+        [throttleTime]="3000"
+        (throttledClick)="onDownload()"
+        type="submit"
+        class="ocw-btn ocw-btn-modal-blue ocw-btn download_btn"
+      >
+        Download
+        @if (loading) {
+          <span
+            class="loadingSpinner after:border-x-transparent after:border-y-white !h-3.5 ml-1.5"
+          ></span>
+        }
+      </button>
+    </mat-dialog-actions>
+  </div>
+</div>

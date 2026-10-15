@@ -1,0 +1,321 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between items-center px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-2">
+      <div
+        class="w-8 h-8 rounded-lg flex items-center justify-center"
+        style="background-color: rgba(5, 149, 229, 0.12)"
+      >
+        <lucide-icon
+          [img]="UserIcon"
+          [size]="16"
+          style="color: var(--v4-primary-brand-bold-color)"
+        ></lucide-icon>
+      </div>
+      <h1 class="text-base font-semibold text-v4-main-text-color font-funnel">
+        User Permission Management
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body -->
+  <div
+    class="flex flex-col md:flex-row bg-v4-tertiary-background-color"
+    style="height: 550px"
+  >
+    <!-- Left Side - User Management -->
+    <div
+      class="w-full md:w-80 lg:w-96 border-r border-v4-border-color flex flex-col bg-v4-secondary-background-color"
+    >
+      <div class="p-4 flex-shrink-0">
+        <h2
+          class="text-sm font-semibold text-v4-main-text-color font-peridot mb-3"
+        >
+          User Management
+        </h2>
+
+        <!-- Search Box -->
+        <div class="relative mb-3">
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="14"
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-v4-secondary-text-color"
+          ></lucide-icon>
+          <input
+            type="text"
+            placeholder="Search users..."
+            class="w-full pl-11 pr-4 py-2 border border-v4-border-color rounded-lg text-sm font-peridot text-v4-main-text-color bg-v4-tertiary-background-color focus:ring-1 focus:ring-v4-primary-brand-color focus:border-v4-primary-brand-color outline-none transition-colors"
+            [(ngModel)]="searchTerm"
+            (input)="
+              searchTerm.set($any($event.target).value);
+              onSearchUser($any($event.target).value)
+            "
+          />
+        </div>
+
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="+ New"
+          width="100%"
+          (clickEvent)="openNewUserModal()"
+        />
+      </div>
+
+      <!-- Users List -->
+      <div
+        class="flex-1 overflow-y-auto px-4 pb-4"
+        [ngClass]="{
+          'flex items-center justify-center':
+            !filteredUsers()?.length && !loading.default
+        }"
+      >
+        @if (!loading.default && !loadingPermissions()) {
+          @for (item of filteredUsers(); track item.id; let i = $index) {
+            <div
+              role="presentation"
+              class="border border-v4-border-color rounded-lg mb-2 hover:shadow-sm cursor-pointer bg-v4-tertiary-background-color transition-all"
+              [ngClass]="{
+                '!border-v4-primary-brand-color bg-v4-secondary-background-color':
+                  item?.client_id === selectedUser?.client_id
+              }"
+              (click)="onRowClick(item)"
+            >
+              <div class="pl-3 py-2.5 flex items-center">
+                <div class="flex items-center pr-2.5 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(item)"
+                    (click)="$event.stopPropagation()"
+                    (change)="onUserCheckboxToggle(item, i, $event)"
+                    class="mr-2 w-4 h-4 accent-v4-primary-brand-color"
+                  />
+                  <div
+                    class="flex justify-center items-center h-7 w-7 rounded-full flex-shrink-0"
+                    [ngClass]="
+                      item?.client_id === selectedUser?.client_id
+                        ? 'bg-v4-tertiary-background-color'
+                        : 'bg-v4-secondary-background-color'
+                    "
+                  >
+                    @if (item.profile_pic) {
+                      <img
+                        [src]="item.profile_pic"
+                        class="rounded-full h-7 w-7 object-cover"
+                        alt="User"
+                      />
+                    } @else {
+                      <lucide-icon
+                        [img]="UserIcon"
+                        [size]="14"
+                        class="text-v4-secondary-text-color"
+                      ></lucide-icon>
+                    }
+                  </div>
+                </div>
+                <div class="flex-1 flex gap-2 min-w-0">
+                  <div class="flex-1 flex flex-col gap-0.5 min-w-0">
+                    <div class="truncate">
+                      <span
+                        class="font-semibold text-v4-main-text-color text-sm font-peridot"
+                        >{{ item.client_name }}</span
+                      >
+                      <span
+                        class="text-xs font-peridot text-v4-secondary-text-color ml-1"
+                        >({{ clientType[item.client_type] }})</span
+                      >
+                    </div>
+                    <p
+                      class="text-xs font-peridot text-v4-secondary-text-color truncate"
+                    >
+                      {{ item.client_email }}
+                    </p>
+                    @if (item.company_name !== null) {
+                      <p
+                        class="text-xs font-peridot text-v4-secondary-text-color truncate"
+                      >
+                        {{ item.company_name | titlecase }}
+                      </p>
+                    }
+                  </div>
+                  <div
+                    class="flex flex-col justify-center items-end pr-3 flex-shrink-0"
+                  >
+                    @switch (item.status) {
+                      @case (0) {
+                        <button
+                          class="text-v4-primary-brand-bold-color underline hover:no-underline text-xs font-peridot font-medium"
+                          matTooltip="Request Is Pending. Please Wait or Resend"
+                          (click)="onResend(item, i); $event.stopPropagation()"
+                          [ngClass]="{
+                            'opacity-50 pointer-events-none':
+                              loading.sending === i
+                          }"
+                        >
+                          Resend
+                        </button>
+                      }
+                      @case (1) {
+                        <div class="flex items-center gap-1">
+                          <lucide-icon
+                            [img]="CircleIcon"
+                            [size]="8"
+                            class="text-v4-common-green-color"
+                          ></lucide-icon>
+                          <span
+                            class="text-v4-common-green-color text-xs font-peridot font-medium"
+                            >Active</span
+                          >
+                        </div>
+                      }
+                      @case (2) {
+                        @if (loading.sending === i) {
+                          <span
+                            class="loadingSpinner after:border-y-v4-primary-brand-color"
+                          ></span>
+                        } @else {
+                          <div class="flex items-center gap-1">
+                            <lucide-icon
+                              [img]="CircleIcon"
+                              [size]="8"
+                              class="text-v4-common-red-color"
+                            ></lucide-icon>
+                            <span
+                              class="text-v4-common-red-color text-xs font-peridot font-medium"
+                              >Rejected</span
+                            >
+                          </div>
+                        }
+                      }
+                      @default {
+                        <button
+                          class="text-v4-common-green-color underline hover:no-underline text-xs font-peridot font-medium"
+                          matTooltip="Approve and Set Permission"
+                          (click)="onApprove(item, i); $event.stopPropagation()"
+                          [ngClass]="{
+                            'opacity-50 pointer-events-none':
+                              loading.accepting === i
+                          }"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          class="text-v4-common-red-color underline hover:no-underline text-xs font-peridot font-medium"
+                          (click)="onDelete(item, i); $event.stopPropagation()"
+                          [ngClass]="{
+                            'opacity-50 pointer-events-none':
+                              loading.deleting === i
+                          }"
+                        >
+                          Delete
+                        </button>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <app-common-list-skelton [items]="14"></app-common-list-skelton>
+        }
+        @if (
+          !filteredUsers()?.length && !loading.default && !loadingPermissions()
+        ) {
+          <div
+            class="flex flex-col items-center gap-2 text-v4-secondary-text-color"
+          >
+            <lucide-icon [img]="SearchIcon" [size]="20"></lucide-icon>
+            <span class="text-sm font-peridot">No user found!</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right Side - Permissions Management -->
+    <div class="flex-1 flex flex-col min-h-0">
+      <div class="p-4 border-b border-v4-border-color flex-shrink-0">
+        <h2
+          class="text-sm font-semibold text-v4-main-text-color font-peridot mb-1"
+        >
+          Manage Permissions
+        </h2>
+        <p class="text-xs font-peridot text-v4-secondary-text-color">
+          Select permissions for the selected user.
+        </p>
+      </div>
+
+      <!-- Permissions List -->
+      <div class="flex-1 overflow-y-auto min-h-0">
+        @if (loading.default || loadingPermissions()) {
+          <div class="flex justify-center items-center h-full">
+            <span
+              class="loadingSpinner after:border-y-v4-primary-brand-color"
+            ></span>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 p-4">
+            @for (permission of permissions(); track permission.id) {
+              <div
+                class="border rounded-lg p-4 transition-colors cursor-pointer"
+                [ngClass]="
+                  hasPermission(permission.id)
+                    ? 'border-v4-primary-brand-color bg-v4-secondary-background-color'
+                    : 'border-v4-border-color bg-v4-secondary-background-color hover:border-v4-primary-brand-color/50'
+                "
+              >
+                <label class="flex items-start cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 mt-0.5 accent-v4-primary-brand-color flex-shrink-0"
+                    [checked]="hasPermission(permission.id)"
+                    (change)="onPermissionChange(permission.id, $event)"
+                  />
+                  <div class="ml-3 flex-1 min-w-0">
+                    <h3
+                      class="text-sm font-semibold text-v4-main-text-color font-peridot"
+                    >
+                      {{ permission.name }}
+                    </h3>
+                    <p
+                      class="text-xs font-peridot text-v4-secondary-text-color mt-0.5"
+                    >
+                      {{ permission.description }}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- modal footer -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      mat-dialog-close=""
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    <app-common-button-v4
+      width="140px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Save Changes"
+      (clickEvent)="saveChanges()"
+      [disabled]="setPermissionsLoading()"
+      [loading]="setPermissionsLoading()"
+    />
+  </div>
+</div>

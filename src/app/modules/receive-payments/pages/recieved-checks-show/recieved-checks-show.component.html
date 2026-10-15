@@ -1,0 +1,663 @@
+<!-------- new_common_module-wrap start -------->
+<section
+  class="main_common_module relative max-xl:flex-col max-xl:w-full max-xl:items-center"
+  [ngClass]="{ 'blur-[2px]': isDdInitiated() || isPrinting() }"
+>
+  <!-------- left section start -------->
+  <div
+    class="top-section max-w-[50%] flex-[1_1_50%] flex flex-col gap-5 max-xl:max-w-[70%] max-lg:max-w-[80%]"
+  >
+    <div
+      class="bg-main-background-color rounded-[5px] relative"
+      [ngClass]="{ 'skelton h-[380px] max-xl:!w-[690px]': isLoadingComment() }"
+    >
+      <div class="bg-main-background-color rounded-[5px] w-full p-[1px]">
+        <div
+          class="m-2 p-2 bg-secondary-background-color rounded-tl-[5px] rounded-tr-[5px] border-b border-input-border-color flex justify-between items-center"
+        >
+          <div class="flex gap-3 items-center">
+            <app-ocw-back-button
+              [btnStyle]="{ bg: 'light' }"
+              [isRounded]="true"
+              (click)="onGoBack()"
+              type="takeEvent"
+            ></app-ocw-back-button>
+            <h3 class="text-main-text-color font-inter text-[15px] font-medium">
+              Check Details
+            </h3>
+          </div>
+          <div class="flex gap-4">
+            @if (showAcceptBtn()) {
+              <app-common-button-v35
+                [type]="{ style: 'green', name: 'money-action' }"
+                [isAddIcon]="isAccept() ? false : true"
+                [icon]="['fas', 'check']"
+                (clickEvent)="acceptAction(data.uuid)"
+                text="Accept"
+                width="100%"
+                [disabled]="isAccept()"
+                [loading]="isAccept()"
+              ></app-common-button-v35>
+            }
+            @if (showRejectBtn()) {
+              <app-common-button-v35
+                [type]="{ style: 'red', name: 'money-action' }"
+                [isAddIcon]="isReject() ? false : true"
+                backGroundInput="var(--common-red-color)"
+                [icon]="['fas', 'close']"
+                (clickEvent)="rejectAction(data.uuid)"
+                text="Reject"
+                textColorInput="white"
+                width="100%"
+                [disabled]="isReject()"
+                [loading]="isReject()"
+              ></app-common-button-v35>
+            }
+          </div>
+        </div>
+        <div class="module_main_body !mt-0">
+          <div class="check-design">
+            <div class="check-design-sec">
+              <img
+                src="assets/images/check/check_template.svg"
+                alt="Sample check Information"
+              />
+            </div>
+            <div class="check-body-sec">
+              <div class="addres-bank-date">
+                <div class="address">
+                  <h6 class="cheque-sub-headers text-main-text-color">
+                    ADDRESS
+                  </h6>
+                  <p
+                    class="cheque-details-text"
+                    [innerHtml]="data?.address"
+                  ></p>
+                </div>
+                <div class="names_dates">
+                  <div class="name_date">
+                    <span class="cheque-sub-headers text-main-text-color">{{
+                      data?.bankName
+                    }}</span>
+                    <h5 class="cheque-sub-headers text-main-text-color">
+                      DATE
+                      <span class="cheque-sub-headers text-main-text-color">{{
+                        data?.chequeIssueDate
+                      }}</span>
+                    </h5>
+                  </div>
+                </div>
+              </div>
+              <div class="payto-order-sec">
+                <div class="sub-head">
+                  <h6 class="cheque-sub-headers text-main-text-color">
+                    PAY TO THE ORDER OF
+                  </h6>
+                </div>
+                <div class="text">
+                  <p class="cheque-sub-headers text-main-text-color">
+                    {{ data?.payeeName }}
+                  </p>
+                </div>
+                <div class="money">
+                  <h6 class="cheque-sub-headers text-main-text-color">
+                    $ <span>{{ data?.chequeAmount }}</span>
+                  </h6>
+                </div>
+              </div>
+
+              <div class="payments">
+                <div class="text">
+                  <h6 class="cheque-sub-headers text-main-text-color">
+                    {{
+                      data?.amounyInWords === false ? "" : data?.amounyInWords
+                    }}
+                  </h6>
+                </div>
+                <div class="dolllar">
+                  <h6 class="cheque-sub-headers text-main-text-color">
+                    DOLLARS
+                  </h6>
+                </div>
+              </div>
+
+              <div class="memo-sign">
+                <div class="memo">
+                  <p class="cheque-details-text">{{ data?.payeeName }}</p>
+                  <p class="cheque-details-text">
+                    {{ data?.payeeAddressLine1 }},{{ data?.payeeZip }}
+                  </p>
+                  <h6 class="cheque-sub-headers text-main-text-color">MEMO</h6>
+                </div>
+                <div class="sign">
+                  <p></p>
+                  <h6 class="cheque-sub-headers text-main-text-color">
+                    Authorized Signature
+                  </h6>
+                </div>
+              </div>
+            </div>
+            @if (checkStatus === 8) {
+              <div class="void-check text-main-text-color opacity-10">
+                <span>VOIDED</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="bg-main-background-color rounded-[5px] px-4 pt-2 pb-4 min-h-[290px]"
+      [ngClass]="{ 'skelton h-[290px] max-xl:!w-[690px]': isLoadingComment() }"
+    >
+      <div
+        class="bg-secondary-background-color rounded-[5px] px-2 py-4 mb-[7px]"
+      >
+        <h1 class="font-inter text-secondary-text-color font-medium text-xs">
+          Activity Log
+        </h1>
+      </div>
+      <div>
+        @if (activeLogs?.length > 0 && !isLoadingActivityLogs()) {
+          <table class="new-table">
+            <thead>
+              <tr>
+                @for (
+                  item of ["Date", "Status", "By", "Device", "Notes"];
+                  track $index
+                ) {
+                  <th>{{ item }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of activeLogs; track item) {
+                <tr>
+                  <td>{{ item.userFormatedActivityDate }}</td>
+                  <td>{{ item.status }}</td>
+                  <td>{{ item.userName }}</td>
+                  <td>{{ item.ipAddress }}</td>
+                  <td class="break-all">{{ item.note }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else if (!activeLogs?.length && !isLoadingActivityLogs()) {
+          <div class="flex flex-col justify-center items-center min-h-48">
+            <img
+              ngSrc="/assets/images/empty-box-v3.svg"
+              alt="No data"
+              width="120"
+              height="100"
+            />
+            <span class="font-roboto font-normal text-main-text-color text-sm"
+              >Sorry, No Records Found!!</span
+            >
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="main_right_section flex flex-col gap-5 max-xl:!max-w-[70%] max-xl:!w-[70%] max-lg:!max-w-[80%] max-lg:!w-[80%]"
+  >
+    <div
+      class="module_top_section"
+      [ngClass]="{ 'skelton h-[380px]': isLoadingComment() }"
+    >
+      <div class="module_body">
+        <div class="module-right-box h-[347px] recieved-checks-mat-tab">
+          <mat-tab-group
+            animationDuration="0ms"
+            class="recieved-checks-mat-tab"
+          >
+            <mat-tab label="Comments">
+              <div class="example-form flex flex-col items-end">
+                <textarea
+                  placeholder="Write your comments "
+                  class="input_style my-4 !h-16"
+                  [(ngModel)]="comment"
+                  rows="3"
+                  maxlength="190"
+                ></textarea>
+                @if (comment === "" && isClick) {
+                  <span class="error_msg">Please write something</span>
+                }
+                <app-common-button-v35
+                  [type]="{ style: 'blue', name: 'money-action' }"
+                  (clickEvent)="addComment()"
+                  text="Add Comment"
+                  [disabled]="isloading"
+                  [loading]="isloading"
+                  width="150px"
+                ></app-common-button-v35>
+              </div>
+              <div
+                class="activity_table ocw_table_wrapper mt-4"
+                [ngClass]="
+                  comment === '' && isClick ? 'max-size2' : 'max-size1'
+                "
+              >
+                @if (commentList?.length > 0 && !isLoadingComment()) {
+                  <table class="new-table">
+                    <thead>
+                      <tr>
+                        @for (
+                          item of ["Date", "User", "Note", "Action"];
+                          track item
+                        ) {
+                          <th>{{ item }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody class="!max-h-[106px]">
+                      @for (item of commentList; track item.encrypted_id) {
+                        <tr>
+                          <td>{{ item.formated_date }}</td>
+                          <td>{{ item.user_name }}</td>
+                          <td class="break-all">
+                            {{ item.comments }}
+                            @if (item.status?.status_text) {
+                              <a class="info">
+                                <fa-icon
+                                  [icon]="faEnvelope"
+                                  aria-hidden="true"
+                                  title="{{ item.status?.status_text }}"
+                                ></fa-icon>
+                              </a>
+                            }
+                          </td>
+                          <td>
+                            <div class="flex items-center pl-7">
+                              <fa-icon
+                                [icon]="
+                                  isDeleteComment() &&
+                                  selectedCommentId === item.encrypted_id
+                                    ? faSpinner
+                                    : faTrash
+                                "
+                                [animation]="
+                                  isDeleteComment() &&
+                                  selectedCommentId === item.encrypted_id
+                                    ? 'spin'
+                                    : undefined
+                                "
+                                class="text-common-red-color cursor-pointer"
+                                (click)="deleteComment(item.encrypted_id)"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <ng-container
+                    *ngTemplateOutlet="
+                      noDataTemplate;
+                      context: {
+                        message: 'Sorry, No comments Found!!',
+                        isLoading: isLoadingComment()
+                      }
+                    "
+                  ></ng-container>
+                }
+              </div>
+            </mat-tab>
+            <mat-tab label="Attachments">
+              <div class="activity_table max-size ocw_table_wrapper">
+                <div class="my-4 flex justify-end">
+                  <app-common-button-v35
+                    [type]="{ style: 'blue', name: 'money-action' }"
+                    (clickEvent)="addAttachment()"
+                    [isAddIcon]="true"
+                    [icon]="['fas', 'plus']"
+                    text="Add Attachment"
+                    width="150px"
+                  ></app-common-button-v35>
+                </div>
+                @if (listData?.length > 0 && !isLoadingAttachment()) {
+                  <table class="new-table">
+                    <thead>
+                      <tr>
+                        @for (
+                          item of ["Date", "User", "File", "Action"];
+                          track item
+                        ) {
+                          <th>{{ item }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of listData; track item) {
+                        <tr>
+                          <td>{{ item.formated_date }}</td>
+                          <td>{{ item.user_name }}</td>
+                          <td
+                            class="link"
+                            (click)="openAttachment(item.encrypted_id)"
+                          >
+                            <a style="display: inline-block">
+                              <fa-icon
+                                [icon]="faExternalLink"
+                                aria-hidden="true"
+                              ></fa-icon>
+                            </a>
+                            {{ item.file_name }}
+                          </td>
+                          <td>
+                            <div class="flex items-center">
+                              <fa-icon
+                                [icon]="
+                                  isDeleteAttachment() &&
+                                  selectedAttachmentId === item.encrypted_id
+                                    ? faSpinner
+                                    : faTrash
+                                "
+                                [animation]="
+                                  isDeleteAttachment() &&
+                                  selectedAttachmentId === item.encrypted_id
+                                    ? 'spin'
+                                    : undefined
+                                "
+                                class="text-common-red-color cursor-pointer"
+                                (click)="deleteAttachment(item.encrypted_id)"
+                              />
+                            </div>
+                            @if (item.status?.status_text) {
+                              <a class="info">
+                                <fa-icon
+                                  [icon]="faEnvelope"
+                                  aria-hidden="true"
+                                  title="{{ item.status?.status_text }}"
+                                ></fa-icon>
+                              </a>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <ng-container
+                    *ngTemplateOutlet="
+                      noDataTemplate;
+                      context: {
+                        message: 'Sorry, No attachment Found!!',
+                        isLoading: isLoadingAttachment()
+                      }
+                    "
+                  ></ng-container>
+                }
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Metadata" class="recieved-checks-mat-tab">
+              <div class="metadata_table h-full">
+                @if (
+                  data?.customField1 !== null ||
+                  data?.customField2 !== null ||
+                  data?.customField3 !== null ||
+                  metaData?.length > 0
+                ) {
+                  <div class="activity_table ocw_table_wrapper max-size1">
+                    <table class="new-table border-collapse">
+                      @if(metaData?.length > 0) {
+                      <thead>
+                        <tr>
+                          <th class="text-main-text-color font-inter font-medium text-sm border-b-0">Document Type</th>
+                          <th class="text-main-text-color font-inter font-medium text-sm border-b-0">Number</th>
+                        </tr>
+                      </thead>
+                      }
+                      <tbody>
+                        @if (data?.customField1 !== null) {
+                          <tr class="border-b border-[var(--input-border-color)] last:border-b-0">
+                            <td class="text-secondary-text-color font-inter font-normal text-sm border-b-0">Custom Field 1</td>
+                            <td class="text-main-text-color font-inter font-medium text-sm break-all border-b-0">{{ data?.customField1 }}</td>
+                          </tr>
+                        }
+                        @if (data?.customField2 !== null) {
+                          <tr class="border-b border-[var(--input-border-color)] last:border-b-0">
+                            <td class="text-secondary-text-color font-inter font-normal text-sm border-b-0">Custom Field 2</td>
+                            <td class="text-main-text-color font-inter font-medium text-sm break-all border-b-0">{{ data?.customField2 }}</td>
+                          </tr>
+                        }
+                        @if (data?.customField3 !== null) {
+                          <tr class="border-b border-[var(--input-border-color)] last:border-b-0">
+                            <td class="text-secondary-text-color font-inter font-normal text-sm border-b-0">Custom Field 3</td>
+                            <td class="text-main-text-color font-inter font-medium text-sm break-all border-b-0">{{ data?.customField3 }}</td>
+                          </tr>
+                        }
+
+                        @for (metaDataObj of metaData; track metaDataObj) {
+                          @for (item of metaDataObj.metaData | keyvalue; track item) {
+                            <tr class="border-b border-[var(--input-border-color)] last:border-b-0">
+                              <td class="text-secondary-text-color font-inter font-normal text-sm capitalize border-b-0">{{ item.key }}</td>
+                              <td class="text-main-text-color font-inter font-medium text-sm break-all border-b-0">{{ item.value }}</td>
+                            </tr>
+                          }
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <ng-container
+                    *ngTemplateOutlet="
+                      noDataTemplate;
+                      context: {
+                        message: 'Sorry, No Metadata Found!!',
+                        isLoading: isLoadingComment()
+                      }
+                    "
+                  ></ng-container>
+                }
+              </div>
+            </mat-tab>
+            <mat-tab label="Proof of Delivery">
+              @if (podDetails?.length > 0 && !isLoadingPod()) {
+                <table class="new-table">
+                  <thead>
+                    <tr>
+                      @for (item of ["Date", "Note", "Action"]; track $index) {
+                        <th>{{ item }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of podDetails; track item) {
+                      <tr class="table-row">
+                        <td>{{ item?.formated_date | date: "MM/dd/yyyy" }}</td>
+                        <td>{{ item?.description }}</td>
+                        <td>
+                          <fa-icon
+                            (click)="downloadPod(item?.encrypted_id)"
+                            class="cursor-pointer text-base px-2"
+                            [matTooltip]="
+                              isDownload() ? 'Downloading' : 'Download File'
+                            "
+                            [icon]="isDownload() ? faSpinner : faDownload"
+                            [animation]="isDownload() ? 'spin' : ''"
+                          />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <ng-container
+                  *ngTemplateOutlet="
+                    noDataTemplate;
+                    context: {
+                      message: 'Sorry, No Data Found!!',
+                      isLoading: isLoadingPod()
+                    }
+                  "
+                ></ng-container>
+              }
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-5">
+      @if(isDataNotEmpty){
+      <div
+      class="bg-main-background-color rounded-[5px] px-4 pt-2 w-full min-h-[290px]"
+      [ngClass]="{ 'skelton h-[290px]': isLoadingComment() }"
+    >
+      <div class="bg-secondary-background-color rounded-[5px] px-2 py-4">
+        <h1 class="font-inter text-secondary-text-color font-medium text-xs">
+          Recurring details
+        </h1>
+      </div>
+      <div>
+        <div class="grid grid-cols-3 p-4">
+          <span
+            class="font-inter text-secondary-text-color font-normal text-xs"
+            >Status</span
+          >
+          <span
+            class="col-span-2 font-inter text-{{ statusColor }} font-semibold text-xs"
+            >{{ statusText || '' }}</span
+          >
+        </div>
+        @for (item of recurringDetails; track item) {
+          <div class="grid grid-cols-3 p-4">
+            <span
+              class="font-inter text-secondary-text-color font-normal text-xs"
+              >{{item.key}}</span
+            >
+            <span
+              class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+              >{{ item.value || '' }}</span
+            >
+          </div>
+        }
+      </div>
+    </div>
+      }
+      @if (
+        accountDetails && !areAllValuesNull(accountDetails) && !isLoadingComment()
+      ) {
+        <div
+          class="bg-main-background-color rounded-[5px] px-4 pt-2 w-full min-h-[290px]"
+          [ngClass]="{ 'skelton h-[290px]': isLoadingComment() }"
+        >
+          <div class="bg-secondary-background-color rounded-[5px] px-2 py-4">
+            <h1 class="font-inter text-secondary-text-color font-medium text-xs">
+              Account Details
+            </h1>
+          </div>
+          <div>
+            <div class="grid grid-cols-3 p-4">
+              <span
+                class="font-inter text-secondary-text-color font-normal text-xs"
+                >Account Name</span
+              >
+              <span
+                class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+                >{{ accountDetails?.bankAccountAccountName }}</span
+              >
+            </div>
+            <div class="grid grid-cols-3 p-4">
+              <span
+                class="font-inter text-secondary-text-color font-normal text-xs"
+                >Routing Number</span
+              >
+              <span
+                class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+                >{{ accountDetails?.bankAccountRoutingNumber }}</span
+              >
+            </div>
+            <div class="grid grid-cols-3 p-4">
+              <span
+                class="font-inter text-secondary-text-color font-normal text-xs"
+                >Account Number</span
+              >
+              <span
+                class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+                >{{ accountDetails?.bankAccountAccountNumber }}</span
+              >
+            </div>
+            <div class="grid grid-cols-3 p-4">
+              <span
+                class="font-inter text-secondary-text-color font-normal text-xs"
+                >Address</span
+              >
+              <div
+                class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+              >
+                <span
+                  >{{
+                    accountDetails?.bankAccountAddressLine1
+                      ? accountDetails?.bankAccountAddressLine1 + ","
+                      : ""
+                  }}
+                </span>
+                <br />
+                @if (accountDetails?.bankAccountAddressLine2) {
+                  <span
+                    >{{
+                      accountDetails?.bankAccountAddressLine2
+                        ? accountDetails?.bankAccountAddressLine2 + ","
+                        : ""
+                    }}
+                  </span>
+                  <br />
+                }
+                <span>
+                  {{
+                    accountDetails?.bankAccountCity
+                      ? accountDetails?.bankAccountCity + ", "
+                      : ""
+                  }}
+                  {{
+                    accountDetails?.bankAccountState
+                      ? accountDetails?.bankAccountState + ", "
+                      : ""
+                  }}
+                  {{
+                    accountDetails?.bankAccountZip
+                      ? accountDetails?.bankAccountZip
+                      : ""
+                  }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    <!-- top section end -->
+  </div>
+  <!-------- right section end -------->
+</section>
+@if (isDdInitiated() || isPrinting()) {
+  <div class="absolute left-[50%] top-[50%] loader"></div>
+}
+
+<ng-template #noDataTemplate let-message="message" let-isLoading="isLoading">
+  @if (isLoading) {
+    <div class="flex flex-col justify-center items-center h-full">
+      <fa-icon
+        [icon]="faSpinner"
+        animation="spin"
+        class="text-common-green-color"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-col justify-center items-center h-full">
+      <img
+        ngSrc="/assets/images/empty-box-v3.svg"
+        alt="No data"
+        width="120"
+        height="100"
+      />
+      <span class="font-roboto font-normal text-main-text-color text-sm">
+        {{ message }}
+      </span>
+    </div>
+  }
+</ng-template>

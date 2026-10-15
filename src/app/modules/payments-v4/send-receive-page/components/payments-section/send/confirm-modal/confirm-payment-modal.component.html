@@ -1,0 +1,257 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden relative">
+  <!-- Header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <h2 class="text-lg font-semibold text-v4-main-text-color font-funnel">
+      {{ title }}
+    </h2>
+    <div
+      role="presentation"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      (click)="onCancel()"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <div
+    class="flex flex-col px-5 pt-4 pb-4 bg-v4-tertiary-background-color max-h-[82vh] overflow-y-auto"
+  >
+    <!-- Visual preview -->
+    <div class="cpm-preview-frame mb-3">
+      @if (isReceive) {
+        <!-- A request runs the other way: payer left, receiving wallet right. -->
+        <div class="cpm-hero">
+          <div class="cpm-hero-amt text-v4-main-text-color">
+            ${{ formattedAmount }}
+          </div>
+          <div class="cpm-hero-row text-v4-tertiary-text-color">
+            <span>{{ data.from || "Payer" }}</span>
+            <lucide-icon [img]="ArrowRightIcon" [size]="14" />
+            <span class="font-medium text-v4-main-text-color">{{
+              data.toBankAccount || "Wallet"
+            }}</span>
+          </div>
+          <div class="cpm-hero-row text-v4-tertiary-text-color">
+            Payment request
+          </div>
+        </div>
+      } @else if (isCheckMethod) {
+        <app-check-preview-v4
+          [templateJson]="checkTemplateJson"
+          [checkData]="checkData"
+          [loading]="checkPreviewLoading"
+          [showSampleCheck]="false"
+        />
+      } @else {
+        <div class="cpm-hero">
+          <div class="cpm-hero-amt text-v4-main-text-color">
+            ${{ formattedAmount }}
+          </div>
+          <div class="cpm-hero-row text-v4-tertiary-text-color">
+            <span>{{ sourceLabel }}</span>
+            <lucide-icon [img]="ArrowRightIcon" [size]="14" />
+            <span class="font-medium text-v4-main-text-color">{{
+              data.payeeName || "Payee"
+            }}</span>
+          </div>
+          <div class="cpm-hero-row text-v4-tertiary-text-color">
+            {{ paymentMethodLabel }}
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Compact detail + fee list -->
+    <div class="cpm-list font-peridot mb-3">
+      @if (isReceive) {
+        @if (data.from) {
+          <div class="cpm-row">
+            <span class="cpm-k">Requesting from</span>
+            <span class="cpm-v cpm-clamp" [title]="data.from">{{
+              data.from
+            }}</span>
+          </div>
+        }
+        @if (data.toBankAccount) {
+          <div class="cpm-row">
+            <span class="cpm-k">Deposit to</span>
+            <span class="cpm-v">{{ data.toBankAccount }}</span>
+          </div>
+        }
+        <div class="cpm-row">
+          <span class="cpm-k">Request amount</span>
+          <span class="cpm-v">${{ formattedAmount }}</span>
+        </div>
+        @if (hasRecurringDetails) {
+          <div class="cpm-row">
+            <span class="cpm-k">Frequency</span>
+            <span class="cpm-v">{{ formattedFrequency }}</span>
+          </div>
+          <div class="cpm-row">
+            <span class="cpm-k">Start date</span>
+            <span class="cpm-v">{{ formattedStartDate }}</span>
+          </div>
+          <div class="cpm-row">
+            <span class="cpm-k">Repeats</span>
+            <span class="cpm-v">{{ formattedPayUntil || "Until cancelled" }}</span>
+          </div>
+        }
+      } @else {
+      @if (data.bankName || data.accNumber) {
+        <div class="cpm-row">
+          <span class="cpm-k">{{ sourceLabel }}</span>
+          <span class="cpm-v"
+            >{{ data.bankName }}
+            @if (data.accNumber) {
+              {{ data.accNumber }}
+            }
+          </span>
+        </div>
+      }
+
+      @if (data.payeeName) {
+        <div class="cpm-row">
+          <span class="cpm-k">Payee</span>
+          <span class="cpm-v cpm-clamp" [title]="data.payeeName">
+            {{ data.payeeName }}
+            @if (data.payeeEmail) {
+              <span class="cpm-sub">{{ data.payeeEmail }}</span>
+            }
+          </span>
+        </div>
+      }
+
+      <div class="cpm-row">
+        <span class="cpm-k">Method</span>
+        <span class="cpm-v">
+          {{ paymentMethodLabel }}
+          @if (shippingType) {
+            <span class="cpm-sub">{{ shippingType }}</span>
+          }
+        </span>
+      </div>
+
+      @if (estimatedTime) {
+        <div class="cpm-row">
+          <span class="cpm-k">Est. arrival</span>
+          <span class="cpm-v">{{ estimatedTime }}</span>
+        </div>
+      }
+
+      @if (showFees) {
+        <div class="cpm-row">
+          <span class="cpm-k">Amount</span>
+          <span class="cpm-v">${{ formattedAmount }}</span>
+        </div>
+        @if (data.serviceFeeDisplay) {
+          <div class="cpm-row">
+            <span class="cpm-k">{{ data.serviceFeeLabel || "Service fee" }}</span>
+            <span
+              class="cpm-v"
+              [class.cpm-free]="data.serviceFeeDisplay === 'Free'"
+              >{{ data.serviceFeeDisplay }}</span
+            >
+          </div>
+        }
+        @if (mailingCost > 0) {
+          <div class="cpm-row">
+            <span class="cpm-k">{{ data.mailingCostLabel || "Mailing fee" }}</span>
+            <span class="cpm-v">${{ mailingCost | number: "1.2-2" }}</span>
+          </div>
+        }
+        <div class="cpm-row cpm-total">
+          <span class="cpm-k">Total</span>
+          <span class="cpm-v">${{ totalDisplay | number: "1.2-2" }}</span>
+        </div>
+      }
+      }
+    </div>
+
+    <!-- Attachments (read-only list) -->
+    @if (!isReceive && data.attachments?.length) {
+      <div class="w-full mb-4 border-t border-v4-border-color pt-3">
+        <div
+          class="text-xs font-bold text-v4-main-text-color tracking-widest mb-2 font-funnel uppercase"
+        >
+          Attachments
+        </div>
+        <div class="flex flex-col gap-1">
+          @for (att of data.attachments; track att.id) {
+            <div class="flex items-center gap-2.5 py-1 font-peridot">
+              <lucide-icon
+                [img]="PaperclipIcon"
+                [size]="15"
+                class="text-v4-tertiary-text-color shrink-0"
+              />
+              <span class="text-sm text-v4-main-text-color truncate flex-1">{{
+                att.name
+              }}</span>
+              @if (att.pageCount) {
+                <span class="text-xs text-v4-tertiary-text-color shrink-0"
+                  >{{ att.pageCount }} pg</span
+                >
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- No payee bank account — the money is credited to their wallet -->
+    @if (showWalletFallbackNotice) {
+      <div
+        class="w-full flex items-start gap-3 rounded-xl border border-v4-border-warning bg-v4-surface-warning px-4 py-3 mb-4"
+      >
+        <lucide-icon
+          [img]="WalletIcon"
+          [size]="18"
+          class="text-v4-text-warning shrink-0 mt-0.5"
+        />
+        <div class="text-xs text-v4-main-text-color font-peridot">
+          <strong>No bank account on file for this payee.</strong> The funds will
+          be credited to their ZilMoney wallet, where they can withdraw them.
+        </div>
+      </div>
+    }
+
+    <!-- Unverified payee bank warning -->
+    @if (showUnverifiedBankWarning) {
+      <div
+        class="w-full flex items-start gap-3 rounded-xl border border-v4-border-warning bg-v4-surface-warning px-4 py-3 mb-4"
+      >
+        <lucide-icon
+          [img]="WarningIcon"
+          [size]="18"
+          class="text-v4-text-warning shrink-0 mt-0.5"
+        />
+        <div class="text-xs text-v4-main-text-color font-peridot">
+          <strong>Almost there!</strong> The payee just needs to verify their
+          bank account before this transaction can be completed.
+        </div>
+      </div>
+    }
+
+    <!-- Actions -->
+    <div class="w-full flex justify-between gap-3">
+      <app-common-button-v4
+        class="w-full"
+        [type]="{ style: 'outline', name: 'main' }"
+        text="Cancel"
+        width="100%"
+        (clickEvent)="onCancel()"
+        [disabled]="isProcessing()"
+      />
+      <app-common-button-v4
+        class="w-full"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="actionButtonText"
+        width="100%"
+        [loading]="isProcessing()"
+        [disabled]="isProcessing() || checkPreviewLoading"
+        (clickEvent)="onConfirm()"
+      />
+    </div>
+  </div>
+</div>

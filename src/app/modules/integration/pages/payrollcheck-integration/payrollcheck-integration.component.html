@@ -1,0 +1,433 @@
+<!-------- main_common_module start -------->
+<section class="main_common_module font-inter">
+  <!--------left section start -------->
+  <div class="main_left_wrapper">
+    <!--------top section start -------->
+    <div class="module_top_section">
+      <div class="module_main_header">
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-3">
+            @if (!fileLink) {
+              <app-ocw-back-button
+                backUrl="manage/thirdparty_app/index"
+              ></app-ocw-back-button>
+            } @else {
+              <app-ocw-back-button
+                (click)="onCreateAnotherCheck()"
+              ></app-ocw-back-button>
+            }
+            <div>
+              <h1 class="text-xl font-semibold text-main-text-color">
+                {{ isTrustBooks() ? 'Create Checks from TrustBooks PDF' : 'Checks From PDF' }}
+              </h1>
+              <p class="text-sm text-secondary-text-color">
+                Convert your payroll PDFs into printable checks
+              </p>
+            </div>
+          </div>
+        </div>
+        @if (!isTrustBooks()) {
+          <app-demo-video slug="checkfrompdf"></app-demo-video>
+        }
+      </div>
+
+      @if (!fileLink) {
+        <div class="module_main_body">
+          <form [formGroup]="payrollsCheck">
+            <!-- Configuration Section -->
+            <div class="bg-secondary-background-color rounded-xl p-5 mb-5">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Bank Account -->
+                <div>
+                  <label
+                    class="block text-sm font-medium text-main-text-color mb-2"
+                    for="bankAccount"
+                  >
+                    Bank Account <span class="text-common-red-color">*</span>
+                  </label>
+                  <app-bank-ac-dropdown-v3
+                    [enableAddNew]="true"
+                    [labelIconNeeded]="true"
+                    placeholder="Select Bank Account"
+                    (changeEvent)="onBankChange($event)"
+                    #bankAcDropDown
+                  ></app-bank-ac-dropdown-v3>
+                  <app-control-message-v35
+                    [control]="payrollsCheck.controls.bankAccount"
+                    label="Please choose bank account."
+                  ></app-control-message-v35>
+                </div>
+              </div>
+
+              <!-- Signature Option -->
+              <div class="pt-4 mt-4 border-t border-input-border-color">
+                <label
+                  class="block text-sm font-medium text-main-text-color mt-1"
+                  for="signature"
+                >
+                  Signature Option <span class="text-common-red-color">*</span>
+                </label>
+                <mat-radio-group
+                  formControlName="signature"
+                  class="flex gap-6 mt-2"
+                >
+                  @for (item of signature; track item.value) {
+                    <mat-radio-button
+                      [value]="item.value"
+                      [disabled]="isSignatureOptionDisabled(item.value)"
+                    >
+                      <span
+                        class="text-sm text-main-text-color"
+                        [class.cursor-pointer]="!isSignatureOptionDisabled(item.value)"
+                        [class.opacity-50]="isSignatureOptionDisabled(item.value)"
+                        [class.cursor-not-allowed]="isSignatureOptionDisabled(item.value)"
+                        >{{ item.label }}</span
+                      >
+                    </mat-radio-button>
+                  }
+                </mat-radio-group>
+                @if (isBillsAndInvoices) {
+                  <div
+                    class="mt-2 flex items-center gap-2 rounded-lg border border-common-yellow-color bg-common-secondary-yellow-color px-3 py-2 text-xs text-[#B45309]"
+                  >
+                    <fa-icon
+                      [icon]="faTriangleExclamation"
+                      class="shrink-0"
+                    ></fa-icon>
+                    <span
+                      >Bills &amp; Invoices are always printed with a
+                      signature.</span
+                    >
+                  </div>
+                }
+                <app-control-message-v35
+                  [control]="payrollsCheck.controls.signature"
+                  label="Please choose signature option."
+                ></app-control-message-v35>
+              </div>
+
+              <!-- MICR Line Option -->
+              <div class="pt-4 mt-4 border-t border-input-border-color">
+                <label
+                  class="block text-sm font-medium text-main-text-color mt-1"
+                  for="micrLine"
+                >
+                  MICR Line Option <span class="text-common-red-color">*</span>
+                </label>
+                <mat-radio-group
+                  formControlName="micrLine"
+                  class="flex gap-6 mt-2"
+                >
+                  @for (item of micrLine; track item.value) {
+                    <mat-radio-button
+                      [value]="item.value"
+                      [matTooltip]="item.tooltip"
+                      [disabled]="isMicrOptionDisabled(item.value)"
+                    >
+                      <span
+                        class="text-sm text-main-text-color"
+                        [class.cursor-pointer]="!isMicrOptionDisabled(item.value)"
+                        [class.opacity-50]="isMicrOptionDisabled(item.value)"
+                        [class.cursor-not-allowed]="isMicrOptionDisabled(item.value)"
+                        >{{ item.label }}</span
+                      >
+                    </mat-radio-button>
+                  }
+                </mat-radio-group>
+                @if (isBillsAndInvoices) {
+                  <div
+                    class="mt-2 flex items-center gap-2 rounded-lg border border-common-yellow-color bg-common-secondary-yellow-color px-3 py-2 text-xs text-[#B45309]"
+                  >
+                    <fa-icon
+                      [icon]="faTriangleExclamation"
+                      class="shrink-0"
+                    ></fa-icon>
+                    <span
+                      >Bills &amp; Invoices always include the bank account
+                      number.</span
+                    >
+                  </div>
+                }
+                <app-control-message-v35
+                  [control]="payrollsCheck.controls.micrLine"
+                  label="Please choose MICR line option."
+                ></app-control-message-v35>
+              </div>
+
+              <!-- Check Type -->
+              @if (!isTrustBooks()) {
+              <div class="pt-4 mt-4 border-t border-input-border-color">
+                <label
+                  class="block text-sm font-medium text-main-text-color mb-2"
+                  for="payrollType"
+                >
+                  Payroll Type
+                </label>
+                <mat-radio-group
+                  formControlName="payrollType"
+                  class="grid grid-cols-2 gap-x-4 gap-y-2"
+                >
+                  @for (item of payrollType; track item.value) {
+                    <mat-radio-button [value]="item.value">
+                      <span
+                        class="text-sm text-main-text-color cursor-pointer"
+                        >{{ item.label }}</span
+                      >
+                    </mat-radio-button>
+                  }
+                </mat-radio-group>
+              </div>
+              }
+            </div>
+
+            <!-- Upload Section -->
+            <div class="bg-secondary-background-color rounded-xl p-5 mb-5">
+              <label
+                class="block text-sm font-medium text-main-text-color mb-3"
+                for="uploadedFile"
+              >
+                <fa-icon
+                  [icon]="faCloudArrowUp"
+                  class="text-common-blue-color mr-2"
+                ></fa-icon>
+                Upload Your PDF File
+              </label>
+              <div class="flex flex-col relative">
+                <app-common-upload-button-v35
+                  [buttonText]="'Click to upload or drag and drop'"
+                  [acceptedFileTypes]="['.pdf']"
+                  [uploadedFile]="uploadedFile"
+                  [inputWidth]="'100%'"
+                  [FileSize]="50"
+                  (selectedFileEvent)="onFileSelected($event)"
+                  (removingFileName)="onFileRemoved()"
+                  class="w-1/2"
+                  [fileNameMaxLength]="28"
+                />
+                <app-control-message-v35
+                  [control]="payrollsCheck.controls.file"
+                  label="Please upload a PDF file."
+                />
+              </div>
+              <p class="text-xs text-secondary-text-color mt-2">
+                <fa-icon [icon]="faFileLines" class="mr-1"></fa-icon>
+                Supported format: PDF (Max 50MB)
+              </p>
+
+              @if (loading.processing) {
+                <div
+                  class="mt-3 flex items-center gap-2 text-common-blue-color"
+                >
+                  <span class="loadingSpinner"></span>
+                  <span class="text-sm">Processing your file...</span>
+                </div>
+              }
+            </div>
+
+            <!-- Cost Summary & Action -->
+            @if (costPreview || loading.processing) {
+              <div
+                class="bg-main-background-color border border-input-border-color rounded-xl p-5"
+              >
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                >
+                  <!-- Cost Info -->
+                  <div>
+                    <p class="text-sm text-secondary-text-color mb-2">
+                      Cost Summary
+                    </p>
+                    <div class="flex items-center gap-6">
+                      <div>
+                        <span
+                          [ngClass]="{ 'skelton w-10 h-5': loading.processing }"
+                          class="text-2xl font-semibold text-main-text-color"
+                          >{{ displayTotalPages }}</span
+                        >
+                        <span class="text-sm text-secondary-text-color ml-1"
+                          >pages</span
+                        >
+                      </div>
+                      <div class="w-px h-8 bg-input-border-color"></div>
+                      <div>
+                        <span
+                          [ngClass]="{ 'skelton w-10 h-5': loading.processing }"
+                          class="text-2xl font-semibold text-common-green-color"
+                          >${{ displayTotalCost.toFixed(2) }}</span
+                        >
+                        <span class="text-sm text-secondary-text-color ml-1"
+                          >total</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 flex justify-end gap-2">
+                @if(isTrustBooks() || isBillsAndInvoices) {
+                  <app-common-button-v35
+                    [ngClass]="{ 'skelton w-[125px] h-8': loading.processing }"
+                    [type]="{ style: 'filled', name: 'main' }"
+                    [backGroundInput]="'var(--common-blue-color)'"
+                    text="Create Check"
+                    (clickEvent)="confirmCostPreview('save')"
+                    [loading]="loading.saveCheck"
+                    [disabled]="loading.saveCheck || loading.createCheck || loading.processing || !pendingPathName"
+                    width="125px"
+                  />
+                }
+                @if (!isBillsAndInvoices) {
+                <app-common-button-v35
+                  [ngClass]="{ 'skelton w-[125px] h-8': loading.processing }"
+                  [type]="{ style: 'filled', name: 'main' }"
+                  [backGroundInput]="'var(--common-green-color)'"
+                  text="Confirm & Proceed"
+                  (clickEvent)="confirmCostPreview()"
+                  [loading]="loading.createCheck"
+                  [disabled]="loading.createCheck"
+                  width="125px"
+                />
+                }
+              </div>
+            }
+          </form>
+        </div>
+      } @else {
+        <div class="module_main_body">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 text-common-green-color">
+              <fa-icon [icon]="faCircleCheck" class="text-lg"></fa-icon>
+              <span class="text-sm font-medium"
+                >Check created successfully!</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              @if (canPayCreatedCheck) {
+                <app-common-button-v35
+                  [type]="{ style: 'blue', name: 'money-action' }"
+                  text="View Payments"
+                  (clickEvent)="onPayCheck()"
+                />
+              }
+              <app-common-button-v35
+                [type]="{ style: 'green', name: 'money-action' }"
+                text="Create Another"
+                (clickEvent)="onCreateAnotherCheck()"
+                [isAddIcon]="true"
+              />
+            </div>
+          </div>
+          <div
+            class="rounded-xl overflow-hidden border border-input-border-color"
+          >
+            <iframe
+              [src]="fileLink"
+              width="100%"
+              height="750px"
+              class="block"
+            ></iframe>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-------- right section start -------->
+  <div class="main_right_section">
+    <!-- How It Works Section -->
+    <div class="module_top_section">
+      <div class="main__header">
+        <div class="left">
+          <div class="flex items-center gap-2">
+            <fa-icon
+              [icon]="faLightbulb"
+              class="text-common-yellow-color"
+            ></fa-icon>
+            <p class="sub_head">How It Works</p>
+          </div>
+        </div>
+      </div>
+      <div class="module_body">
+        <div class="space-y-4">
+          @for (item of instructions(); track item; let i = $index) {
+            <div
+              class="flex items-start gap-3 p-3 bg-secondary-background-color rounded-lg"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-common-secondary-blue-color text-common-blue-color flex items-center justify-center flex-shrink-0"
+              >
+                <fa-icon [icon]="item.icon" class="text-sm"></fa-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-secondary-text-color mb-0.5">
+                  Step {{ i + 1 }}
+                </p>
+                <p class="text-sm text-main-text-color font-medium">
+                  {{ item.text }}
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample Files Section -->
+    <div class="module_bottom_section">
+      <div class="main__header">
+        <div class="left">
+          <div class="flex items-center gap-2">
+            <fa-icon [icon]="faFilePdf" class="text-common-red-color"></fa-icon>
+            <p class="sub_head">Sample File{{ isTrustBooks() ? '' : 's' }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="module_body">
+        <p class="text-xs text-secondary-text-color mb-4">
+          Download sample PDFs to try out the feature.
+        </p>
+        <div class="flex flex-col gap-3">
+          @if (loading.initialLoading) {
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skelton w-[375px] h-[60px]"></div>
+            }
+          } @else {
+            @for (item of sampleFilesList(); track item.value) {
+            @if ((isTrustBooks() && item.value === 'trustbooks') || (!isTrustBooks())) {
+              <a
+                target="_blank"
+                [href]="item.file"
+                class="flex items-center gap-3 p-3 bg-secondary-background-color rounded-lg hover:bg-common-secondary-blue-color transition-colors group"
+              >
+                <div
+                  class="w-9 h-9 rounded-lg bg-common-secondary-{{
+                    item.color
+                  }}-color text-common-{{
+                    item.color
+                  }}-color flex items-center justify-center flex-shrink-0"
+                >
+                  <fa-icon [icon]="faDownload" class="text-sm"></fa-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p
+                    class="text-sm text-main-text-color font-medium group-hover:text-common-blue-color truncate"
+                  >
+                    {{ item.label }}
+                  </p>
+                  <p class="text-xs text-secondary-text-color">
+                    {{ item.value === 'bill' ? 'Bill Sample' : 'Payroll Sample' }}
+                  </p>
+                </div>
+              </a>
+            }
+          }
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bg-main-background-color h-fit p-3 rounded-[5px] max-lg:hidden">
+    <app-contact-support-new />
+  </div>
+</section>
+<!-------- main_common_module end -------->

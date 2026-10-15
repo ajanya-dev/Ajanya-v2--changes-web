@@ -1,0 +1,943 @@
+<section class="main_common_module">
+  <div class="main_wrapper">
+    <div class="module_main_header">
+      <div class="header_title !flex gap-2 items-center flex-wrap">
+        <app-common-back-button-v35
+          type="takeEvent"
+          (backEvent)="onBackClick()"
+        ></app-common-back-button-v35>
+        <h3
+          class="!font-inter !font-semibold !text-sm sm:!text-base !text-main-text-color break-words"
+        >
+          {{ activeTab() === "check" ? "Multiple Checks" : "Bulk Payment" }}
+        </h3>
+      </div>
+    </div>
+
+    <div class="module_main_body">
+      <!-- TABS START -->
+      @if (pageInfo?.name === "checks") {
+        <div class="v35-tabs text-sm pt-1 w-32">
+          <div
+            [ngClass]="{
+              selected: activeTab() === 'check'
+            }"
+            (click)="changeTab('check')"
+            role="presentation"
+          >
+            <div>Multiple Check</div>
+          </div>
+          <div
+            role="presentation"
+            routerLink="/manage/cheque/group/index"
+            [ngClass]="{
+              selected: activeTab() === 'group'
+            }"
+          >
+            <div>My Groups</div>
+          </div>
+          <div
+            role="presentation"
+            (click)="changeTab('more')"
+            [ngClass]="{
+              selected: activeTab() === 'more'
+            }"
+          >
+            <div>Bulk Pay</div>
+          </div>
+        </div>
+      }
+      <!-- TABS END -->
+      <div class="table-container">
+        @if (activeTab() === "check") {
+          @if (pageInfo?.name === "checks") {
+            <div class="flex flex-col sm:flex-row justify-end gap-2 mt-3">
+              <span class="text-xs sm:text-sm md:text-base">
+                Total Item:
+                <span class="brand-color text-base sm:text-lg">
+                  {{ totalItems }}</span
+                >
+              </span>
+
+              <span class="text-xs sm:text-sm md:text-base">
+                Total Amount:
+                <span class="brand-color text-base sm:text-lg">
+                  {{ totalAmount | number: "1.2-2" }}</span
+                >
+              </span>
+            </div>
+          }
+          @if (pageInfo?.name === "checks" && groupId) {
+            <div class="flex justify-center p-2 sm:p-3 md:p-5">
+              <p
+                class="brand-color group_name text-center break-words text-sm sm:text-base"
+              >
+                {{ this.groupName }}
+              </p>
+            </div>
+          }
+
+          <!-- FILTERS START -->
+          <div
+            class="filter_lables grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-2 mt-3"
+            [ngClass]="{
+              col_6: pageInfo?.name === 'group',
+              '!grid-cols-1 sm:!grid-cols-2 md:!grid-cols-3 lg:!grid-cols-4 xl:!grid-cols-5 2xl:!grid-cols-6':
+                isBryanCohenCustomer,
+              '!grid-cols-1 sm:!grid-cols-2 md:!grid-cols-3 lg:!grid-cols-4 xl:!grid-cols-5 2xl:!grid-cols-7':
+                isBryanCohenCustomer && pageInfo?.name === 'group'
+            }"
+          >
+            @if (pageInfo?.name === "group") {
+              <div class="flex flex-col gap-2">
+                <label for="group">
+                  <span class="label_text text-xs sm:text-sm md:text-base"
+                    >Group Name<span class="required">*</span></span
+                  >
+                </label>
+                <div class="single_input no_modal_btn">
+                  <input
+                    type="text"
+                    class="input_style text-xs sm:text-sm md:text-base"
+                    placeholder=" "
+                    [(ngModel)]="groupName"
+                    maxlength="20"
+                  />
+                </div>
+              </div>
+            }
+
+            <div class="flex flex-col gap-2">
+              <label for="account">
+                <div class="flex items-center">
+                  <span class="label_text text-xs sm:text-sm md:text-base"
+                    >Base Account<span class="required">*</span></span
+                  >
+                </div>
+                <app-common-button-v35
+                  backGroundInput="var(--common-red-color)"
+                  textColorInput="white"
+                  customClasses="!h-[20px] sm:!h-[24px] text-xs sm:text-sm"
+                  type="list"
+                  text="Clear"
+                  (clickEvent)="clearBase('bankAccount')"
+                ></app-common-button-v35>
+              </label>
+              <app-bank-ac-dropdown-v3
+                #baseBankDropdown
+                id="baseBankDropdown"
+                [labelIconNeeded]="false"
+                [dropdownIconNeeded]="false"
+                (ready)="onBaseBankReady($event, baseBankDropdown)"
+                (changeEvent)="selectBaseBank($event)"
+                class="w-full min-w-[120px] sm:min-w-[150px] md:min-w-[180px] z-[999]"
+              />
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label for="amount">
+                <div class="flex items-center">
+                  <span class="label_text text-xs sm:text-sm md:text-base"
+                    >Base Amount
+                    @if (pageInfo?.name === "checks") {
+                      <span class="required">*</span>
+                    }
+                  </span>
+                </div>
+                <app-common-button-v35
+                  backGroundInput="var(--common-red-color)"
+                  textColorInput="white"
+                  customClasses="!h-[20px] sm:!h-[24px] text-xs sm:text-sm"
+                  type="list"
+                  text="Clear"
+                  (clickEvent)="clearBase('amount')"
+                ></app-common-button-v35>
+              </label>
+              <div class="single_input no_modal_btn">
+                <input
+                  type="text"
+                  class="input_style text-xs sm:text-sm md:text-base"
+                  (input)="setBaseAmount($event.target.value)"
+                  [(ngModel)]="baseAmount"
+                  (keypress)="utils.numberOnly($event, 'decimal')"
+                  maxlength="13"
+                  mask="separator.2"
+                  thousandSeparator=","
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label for="date">
+                @if (isBryanCohenCustomer) {
+                  <span class="label_text text-xs sm:text-sm md:text-base"
+                    >Base Date<span class="required">*</span></span
+                  >
+                }
+                <app-common-button-v35
+                  backGroundInput="var(--common-red-color)"
+                  textColorInput="white"
+                  customClasses="!h-[20px] sm:!h-[24px] text-xs sm:text-sm"
+                  type="list"
+                  text="Clear"
+                  (clickEvent)="clearBase('date')"
+                ></app-common-button-v35>
+              </label>
+              <div class="single_input no_modal_btn">
+                <input
+                  type="date"
+                  class="input_style text-xs sm:text-sm md:text-base"
+                  [(ngModel)]="baseDate"
+                  (input)="setBaseDate($event.target.value)"
+                />
+              </div>
+            </div>
+
+            @if (isBryanCohenCustomer) {
+              <div class="flex flex-col gap-2">
+                <label for="position">
+                  <span class="label_text text-xs sm:text-sm md:text-base"
+                    >Base Position<span class="required">*</span></span
+                  >
+                  <app-common-button-v35
+                    backGroundInput="var(--common-red-color)"
+                    textColorInput="white"
+                    customClasses="!h-[20px] sm:!h-[24px] text-xs sm:text-sm"
+                    type="list"
+                    text="Clear"
+                    (clickEvent)="clearBase('position')"
+                  ></app-common-button-v35>
+                </label>
+                <div class="single_input no_modal_btn">
+                  <ng-select
+                    class="category_item text-xs sm:text-sm md:text-base"
+                    appendTo="body"
+                    bindLabel="name"
+                    bindValue="value"
+                    placeholder="Select Position"
+                    appendTo="ng-select"
+                    [(ngModel)]="basePosition"
+                    (change)="setBasePosition($event)"
+                  >
+                    @for (item of positionOptions; track item) {
+                      <ng-option [value]="item.value">
+                        {{ item.name }}
+                      </ng-option>
+                    }
+                  </ng-select>
+                </div>
+              </div>
+            }
+
+            <div class="flex flex-col gap-2">
+              <label for="memo">
+                @if (isBryanCohenCustomer) {
+                  <span class="label_text text-xs sm:text-sm md:text-base"
+                    >Base Memo<span class="required">*</span></span
+                  >
+                }
+                <app-common-button-v35
+                  backGroundInput="var(--common-red-color)"
+                  textColorInput="white"
+                  customClasses="!h-[20px] sm:!h-[24px] text-xs sm:text-sm"
+                  type="list"
+                  text="Clear"
+                  (clickEvent)="clearBase('memo')"
+                ></app-common-button-v35>
+              </label>
+              <div class="single_input no_modal_btn">
+                <input
+                  type="text"
+                  class="input_style text-xs sm:text-sm md:text-base"
+                  placeholder=" "
+                  [(ngModel)]="baseMemo"
+                  (input)="setBaseMemo($event.target.value)"
+                  maxlength="150"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label for="category">
+                <span class="label_text text-xs sm:text-sm md:text-base"
+                  >{{
+                    isQBMultipleExportEnabled() &&
+                    isQBPushbackEnabled() &&
+                    isQbOnlineExportSelected()
+                      ? "QB Category"
+                      : isBryanCohenCustomerQbEnable
+                      ? "QB Expense"
+                      : "Base Category"
+                  }}
+                  @if (isBryanCohenCustomerQbEnable) {
+                    <span class="required">*</span>
+                  }
+                </span>
+                <app-common-button-v35
+                  backGroundInput="var(--common-red-color)"
+                  textColorInput="white"
+                  customClasses="!h-[20px] sm:!h-[24px] text-xs sm:text-sm"
+                  type="list"
+                  text="Clear"
+                  (clickEvent)="
+                    clearBase(
+                      isBryanCohenCustomerQbEnable ? 'expense' : 'category'
+                    )
+                  "
+                ></app-common-button-v35>
+              </label>
+              <div class="single_input">
+                @if (isQBMultipleExportEnabled() && isQBPushbackEnabled() && isQbOnlineExportSelected()) {
+                  <ng-select
+                    class="category_item text-xs sm:text-sm md:text-base"
+                    appendTo="body"
+                    bindLabel="name"
+                    bindValue="id"
+                    [items]="qbCategories()"
+                    placeholder="Select QB Category"
+                    appendTo="ng-select"
+                    [(ngModel)]="baseQBCategory"
+                    (change)="setBaseQBCategory($event)"
+                    (scrollToEnd)="onScrollQBCategories()"
+                    (keyup)="onSearchQBCategories($event?.target?.value)"
+                  >
+                  </ng-select>
+                } @else if (isBryanCohenCustomerQbEnable) {
+                  <ng-select
+                    class="category_item text-xs sm:text-sm md:text-base"
+                    appendTo="body"
+                    (scrollToEnd)="onQBDScrollCompanyDetails('')"
+                    (keyup)="onQBDSearchItemsCompanyDetails($event)"
+                    (change)="onQBDItemChangeExpenseDetails($event)"
+                    bindLabel="name"
+                    placeholder="Select Expense"
+                    appendTo="ng-select"
+                    [(ngModel)]="baseExpense"
+                  >
+                    @for (item of qbdExpenseItem; track item) {
+                      <ng-option [value]="item">
+                        {{ item.name }}
+                      </ng-option>
+                    }
+                  </ng-select>
+                } @else {
+                  <app-category-dropdown-v3
+                    (changeEvent)="setBaseCategory($event)"
+                    class="w-full min-w-[120px] sm:min-w-[150px] md:min-w-[180px]"
+                  />
+                }
+              </div>
+            </div>
+          </div>
+          <!-- FILTERS END -->
+          @if (
+            pageInfo?.name === "checks" &&
+            !groupId &&
+            isQBDPushback &&
+            !isBryanCohenCustomerQbEnable
+          ) {
+            <div class="flex flex-col sm:flex-row justify-end my-2 gap-2">
+              <div class="pushBack text-xs sm:text-sm md:text-base">
+                <input
+                  type="checkbox"
+                  id="Qbdpushback"
+                  [checked]="isQBDExportEnabled"
+                  (change)="baseQBExportEnabledClicked(!isQBDExportEnabled)"
+                />
+                <label for="Qbdpushback">Export to QB Desktop</label>
+              </div>
+              @if (isQBDExportEnabled) {
+                <app-common-button-v35
+                  class="sm:ml-2"
+                  [type]="{ style: 'filled', name: 'main' }"
+                  backGroundInput="var(--common-blue-color)"
+                  text="QB Desktop Expense List"
+                  width="190px"
+                  (clickEvent)="openQBDExport(selectedBaseBankId?.toString())"
+                  [disabled]="submitting"
+                ></app-common-button-v35>
+              }
+            </div>
+          }
+
+          @if (pageInfo?.name === "checks" && !groupId) {
+            <div class="flex flex-wrap justify-end items-center gap-2 mt-2 btn_row">
+              @if ((isQBMultipleExportEnabled() && isQBPushbackEnabled())) {
+                <div class="pushBack text-xs sm:text-sm md:text-base">
+                  <input
+                    type="checkbox"
+                    id="Qbmultiplepushback"
+                    [checked]="isExportToQbOnlineSelected()"
+                    (change)="isQBMultipleExportEnabledClicked(!isExportToQbOnlineSelected())"
+                  />
+                  <label for="Qbmultiplepushback">Export to QB Online</label>
+                </div>
+              }
+              <app-common-button-v35
+                [type]="{ style: 'filled', name: 'main' }"
+                backGroundInput="var(--common-secondary-blue-color)"
+                textColorInput="var(--common-blue-color)"
+                text="My Groups"
+                width="150px"
+                routerLink="/manage/cheque/group/index"
+              ></app-common-button-v35>
+              <app-common-button-v35
+                [type]="{ style: 'filled', name: 'main' }"
+                backGroundInput="var(--common-blue-color)"
+                [text]="'Add New ' + ('Payee' | whiteLabel: 'payeeName')"
+                width="150px"
+                (clickEvent)="openAddNewPayee()"
+              ></app-common-button-v35>
+
+              <app-common-button-v35
+                [type]="{ style: 'filled', name: 'main' }"
+                backGroundInput="var(--common-violet-color)"
+                text="Make Checks"
+                width="150px"
+                (clickEvent)="saveChecks()"
+                [loading]="savingChecks()"
+                [disabled]="savingChecks() || submitting"
+              ></app-common-button-v35>
+              <app-common-button-v35
+                [type]="{ style: 'filled', name: 'main' }"
+                backGroundInput="var(--common-green-color)"
+                text="Save as new Group"
+                width="150px"
+                (clickEvent)="saveAsGroup()"
+                [disabled]="submitting"
+                [loading]="submitting"
+              ></app-common-button-v35>
+            </div>
+          }
+
+          <!-- BUTTONS FOR GROUPS -->
+          <div class="flex flex-col sm:flex-row justify-end pt-3 gap-3">
+            @if (pageInfo?.name === "group" && groupId) {
+              <div class="flex flex-wrap gap-3 justify-end">
+                @if ( hasQbExportData()) {
+                  <div class="pushBack text-xs sm:text-sm md:text-base">
+                    <input
+                      type="checkbox"
+                      id="Qbmultiplepushback"
+                      [checked]="isGroupQBMultipleExportSelected()"
+                      (change)="isQBMultipleExportEnabledClicked(!isGroupQBMultipleExportSelected())"
+                    />
+                    <label for="Qbmultiplepushback">Export to QB Online</label>
+                  </div>
+                }
+                <div>
+                  <app-common-button-v35
+                    class="flex-1"
+                    [type]="{ style: 'filled', name: 'main' }"
+                    backGroundInput="var(--common-violet-color)"
+                    text="Make Checks"
+                    width="120px"
+                    (clickEvent)="saveChecks()"
+                    [disabled]="savingChecks() || submitting"
+                    [loading]="savingChecks()"
+                  />
+                </div>
+              </div>
+            }
+
+            @if (pageInfo?.name === "group" && groupId) {
+              <div>
+                <app-common-button-v35
+                  class="flex-1"
+                  [type]="{ style: 'filled', name: 'main' }"
+                  backGroundInput="var(--common-green-color)"
+                  [text]="
+                    pageInfo?.mode === 'edit' ? 'Update Group' : 'Save Group'
+                  "
+                  width="120px"
+                  (clickEvent)="saveGroupChecks()"
+                  [disabled]="savingChecks() || submitting"
+                  [loading]="submitting"
+                ></app-common-button-v35>
+              </div>
+            }
+          </div>
+
+          <!-- TABLE START -->
+          <div class="table w-full overflow-x-auto">
+            <form [formGroup]="checksForm">
+              <table
+                class="w-full mt-3 min-w-[600px] sm:min-w-[700px] md:min-w-[800px] lg:min-w-full"
+              >
+                <thead>
+                  <tr class="text-xs sm:text-sm">
+                    @if (pageInfo?.name === "checks" && groupId) {
+                      <th class="min_width px-1 sm:px-2">
+                        <input
+                          type="checkbox"
+                          id="head-checkbox"
+                          (click)="selectRowToggle($event.target.checked)"
+                          checked
+                        />
+                      </th>
+                    }
+
+                    @if (pageInfo.mode === "edit") {
+                      <th class="min_width text-center px-1 sm:px-2">
+                        <input
+                          type="checkbox"
+                          id="head-checkbox-edit"
+                          (click)="selectAllRowsForPayment($event.target.checked)"
+                          checked
+                        />
+                      </th>
+                    }
+
+                    <th class="min_width text-center px-1 sm:px-2">#</th>
+                    <th class="px-1 sm:px-2">Account</th>
+                    <th class="px-1 sm:px-2">
+                      {{ "Payee" | whiteLabel: "payeeName" }}
+                    </th>
+                    <th class="px-1 sm:px-2">Amount</th>
+                    <th class="px-1 sm:px-2">Issue Date</th>
+                    @if (isBryanCohenCustomer) {
+                      <th class="px-1 sm:px-2">Position</th>
+                    }
+                    <th class="px-1 sm:px-2">Memo</th>
+                    @if (!isBryanCohenCustomer) {
+                      <th class="px-1 sm:px-2">Note</th>
+                    }
+                    @if (pageInfo?.name !== "group" && !isBryanCohenCustomer) {
+                      <th class="px-1 sm:px-2">Ac#</th>
+                    }
+                    @if (pageInfo?.name !== "group" && !isBryanCohenCustomer) {
+                      <th class="px-1 sm:px-2">Inv#</th>
+                    }
+                    <th class="px-1 sm:px-2">
+                      {{
+                        isQBMultipleExportEnabled() &&
+                        isQBPushbackEnabled() &&
+                        isQbOnlineExportSelected()
+                          ? "QB Category"
+                          : isBryanCohenCustomerQbEnable
+                          ? "Expense"
+                          : "Category"
+                      }}
+                    </th>
+                    @if (
+                      pageInfo?.name !== "group" && this.isQBDExportEnabled
+                    ) {
+                      <th class="px-1 sm:px-2">QB Desktop Expense</th>
+                    }
+                    <th class="px-1 sm:px-2">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody class="text-xs sm:text-sm">
+                  <ng-container formArrayName="checks">
+                    @for (
+                      item of checksForm?.controls["checks"]["controls"];
+                      track item;
+                      let i = $index
+                    ) {
+                      <tr
+                        [ngClass]="{
+                          'row-disabled':
+                            !item.controls.isSelectedForPayment.value
+                        }"
+                      >
+                        <ng-container [formGroupName]="i">
+                          @if (pageInfo?.name === "checks" && groupId) {
+                            <td class="px-1 sm:px-2">
+                              <input
+                                type="checkbox"
+                                id="check-row-{{ i }}"
+                                (change)="countTotal()"
+                                checked
+                              />
+                            </td>
+                          }
+                          @if (pageInfo.mode === "edit") {
+                            <td class="px-1 sm:px-2">
+                              <input
+                                type="checkbox"
+                                id="check-row-edit-{{ i }}"
+                                [checked]="
+                                  item.controls.isSelectedForPayment.value
+                                "
+                                (change)="
+                                  deselectRowForPayment(
+                                    $event.target.checked,
+                                    i
+                                  )
+                                "
+                              />
+                            </td>
+                          }
+                          <td class="text-xs text-center px-1 sm:px-2">
+                            {{ i + 1 }}
+                          </td>
+                          <td class="px-1 sm:px-2">
+                            <div class="single_input no_modal_btn">
+                              <div [class.pointer-events-none]="!!selectedBaseAccount && hasQbExportData()"
+                                    [class.opacity-60]="!!selectedBaseAccount && hasQbExportData()" class="min-w-[100px] sm:min-w-[120px] md:min-w-[150px] lg:min-w-[180px] max-w-[180px]">
+                                <app-bank-ac-dropdown-v3
+                                  #bankDropdown
+                                  permissionContext="forPayment"
+                                  class="w-full min-w-[100px] sm:min-w-[120px] md:min-w-[150px] lg:min-w-[180px]"
+                                  [labelIconNeeded]="false"
+                                  [dropdownIconNeeded]="false"
+                                  (changeEvent)="bankChange($event, i)"
+                                  (ready)="onBankReady($event, bankDropdown, i)"
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td class="px-1 sm:px-2">
+                            <div class="flex flex-col sm:flex-row gap-1">
+                              <div class="single_input no_modal_btn" class="min-w-[100px] sm:min-w-[120px] md:min-w-[150px] lg:min-w-[180px] max-w-[180px]">
+                                <app-payee-dropdown-v3
+                                  class="w-full min-w-[100px] sm:min-w-[120px] md:min-w-[150px] lg:min-w-[180px]"
+                                  [labelIconNeeded]="false"
+                                  [dropdownIconNeeded]="false"
+                                  (changeEvent)="payeeChange($event, i)"
+                                  (ready)="onPayeeReady($event, i)"
+                                />
+                              </div>
+                              @if (
+                                bryanCohenErrors()?.length > 0 &&
+                                hasErrorForRow(i + 1)
+                              ) {
+                                <div
+                                  class="flex gap-1 items-center justify-center"
+                                >
+                                  <fa-icon
+                                    [icon]="circleInfo"
+                                    class="text-common-red-color cursor-pointer text-xs sm:text-sm"
+                                    animation="beat-fade"
+                                    [matTooltip]="getErrorsForRow(i + 1)"
+                                  />
+                                  @if (isEditPayee[i + 1]) {
+                                    <fa-icon
+                                      [icon]="faSpinner"
+                                      animation="spin"
+                                      class="text-common-blue-color text-xs sm:text-sm"
+                                      matTooltip="Loading..."
+                                    />
+                                  } @else {
+                                    <fa-icon
+                                      role="presentation"
+                                      (click)="getPayee(i + 1)"
+                                      [icon]="faEdit"
+                                      class="text-common-blue-color cursor-pointer text-xs sm:text-sm"
+                                      matTooltip="Update Payee"
+                                    />
+                                  }
+                                </div>
+                              }
+                            </div>
+                          </td>
+                          <td class="px-1 sm:px-2">
+                            <div
+                              class="min-w-12 sm:min-w-16 md:min-w-20 w-full max-w-20 sm:max-w-24 md:max-w-28"
+                              [ngClass]="{ '!w-full': isBryanCohenCustomer }"
+                            >
+                              <app-amount-input
+                                id="amount-feild{{ i }}"
+                                (input)="countTotal()"
+                                formControlName="amount"
+                                class="w-full"
+                                [maxLength]="13"
+                                (change)="
+                                  setTitle(
+                                    'amount-feild' + i,
+                                    $event.target.value
+                                  );
+                                  checkQBAndSetAmount(item, $event.target.value)
+                                "
+                              ></app-amount-input>
+                            </div>
+                          </td>
+                          <td class="px-1 sm:px-2">
+                            <input
+                              type="date"
+                              class="input_style text-xs sm:text-sm"
+                              formControlName="date"
+                            />
+                          </td>
+                          @if (isBryanCohenCustomer) {
+                            <td class="px-1 sm:px-2">
+                              <div class="single_input no_modal_btn">
+                                <ng-select
+                                  class="category_item text-xs sm:text-sm"
+                                  appendTo="body"
+                                  bindLabel="name"
+                                  bindValue="value"
+                                  placeholder="Select Position"
+                                  appendTo="ng-select"
+                                  formControlName="position"
+                                >
+                                  @for (item of positionOptions; track item) {
+                                    <ng-option [value]="item.value">
+                                      {{ item.name }}
+                                    </ng-option>
+                                  }
+                                </ng-select>
+                              </div>
+                            </td>
+                          }
+                          <td class="px-1 sm:px-2">
+                            <textarea
+                              class="input_style text-xs sm:text-sm"
+                              formControlName="memo"
+                              maxlength="150"
+                            ></textarea>
+                          </td>
+                          @if (!isBryanCohenCustomer) {
+                            <td class="px-1 sm:px-2">
+                              <textarea
+                                class="input_style text-xs sm:text-sm"
+                                formControlName="note"
+                                maxlength="150"
+                              ></textarea>
+                            </td>
+                          }
+                          @if (
+                            pageInfo?.name !== "group" && !isBryanCohenCustomer
+                          ) {
+                            <td class="px-1 sm:px-2">
+                              <input
+                                type="text"
+                                class="input_style text-xs sm:text-sm"
+                                id="ach-{{ i }}"
+                                (change)="
+                                  setTitle('ack-' + i, $event.target.value)
+                                "
+                                formControlName="accountNo"
+                              />
+                            </td>
+                          }
+                          @if (
+                            pageInfo?.name !== "group" && !isBryanCohenCustomer
+                          ) {
+                            <td class="px-1 sm:px-2">
+                              <input
+                                type="text"
+                                class="input_style text-xs sm:text-sm"
+                                id="invoice-{{ i }}"
+                                (change)="
+                                  setTitle('invoice-' + i, $event.target.value)
+                                "
+                                formControlName="invoice"
+                              />
+                            </td>
+                          }
+                          <td class="px-1 sm:px-2">
+                            <div class="single_input no_modal_btn">
+                              @if (isQBMultipleExportEnabled() && isQBPushbackEnabled() && isQbOnlineExportSelected()) {
+                                <ng-select
+                                  class="category_item text-xs sm:text-sm"
+                                  appendTo="body"
+                                  bindLabel="name"
+                                  bindValue="id"
+                                  [items]="qbCategories()"
+                                  placeholder="Select QB Category"
+                                  appendTo="ng-select"
+                                  formControlName="category"
+                                  (scrollToEnd)="onScrollQBCategories()"
+                                  (keyup)="onSearchQBCategories($event?.target?.value)"
+                                >
+                                </ng-select>
+                              } @else if (isBryanCohenCustomerQbEnable) {
+                                <ng-select
+                                  class="category_item text-xs sm:text-sm"
+                                  appendTo="body"
+                                  (scrollToEnd)="onQBDScrollCompanyDetails('')"
+                                  (keyup)="
+                                    onQBDSearchItemsCompanyDetails($event)
+                                  "
+                                  (change)="
+                                    onQBDItemChangeExpenseDetails(
+                                      $event,
+                                      i,
+                                      checksForm?.controls['checks'][
+                                        'controls'
+                                      ][i]
+                                    )
+                                  "
+                                  bindLabel="name"
+                                  placeholder="Select Expense"
+                                  appendTo="ng-select"
+                                  formControlName="expense"
+                                >
+                                  @for (item of qbdExpenseItem; track item) {
+                                    <ng-option [value]="item">
+                                      {{ item.name }}
+                                    </ng-option>
+                                  }
+                                </ng-select>
+                              } @else {
+                                <app-category-dropdown-v3
+                                  #categoryDropdown
+                                  class="w-full min-w-[100px] sm:min-w-[120px] md:min-w-[150px] lg:min-w-[180px]"
+                                  (ready)="
+                                    onCategoryReady($event, categoryDropdown, i)
+                                  "
+                                  (changeEvent)="categoryChange($event, i)"
+                                />
+                              }
+                            </div>
+                          </td>
+                          @if (
+                            pageInfo?.name !== "group" &&
+                            this.isQBDExportEnabled
+                          ) {
+                            <td class="px-1 sm:px-2">
+                              <div
+                                class="flex flex-col sm:flex-row items-center gap-1"
+                              >
+                                <div class="qbenable-checkbox-wrapper">
+                                  @if (!isBryanCohenCustomerQbEnable) {
+                                    <fa-icon
+                                      class="cursor-pointer text-xs sm:text-sm"
+                                      [icon]="['far', 'pen-field']"
+                                      matTooltip="QuickBooks Desktop Expense List"
+                                      (click)="
+                                        openQBDExport(
+                                          checksForm?.controls['checks'][
+                                            'controls'
+                                          ][i].value.bankAccount,
+                                          checksForm?.controls['checks'][
+                                            'controls'
+                                          ][i]
+                                        )
+                                      "
+                                    ></fa-icon>
+                                  }
+                                  <button
+                                    class="px-1 sm:px-2 clear_btn text-xs sm:text-sm"
+                                    (click)="
+                                      clearQBExport(
+                                        checksForm?.controls['checks'][
+                                          'controls'
+                                        ][i]
+                                      )
+                                    "
+                                  >
+                                    Clear
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          }
+                          <td class="px-1 sm:px-2">
+                            <div class="flex justify-center items-center">
+                              <fa-icon
+                                [icon]="faTrash"
+                                class="cursor-pointer text-secondary-text-color text-xs sm:text-sm"
+                                (click)="removeFormFromChecksArray(i)"
+                                (keydown.enter)="removeFormFromChecksArray(i)"
+                                (keydown.space)="removeFormFromChecksArray(i)"
+                                tabindex="0"
+                                role="button"
+                                [matTooltip]="'Remove row'"
+                              ></fa-icon>
+                            </div>
+                          </td>
+                        </ng-container>
+                      </tr>
+                    }
+                  </ng-container>
+                </tbody>
+              </table>
+            </form>
+          </div>
+          <!-- TABLE END -->
+
+          <div class="flex flex-col lg:flex-row justify-between gap-2 mt-3">
+            <div class="flex flex-col sm:flex-row gap-2 add_sub_btn">
+              <div class="single_input checkno">
+                <input
+                  type="number"
+                  class="input_style text-xs sm:text-sm md:text-base"
+                  [formControl]="checkCountInput"
+                  (input)="removeDecimal(checkCountInput)"
+                  step="1"
+                  (change)="checkCountChange($event?.target?.value)"
+                />
+                <label
+                  for="checks"
+                  class="floating_label_field text-xs sm:text-sm"
+                  >Number of checks
+                  <fa-icon
+                    class="ml-1"
+                    matTooltip="Maximum number of checks is 50"
+                    [icon]="circleInfo"
+                  ></fa-icon>
+                </label>
+              </div>
+
+              <div class="flex gap-2">
+                <app-common-button-v35
+                  class="flex-1"
+                  [type]="{ style: 'filled', name: 'main' }"
+                  backGroundInput="var(--common-green-color)"
+                  text="+"
+                  customClasses="!text-[18px] sm:!text-[20px] md:!text-[24px] !mt-1 !h-[35px] sm:!h-[40px] md:!h-[45px]"
+                  width="35px"
+                  (clickEvent)="incrementCheckCount()"
+                  [disabled]="submitting"
+                ></app-common-button-v35>
+
+                <app-common-button-v35
+                  class="flex-1"
+                  [type]="{ style: 'filled', name: 'main' }"
+                  backGroundInput="var(--common-red-color)"
+                  text="-"
+                  customClasses="!text-[18px] sm:!text-[20px] md:!text-[24px] !mt-1 !h-[35px] sm:!h-[40px] md:!h-[45px]"
+                  width="35px"
+                  (clickEvent)="popCheck()"
+                  [disabled]="submitting"
+                ></app-common-button-v35>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+              @if (
+                (pageInfo?.name === "group" && groupId) ||
+                (pageInfo?.name === "checks" && pageInfo?.mode === "create")
+              ) {
+                <div>
+                  <app-common-button-v35
+                    class="flex-1"
+                    [type]="{ style: 'filled', name: 'main' }"
+                    backGroundInput="var(--common-violet-color)"
+                    text="Make Checks"
+                    width="120px"
+                    (clickEvent)="saveChecks()"
+                    [loading]="savingChecks()"
+                    [disabled]="savingChecks() || submitting"
+                  ></app-common-button-v35>
+                </div>
+              }
+              @if (pageInfo?.name === "group") {
+                <div>
+                  <app-common-button-v35
+                    [type]="{ style: 'filled', name: 'main' }"
+                    backGroundInput="var(--common-green-color)"
+                    [text]="
+                      pageInfo?.mode === 'edit' ? 'Update Group' : 'Save Group'
+                    "
+                    width="120px"
+                    (clickEvent)="saveGroupChecks()"
+                    [disabled]="savingChecks() || submitting"
+                    [loading]="submitting"
+                  ></app-common-button-v35>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (activeTab() === "more") {
+        <div class="h-7"></div>
+        <app-group-payments payFrom="bank" />
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,118 @@
+<div class="angular-ocw-v35-ng-select-dropdown relative">
+  @if (labelIconNeeded) {
+    <div
+      [class]="labelIconNeeded ? 'height-' + customHeight : ''"
+      class="height-0 absolute top-0 z-[999]"
+    >
+      <div
+        class="flex justify-center items-center v35-dropdown-labeled-icon border-r border-input-border-color"
+      >
+        <fa-icon class="text-common-blue-color" [icon]="icon"></fa-icon>
+      </div>
+    </div>
+  }
+  <ng-select
+    [ngStyle]="{'z-index': zIndex()}"
+    [appendTo]="append"
+    id="payee_drop_down_{{ id }}"
+    [class]="labelIconNeeded ? 'height-' + customHeight : ''"
+    class="ng-dropdown-panel-v35 height-0 text-sm drop-down-select-bank-v3"
+    [formControl]="selectedBankAccount"
+    (scrollToEnd)="onScrollToEnd()"
+    (focus)="search($event)"
+    (keyup)="search($event)"
+    (change)="onChange($event)"
+    [loading]="(bankAccountsState$ | async)?.isLoading ?? false"
+    (clear)="clear()"
+    (close)="onDropdownClose()"
+    (blur)="onTouched(); touch.emit()"
+    placeholder="{{ placeholder }}"
+    [notFoundText]="
+    !paymentsService.hasPermission.bank ? 
+    'Permission Denied'
+    : (bankAccountsState$ | async)?.isLoading ?? false
+    ? 'Loading...'
+    : 'No bank accounts found'
+    "
+  >
+    @if (enableAddNew && paymentsService.hasPermission.bank) {
+      <ng-option value="add-new">
+        <div
+          role="presentation"
+          class="add-new-btn-ng-option p-2 flex justify-center items-center text-center text-sm bg-common-secondary-blue-color rounded-lg text-common-blue-color cursor-pointer"
+        >
+          <fa-icon class="mr-1" [icon]="['fas', 'plus']"></fa-icon>
+          <span class="add-new-text-ng-option">New</span>
+        </div>
+      </ng-option>
+    }
+    @for (item of bankAccountsToList$ | async; track item) {
+      <ng-option
+        [value]="item"
+        [matTooltip]="(item.nickName ?? item.name) + ' ' + item.accountNumber"
+        [disabled]="item.id === disableSelectionId() ? true : false"
+      >
+        <div
+          class="min-w-full flex justify-between items-center"
+          [ngClass]="{ '!opacity-50': item.id === disableSelectionId() }"
+        >
+          @if (dropdownIconNeeded) {
+            <div
+              class="rounded-full h-8 w-8 mr-2 flex justify-center items-center text-center text-common-blue-color bg-secondary-background-color"
+            >
+              <fa-icon [icon]="icon"></fa-icon>
+            </div>
+          }
+          <div class="flex-1 flex flex-col items-start overflow-hidden">
+            <div class="main-text-highlight font-medium truncate"
+            [ngClass]="{
+              '!text-common-yellow-color': item.mAch !== 1 && item.verified === 1 &&   dropdownType === 'manual-ach',
+              '!text-common-red-color': item.verified === 0 &&   dropdownType === 'manual-ach',
+              '!text-common-green-color': item.mAch === 1 && item.verified === 1 &&   dropdownType === 'manual-ach',
+            }">
+              {{ item.nickName !== null ? item.nickName : item.name }}
+            </div>
+            <div class="truncate text-secondary-text-color"
+            [ngClass]="{
+              '!text-common-yellow-color': item.mAch !== 1 && item.verified === 1 &&   dropdownType === 'manual-ach',
+              '!text-common-red-color': item.verified === 0 &&   dropdownType === 'manual-ach',
+              '!text-common-green-color': item.mAch === 1 && item.verified === 1 &&   dropdownType === 'manual-ach',
+            }">
+              {{ item.accountNumber }}
+            </div>
+          </div>
+          <div class="w-8 flex justify-end text-common-green-color">
+            @if (
+              config.enableAchStatus &&
+              (item.isItZil || item.achApplicationStatus === 1)
+            ) {
+              <div title="ACH Verified">ACH</div>
+            } @else {
+              <ng-template #verified>
+                @if (item.verified === 1) {
+                  <div>
+                    <fa-icon
+                      [icon]="['fas', 'circle-check']"
+                      title="Verified"
+                    ></fa-icon>
+                  </div>
+                }
+              </ng-template>
+            }
+          </div>
+        </div>
+      </ng-option>
+    }
+
+    <ng-template ng-label-tmp let-item="item">
+      {{ item.nickName !== null ? item.nickName : item.name }}
+      {{ item.accountNumber }}
+    </ng-template>
+
+    <ng-template ng-footer-tmp>
+      @if ((bankAccountsState$ | async)?.isLoading) {
+        <div class="skelton p-1.5 -mt-1"></div>
+      }
+    </ng-template>
+  </ng-select>
+</div>

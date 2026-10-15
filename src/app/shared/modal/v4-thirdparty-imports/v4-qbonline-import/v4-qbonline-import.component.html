@@ -1,0 +1,520 @@
+<div class="flex flex-col h-[600px] max-h-[80vh]">
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color flex-shrink-0"
+  >
+    <div class="flex items-center gap-3">
+      <img
+        ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+        alt="QuickBooks"
+        width="32"
+        height="32"
+      />
+      <span class="text-base font-semibold text-v4-main-text-color font-funnel"
+        >Import from QuickBooks Online</span
+      >
+    </div>
+    <button
+      class="flex items-center gap-2 px-3 py-1.5 text-sm text-v4-secondary-text-color hover:bg-v4-tertiary-background-color rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+      matTooltip="Integration Settings"
+      (click)="goToThirdpartyHome()"
+    >
+      <lucide-icon [img]="SettingsIcon" [size]="16"></lucide-icon>
+      <span class="hidden sm:inline">Settings</span>
+    </button>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="data_spinner" [ngClass]="{ data_fetched: dataLoaded }"></div>
+
+  <!-- Disconnected State -->
+  @if (!isConnected && dataLoaded) {
+    <div
+      class="flex-1 flex flex-col justify-center items-center px-6 py-12 overflow-auto"
+    >
+      <div
+        class="bg-v4-secondary-background-color border border-v4-border-color rounded-xl p-8 max-w-md w-full text-center"
+      >
+        <div
+          class="w-20 h-20 mx-auto mb-6 bg-v4-tertiary-background-color rounded-full flex items-center justify-center"
+        >
+          <img
+            ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+            alt="QuickBooks"
+            width="48"
+            height="48"
+          />
+        </div>
+        <h3
+          class="text-xl font-semibold text-v4-main-text-color mb-2 font-funnel"
+        >
+          QuickBooks Online
+        </h3>
+        <div class="flex items-center justify-center gap-2 mb-6">
+          <span class="w-2 h-2 bg-v4-common-red-color rounded-full"></span>
+          <span class="text-sm text-v4-secondary-text-color">Disconnected</span>
+        </div>
+        <p class="text-sm text-v4-secondary-text-color mb-6">
+          Connect your QuickBooks Online account to import checks, bill
+          payments, and more.
+        </p>
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Connect QuickBooks Online'"
+          [textColorInput]="'white'"
+          [width]="'100%'"
+          (clickEvent)="goToThirdpartyHome()"
+        ></app-common-button-v4>
+      </div>
+    </div>
+  }
+
+  <!-- Connected State - Main Content -->
+  @if (isConnected && dataLoaded) {
+    <!-- Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto px-6 py-4" [formGroup]="QuickBookForm">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Left Section: Companies & Bank Accounts -->
+        <div
+          class="flex flex-col bg-v4-secondary-background-color border border-v4-border-color rounded-xl overflow-hidden"
+        >
+          <!-- Header with Search -->
+          <div
+            class="p-4 bg-v4-tertiary-background-color border-b border-v4-border-color flex-shrink-0"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-8 h-8 bg-v4-primary-brand-color rounded-lg flex items-center justify-center"
+                >
+                  <lucide-icon
+                    [img]="Building2Icon"
+                    [size]="16"
+                    class="text-white"
+                  ></lucide-icon>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-v4-main-text-color">
+                    Companies
+                  </h3>
+                  <p class="text-xs text-v4-secondary-text-color">
+                    Select companies to import from
+                  </p>
+                </div>
+              </div>
+            </div>
+            <!-- Search Input -->
+            <app-common-input-v4
+              [placeholder]="'Search companies...'"
+              [isFieldRequired]="false"
+              [ngModel]="searchText"
+              (ngModelChange)="searchText = $event; onSearchCompany()"
+              [ngModelOptions]="{ standalone: true }"
+            />
+          </div>
+
+          <!-- Select All Header -->
+          <div
+            class="px-4 py-3 border-b border-v4-border-color bg-v4-tertiary-background-color flex-shrink-0 flex items-center justify-between"
+          >
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-v4-main-text-color">
+              <input
+                type="checkbox"
+                class="v4-checkbox-sm"
+                [checked]="allComplete"
+                [indeterminate]="someComplete()"
+                (change)="setAll($event.target.checked); changeImportFrom()"
+              />
+              <span class="text-sm">Select All</span>
+            </label>
+            @if (selectedCompany.length > 0) {
+              <span
+                class="text-xs text-white font-medium bg-v4-primary-brand-color px-2 py-0.5 rounded-full"
+              >
+                {{ selectedCompany.length }} selected
+              </span>
+            }
+          </div>
+
+          <!-- Company List with Bank Accounts -->
+          <div
+            class="flex-1 overflow-y-auto max-h-[380px] divide-y divide-v4-border-color"
+            [ngClass]="dataLoaded ? '' : 'opacity-50'"
+          >
+            @if (companyData?.length > 0) {
+              @for (
+                company of companyData | sort: "asc" : "name";
+                track company.value;
+                let i = $index
+              ) {
+                <div
+                  class="group px-4 py-3 transition-all duration-200"
+                  [ngClass]="{
+                    'hover:bg-v4-tertiary-background-color': !company.completed
+                  }"
+                >
+                  <div class="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      class="v4-checkbox-sm"
+                      [(ngModel)]="company.completed"
+                      [name]="company.value"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="updateAllComplete()"
+                      (change)="changeImportFrom()"
+                    />
+                    <div class="flex-1 min-w-0 flex items-center gap-3">
+                      <div class="flex-1 min-w-0">
+                        <span
+                          class="text-sm font-medium block truncate transition-colors"
+                          [ngClass]="
+                            company.completed
+                              ? 'text-v4-main-text-color'
+                              : 'text-v4-secondary-text-color group-hover:text-v4-main-text-color'
+                          "
+                          [matTooltip]="tooltip(company.name)"
+                        >
+                          {{ company.name }}
+                        </span>
+                        @if (
+                          company.bankAccounts?.length > 0 &&
+                          selectedType() === "checks"
+                        ) {
+                          <span class="text-xs text-v4-secondary-text-color">
+                            {{ company.bankAccounts.length }} bank
+                            {{
+                              company.bankAccounts.length === 1
+                                ? "account"
+                                : "accounts"
+                            }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bank Accounts Multi-Select Dropdown -->
+                  @if (
+                    company.completed &&
+                    company.bankAccounts?.length > 0 &&
+                    selectedType() === "checks"
+                  ) {
+                    <div class="mt-3 ml-12 v4-qbo-ng-select relative">
+                      <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                          <lucide-icon
+                            [img]="LandmarkIcon"
+                            [size]="12"
+                            class="text-v4-secondary-text-color"
+                          ></lucide-icon>
+                          <span
+                            class="text-xs font-medium text-v4-secondary-text-color"
+                            >Bank Accounts</span
+                          >
+                        </div>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            class="v4-checkbox-sm"
+                            [checked]="areAllBankAccountsSelected(company)"
+                            (change)="toggleAllBankAccounts(company, $event.target.checked)"
+                          />
+                          <span class="text-xs text-v4-secondary-text-color">Select All</span>
+                        </label>
+                      </div>
+                      <ng-select
+                        class="ng-dropdown-panel-v4 text-sm"
+                        [items]="company.bankAccounts"
+                        [(ngModel)]="company.selectedBankAccounts"
+                        [ngModelOptions]="{ standalone: true }"
+                        bindLabel="name"
+                        [multiple]="true"
+                        [closeOnSelect]="false"
+                        placeholder="Select bank accounts"
+                        [clearable]="false"
+                        [compareWith]="compareBankAccounts"
+                        appendTo="body"
+                      >
+                        <ng-template
+                          ng-option-tmp
+                          let-item="item"
+                          let-item$="item$"
+                        >
+                          <div class="flex items-center gap-2 py-0.5">
+                            <input
+                              type="checkbox"
+                              [checked]="item$.selected"
+                              class="rounded"
+                            />
+                            <lucide-icon
+                              [img]="LandmarkIcon"
+                              [size]="12"
+                              class="text-v4-secondary-text-color"
+                            ></lucide-icon>
+                            <span class="text-sm">{{ item.name }}</span>
+                          </div>
+                        </ng-template>
+                        <ng-template
+                          ng-multi-label-tmp
+                          let-items="items"
+                          let-clear="clear"
+                        >
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            @if (items.length === company.bankAccounts.length) {
+                              <span
+                                class="flex items-center gap-1.5 text-v4-common-green-color text-sm"
+                              >
+                                <lucide-icon
+                                  [img]="CircleCheckIcon"
+                                  [size]="12"
+                                ></lucide-icon>
+                                All accounts selected
+                              </span>
+                            } @else if (items.length > 2) {
+                              <span
+                                class="bg-v4-tertiary-background-color text-v4-primary-brand-bold-color text-xs px-2 py-1 rounded-md font-medium"
+                              >
+                                {{ items.length }} of
+                                {{ company.bankAccounts.length }} selected
+                              </span>
+                            } @else if (items.length === 0) {
+                              <span class="text-v4-secondary-text-color text-sm"
+                                >Select accounts...</span
+                              >
+                            } @else {
+                              @for (item of items; track item.id) {
+                                <span
+                                  class="bg-v4-tertiary-background-color text-v4-primary-brand-bold-color text-xs px-2 py-1 rounded-md font-medium"
+                                >
+                                  {{ item.name }}
+                                </span>
+                              }
+                            }
+                          </div>
+                        </ng-template>
+                      </ng-select>
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <!-- No Companies Found -->
+            @if (companyData?.length === 0 && selectedType() === "checks") {
+              <div class="flex flex-col items-center justify-center py-16 px-4">
+                <div
+                  class="w-16 h-16 bg-v4-tertiary-background-color rounded-2xl flex items-center justify-center mb-4"
+                >
+                  <lucide-icon
+                    [img]="Building2Icon"
+                    [size]="24"
+                    class="text-v4-secondary-text-color"
+                  ></lucide-icon>
+                </div>
+                <span class="text-sm font-medium text-v4-main-text-color mb-1"
+                  >No companies found</span
+                >
+                <span class="text-xs text-v4-secondary-text-color text-center">
+                  @if (searchText) {
+                    Try adjusting your search terms
+                  } @else {
+                    Connect your QuickBooks account to see companies
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right Section: Filters -->
+        <div class="flex flex-col gap-4">
+          <!-- Time Span Card -->
+          <div
+            class="bg-v4-secondary-background-color rounded-xl p-4 border border-v4-border-color"
+          >
+            <h4
+              class="text-sm font-semibold text-v4-main-text-color mb-3 flex items-center gap-2"
+            >
+              <lucide-icon
+                [img]="ClockIcon"
+                [size]="16"
+                class="text-v4-primary-brand-bold-color"
+              ></lucide-icon>
+              Time Span
+            </h4>
+            <div class="grid grid-cols-2 gap-1.5">
+              @for (time of filteredImportTime; track time.value) {
+                <label
+                  class="v4-qbo-time-span-radio"
+                  [ngClass]="{
+                    'selected-option':
+                      QuickBookForm.get('importTime')?.value === time.value
+                  }"
+                >
+                  <input
+                    type="radio"
+                    class="v4-radio-sm"
+                    formControlName="importTime"
+                    [value]="time.value"
+                  />
+                  <span class="text-v4-main-text-color">{{ time.name }}</span>
+                </label>
+              }
+            </div>
+            <!-- Custom Date Range -->
+            @if (QuickBookForm.get("importTime")?.value === 10) {
+              <div
+                class="flex flex-col gap-3 mt-3 pt-3 border-t border-v4-border-color"
+              >
+                <app-v4-date-picker
+                  placeholder="Select start date"
+                  fieldLabel="Start Date"
+                  [formControl]="startDateControl"
+                  [maxDate]="endDateControl.value"
+                  [isFieldRequired]="false"
+                />
+                <app-v4-date-picker
+                  placeholder="Select end date"
+                  fieldLabel="End Date"
+                  [formControl]="endDateControl"
+                  [minDate]="startDateControl.value"
+                  [isFieldRequired]="false"
+                />
+              </div>
+            }
+          </div>
+
+          <!-- Check Type Card -->
+          @if (data.type !== "bills" && data.type !== "invoices") {
+            <div
+              class="bg-v4-secondary-background-color rounded-xl p-4 border border-v4-border-color"
+            >
+              <h4
+                class="text-sm font-semibold text-v4-main-text-color mb-3 flex items-center gap-2"
+              >
+                <lucide-icon
+                  [img]="FileCheckIcon"
+                  [size]="16"
+                  class="text-v4-common-green-color"
+                ></lucide-icon>
+                Check Type
+              </h4>
+              <div class="grid grid-cols-2 gap-1.5">
+                <label
+                  class="v4-qbo-check-type compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('checkType')?.value }"
+                >
+                  <input type="checkbox" class="v4-checkbox-sm" formControlName="checkType" />
+                  <span class="text-v4-main-text-color">Check</span>
+                </label>
+                <label
+                  class="v4-qbo-check-type compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('billType')?.value }"
+                >
+                  <input type="checkbox" class="v4-checkbox-sm" formControlName="billType" />
+                  <span class="text-v4-main-text-color">Bill Payment</span>
+                </label>
+                <label
+                  class="v4-qbo-check-type compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('refundReceipt')?.value }"
+                >
+                  <input type="checkbox" class="v4-checkbox-sm" formControlName="refundReceipt" />
+                  <span class="text-v4-main-text-color">Refund Receipt</span>
+                </label>
+                <label
+                  class="v4-qbo-check-type compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('expanse')?.value }"
+                >
+                  <input type="checkbox" class="v4-checkbox-sm" formControlName="expanse" />
+                  <span class="text-v4-main-text-color">Expense</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Download Filter Card -->
+            <div
+              class="bg-v4-secondary-background-color rounded-xl p-4 border border-v4-border-color"
+            >
+              <h4
+                class="text-sm font-semibold text-v4-main-text-color mb-3 flex items-center gap-2"
+              >
+                <lucide-icon
+                  [img]="FilterIcon"
+                  [size]="16"
+                  class="text-v4-common-violet-color"
+                ></lucide-icon>
+                Download Filter
+              </h4>
+              <div class="flex flex-col gap-2">
+                @for (radio of downloadFilter; track radio.value) {
+                  <label
+                    class="v4-qbo-download-filter-radio"
+                    [ngClass]="{
+                      'selected-option':
+                        QuickBookForm.get('markAsPrintLater')?.value ===
+                        radio.value
+                    }"
+                  >
+                    <input
+                      type="radio"
+                      class="v4-radio-sm"
+                      formControlName="markAsPrintLater"
+                      [value]="radio.value"
+                    />
+                    <span class="text-v4-main-text-color">{{ radio.name }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Info Card -->
+          <div
+            class="info-box rounded-xl p-4 border border-v4-border-color"
+          >
+            <div class="flex gap-3">
+              <lucide-icon
+                [img]="InfoIcon"
+                [size]="16"
+                class="info-text mt-0.5 shrink-0"
+              ></lucide-icon>
+              <div>
+                <p
+                  class="text-sm info-text font-medium mb-1"
+                >
+                  Import Tips
+                </p>
+                <p class="text-xs info-text">
+                  Select the companies and time range for importing
+                  {{ selectedType() | titlecase }}. You can import up to 3
+                  companies simultaneously for optimal performance.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div
+      class="flex items-center justify-end gap-3 px-6 py-4 border-t border-v4-border-color bg-v4-secondary-background-color flex-shrink-0"
+    >
+      <app-common-button-v4
+        [width]="'125px'"
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Cancel'"
+        (clickEvent)="back()"
+      ></app-common-button-v4>
+      <app-common-button-v4
+        [width]="'125px'"
+        [type]="{ style: 'primary', name: 'main' }"
+        [text]="'Import'"
+        [textColorInput]="'white'"
+        (clickEvent)="onSubmit()"
+        [loading]="loading"
+        [disabled]="loading || selectedCompany.length === 0"
+      ></app-common-button-v4>
+    </div>
+  }
+</div>

@@ -1,0 +1,72 @@
+<div>
+  @if (!isLoading() && commentData?.length) {
+    <table class="new-table">
+      <thead>
+        <tr>
+          @for (item of headers; track $index) {
+            <th>{{ item }}</th>
+          }
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (item of commentData; track item) {
+          <tr>
+            <td>{{ item.formated_date }}</td>
+            <td>{{ item.user_name }}</td>
+            <td>
+              {{ item.comments }}
+              @if (item?.status?.status_text) {
+                <a class="info" [title]="item?.status?.status_text">
+                  <fa-icon class="cursor-pointer" [icon]="faEnvelope"></fa-icon>
+                </a>
+              }
+            </td>
+            <td>
+              <div class="flex w-12 justify-center items-center">
+                <fa-icon
+                  class="text-common-red-color cursor-pointer"
+                  [icon]="faTrash"
+                  (click)="deleteComment(item.encrypted_id || item.id)"
+                ></fa-icon>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  } @else {
+    <ng-container
+      *ngTemplateOutlet="
+        noDataTemplate;
+        context: {
+          message: 'Sorry, No Comments Found!!',
+          isLoading: isLoading()
+        }
+      "
+    ></ng-container>
+  }
+</div>
+<ng-template #noDataTemplate let-message="message" let-isLoading="isLoading">
+  @if (isLoading) {
+    <div class="flex flex-col justify-center items-center h-[213px]">
+      <fa-icon
+        [icon]="faSpinner"
+        animation="spin"
+        class="text-common-green-color"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-col justify-center items-center h-[213px]">
+      <img
+        ngSrc="/assets/images/empty-box-v3.svg"
+        alt="No data"
+        width="120"
+        height="100"
+      />
+      <span class="font-roboto font-normal text-main-text-color text-sm">
+        {{ message }}
+      </span>
+    </div>
+  }
+</ng-template>

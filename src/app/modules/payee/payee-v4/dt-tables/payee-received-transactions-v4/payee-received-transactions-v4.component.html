@@ -1,0 +1,50 @@
+@if (payeeEmail()) {
+  <div class="flex h-full w-full flex-col">
+    <app-v4-data-table
+      class="flex-1 min-h-0"
+      [showActionButtonContainer]="false"
+      [columnDefs]="columnDefs"
+      [defaultColumnFields]="columnFields"
+      [tableId]="tableId"
+      [frameworkComponents]="frameworkComponents"
+      [paginationPageSize]="50"
+      [rowSelection]="'single'"
+      [useCustomEmptyState]="true"
+      [emptyStateScopeKey]="payeeEmail()"
+      [emptyStateConfig]="{
+        icon: 'arrow-down-left',
+        title: 'No transactions yet',
+        description: 'Payments you receive from this payee will appear here',
+        buttonText: '',
+        compact: true
+      }"
+      (rowClicked)="onRowClicked($event)"
+      (cellRendererViewEvent)="getViewAction($event)"
+      (cellRendererIdEvent)="getActionComp($event)"
+    />
+  </div>
+} @else {
+  <!--
+    Received payments are matched by the payee's email. With no email there is
+    nothing to query — and without a filter payload the grid's getTableData()
+    bails before requesting, leaving a blank body under the stale default row
+    count. Render the empty state directly instead of a meaningless request.
+  -->
+  <app-v4-data-table-empty-state
+    icon="arrow-down-left"
+    title="No transactions yet"
+    description="Payments you receive from this payee will appear here"
+    [compact]="true"
+  />
+}
+
+@if (selectedRow()) {
+  <app-payments-in-detail-panel-v4
+    [uuid]="selectedRow()?.uu_id ?? ''"
+    [encryptedId]="selectedRow()?.encrypted_id ?? ''"
+    [row]="selectedRow()"
+    [isOpen]="isPanelOpen()"
+    [backdropZIndex]="10002"
+    (closed)="closePanelAndReset()"
+  />
+}

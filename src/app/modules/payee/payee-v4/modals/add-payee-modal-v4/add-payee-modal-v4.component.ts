@@ -337,7 +337,11 @@ export class AddPayeeModalV4Component implements OnInit {
   isFinishedAddress = false;
   isSendLink = false;
   reqCheck = false;
-  addPayeeBank = false;
+  /**
+   * On by default: the secure link should ask for bank details unless the
+   * user opts out, so the payee is payable the moment they finish the form.
+   */
+  addPayeeBank = true;
   loadingSendLink = signal(false);
   resendLink = signal<string | undefined>(undefined);
   urlCopied = signal(false);
@@ -2131,8 +2135,11 @@ export class AddPayeeModalV4Component implements OnInit {
       payeeType: ['1'],
       payeeEmail: [''],
       payeePhone: [''],
-      emailCheck: new FormControl(false),
-      phoneCheck: new FormControl(false)
+      // On by default: a ticked box means "send here once this is filled in".
+      // A tick with an empty field counts for nothing at submit (see
+      // `sendChannels`), so nothing is sent to a blank address.
+      emailCheck: new FormControl(true),
+      phoneCheck: new FormControl(true)
     });
 
     this.requestPayeeForm.controls.payeePhone.valueChanges
@@ -2140,6 +2147,7 @@ export class AddPayeeModalV4Component implements OnInit {
       .subscribe(() => this.getPhoneNumber());
   }
 
+  /** A box may stay ticked over an empty field; it only refuses an invalid one. */
   setCheck(type: string) {
     if (type === 'email') {
       this.emailValidation = ValidationService.emailValidator(
@@ -2147,8 +2155,8 @@ export class AddPayeeModalV4Component implements OnInit {
       );
       if (
         this.requestPayeeForm.controls.emailCheck.value &&
-        (this.emailValidation ||
-          !this.requestPayeeForm.controls.payeeEmail.value)
+        this.requestPayeeForm.controls.payeeEmail.value &&
+        this.emailValidation
       ) {
         this.requestPayeeForm.controls.emailCheck.patchValue(false);
       }
@@ -2158,12 +2166,25 @@ export class AddPayeeModalV4Component implements OnInit {
       );
       if (
         this.requestPayeeForm.controls.phoneCheck.value &&
-        (this.phoneValidation ||
-          !this.requestPayeeForm.controls.payeePhone.value)
+        this.requestPayeeForm.controls.payeePhone.value &&
+        this.phoneValidation
       ) {
         this.requestPayeeForm.controls.phoneCheck.patchValue(false);
       }
     }
+  }
+
+  /** Channels that will actually be used: ticked, filled in, and valid. */
+  sendChannels(): { email: boolean; sms: boolean } {
+    const { emailCheck, phoneCheck, payeeEmail, payeePhone } =
+      this.requestPayeeForm.controls;
+    return {
+      email:
+        !!emailCheck.value &&
+        !!payeeEmail.value &&
+        !ValidationService.emailValidator(payeeEmail),
+      sms: !!phoneCheck.value && !!payeePhone.value && payeePhone.valid
+    };
   }
 
   getEmail() {
@@ -2215,8 +2236,7 @@ export class AddPayeeModalV4Component implements OnInit {
   onSubmitself() {
     this.requestPayeeForm.markAsTouched();
 
-    const emailChecked = this.requestPayeeForm.controls.emailCheck.value;
-    const phoneChecked = this.requestPayeeForm.controls.phoneCheck.value;
+    const { email: emailChecked, sms: phoneChecked } = this.sendChannels();
 
     if (!emailChecked && !phoneChecked) {
       this.alertService.warningAlert({

@@ -1,0 +1,110 @@
+<div>
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-v4-border-color bg-v4-popup-header-footer-color">
+    <h2 class="m-0 text-base font-bold text-v4-main-text-color font-funnel">
+      Request payee to sign on receipt
+    </h2>
+    <button
+      class="flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer bg-transparent border-none hover:bg-v4-secondary-background-color transition-colors"
+      (click)="close()"
+    >
+      <lucide-icon name="x" [size]="18" class="text-v4-secondary-text-color" />
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="px-6 py-5 bg-v4-popup-background-color">
+
+    <!-- SMS Section -->
+    <div
+      class="rounded-xl border p-4 mb-4 cursor-pointer transition-all"
+      [class.border-v4-primary-brand-bold-color]="receiptType() === 'sms'"
+      [class.bg-v4-secondary-background-color]="receiptType() === 'sms'"
+      [class.border-v4-border-color]="receiptType() !== 'sms'"
+      (click)="setReceiptType('sms')"
+    >
+      <div class="flex items-center gap-3 mb-3">
+        <div
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+          [class.border-v4-primary-brand-bold-color]="receiptType() === 'sms'"
+          [class.border-v4-border-color]="receiptType() !== 'sms'"
+        >
+          @if (receiptType() === 'sms') {
+            <div class="w-2.5 h-2.5 rounded-full bg-v4-primary-brand-bold-color"></div>
+          }
+        </div>
+        <span class="text-sm font-bold text-v4-main-text-color">SMS</span>
+      </div>
+
+      <form [formGroup]="smsForm" (click)="$event.stopPropagation()">
+        <div class="flex items-start gap-3">
+          <div class="flex-1">
+            <app-phone-input-v4
+              formControlName="payee_phone"
+              [placeholder]="'Payee Mobile Number'"
+              [isFieldRequired]="true"
+            />
+          </div>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Send SMS"
+            lucideIcon="send"
+            [loading]="smsLoading()"
+            [disabled]="smsLoading() || emailLoading() || receiptType() !== 'sms'"
+            (clickEvent)="sendSMS()"
+          />
+        </div>
+        <p class="text-xs font-semibold text-v4-main-text-color mt-2 mb-0">
+          Cost: <span class="text-v4-common-green-color">{{ smsCost() }}</span>
+        </p>
+      </form>
+    </div>
+
+    <!-- Email Section -->
+    <div
+      class="rounded-xl border p-4 cursor-pointer transition-all"
+      [class.border-v4-primary-brand-bold-color]="receiptType() === 'email'"
+      [class.bg-v4-secondary-background-color]="receiptType() === 'email'"
+      [class.border-v4-border-color]="receiptType() !== 'email'"
+      (click)="setReceiptType('email')"
+    >
+      <div class="flex items-center gap-3 mb-3">
+        <div
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+          [class.border-v4-primary-brand-bold-color]="receiptType() === 'email'"
+          [class.border-v4-border-color]="receiptType() !== 'email'"
+        >
+          @if (receiptType() === 'email') {
+            <div class="w-2.5 h-2.5 rounded-full bg-v4-primary-brand-bold-color"></div>
+          }
+        </div>
+        <span class="text-sm font-bold text-v4-main-text-color">E-Mail</span>
+      </div>
+
+      <form [formGroup]="emailForm" (click)="$event.stopPropagation()">
+        <div class="flex items-start gap-3">
+          <div class="flex-1">
+            <div class="v4-common-input-full-width">
+              <app-common-input-v4
+                [placeholder]="'Payee Email'"
+                [isFieldRequired]="true"
+                formControlName="payeeEmail"
+              />
+            </div>
+            @if (receiptType() === 'email') {
+              <app-v4-control-message [control]="emailForm.controls.payeeEmail" />
+            }
+          </div>
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            text="Send Email"
+            lucideIcon="send"
+            [loading]="emailLoading()"
+            [disabled]="smsLoading() || emailLoading() || receiptType() !== 'email'"
+            (clickEvent)="sendEmail()"
+          />
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

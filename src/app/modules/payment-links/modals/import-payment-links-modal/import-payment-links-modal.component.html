@@ -1,0 +1,328 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5">
+          @if (currentStep() === "upload") {
+            Import from CSV
+          } @else if (currentStep() === "edit") {
+            Edit Import Data
+          } @else {
+            Review & Submit
+          }
+        </span>
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <!-- STEP 1: Upload -->
+  @if (currentStep() === "upload") {
+    <div class="flex flex-col gap-4">
+      <!-- File Upload Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+        <label
+          class="font-inter font-semibold text-main-text-color text-sm"
+          for="file"
+        >
+          Select File: <span class="text-red-500">*</span>
+        </label>
+        <div class="flex flex-col">
+          <app-common-upload-button-v35
+            buttonText="Upload"
+            [acceptedFileTypes]="['.csv']"
+            (selectedFileEvent)="uploadEvent($event)"
+          />
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="text-sm flex flex-col mt-2">
+        <span
+          class="flex items-center gap-1 font-inter text-main-text-color font-normal"
+        >
+          <fa-icon
+            class="text-common-blue-color"
+            [icon]="faAngleRight"
+          ></fa-icon>
+          We only support CSV file format
+        </span>
+
+        <a class="flex items-center gap-1 mt-3">
+          <span class="m-1 text-common-blue-color font-inter font-normal">
+            <app-common-button-v35
+              class="whitespace-nowrap"
+              text="Download Sample File"
+              [type]="{ name: 'list', style: 'blue' }"
+              [disableHoverEffect]="false"
+              customClasses="font-extralight p-0"
+              backGroundInput="transparent"
+              [isAddIcon]="true"
+              [icon]="['fas', 'arrow-down-to-line']"
+              (clickEvent)="downloadSampleFile()"
+              [disabled]="isSampleFileLoading()"
+            />
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer Buttons - Upload Step -->
+    <div class="flex justify-end gap-3 pt-8">
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'bordered', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="cancel()"
+      />
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Import"
+        (clickEvent)="submitFile()"
+        [loading]="loading()"
+        [disabled]="loading() || !selectedFile"
+      />
+    </div>
+  }
+
+  <!-- STEP 2: Edit Data Table -->
+  @if (currentStep() === "edit") {
+    <div class="flex flex-col gap-4">
+      <div class="text-sm text-secondary-text-color font-inter mb-2">
+        Review and edit the imported data below. Click "Update" when done.
+      </div>
+
+      <!-- Editable Table -->
+      <div class="import-table-container max-h-[400px] overflow-auto">
+        <table class="import-table w-full border-collapse">
+          <thead class="sticky top-0 bg-main-background-color z-10">
+            <tr>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                #
+              </th>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Name
+              </th>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Email
+              </th>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Amount
+              </th>
+              <th
+                class="text-center p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (
+              row of editableData;
+              track $index;
+              let i = $index;
+              let last = $last
+            ) {
+              <tr class="hover:bg-secondary-background-color">
+                <td
+                  class="p-3 text-sm text-main-text-color"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  {{ i + 1 }}
+                </td>
+                <td
+                  class="p-2"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  <input
+                    type="text"
+                    [(ngModel)]="row.name"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded-md focus:outline-none focus:border-common-blue-color bg-main-background-color text-main-text-color"
+                  />
+                </td>
+                <td
+                  class="p-2"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  <input
+                    type="email"
+                    [(ngModel)]="row.email"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded-md focus:outline-none focus:border-common-blue-color bg-main-background-color text-main-text-color"
+                  />
+                </td>
+                <td
+                  class="p-2"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  <input
+                    type="text"
+                    [(ngModel)]="row.amount"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded-md focus:outline-none focus:border-common-blue-color bg-main-background-color text-main-text-color"
+                  />
+                </td>
+                <td
+                  class="p-2 text-center"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  <button
+                    type="button"
+                    (click)="deleteRow(i)"
+                    class="text-common-red-color transition-colors"
+                    title="Delete row"
+                  >
+                    <fa-icon [icon]="faTrash" class="text-sm"></fa-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="text-sm text-secondary-text-color font-inter">
+        Total rows: {{ editableData.length }}
+      </div>
+    </div>
+
+    <!-- Footer Buttons - Edit Step -->
+    <div class="flex justify-end gap-3 pt-8">
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'bordered', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="cancel()"
+      />
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Update"
+        (clickEvent)="updateData()"
+        [loading]="isUpdating()"
+        [disabled]="isUpdating() || !editableData.length"
+      />
+    </div>
+  }
+
+  <!-- STEP 3: Review & Submit -->
+  @if (currentStep() === "review") {
+    <div class="flex flex-col gap-4">
+      <div class="text-sm text-secondary-text-color font-inter mb-2">
+        Review the final data below. Click "Submit" to create payment links.
+      </div>
+
+      <!-- Read-only Table -->
+      <div class="import-table-container max-h-[400px] overflow-auto">
+        <table class="import-table w-full border-collapse">
+          <thead class="sticky top-0 bg-main-background-color z-10">
+            <tr>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                #
+              </th>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Name
+              </th>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Email
+              </th>
+              <th
+                class="text-left p-3 font-inter font-semibold text-sm text-main-text-color border-b border-input-border-color"
+              >
+                Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (
+              row of importData;
+              track $index;
+              let i = $index;
+              let last = $last
+            ) {
+              <tr class="hover:bg-hover-background-color">
+                <td
+                  class="p-3 text-sm text-main-text-color"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  {{ i + 1 }}
+                </td>
+                <td
+                  class="p-3 text-sm text-main-text-color"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  {{ row.name }}
+                </td>
+                <td
+                  class="p-3 text-sm text-main-text-color"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  {{ row.email }}
+                </td>
+                <td
+                  class="p-3 text-sm text-main-text-color"
+                  [class.border-b]="!last"
+                  [class.border-input-border-color]="!last"
+                >
+                  {{ row.amount }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="text-sm text-secondary-text-color font-inter">
+        Total rows: {{ importData.length }}
+      </div>
+    </div>
+
+    <!-- Footer Buttons - Review Step -->
+    <div class="flex justify-end gap-3 pt-8">
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'bordered', name: 'main' }"
+        text="Edit"
+        (clickEvent)="goBackToEdit()"
+        [disabled]="isCreating()"
+      />
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Submit"
+        (clickEvent)="createLinks()"
+        [loading]="isCreating()"
+        [disabled]="isCreating() || !importData.length"
+      />
+    </div>
+  }
+</div>

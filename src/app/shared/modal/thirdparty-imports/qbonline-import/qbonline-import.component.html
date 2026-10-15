@@ -1,0 +1,390 @@
+<div class="flex flex-col h-[650px] max-h-[80vh]">
+  <!-- Header (Fixed) -->
+  <div class="flex items-center justify-between pb-4 border-b border-input-border-color flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <img
+        ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+        alt="QuickBooks"
+        width="32"
+        height="32"
+      />
+      <span class="text-lg font-semibold text-main-text-color">Import from QuickBooks Online</span>
+    </div>
+    <button
+      class="flex items-center gap-2 px-3 py-1.5 text-sm text-secondary-text-color hover:text-common-blue-color hover:bg-common-secondary-blue-color rounded-md transition-colors"
+      matTooltip="Integration Settings"
+      (click)="goToThirdpartyHome()"
+    >
+      <fa-icon [icon]="faGear" />
+      <span class="hidden sm:inline">Settings</span>
+    </button>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="data_spinner" [ngClass]="{ data_fetched: dataLoaded }"></div>
+
+  <!-- Disconnected State -->
+  @if (!isConnected && dataLoaded) {
+    <div class="flex-1 flex flex-col justify-center items-center py-12 overflow-auto">
+      <div class="bg-main-background-color border border-input-border-color rounded-xl p-8 max-w-md w-full text-center shadow-sm">
+        <div class="w-20 h-20 mx-auto mb-6 bg-common-secondary-blue-color rounded-full flex items-center justify-center">
+          <img
+            ngSrc="/assets/images/integration/qb-logo-stacked.svg"
+            alt="QuickBooks"
+            width="48"
+            height="48"
+          />
+        </div>
+        <h3 class="text-xl font-semibold text-main-text-color mb-2">QuickBooks Online</h3>
+        <div class="flex items-center justify-center gap-2 mb-6">
+          <span class="w-2 h-2 bg-common-red-color rounded-full"></span>
+          <span class="text-sm text-secondary-text-color">Disconnected</span>
+        </div>
+        <p class="text-sm text-secondary-text-color mb-6">
+          Connect your QuickBooks Online account to import checks, bill payments, and more.
+        </p>
+        <button
+          class="w-full py-2.5 px-4 bg-common-blue-color hover:bg-common-blue-color/90 text-white font-medium rounded-lg transition-colors"
+          (click)="goToThirdpartyHome()"
+        >
+          Connect QuickBooks Online
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Connected State - Main Content -->
+  @if (isConnected && dataLoaded) {
+    <!-- Scrollable Content Area -->
+    <div
+      class="flex-1 overflow-y-auto py-4"
+      [formGroup]="QuickBookForm"
+    >
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Left Section: Companies & Bank Accounts -->
+        <div class="flex flex-col bg-main-background-color border border-input-border-color rounded-xl overflow-hidden shadow-sm">
+          <!-- Header with Search -->
+          <div class="p-4 bg-secondary-background-color border-b border-input-border-color flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-common-blue-color rounded-lg flex items-center justify-center">
+                  <fa-icon [icon]="faBuilding" class="text-white text-sm" />
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-main-text-color">Companies</h3>
+                  <p class="text-xs text-secondary-text-color">Select companies to import from</p>
+                </div>
+              </div>
+            </div>
+            <!-- Search Input -->
+            <div class="relative">
+              <fa-icon [icon]="faSearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-text-color text-sm" />
+              <input
+                type="search"
+                class="w-full pl-10 pr-4 py-2.5 text-sm bg-main-background-color border border-input-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-common-blue-color/20 focus:border-common-blue-color transition-all placeholder:text-secondary-text-color/60"
+                [(ngModel)]="searchText"
+                (ngModelChange)="onSearchCompany()"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="Search companies..."
+              />
+            </div>
+          </div>
+
+          <!-- Select All Header -->
+          <div class="px-4 py-3 border-b border-input-border-color bg-secondary-background-color flex-shrink-0 flex items-center justify-between">
+            <mat-checkbox
+              class="text-sm font-medium text-main-text-color"
+              [checked]="allComplete"
+              [indeterminate]="someComplete()"
+              (change)="setAll($event.checked); changeImportFrom()"
+            >
+              <span class="ml-1 text-sm">Select All</span>
+            </mat-checkbox>
+            @if (selectedCompany.length > 0) {
+              <span class="text-xs text-white font-medium bg-common-blue-color px-2 py-0.5 rounded-full">
+                {{ selectedCompany.length }} selected
+              </span>
+            }
+          </div>
+
+          <!-- Company List with Bank Accounts -->
+          <div
+            class="flex-1 overflow-y-auto max-h-[380px] divide-y divide-input-border-color"
+            [ngClass]="dataLoaded ? '' : 'opacity-50'"
+          >
+            @if (companyData?.length > 0) {
+              @for (company of companyData | sort: 'asc' : 'name'; track company.value; let i = $index) {
+                <div
+                  class="group px-4 py-3 transition-all duration-200"
+                  [ngClass]="{
+                    'hover:bg-secondary-background-color': !company.completed
+                  }"
+                >
+                  <div class="flex items-center gap-3">
+                    <mat-checkbox
+                      [(ngModel)]="company.completed"
+                      [name]="company.value"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="updateAllComplete()"
+                      (change)="changeImportFrom()"
+                    ></mat-checkbox>
+                    <div class="flex-1 min-w-0 flex items-center gap-3">
+                      <!-- Company Info -->
+                      <div class="flex-1 min-w-0">
+                        <span
+                          class="text-sm font-medium block truncate transition-colors"
+                          [ngClass]="company.completed ? 'text-main-text-color' : 'text-secondary-text-color group-hover:text-main-text-color'"
+                          [matTooltip]="tooltip(company.name)"
+                        >
+                          {{ company.name }}
+                        </span>
+                        @if (company.bankAccounts?.length > 0 && selectedType() === 'checks') {
+                          <span class="text-xs text-secondary-text-color">
+                            {{ company.bankAccounts.length }} bank {{ company.bankAccounts.length === 1 ? 'account' : 'accounts' }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bank Accounts Multi-Select Dropdown -->
+                  @if (company.completed && company.bankAccounts?.length > 0 && selectedType() === 'checks') {
+                    <div class="mt-3 ml-12 angular-ocw-v35-ng-select-dropdown relative">
+                      <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                          <fa-icon [icon]="faUniversity" class="text-secondary-text-color text-xs" />
+                          <span class="text-xs font-medium text-secondary-text-color">Bank Accounts</span>
+                        </div>
+                        <mat-checkbox
+                          class="check-type-radio compact !border-none"
+                          [checked]="areAllBankAccountsSelected(company)"
+                          (change)="toggleAllBankAccounts(company, $event.checked)"
+                        >
+                          <span class="text-xs text-secondary-text-color">Select All</span>
+                        </mat-checkbox>
+                      </div>
+                      <ng-select
+                        class="ng-dropdown-panel-v35 text-sm"
+                        [items]="company.bankAccounts"
+                        [(ngModel)]="company.selectedBankAccounts"
+                        [ngModelOptions]="{ standalone: true }"
+                        bindLabel="name"
+                        [multiple]="true"
+                        [closeOnSelect]="false"
+                        placeholder="Select bank accounts"
+                        [clearable]="false"
+                        [compareWith]="compareBankAccounts"
+                        appendTo="body"
+                      >
+                        <ng-template ng-option-tmp let-item="item" let-item$="item$">
+                          <div class="flex items-center gap-2 py-0.5">
+                            <input type="checkbox" [checked]="item$.selected" class="rounded" />
+                            <fa-icon [icon]="faBuildingColumns" class="text-secondary-text-color text-xs" />
+                            <span class="text-sm">{{ item.name }}</span>
+                          </div>
+                        </ng-template>
+                        <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            @if (items.length === company.bankAccounts.length) {
+                              <span class="flex items-center gap-1.5 text-common-green-color text-sm">
+                                <fa-icon [icon]="faCheckCircle" class="text-xs" />
+                                All accounts selected
+                              </span>
+                            } @else if (items.length > 2) {
+                              <span class="bg-common-blue-color/10 text-common-blue-color text-xs px-2 py-1 rounded-md font-medium">
+                                {{ items.length }} of {{ company.bankAccounts.length }} selected
+                              </span>
+                            } @else if (items.length === 0) {
+                              <span class="text-secondary-text-color text-sm">Select accounts...</span>
+                            } @else {
+                              @for (item of items; track item.id) {
+                                <span class="bg-common-secondary-blue-color text-common-blue-color text-xs px-2 py-1 rounded-md font-medium">
+                                  {{ item.name }}
+                                </span>
+                              }
+                            }
+                          </div>
+                        </ng-template>
+                      </ng-select>
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <!-- No Companies Found -->
+            @if (companyData?.length === 0 && selectedType() === 'checks') {
+              <div class="flex flex-col items-center justify-center py-16 px-4">
+                <div class="w-16 h-16 bg-secondary-background-color rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                  <fa-icon [icon]="faBuildingCircleXmark" class="text-secondary-text-color text-2xl" />
+                </div>
+                <span class="text-sm font-medium text-main-text-color mb-1">No companies found</span>
+                <span class="text-xs text-secondary-text-color text-center">
+                  @if (searchText) {
+                    Try adjusting your search terms
+                  } @else {
+                    Connect your QuickBooks account to see companies
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right Section: Filters -->
+        <div class="flex flex-col gap-4">
+          <!-- Time Span Card -->
+          <div class="bg-secondary-background-color rounded-lg p-4">
+            <h4 class="text-sm font-semibold text-main-text-color mb-3 flex items-center gap-2">
+              <fa-icon [icon]="faClock" class="text-common-blue-color" />
+              Time Span
+            </h4>
+            <mat-radio-group
+              aria-labelledby="mat-radio-group-label"
+              formControlName="importTime"
+              class="grid grid-cols-2 gap-1.5"
+            >
+              @for (time of filteredImportTime; track time.value) {
+                <mat-radio-button
+                  class="time-span-radio compact"
+                  [value]="time.value"
+                  [ngClass]="{
+                    'selected-option': QuickBookForm.get('importTime')?.value === time.value
+                  }"
+                >
+                  <span class="text-main-text-color">{{ time.name }}</span>
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+            <!-- Custom Date Range -->
+            @if (QuickBookForm.get('importTime')?.value === 10) {
+              <div class="flex flex-col gap-3 mt-3 pt-3 border-t border-input-border-color">
+                <div class="flex items-center gap-3">
+                  <label for="startDate" class="text-sm text-secondary-text-color w-20">Start Date</label>
+                  <input
+                    id="startDate"
+                    type="date"
+                    class="flex-1 py-2 px-3 text-sm border border-input-border-color rounded-md bg-main-background-color text-main-text-color transition-all focus:outline-none focus:border-common-blue-color"
+                    [(ngModel)]="startDate"
+                    [ngModelOptions]="{ standalone: true }"
+                    [max]="endDate"
+                  />
+                </div>
+                <div class="flex items-center gap-3">
+                  <label for="endDate" class="text-sm text-secondary-text-color w-20">End Date</label>
+                  <input
+                    id="endDate"
+                    type="date"
+                    class="flex-1 py-2 px-3 text-sm border border-input-border-color rounded-md bg-main-background-color text-main-text-color transition-all focus:outline-none focus:border-common-blue-color"
+                    [(ngModel)]="endDate"
+                    [ngModelOptions]="{ standalone: true }"
+                    [min]="startDate"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Check Type Card -->
+          @if (data.type !== 'bills' && data.type !== 'invoices') {
+            <div class="bg-secondary-background-color rounded-lg p-4">
+              <h4 class="text-sm font-semibold text-main-text-color mb-3 flex items-center gap-2">
+                <fa-icon [icon]="faFileCheck" class="text-common-green-color" />
+                Check Type
+              </h4>
+              <div class="grid grid-cols-2 gap-1.5">
+                <mat-checkbox
+                  formControlName="checkType"
+                  class="check-type-radio compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('checkType')?.value }"
+                >
+                  <span class="text-main-text-color">Check</span>
+                </mat-checkbox>
+                <mat-checkbox
+                  formControlName="billType"
+                  class="check-type-radio compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('billType')?.value }"
+                >
+                  <span class="text-main-text-color">Bill Payment</span>
+                </mat-checkbox>
+                <mat-checkbox
+                  formControlName="refundReceipt"
+                  class="check-type-radio compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('refundReceipt')?.value }"
+                >
+                  <span class="text-main-text-color">Refund Receipt</span>
+                </mat-checkbox>
+                <mat-checkbox
+                  formControlName="expanse"
+                  class="check-type-radio compact"
+                  [ngClass]="{ 'selected-option': QuickBookForm.get('expanse')?.value }"
+                >
+                  <span class="text-main-text-color">Expense</span>
+                </mat-checkbox>
+              </div>
+            </div>
+
+            <!-- Download Filter Card -->
+            <div class="bg-secondary-background-color rounded-lg p-4">
+              <h4 class="text-sm font-semibold text-main-text-color mb-3 flex items-center gap-2">
+                <fa-icon [icon]="faFilter" class="text-common-violet-color" />
+                Download Filter
+              </h4>
+              <mat-radio-group
+                aria-labelledby="mat-radio-group-label"
+                formControlName="markAsPrintLater"
+                class="flex flex-col gap-2"
+              >
+                @for (radio of downloadFilter; track radio.value) {
+                  <mat-radio-button
+                    class="download-filter-radio"
+                    [value]="radio.value"
+                    [ngClass]="{
+                      'selected-option': QuickBookForm.get('markAsPrintLater')?.value === radio.value
+                    }"
+                  >
+                    <span class="text-main-text-color">{{ radio.name }}</span>
+                  </mat-radio-button>
+                }
+              </mat-radio-group>
+            </div>
+
+          }
+
+          <!-- Info Card -->
+          <div class="bg-common-secondary-blue-color rounded-lg p-4 border border-common-blue-color">
+            <div class="flex gap-3">
+              <fa-icon [icon]="faCircleInfo" class="text-common-blue-color mt-0.5" />
+              <div>
+                <p class="text-sm text-main-text-color font-medium mb-1">Import Tips</p>
+                <p class="text-xs text-secondary-text-color">
+                  Select the companies and time range for importing {{selectedType() | titlecase}}. You can import up to 3 companies simultaneously for optimal performance.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions (Fixed at Bottom) -->
+    <div class="flex items-center justify-end pt-4 border-t border-input-border-color bg-main-background-color flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'bordered', name: 'main' }"
+        text="Cancel"
+        (clickEvent)="back()"
+      />
+      <app-common-button-v35
+        width="125px"
+        [type]="{ style: 'modal', name: 'main' }"
+        text="Import"
+        (clickEvent)="onSubmit()"
+        [loading]="loading"
+        [disabled]="loading || selectedCompany.length === 0"
+      />
+      </div>
+    </div>
+  }
+</div>

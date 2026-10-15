@@ -1,0 +1,525 @@
+<div class="p-1.5 min-w-[580px]">
+  <!-- Modal Header -->
+  <div
+    class="flex justify-between items-center pb-4 border-b border-input-border-color"
+  >
+    <div class="flex items-center gap-2">
+      <span class="font-inter font-semibold text-lg text-main-text-color">
+        QuickBooks Settings
+      </span>
+    </div>
+    <button type="button" class="cursor-pointer" (click)="close()">
+      <fa-icon
+        class="text-secondary-text-color text-lg"
+        [icon]="faXmark"
+      ></fa-icon>
+    </button>
+  </div>
+
+  <!-- Modal Body -->
+  <div class="pt-4">
+    <div class="flex flex-col gap-3">
+      <!-- Auto Settings Options Row -->
+      <div class="bg-secondary-background-color rounded-[10px] py-2.5 px-4">
+        <div class="grid grid-cols-2 items-center gap-x-4">
+          <div class="single_input flex auto-redirect-height items-center">
+            <mat-checkbox
+              [formControl]="autoDownloading"
+              class="example-margin ml-2 p-0"
+              [ngStyle]="{
+                'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+              }"
+              (change)="postQuickBookOnlineData()"
+            >
+              <span class="text-sm pb-1">Auto Downloading</span>
+            </mat-checkbox>
+          </div>
+          @if (autoDownloading.value) {
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="autoDownloadPermission"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Auto Download Permission</span>
+              </mat-checkbox>
+              <fa-icon
+                class="text-common-blue-color text-xs cursor-help ml-1"
+                [matTooltipPosition]="toolTipPosition.value"
+                matTooltip="By enabling this option, the user will need approval to process the auto-downloaded checks."
+                [icon]="faQuestion"
+              ></fa-icon>
+            </div>
+          }
+          <div class="single_input flex auto-redirect-height items-center">
+            <mat-checkbox
+              [formControl]="autoPayeeUpdate"
+              class="example-margin ml-2 p-0"
+              [ngStyle]="{
+                'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+              }"
+              (change)="postQuickBookOnlineData()"
+            >
+              <span class="text-sm pb-1">Payee Auto Update</span>
+            </mat-checkbox>
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help ml-1"
+              [matTooltipPosition]="toolTipPosition.value"
+              matTooltip="Any changes made to the Payee in Online Check Writer will update in QuickBooks."
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+          <div class="single_input flex auto-redirect-height items-center">
+            <mat-checkbox
+              [formControl]="printRegularVoucher"
+              class="example-margin ml-2 p-0"
+              [ngStyle]="{
+                'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+              }"
+              (change)="postQuickBookOnlineData()"
+            >
+              <span class="text-sm pb-1">Enable OCW Style Stub</span>
+            </mat-checkbox>
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help ml-1"
+              [matTooltipPosition]="toolTipPosition.value"
+              matTooltip="By default, check prints in QuickBooks style stub. If you enable this button, it prints the way you custom-designed the Online Check Writer template at your MY BANKS"
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+          @if (pushbackEnable.value && isConnected) {
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="showWarning"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Category must be selected</span>
+              </mat-checkbox>
+              <fa-icon
+                class="text-common-blue-color text-xs cursor-help ml-1"
+                [matTooltipPosition]="toolTipPosition.value"
+                matTooltip="If enabled, category is a must to create checks"
+                [icon]="faQuestion"
+              ></fa-icon>
+            </div>
+          }
+          <div class="single_input flex auto-redirect-height items-center">
+            <mat-checkbox
+              [formControl]="showSelectionPopup"
+              class="example-margin ml-2 p-0"
+              [ngStyle]="{
+                'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+              }"
+              (change)="postQuickBookOnlineData()"
+            >
+              <span class="text-sm pb-1">Manually Select Checks to Import</span>
+            </mat-checkbox>
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help ml-1"
+              [matTooltipPosition]="toolTipPosition.value"
+              matTooltip="Choose this option to review all QuickBooks checks and select only the ones you want to import."
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+          @if (showSelectionPopup.value) {
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="autoSkipTextEnabled"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Auto Skip Text</span>
+              </mat-checkbox>
+              <fa-icon
+                class="text-common-blue-color text-xs cursor-help ml-1"
+                [matTooltipPosition]="toolTipPosition.value"
+                matTooltip="Enable this option to automatically skip transactions that contain specified text patterns."
+                [icon]="faQuestion"
+              ></fa-icon>
+            </div>
+          }
+        </div>
+        @if (showSelectionPopup.value && autoSkipTextEnabled.value) {
+          <div class="flex items-center gap-3 mt-3 pl-3">
+            <label
+              class="text-sm text-secondary-text-color whitespace-nowrap ml-2"
+              for="skipTexts"
+              >Skip Texts</label
+            >
+            <input
+              id="skipTexts"
+              class="flex-1 py-2 px-3 text-[13px] border border-input-border-color rounded-md bg-main-background-color text-main-text-color transition-all focus:outline-none focus:border-common-blue-color placeholder:text-secondary-text-color max-w-[300px]"
+              [formControl]="skipTextsInput"
+              placeholder="Enter comma-separated texts"
+            />
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help"
+              [matTooltipPosition]="toolTipPosition.value"
+              matTooltip="Enter comma-separated text patterns. Any transactions containing these texts will be automatically skipped during import"
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+        }
+      </div>
+
+      <!-- Import Timestamp Field -->
+      <div class="bg-secondary-background-color rounded-[10px] py-2.5 px-4">
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-secondary-text-color ml-2 mr-3">Import Timestamp</span>
+          <mat-radio-group
+            aria-labelledby="timestamp-label"
+            class="flex items-center gap-4"
+            [formControl]="importTimestampField"
+            (change)="postQuickBookOnlineData()"
+          >
+            @for (option of timestampFieldOptions; track option) {
+              <mat-radio-button [value]="option.value">
+                <span class="text-sm text-main-text-color cursor-pointer">{{
+                  option.name
+                }}</span>
+              </mat-radio-button>
+            }
+          </mat-radio-group>
+          <fa-icon
+            class="text-common-blue-color text-xs cursor-help"
+            [matTooltipPosition]="toolTipPosition.value"
+            matTooltip="Choose which timestamp field should be used when importing transactions from QuickBooks."
+            [icon]="faQuestion"
+          ></fa-icon>
+        </div>
+      </div>
+
+      <!-- Settings Cards Row -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Check Type Card -->
+        <div
+          class="bg-secondary-background-color rounded-[10px] p-3 transition-shadow"
+        >
+          <div
+            class="flex items-center gap-2 mb-2 pb-2 border-b border-input-border-color"
+          >
+            <span class="font-inter font-semibold text-sm text-main-text-color"
+              >Check Type</span
+            >
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help"
+              matTooltip="Choose your preferred check style for importing."
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+          <div class="flex flex-col">
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="check"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Check</span>
+              </mat-checkbox>
+            </div>
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="billPayment"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Bill Payment (Check)</span>
+              </mat-checkbox>
+            </div>
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="refund"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Refund Receipt</span>
+              </mat-checkbox>
+            </div>
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="expense"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Expense</span>
+              </mat-checkbox>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Filter Card -->
+        <div
+          class="bg-secondary-background-color rounded-[10px] p-3 transition-shadow"
+        >
+          <div
+            class="flex items-center gap-2 mb-4 pb-2 border-b border-input-border-color"
+          >
+            <span class="font-inter font-semibold text-sm text-main-text-color"
+              >Download Filter</span
+            >
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help"
+              matTooltip="Set your default download filter to import."
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+          <div class="pt-0.5">
+            <mat-radio-group
+              aria-labelledby="radio-label"
+              class="flex flex-col gap-1"
+              [formControl]="downloadFilter"
+              (change)="postQuickBookOnlineData()"
+            >
+              @for (radio of downloadFilters; track radio) {
+                <mat-radio-button [value]="radio.value" class="mb-5">
+                  <span class="text-sm text-main-text-color cursor-pointer">{{
+                    radio.name
+                  }}</span>
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Settings Section -->
+      @if (data?.allowExport) {
+        <!-- Options Row -->
+        <div class="bg-secondary-background-color rounded-[10px] py-2.5 px-4">
+          <div class="flex flex-wrap items-center gap-x-4">
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="pushbackEnable"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Enable Pushback</span>
+              </mat-checkbox>
+            </div>
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="autoExportEnable"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Auto Check Export</span>
+              </mat-checkbox>
+            </div>
+            <div class="single_input flex auto-redirect-height items-center">
+              <mat-checkbox
+                [formControl]="locationEnable"
+                class="example-margin ml-2 p-0"
+                [ngStyle]="{
+                  'pointer-events': loading.defaultLoading ? 'none' : 'auto'
+                }"
+                (change)="postQuickBookOnlineData()"
+              >
+                <span class="text-sm pb-1">Enable Location</span>
+              </mat-checkbox>
+            </div>
+          </div>
+        </div>
+
+        <!-- Import Section -->
+        <div class="bg-secondary-background-color rounded-[10px] p-3">
+          <div class="mb-2">
+            <div class="flex items-center gap-2">
+              <fa-icon
+                [icon]="faCloudArrowDown"
+                class="text-common-blue-color"
+              ></fa-icon>
+              <span
+                class="font-inter font-semibold text-sm text-main-text-color"
+                >Import Data from QuickBooks</span
+              >
+            </div>
+            <span class="text-xs text-secondary-text-color"
+              >Click on any item below to sync from your QuickBooks
+              account</span
+            >
+          </div>
+          <div
+            class="flex flex-wrap gap-2"
+            [ngClass]="!isConnected ? 'opacity-40 pointer-events-none' : ''"
+          >
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Bank"
+              (clickEvent)="onBankImportClicked()"
+              [loading]="quickBooksLoading.bank"
+              [disabled]="
+                quickBooksLoading.bank || (!pushbackEnable.value && isConnected)
+              "
+              [class.opacity-40]="!pushbackEnable.value && isConnected"
+              [class.pointer-events-none]="!pushbackEnable.value && isConnected"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              [toolTip]="
+                isConnected
+                  ? 'Import bank accounts from QuickBooks'
+                  : 'Please connect to QuickBooks to import bank accounts'
+              "
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              [text]="'Payee' | whiteLabel: 'payeeName'"
+              (clickEvent)="onPayeeImportClicked()"
+              [loading]="quickBooksLoading.payee"
+              [disabled]="
+                quickBooksLoading.payee ||
+                (!pushbackEnable.value && isConnected)
+              "
+              [class.opacity-40]="!pushbackEnable.value && isConnected"
+              [class.pointer-events-none]="!pushbackEnable.value && isConnected"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              [toolTip]="
+                isConnected
+                  ? 'Import ' +
+                    ('Payee' | whiteLabel: 'payeeName') +
+                    ' from QuickBooks'
+                  : 'Please connect to QuickBooks to import ' +
+                    ('Payee' | whiteLabel: 'payeeName')
+              "
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Category"
+              (clickEvent)="onCategoryImportClicked('Category')"
+              [loading]="quickBooksLoading.category"
+              [disabled]="
+                quickBooksLoading.category ||
+                (!pushbackEnable.value && isConnected)
+              "
+              [class.opacity-40]="!pushbackEnable.value && isConnected"
+              [class.pointer-events-none]="!pushbackEnable.value && isConnected"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              [toolTip]="
+                isConnected
+                  ? 'Import categories from QuickBooks'
+                  : 'Please connect to QuickBooks to import categories'
+              "
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Class"
+              (clickEvent)="onCategoryImportClicked('Class')"
+              [loading]="quickBooksLoading.class"
+              [disabled]="
+                quickBooksLoading.class ||
+                (!pushbackEnable.value && isConnected)
+              "
+              [class.opacity-40]="!pushbackEnable.value && isConnected"
+              [class.pointer-events-none]="!pushbackEnable.value && isConnected"
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              [toolTip]="
+                isConnected
+                  ? 'Import classes from QuickBooks'
+                  : 'Please connect to QuickBooks to import classes'
+              "
+            />
+            <app-common-button-v35
+              [type]="{ style: 'green', name: 'money-action' }"
+              text="Location"
+              (clickEvent)="onLocationImportClicked()"
+              [loading]="quickBooksLoading.location"
+              [disabled]="
+                quickBooksLoading.location ||
+                (!pushbackEnable.value && isConnected) ||
+                !locationEnable.value
+              "
+              [class.opacity-40]="
+                (!pushbackEnable.value && isConnected) || !locationEnable.value
+              "
+              [class.pointer-events-none]="
+                (!pushbackEnable.value && isConnected) || !locationEnable.value
+              "
+              [isAddIcon]="true"
+              [icon]="['fas', 'down-to-line']"
+              [toolTip]="
+                isConnected
+                  ? 'Import locations from QuickBooks'
+                  : 'Please connect to QuickBooks to import locations'
+              "
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Skip Serial Number Section -->
+      <div class="bg-secondary-background-color rounded-[10px] p-3">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 flex-1">
+            <label
+              class="text-sm text-secondary-text-color whitespace-nowrap"
+              for="skipNumber"
+              >Skip Serial Number</label
+            >
+            <input
+              id="skipNumber"
+              class="flex-1 py-2 px-3 text-[13px] border border-input-border-color rounded-md bg-main-background-color text-main-text-color transition-all focus:outline-none focus:border-common-blue-color placeholder:text-secondary-text-color max-w-[200px]"
+              [formControl]="skipNumber"
+              placeholder="Enter skip number"
+            />
+            <fa-icon
+              class="text-common-blue-color text-xs cursor-help"
+              [matTooltipPosition]="toolTipPosition.value"
+              matTooltip="This is a required step as Online Check Writer will not import checks with missing serial numbers."
+              [icon]="faQuestion"
+            ></fa-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Footer -->
+  <div
+    class="flex justify-end gap-3 pt-4 mt-4 border-t border-input-border-color"
+  >
+    <app-common-button-v35
+      width="100px"
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="close()"
+    />
+    <app-common-button-v35
+      width="100px"
+      [type]="{ style: 'modal', name: 'main' }"
+      text="Update"
+      [disabled]="loading.defaultLoading"
+      [loading]="loading.defaultLoading && isUpdate"
+      (clickEvent)="postQuickBookOnlineData('update')"
+    />
+  </div>
+</div>

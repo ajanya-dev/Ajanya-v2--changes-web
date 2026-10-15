@@ -1,0 +1,200 @@
+<div class="ocw_man_modal_wrapper add_bank_modal">
+  <div class="ocw_modal_header flex justify-between items-baseline">
+    <div class="ocw_modal_title">Mail Tracking</div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="['fas', 'xmark']"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <div class="ocw_modal_body invoice-modal-body">
+    <div
+      class="w-full flex flex-col items-center overflow-y-scroll overflow-x-hidden border border-input-border-color rounded-lg shadow-xl p-4"
+    >
+      <h3
+        class="w-full text-secondary-text-color text-lg font-bold mb-3 rounded-lg"
+      >
+        Shipment Details
+      </h3>
+      @if (isImbLimitedTracking) {
+        <p
+          class="w-full flex items-start gap-1.5 text-xs text-secondary-text-color mb-3 leading-4"
+        >
+          <fa-icon
+            [icon]="faCircleInfo"
+            class="text-v4-text-warning shrink-0 leading-4"
+          ></fa-icon>
+          USPS First Class uses IMB tracking — limited scans only, not full
+          delivery tracking.
+        </p>
+      }
+      @for (item of trackingDetails; track item) {
+        <div
+          class="w-full border border-input-border-color rounded-lg shadow-lg mb-3"
+        >
+          <span
+            class="bg-common-secondary-green-color w-full p-2 flex justify-between"
+            [style.color]="'var(--' + themeTextColor + ')'"
+          >
+            <span class="ms-3 font-medium w-5/6">{{ item.Date }}</span>
+            <fa-icon
+              [icon]="['fas', 'truck-fast']"
+              class="w-1/6 text-lg text-end me-4"
+            ></fa-icon>
+          </span>
+          <div
+            class="mx-4 text-sm text-secondary-text-color flex justify-center items-center"
+          >
+            <div class="p-3 flex flex-col w-2/6">
+              <span class="text-sm text-secondary-text-color text-center"
+                >Status</span
+              >
+              <span
+                class="text-md text-center"
+                [style.color]="'var(--' + themeTextColor + ')'"
+                >{{ convertToReadable(item?.status) }}</span
+              >
+            </div>
+            <fa-icon
+              [icon]="['fas', 'barcode']"
+              class="w-1/6 text-2xl text-center shadow-2xl"
+              [style.color]="'var(--' + themeTextColor + ')'"
+            ></fa-icon>
+            <div
+              class="flex flex-col justify-center items-center w-3/6 mb-3 p-4"
+            >
+              <span class="text-md text-secondary-text-color font-semibold">{{
+                item?.message
+              }}</span>
+              <span class="text-md text-secondary-text-color">
+                {{ item.trackingLocation?.city }}
+                {{
+                  item.trackingLocation?.state
+                    ? ", " + item.trackingLocation?.state
+                    : ""
+                }}
+                {{
+                  item.trackingLocation?.country
+                    ? ", " + item.trackingLocation?.country
+                    : ""
+                }}
+                {{
+                  item.trackingLocation?.zip
+                    ? ", " + item.trackingLocation?.zip
+                    : ""
+                }}
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="left-side flex flex-col justify-between px-4">
+      @if (shipdata?.status === "pre_transit") {
+        <ol class="steps">
+          <li class="step is-active" data-step="1">Pre-Transit</li>
+          <li class="step" data-step="2">In Transit</li>
+          <li class="step" data-step="3">Out for Delivery</li>
+          <li class="step" data-step="4">Delivered</li>
+        </ol>
+      }
+      @if (shipdata?.status === "in_transit") {
+        <ol class="steps">
+          <li class="step is-complete" data-step="1">Pre-Transit</li>
+          <li class="step is-active" data-step="2">In Transit</li>
+          <li class="step" data-step="3">Out for Delivery</li>
+          <li class="step" data-step="4">Delivered</li>
+        </ol>
+      }
+      @if (shipdata?.status === "out_for_delivery") {
+        <ol class="steps">
+          <li class="step is-complete" data-step="1">Pre-Transit</li>
+          <li class="step is-complete" data-step="2">In Transit</li>
+          <li class="step is-active" data-step="3">Out for Delivery</li>
+          <li class="step" data-step="4">Delivered</li>
+        </ol>
+      }
+      @if (shipdata?.status === "delivered") {
+        <ol class="steps">
+          <li class="step is-complete" data-step="1">Pre-Transit</li>
+          <li class="step is-complete" data-step="2">In Transit</li>
+          <li class="step is-complete" data-step="3">Out for Delivery</li>
+          <li class="step is-active" data-step="4">Delivered</li>
+        </ol>
+      }
+      @if (
+        shipdata?.status !== "delivered" &&
+        shipdata?.status !== "out_for_delivery" &&
+        shipdata?.status !== "in_transit" &&
+        shipdata?.status !== "pre_transit"
+      ) {
+        <ol class="steps">
+          <li class="step is-active" data-step="1">Pre-Transit</li>
+          <li class="step" data-step="2">In Transit</li>
+          <li class="step" data-step="3">Out for Delivery</li>
+          <li class="step" data-step="4">Delivered</li>
+        </ol>
+      }
+
+      <div class="delivery-details justify-between">
+        @if (mailedType !== 3) {
+          <div class="delivered bg-tertiary-background-color h-fit">
+            <p class="text-sm font-normal">{{ delivery }}</p>
+            <p class="text-base font-semibold">
+              {{ shipdata?.estimatedDeliveryDate }}
+            </p>
+          </div>
+        }
+
+        <div class="last-update bg-tertiary-background-color h-fit">
+          <p class="text-sm font-normal text-common-red-color">Last Updated</p>
+          <p class="text-base font-semibold">{{ shipdata?.lastUpdated }}</p>
+        </div>
+      </div>
+      <div class="flex justify-between items-center gap-3">
+        @if (mailedType !== 1 && mailedType !== 14) {
+          <div>
+            <app-common-button-v35
+              [type]="{ style: 'modal', name: 'main' }"
+              width="150px"
+              text="View Tracking"
+              (clickEvent)="openDetails(shipdata?.trackingCode)"
+            ></app-common-button-v35>
+          </div>
+          <app-common-button-v35
+            [type]="{ style: 'filled', name: 'main' }"
+            (clickEvent)="sendTrack()"
+            text="Share Link"
+            width="150px"
+            [isAddIcon]="true"
+            [icon]="faPaperPlane"
+            backGroundInput="var(--common-blue-color)"
+          />
+        }
+        <div class="usps">
+          @if (!shipdata?.carrierLogo) {
+            <p>Tracking Code</p>
+          }
+          @if (shipdata?.carrierLogo) {
+            <img
+              width="200"
+              height="100"
+              [ngSrc]="shipdata.carrierLogo"
+              alt="logo"
+            />
+          }
+        </div>
+      </div>
+      <div class="w-full flex justify-center items-center">
+        <img
+          width="300"
+          height="95"
+          ngSrc="assets/images/mail-track/ocwMailLogo.svg"
+          alt=""
+        />
+      </div>
+    </div>
+  </div>
+</div>

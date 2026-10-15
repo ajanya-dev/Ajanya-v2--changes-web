@@ -1,0 +1,294 @@
+<div class="main_common_module">
+  <!-- Common Loader -->
+  @if (isCheckRenewalStatus()) {
+    <div class="fixed top-0 left-0 w-full h-full bg-none bg-opacity-50 flex justify-center items-center z-50">
+      <div class="data_spinner"></div>
+    </div>
+  }
+  
+  <!-- MAIN LEFT WRAPPER START -->
+  <div class="main_left_wrapper">
+    <!-- MODULE TOP SECTION START -->
+    <div class="module_main_header mb-3">
+      <div class="text-base font-semibold text-main-text-color font-inter">
+        Current Plan Details
+      </div>
+      <!-- Mobile menu start -->
+      <div class="btn-toggle">
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="menu"
+          class="mobile_menu"
+          aria-label="Example icon-button with a menu"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu class="shadow-button" #menu="matMenu">
+          <button mat-menu-item (click)="onUpdateCard()">
+            <span class="mobile-btn-size">
+              <fa-icon
+                class="!text-primary-text-color"
+                [icon]="['fas', 'plus']"
+              ></fa-icon>
+            </span>
+            <span> Add/Update Card</span>
+          </button>
+
+          <button
+            mat-menu-item
+            (click)="onChanagePlan()"
+            [disabled]="isLoading"
+            [ngClass]="{ disable: isDisable }"
+          >
+            <span class="mobile-btn-size">
+              <fa-icon
+                class="!text-primary-text-color"
+                [icon]="['fas', 'edit']"
+              ></fa-icon>
+            </span>
+            <span> Change Plan</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <div class="module_main_section">
+      <div class="plan_info_section module_top_section">
+        <div class="module_main_body">
+          <div class="plan_info_wrapper">
+            <div class="plan_info_body current_plan">
+              <p class="!text-secondary-text-color">Current Plan</p>
+              <span class="skelton !text-main-text-color"
+                >{{ currentPlan?.name }}
+              </span>
+            </div>
+          </div>
+
+          <div class="plan_info_wrapper">
+            <div class="plan_info_body last_billing_date">
+              <p class="!text-secondary-text-color">Last Billing Date</p>
+              <span class="skelton">{{
+                currentPlan?.subscription?.currentTermStartsAt
+              }}</span>
+            </div>
+          </div>
+
+          <div class="plan_info_wrapper">
+            <div class="plan_info_body renewal_date">
+              <p class="!text-secondary-text-color">Renewal Date</p>
+              <span class="skelton">{{
+                currentPlan?.subscription?.currentTermEndsAt
+              }}</span>
+            </div>
+          </div>
+          <div
+            class="flex plan_info_buttons items-center plan_info_wrapper mb-4 !p-0"
+          >
+            <app-common-button-v35
+              class="max-[1010px]:mr-2 min-[1150px]:mr-2 mb-5"
+              text="Update Card/PayPal"
+              backGroundInput="var(--common-green-color)"
+              [type]="{ style: 'filled', name: 'main' }"
+              textClasses="!leading-[14px]"
+              width="100%"
+              (clickEvent)="onUpdateCard()"
+            ></app-common-button-v35>
+            <app-common-button-v35
+              class="mb-5"
+              [disabled]="isLoading"
+              text="Change Plan"
+              textClasses="!leading-[14px]"
+              [type]="{ style: 'filled', name: 'main' }"
+              width="100%"
+              (clickEvent)="onChanagePlan()"
+            ></app-common-button-v35>
+          </div>
+        </div>
+      </div>
+      <div class="module_bottom_section">
+        <div class="module_main_body">
+          <div class="ocw_table_wrapper rounded-[8px]">
+            <table class="ocw-table ocw-table-base-lite">
+              <tbody class="!text-main-text-color">
+                <tr>
+                  <td>Status</td>
+                  <td [ngClass]="statusCssClass">
+                    {{ getSubscriptionStatus() }}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Auto Renewal</td>
+                  <td>On</td>
+                </tr>
+                <tr>
+                  <td>Interval</td>
+                  <td>1 ({{ currentPlan?.subscription?.intervalUnit }})</td>
+                </tr>
+                <tr>
+                  <td>Payment Method</td>
+                  <td>
+                    <div class="flex justify-start items-center">
+                      <span>{{
+                        defaultPayment[currentPlan?.subscription?.paymentMethod]
+                      }}</span>
+                      @if (
+                        defaultPayment[
+                          currentPlan?.subscription?.paymentMethod
+                        ] === "wallet"
+                      ) {
+                        <span> ({{ currentPlan?.subscription?.wallet }}) </span>
+                      }
+                      <div class="ml-2">
+                        <app-common-button-v35
+                          text="Change"
+                          [type]="{ style: 'blue', name: 'money-action' }"
+                          (clickEvent)="onChangePaymentMethod()"
+                        ></app-common-button-v35>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                @if (
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                  "authorize_net"
+                ) {
+                  <tr>
+                    <td>Card Last 4 digit</td>
+                    <td>{{ currentPlan?.subscription?.cardLastFour }}</td>
+                  </tr>
+                }
+                @if (
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                  "Card"
+                ) {
+                  <tr>
+                    <td>Card Last 4 digit</td>
+                    <td>{{ currentPlan?.subscription?.cardLastFour }}</td>
+                  </tr>
+                  <tr>
+                    <td>Card Expiry Month & Year</td>
+                    <td>
+                      {{ expiryMonth }} /
+                      {{ currentPlan?.subscription?.cardExpireYear }}
+                    </td>
+                  </tr>
+                }
+                <tr>
+                  <td colspan="2" class="text-info">
+                    When change/update plan, It will be prorated. (Dividing
+                    proportionally and apply credits back to you)
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            class="add_ons rounded-[8px]"
+            [ngClass]="{
+              '!h-[347px]':
+                defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                'Card',
+              '!h-[287px]':
+                defaultPayment[currentPlan?.subscription?.paymentMethod] !==
+                'Card'
+            }"
+          >
+            <div class="flex justify-between !text-main-text-color">
+              <span>Addons</span>
+
+              <div>
+                <app-common-button-v35
+                  type="list"
+                  text="Add"
+                  [toolTip]="'Click here to buy addons'"
+                  [isAddIcon]="true"
+                  (clickEvent)="onSelectedPlan()"
+                ></app-common-button-v35>
+              </div>
+            </div>
+
+            <ul
+              [ngClass]="{
+                '!h-[295px]':
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] ===
+                  'Card',
+                '!h-[230px]':
+                  defaultPayment[currentPlan?.subscription?.paymentMethod] !==
+                  'Card'
+              }"
+            >
+              @if (currentPlan?.subscription?.addOn.length === 0) {
+                <div class="no-addons">
+                  <p>You don't have any addons :(</p>
+                </div>
+              }
+              <li *ngFor="let addOns of currentPlan?.subscription?.addOn">
+                <span class="!text-main-text-color">{{
+                  addOns.addOnDetails.addonName
+                }}</span>
+                <span class="!text-main-text-color">x {{ addOns.qnt }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module_bottom_section invoice">
+      <div class="module_main_body">
+        <div class="ocw_table_wrapper">
+          <app-invoice-table-subscription></app-invoice-table-subscription>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main_right_section">
+    <div class="!text-main-text-color">HELP</div>
+
+    <div class="help_options">
+      <a>
+        <fa-icon
+          (click)="goToLiveChat()"
+          class="!text-[22px] !text-common-blue-color"
+          [icon]="['fas', 'message']"
+        ></fa-icon>
+        <div>Live Chat</div>
+      </a>
+
+      <a [href]="'mailto:' + staticWhiteLabelConditions.customerSupportEmail">
+        <fa-icon
+          class="!text-[22px] !text-common-blue-color"
+          [icon]="['fas', 'envelope']"
+        ></fa-icon>
+        <div>
+          {{ staticWhiteLabelConditions.customerSupportEmail }}
+        </div>
+      </a>
+      @if (staticWhiteLabelConditions.customerSupportNo) {
+        <ng-container>
+          <a [href]="'tel:' + staticWhiteLabelConditions.customerSupportNo">
+            <fa-icon
+              class="!text-[22px] !text-common-blue-color"
+              [icon]="['fas', 'headset']"
+            ></fa-icon>
+            <div>
+              Call at {{ staticWhiteLabelConditions.customerSupportNo }}
+            </div>
+          </a>
+        </ng-container>
+      } @else {
+        <ng-template>
+          <a [href]="staticWhiteLabelConditions.helpWebsite">
+            <fa-icon
+              class="!text-[22px] !text-common-blue-color"
+              [icon]="['fas', 'headset']"
+            ></fa-icon>
+            <div>Contact Us {{ staticWhiteLabelConditions.helpWebsite }}</div>
+          </a>
+        </ng-template>
+      }
+    </div>
+  </div>
+</div>

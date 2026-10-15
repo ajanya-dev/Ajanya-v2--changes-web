@@ -1,0 +1,279 @@
+<div class="ocw_man_modal_wrapper">
+  <form [formGroup]="emaildata" method="POST">
+    <div class="ocw_modal_header flex justify-between items-center">
+      <div class="ocw_modal_title email-modal-heading">
+        {{ isPayByLink ? "Send Payment Link" : "Email Your Invoice" }}
+      </div>
+      <div class="close_btn" [mat-dialog-close]="false">
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          data-prefix="fal"
+          data-icon="times"
+          width="15"
+          height="30"
+          class="svg-inline--fa fa-times fa-w-10"
+          role="img"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 320 512"
+        >
+          <path
+            fill="currentColor"
+            d="M193.94 256L296.5 153.44l21.15-21.15c3.12-3.12 3.12-8.19 0-11.31l-22.63-22.63c-3.12-3.12-8.19-3.12-11.31 0L160 222.06 36.29 98.34c-3.12-3.12-8.19-3.12-11.31 0L2.34 120.97c-3.12 3.12-3.12 8.19 0 11.31L126.06 256 2.34 379.71c-3.12 3.12-3.12 8.19 0 11.31l22.63 22.63c3.12 3.12 8.19 3.12 11.31 0L160 289.94 262.56 392.5l21.15 21.15c3.12 3.12 8.19 3.12 11.31 0l22.63-22.63c3.12-3.12 3.12-8.19 0-11.31L193.94 256z"
+          ></path>
+        </svg>
+      </div>
+      <div
+        *ngIf="nonEmail"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        class="toast absolute top-0"
+        data-autohide="false"
+      >
+        <div class="toast-header">
+          <i class="flaticon-warning-sign"></i>
+          <p class="mr-auto">
+            Invoice numbers <span>{{ nonemailinvoice() }}</span> are not
+            eligible for emailing
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ocw_modal_body email_sms_body">
+      <div class="payable-link-warning" *ngIf="hasMissingPaymentLink">
+        <i class="fa fa-exclamation-triangle"></i>
+        <span>
+          {{ missingPaymentLinkCount }}
+          {{ missingPaymentLinkCount === 1 ? "invoice has" : "invoices have" }}
+          no payment link. Create a link from the action column before sending.
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="check-email-modal-table">
+          <thead>
+            <th style="width: 5%">#</th>
+            <th style="width: 10%">NAME</th>
+            <th style="width: 10%">EMAIL</th>
+            <th style="width: 15%" *ngIf="!isPayByLink">
+              <input
+                type="checkbox"
+                name="payable-link"
+                id="payable-link"
+                class=""
+                (click)="checkAllPayableLinks()"
+              />
+              PAYABLE LINK
+            </th>
+            <th style="text-align: right; width: 10%">
+              <input
+                type="checkbox"
+                name="sms"
+                id="sms"
+                class="ml-1"
+                (click)="checkAllSms($event)"
+              />
+            </th>
+            <th [style.width]="isPayByLink ? '20%' : '26%'">SMS</th>
+            <th style="width: 10%">INV#</th>
+            <th style="width: 10%">AMOUNT</th>
+            <th
+              [style.width]="isPayByLink ? '16%' : '10%'"
+              [style.textAlign]="isPayByLink ? 'center' : null"
+            >
+              ACTION
+            </th>
+          </thead>
+          <tbody formArrayName="item">
+            <tr
+              *ngFor="
+                let transaction of getFormControl()['controls'];
+                let i = index
+              "
+              [formGroupName]="i"
+              [ngClass]="{
+                'payable-link-missing':
+                  isPayByLink && !transaction.value.payableLinkId
+              }"
+            >
+              <td>{{ i + 1 }}</td>
+              <!-- <td formControlName="payeeName" ></td> -->
+              <td>
+                <input
+                  type="text"
+                  class="p-1 w-full check-email-modal-input payeename"
+                  disabled
+                  formControlName="payeeName"
+                />
+              </td>
+              <td>
+                <input
+                  type="email"
+                  formControlName="payeeEmail"
+                  name="email_{{ i }}"
+                  id="email_{{ i }}"
+                  class="p-1 check-email-modal-input"
+                  (change)="emailcheck($event, i)"
+                  value=" {{ transaction.payeeEmail }}"
+                />
+              </td>
+              <td
+                *ngIf="!isPayByLink"
+                [ngClass]="{ red: !transaction.value.payableLinkId }"
+              >
+                <input
+                  type="checkbox"
+                  (click)="paycheck()"
+                  id="pay_{{ transaction.controls.id.value }}"
+                  [disabled]="!transaction.controls.payableLinkId.value"
+                  value="{{ transaction.controls.invoiceNo.value }}"
+                /><span
+                  class="ml-2"
+                  [matTooltip]="
+                    transaction.controls.payableLinkId.value
+                      ? ''
+                      : 'Payment link not found for the selected bank.'
+                  "
+                >
+                  {{
+                    transaction.value.payableLinkId
+                      ? transaction.value.payableLinkId
+                      : "Not found"
+                  }}</span
+                >
+              </td>
+
+              <td class="!text-end">
+                <input
+                  type="checkbox"
+                  (click)="smscheck($event, i)"
+                  formControlName="smscheck"
+                  (change)="smschecks($event, i)"
+                  name="sms_{{ i + 1 }}"
+                  id="sms_{{ transaction.controls.id.value }}"
+                />
+              </td>
+
+              <td>
+                <app-new-phone-input
+                  type="text"
+                  id="phone_{{ transaction.controls.id.value }}"
+                  name="phone_{{ i + 1 }}"
+                  [inputWidth]="'150px'"
+                  formControlName="payeePhone"
+                  (change)="smschecks($event, i)"
+                  value="{{ transaction.payeePhone }}"
+                ></app-new-phone-input>
+              </td>
+
+              <td>
+                <input
+                  type="text"
+                  class="p-1 w-full check-email-modal-input invoiceno"
+                  formControlName="invoiceNo"
+                  disabled
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="p-1 w-full check-email-modal-input"
+                  formControlName="grandTotal"
+                  disabled
+                />
+              </td>
+              <!-- <td formControlName="invoiceNo" ></td>
+                                  <td formControlName="grandTotal"></td> -->
+
+              <td>
+                <!-- The flex wrapper lives inside the cell: a display:flex td
+                     drops out of the table layout and its box overflows the row. -->
+                <div class="action-cell">
+                  <button
+                    type="button"
+                    (click)="removeRow(i, transaction.value.id)"
+                    class="btn btn-danger text-red-500"
+                  >
+                    <i class="fa fa-trash"></i>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="openAddAttachmentModal(transaction.value.id)"
+                    style="width: 17px"
+                  >
+                    <img
+                      src="../../../../../assets/icon/attachment.svg"
+                      alt=" attachment"
+                    />
+                  </button>
+                  <ng-container
+                    *ngIf="Attachment[transaction.value.id]?.length > 0"
+                  >
+                    <span class="attachment-count">
+                      {{ Attachment[transaction.value.id]?.length }}
+                    </span>
+                  </ng-container>
+                  <button
+                    *ngIf="isPayByLink && !transaction.value.payableLinkId"
+                    type="button"
+                    class="create-link-btn"
+                    [disabled]="linkLoadingId === transaction.value.id"
+                    matTooltip="Payment link not found for this bank. Click to create one."
+                    (click)="createPaymentLink(i)"
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="
+                        linkLoadingId === transaction.value.id
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-link'
+                      "
+                    ></i>
+                    <span>Create Link</span>
+                  </button>
+                </div>
+              </td>
+              <!-- <td>
+              <button  type="button" class="btn btn-danger text-red-500"  (click)="update(transaction.value.id)" *ngIf="transaction.value.bankAccountDeleted == 1 || transaction.value.payeeDeleted == 1"
+              [matTooltip]="transaction.value.bankAccountDeleted == 1 && transaction.value.payeeDeleted == 1 ? 'Payee and Bank Account is not found. Click here to update' :  transaction.value.bankAccountDeleted == 1 ? 'Bank account not found. Click here to update' : 'Payee not found. Click here to update' " >
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </button>
+            </td> -->
+            </tr>
+            <tr>
+              <td class="py-3" [attr.colspan]="isPayByLink ? 8 : 9" align="right"><span> SUB TOTAL :  <span>&nbsp; {{ total | currency }}</span></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ocw_modal_footer">
+      <mat-dialog-actions align="end">
+        <button
+          mat-dialog-close
+          class="ocw-btn ocw-btn-modal-bordered"
+          (click)="close()"
+        >
+          Close
+        </button>
+        <button
+          (click)="submit()"
+          type="submit"
+          class="ocw-btn ocw-btn-modal-blue add_btn"
+          [disabled]="loading"
+        >
+          <span class="text">{{
+            loading
+              ? "Loading..."
+              : isPayByLink
+                ? "Send Link"
+                : "Send Email"
+          }}</span>
+          <!-- <span>Send Email</span> -->
+        </button>
+      </mat-dialog-actions>
+    </div>
+  </form>
+</div>

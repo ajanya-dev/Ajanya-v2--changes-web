@@ -1,0 +1,237 @@
+<div class="flex items-center icon-color h-full">
+  <fa-icon
+    class="fa-solid border-transparent border-l-8 border-r-8"
+    [icon]="['fas', 'eye']"
+    [ngClass]="{ 'disabled-icon': shouldEyeDisabled, disable: isMaping }"
+    (click)="viewButtonAction(); $event.stopPropagation()"
+    [matTooltipDisabled]="
+      shouldEyeDisabled || commonTransactionTableRowData?.disableToolTip
+    "
+    [matTooltip]="
+      isMaping ? 'Please map your bank account first.' : 'View Statement'
+    "
+  ></fa-icon>
+
+  <div class="" [class.hidden]="commonTransactionTableRowData?.hideMenuOption">
+    <button
+      [disabled]="shouldEyeDisabled"
+      [matTooltipDisabled]="shouldEyeDisabled"
+      class="border-transparent border-l-8 border-r-8"
+      [matTooltip]="
+        isMaping ? 'Please map your bank account first.' : 'Options'
+      "
+      [matMenuTriggerFor]="menu"
+      (click)="$event.stopPropagation()"
+    >
+      <fa-icon
+        class="text-[20px]"
+        [ngClass]="{ 'disabled-icon': shouldEyeDisabled }"
+        [icon]="['fas', 'ellipsis-vertical']"
+      ></fa-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <div *ngIf="!isTypeCheck">
+        <button
+          mat-menu-item
+          (click)="onEditButtonClick()"
+          [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          class="w-6 h-6"
+        >
+          <mat-icon class="reset-color set-icon-size">edit</mat-icon>
+          <span class="reset-color set-font-size">Edit</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="clonePayment()"
+          class="w-6 h-6"
+          [disabled]="isRtpPayment"
+        >
+          <mat-icon class="reset-color set-icon-size">file_copy</mat-icon>
+          <span class="reset-color set-font-size">Clone</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="openCommentModal()"
+          [disabled]="(isVerticalEllipsisDisabled || isRtpPayment) && !isFromInternationalPayment()"
+          class="w-6 h-6"
+        >
+          <mat-icon class="reset-color set-icon-size">add_comment</mat-icon>
+          <span class="reset-color set-font-size">Add Comment</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="openAttachmentModal()"
+          [disabled]="(isVerticalEllipsisDisabled || isRtpPayment) && !isFromInternationalPayment()"
+          class="w-6 h-6"
+        >
+          <mat-icon class="reset-color set-icon-size">attach_file</mat-icon>
+          <span class="reset-color set-font-size">Add Attachment</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="sendPaymentProof('pp')"
+          [disabled]="(paymentCompleted || isRtpPayment) && !isFromInternationalPayment()"
+        >
+          <mat-icon class="reset-color set-icon-size">receipt</mat-icon>
+          <span class="reset-color set-font-size">Send Payment Proof</span>
+        </button>
+        <button
+          (click)="sendPaymentProof('pod')"
+          [disabled]="paymentCompleted || isPodCompleted || isRtpPayment"
+          [ngClass]="{
+            'opacity-[0.38]': paymentCompleted || isPodCompleted || isRtpPayment
+          }"
+        >
+          <div class="flex gap-[21px] pr-4 pl-[18px]">
+            <img
+              ngSrc="/assets/images/pod-icon.svg"
+              alt="pod"
+              width="18"
+              height="18"
+            />
+            <span class="reset-color set-font-size"
+              >Send/Req Proof of Delivery</span
+            >
+          </div>
+        </button>
+        <button
+          mat-menu-item
+          (click)="voidPayment()"
+          [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          class="w-6 h-6"
+        >
+          <mat-icon class="reset-color set-icon-size">cancel</mat-icon>
+          <span class="reset-color set-font-size">Void</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="deletePayment()"
+          [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+          class="w-6 h-6"
+        >
+          <mat-icon class="reset-color set-icon-size">delete</mat-icon>
+          <span class="reset-color set-font-size">Delete</span>
+        </button>
+        <button
+          mat-menu-item
+          (click)="editPayee()"
+          [disabled]="isVerticalEllipsisDisabled || isRtpPayment"
+        >
+          <mat-icon class="reset-color set-icon-size">edit</mat-icon>
+          <span class="reset-color set-font-size"> Edit Payee</span>
+        </button>
+        <button mat-menu-item (click)="getReceipt()">
+          <mat-icon class="reset-color set-icon-size">receipt</mat-icon>
+          @if (
+            this.commonTransactionTableRowData?.data?.payment_receipts_id !==
+            null
+          ) {
+            @if (this.commonTransactionTableRowData?.data?.signature_url) {
+              <span class="reset-color set-font-size">View Receipt</span>
+            } @else if (
+              this.commonTransactionTableRowData?.data?.signature_url === null
+            ) {
+              <span class="reset-color set-font-size"
+                >Receipt Request Sent, Try Again</span
+              >
+            }
+          } @else {
+            <span class="reset-color set-font-size">Get Signed Receipt</span>
+          }
+        </button>
+      </div>
+      <div *ngIf="isTypeCheck">
+        <div *ngFor="let item of checkActionItems">
+          <button
+            mat-menu-item
+            (click)="onActionButtonClick(item.label)"
+            [disabled]="IsActionDisable(item)"
+          >
+            <mat-icon class="reset-color set-icon-size">{{
+              item.icon
+            }}</mat-icon>
+            @if (item.label === "Get Signed Receipt") {
+              @if (
+                this.commonTransactionTableRowData?.data
+                  ?.payment_receipts_id !== null
+              ) {
+                @if (this.commonTransactionTableRowData?.data?.signature_url) {
+                  <span class="reset-color set-font-size">View Receipt</span>
+                } @else {
+                  <span class="reset-color set-font-size"
+                    >Receipt Request Sent, Try Again</span
+                  >
+                }
+              } @else {
+                <span class="reset-color set-font-size"
+                  >Get Signed Receipt</span
+                >
+              }
+            } @else {
+              <span class="reset-color set-font-size">{{ item.label }}</span>
+            }
+          </button>
+          @if (item.label === "Void" && isResentable) {
+            <button mat-menu-item (click)="onActionButtonClick('re-email')">
+              <mat-icon class="reset-color set-icon-size">send</mat-icon>
+              <span class="reset-color set-font-size">Re-Email this Check</span>
+            </button>
+          }
+          @if (item.label === "Cancel" && isResentable && emailTTP) {
+            <button mat-menu-item (click)="onActionButtonClick('force-email')">
+              <mat-icon class="reset-color set-icon-size">check</mat-icon>
+              <span class="reset-color set-font-size"
+                >Mark as Forcefully Printed</span
+              >
+            </button>
+          }
+        </div>
+        <button
+          appWhiteLabel
+          hiddenIf="isCSNHCRequirement"
+          (click)="sendPaymentProof('pod')"
+          [disabled]="IsActionDisable(podItem)"
+          [ngClass]="{ 'opacity-[0.38]': IsActionDisable(podItem) }"
+        >
+          <div class="flex gap-[21px] pr-4 pl-[19px]">
+            <img
+              ngSrc="/assets/images/pod-icon.svg"
+              alt="pod"
+              width="18"
+              height="18"
+            />
+            <span class="reset-color set-font-size"
+              >Send/Req Proof of Delivery</span
+            >
+          </div>
+        </button>
+      </div>
+    </mat-menu>
+  </div>
+  @if (showFundingApplication) {
+    <fa-icon
+      class="fa-solid border-transparent border-l-8 border-r-8"
+      [icon]="isDownloadingApplication ? faSpinner : faDownload"
+      [animation]="isDownloadingApplication ? 'spin' : undefined"
+      (click)="downloadFundingApplication(); $event.stopPropagation()"
+      matTooltip="Download Wire Instruction Form"
+    ></fa-icon>
+  }
+
+  @if (
+    this.commonTransactionTableRowData?.data?.signature_url &&
+    this.commonTransactionTableRowData?.data?.signature_url !== null
+  ) {
+    <fa-icon
+      class="fa-solid border-transparent border-l-8 border-r-8"
+      [icon]="['fas', 'file-invoice-dollar']"
+      (click)="viewSignedReceipt(); $event.stopPropagation()"
+      [matTooltipDisabled]="
+        shouldEyeDisabled || commonTransactionTableRowData?.disableToolTip
+      "
+      [matTooltip]="
+        isMaping ? 'Please map your bank account first.' : 'View Signed Receipt'
+      "
+    ></fa-icon>
+  }
+</div>

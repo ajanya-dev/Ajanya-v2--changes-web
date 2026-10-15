@@ -1,0 +1,189 @@
+<div class="ocw_man_modal_wrapper">
+  <div class="ocw_modal_header flex items-center gap-3">
+    <div class="ocw_modal_title mail-modal-heading">Update Payee Address</div>
+    @if (!isLoading && getFormControl().controls.length > 1) {
+      <button
+        type="button"
+        class="ocw-btn ocw-btn-modal-bordered set-all-us-btn"
+        [disabled]="isCountryReadonly"
+        (click)="setAllCountriesToUnitedStates()"
+      >
+        Set All country to United States
+      </button>
+    }
+    <div class="close_btn" [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="['fas', 'xmark']"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <div class="ocw_modal_body">
+    <form [formGroup]="EditPayeeForm">
+      <!-- <div>
+          <input type="text" formControlName="add" >
+        </div> -->
+      @if (isLoading) {
+        <div class="payee-loader data_spinner"></div>
+      } @else {
+      <div class="table-responsive">
+        <table class="payee-update-table ocw-table ocw-table-striped">
+          <thead>
+            <tr>
+              <th>S.l</th>
+              <th>Check No</th>
+              <th>Name</th>
+              <th>Address Line 1</th>
+              <th>Address Line 2</th>
+              <th>City</th>
+              <th>State</th>
+
+              @if (
+                getFormControl()["controls"][0]?.get("country")?.value ===
+                  "United States" ||
+                getFormControl()["controls"][0]?.get("country")?.value === ""
+              ) {
+                <th>Zip</th>
+              } @else {
+                <th>Postal Code</th>
+              }
+              <th>Country</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="item">
+            @for (
+              credit of getFormControl()["controls"];
+              track credit;
+              let i = $index;
+              let l = $last
+            ) {
+              <tr [formGroupName]="i">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <input
+                    class="custom-input read-only:cursor-not-allowed read-only:bg-secondary-background-color read-only:text-secondary-text-color opacity-50"
+                    type="text"
+                    name="payee-name"
+                    formControlName="checkNo"
+                    readonly
+                    disabled
+                    value=""
+                    id=""
+                  />
+                </td>
+                <td>
+                  <input
+                    class="custom-input"
+                    type="text"
+                    name="payee-name"
+                    formControlName="name"
+                    disabled
+                    value=""
+                    id=""
+                  />
+                </td>
+                <td>
+                  <input
+                    class="custom-input payeeaddressline"
+                    type="text"
+                    name="payee_address_line_1"
+                    formControlName="address_line_1"
+                    id="googleholder_{{ i }}"
+                    (focus)="addressFocus($event, i)"
+                    value=""
+                  />
+                </td>
+                <td>
+                  <input
+                    class="custom-input"
+                    type="text"
+                    name="payee_address_line_2"
+                    formControlName="address_line_2"
+                    id=""
+                    value=""
+                    [ngClass]="{
+                      invalid:
+                        getFormControl()['controls'][i]?.get('address_line_2')
+                          ?.invalid
+                    }"
+                  />
+                </td>
+                <td>
+                  <input
+                    class="custom-input"
+                    type="text"
+                    name="city"
+                    id=""
+                    formControlName="city"
+                    value=""
+                    maxlength="50"
+                    [ngClass]="{
+                      invalid:
+                        getFormControl()['controls'][i]?.get('city')?.invalid
+                    }"
+                  />
+                </td>
+                <td>
+                  <app-common-state-select
+                    formControlName="state"
+                    [country]="
+                      findCountryCode(
+                        getFormControl()['controls'][i]?.get('country')?.value
+                      )
+                    "
+                    placeholder="State"
+                    controlClass="height-7"
+                    width="120px"
+                    panelWidth="260px"
+                  ></app-common-state-select>
+                </td>
+                <td>
+                  <input
+                    class="custom-input"
+                    type="text"
+                    name="zip"
+                    id=""
+                    (keypress)="utils.prevantSpecialChar($event, ['negative'])"
+                    formControlName="zip"
+                    value=""
+                    maxlength="10"
+                    [ngClass]="{
+                      invalid:
+                        getFormControl()['controls'][i]?.get('zip')?.invalid
+                    }"
+                  />
+                </td>
+                <td>
+                  <app-common-country-select
+                    formControlName="country"
+                    bindValue="name"
+                    placeholder="Country"
+                    [isDisabled]="isCountryReadonly"
+                    controlClass="height-7"
+                    width="120px"
+                    panelWidth="260px"
+                  ></app-common-country-select>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </form>
+  </div>
+
+  <div class="ocw_modal_footer">
+    <mat-dialog-actions align="end">
+      <button
+        type="submit"
+        class="ocw-btn ocw-btn-modal-blue add_btn"
+        [ngClass]="{ 'disable-btn': disabled }"
+        (click)="update()"
+      >
+        <span>Update</span>
+      </button>
+    </mat-dialog-actions>
+  </div>
+</div>

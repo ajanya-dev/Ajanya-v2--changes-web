@@ -1,0 +1,146 @@
+<div
+  class="bg-main-background-color w-full relative bg-[url(/assets/images/register-bg.svg)] max-sm:bg-none min-h-screen"
+>
+  <div class="flex w-full h-full items-center flex-col">
+    <div class="w-32 py-14 max-sm:w-24 max-sm:!pb-0">
+      <img
+        role="presentation"
+        [alt]="appConfig?.websiteTitle || 'CheckWriter'"
+        (click)="onGoToWebsite()"
+        [ngSrc]="logoPath"
+        [title]="appConfig?.websiteTitle || 'CheckWriter'"
+        width="130"
+        height="85"
+        priority
+      />
+    </div>
+
+    <div
+      class="shadow-common-box-shadow rounded flex flex-col gap-5 w-1/3 min-w-80 py-5 px-7 bg-main-background-color max-sm:shadow-none max-sm:px-0"
+    >
+      @if (!linkExpired() && !loading() && !uploaded()) {
+        <!-- Main Content -->
+        <div class="w-full flex-1">
+          <!-- Heading -->
+          <h1
+            class="font-inter font-medium text-main-text-color text-xl text-center"
+          >
+            Document Verification
+          </h1>
+          <p class="text-center text-sm text-secondary-text-color mt-2 mb-6">
+            Please upload the following requested documents to complete the verification process
+          </p>
+
+          <!-- Document Upload Section -->
+          <div class="w-full space-y-8">
+            <div class="flex justify-end">
+              <app-common-button-v35
+                [text]="'Upload from Phone'"
+                [type]="{ style: 'filled', name: 'main' }"
+                customHeight="45px"
+                (clickEvent)="uploadDocumentsFromPhone()"
+              />
+            </div>
+            @for (document of documentFields() | keyvalue: keepOrder; track $index) {
+              <div class="text-left">
+                <!-- Document Label -->
+                <div class="mb-4">
+                  <h3 class="text-sm font-semibold text-main-text-color uppercase tracking-wider mb-2 m-0">
+                    {{ document.value }}
+                      <span class="text-common-red-color ml-1">*</span>
+                  </h3>
+                </div>
+
+                <!-- Upload Button -->
+                <div class="mb-3">
+                  <app-common-upload-button-v35
+                    [buttonText]="'Choose file'"
+                    [buttonHeader]="'Uploaded'"
+                    [acceptedFileTypes]="acceptedFileTypes"
+                    [FileSize]="100"
+                    [inputId]="'upload-' + document.key"
+                    [uploadedFile]="{}"
+                    [isPreviewNeed]="true"
+                    inputWidth="100%"
+                    (selectedFileEvent)="onFileSelected($event, document.key)"
+                    (removingFileName)="onFileRemoved(document.key)"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Progress Information -->
+          <div class="mt-6 p-4 bg-secondary-background-color rounded-lg border-l-4 border-common-blue-color">
+            <p class="text-sm font-semibold text-main-text-color mb-2 m-0">
+              {{ uploadedDocumentsCount }} of {{ documentFieldsCount }} documents uploaded
+            </p>
+            @if (!allRequiredDocumentsUploaded) {
+              <p class="text-xs text-secondary-text-color italic m-0">
+                * All marked documents are required for verification
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Footer with Upload Button -->
+        <div class="w-full my-8">
+          <app-common-button-v35
+            [text]="uploading() ? 'Uploading...' : 'Upload'"
+            [type]="{ style: 'filled', name: 'main' }"
+            [disabled]="!allRequiredDocumentsUploaded || uploading()"
+            [loading]="uploading()"
+            width="100%"
+            customHeight="45px"
+            (clickEvent)="uploadDocuments()"
+          />
+        </div>
+      }
+
+      @if (uploaded()) {
+        <div class="flex flex-col justify-center items-center gap-3 h-96">
+          <fa-icon
+            [icon]="faCheckCircle"
+            class="text-6xl text-green-500"
+            style="color: #10b981;"
+          />
+          <p class="font-inter font-medium text-main-text-color text-base text-center">
+            Documents Uploaded Successfully!
+          </p>
+        </div>
+      }
+
+      @if (linkExpired() && !loading()) {
+        <div class="h-96 flex justify-center items-center flex-col">
+          <img
+            ngSrc="assets/images/link-expired.svg"
+            alt="Link Expired"
+            width="85"
+            height="85"
+          />
+          <span class="font-inter font-medium text-main-text-color text-base"
+            >Link Expired</span
+          >
+          <p class="text-sm text-secondary-text-color text-center mt-2">
+            {{ errorMessage() || 'This verification link has expired. Please contact support for assistance.' }}
+          </p>
+        </div>
+      }
+      @if (loading()) {
+        <div class="h-96 flex justify-center items-center flex-col gap-5">
+          <div class="flex justify-center items-center w-full h-9">
+            <span class="skelton w-3/4 h-5"></span>
+          </div>
+          <div class="skelton w-full h-9"></div>
+          <div class="skelton w-full h-9"></div>
+          <div class="skelton w-full h-9"></div>
+          <div class="skelton w-full h-9"></div>
+          <div class="flex justify-center items-center w-full h-9">
+            <span class="skelton w-3/4 h-9"></span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

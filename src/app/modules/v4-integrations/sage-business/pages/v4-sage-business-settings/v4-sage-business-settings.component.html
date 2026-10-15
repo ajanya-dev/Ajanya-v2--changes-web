@@ -1,0 +1,146 @@
+<div class="space-y-5 font-peridot">
+  @if (loading().dataLoading) {
+    <div class="flex justify-center py-12">
+      <lucide-icon
+        name="loader-circle"
+        [size]="24"
+        class="text-v4-primary-brand-color animate-spin"
+      ></lucide-icon>
+    </div>
+  } @else if (!isConnected()) {
+    <!-- Disconnected state -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl"
+      style="background-color: var(--v4-badge-error-bg-color)"
+    >
+      <lucide-icon
+        name="x-circle"
+        [size]="20"
+        [color]="'var(--v4-badge-error-text-color)'"
+      ></lucide-icon>
+      <span
+        class="text-sm font-semibold"
+        style="color: var(--v4-badge-error-text-color)"
+      >
+        Status: <span class="font-bold">Disconnected</span>
+      </span>
+    </div>
+    <p class="text-sm text-v4-tertiary-text-color">
+      Connect to Sage Business Cloud from the Overview tab to manage your
+      accounting integration.
+    </p>
+  } @else {
+    <!-- Status banner -->
+    <div
+      class="flex items-center gap-3 p-4 rounded-xl border border-v4-badge-success-text-color bg-v4-badge-success-bg-color"
+    >
+      <lucide-icon
+        name="circle-check"
+        [size]="22"
+        class="flex-shrink-0 text-v4-badge-success-text-color"
+      ></lucide-icon>
+      <p class="text-sm font-semibold text-v4-badge-success-text-color">
+        Connected
+      </p>
+    </div>
+
+    <!-- Heading -->
+    <div>
+      <h3 class="text-base font-bold text-v4-main-text-color font-funnel">
+        Sage Business Settings
+      </h3>
+      <p class="text-sm text-v4-tertiary-text-color mt-0.5">
+        Manage your linked companies, import
+        {{ "Payee" | whiteLabel: "payeeName" }}s, or map bank accounts.
+      </p>
+    </div>
+
+    <!-- Top actions -->
+    <div class="grid grid-cols-2 gap-2">
+      <app-common-button-v4
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Import ' + ('Payee' | whiteLabel: 'payeeName')"
+        width="100%"
+        [icon]="['fas', 'down-to-line']"
+        [toolTip]="
+          'Import your ' +
+          ('payee' | whiteLabel: 'payeeName') +
+          's from Sage Business.'
+        "
+        [loading]="loading().importingPayee"
+        [disabled]="loading().importingPayee"
+        (clickEvent)="onImportPayee()"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'destructive', name: 'main' }"
+        text="Disconnect"
+        width="100%"
+        [toolTip]="
+          'Disconnect Sage Business. This removes all linked companies.'
+        "
+        [loading]="loading().disconnecting"
+        [disabled]="loading().disconnecting"
+        (clickEvent)="onDisconnect()"
+      />
+    </div>
+
+    <!-- Connected companies -->
+    <div
+      class="border border-v4-input-border-color rounded-xl bg-v4-secondary-background-color overflow-hidden"
+    >
+      <div
+        class="px-4 py-3 border-b border-v4-input-border-color"
+      >
+        <h4 class="text-sm font-bold text-v4-main-text-color font-funnel">
+          Connected Companies
+        </h4>
+      </div>
+
+      @if (companies().length) {
+        <ul class="divide-y divide-v4-input-border-color">
+          @for (company of companies(); track company.companyId) {
+            <li
+              class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-v4-tertiary-background-color"
+            >
+              <div
+                class="w-9 h-9 rounded-lg bg-v4-tertiary-background-color flex items-center justify-center flex-shrink-0"
+              >
+                <lucide-icon
+                  name="building-2"
+                  [size]="18"
+                  class="text-v4-primary-brand-bold-color"
+                ></lucide-icon>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p
+                  class="text-sm font-semibold text-v4-main-text-color truncate"
+                >
+                  {{ company.companyName }}
+                </p>
+                <p class="text-xs text-v4-tertiary-text-color mt-0.5">
+                  Last update: {{ company.lastUpdated || "—" }}
+                </p>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="px-4 py-8 text-center">
+          <p class="text-sm text-v4-tertiary-text-color">
+            No companies linked yet.
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- Bank mapping -->
+    <div class="pt-1">
+      <app-common-button-v4
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Bank Account Mapping"
+        [width]="'100%'"
+        (clickEvent)="openBankMapping()"
+      />
+    </div>
+  }
+</div>

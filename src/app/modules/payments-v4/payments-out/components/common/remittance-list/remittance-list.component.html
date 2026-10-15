@@ -1,0 +1,94 @@
+<div
+  class="remittance-list flex flex-col rounded-xl border border-v4-border-color bg-v4-secondary-background-color overflow-hidden"
+  [style.max-height]="maxHeight()"
+  [class.is-bare]="bare()"
+>
+  @if (!bare()) {
+    <div
+      class="flex shrink-0 items-center justify-between px-3.5 py-2.5 border-b border-v4-border-color bg-v4-secondary-background-color"
+    >
+      <h3
+        class="text-[13px] font-semibold text-v4-main-text-color font-funnel m-0"
+      >
+        Remittance
+      </h3>
+      <button
+        type="button"
+        class="shrink-0 cursor-pointer border-none bg-transparent text-v4-tertiary-text-color"
+        (click)="toggleFold()"
+      >
+        <lucide-icon
+          [img]="collapsed() ? ChevronDownIcon : ChevronUpIcon"
+          [size]="15"
+        ></lucide-icon>
+      </button>
+    </div>
+  }
+  @if (!collapsed()) {
+    <div
+      class="min-h-0 flex-1 overflow-y-auto bg-v4-secondary-background-color"
+    >
+      @if (remittanceItems()?.length) {
+        <div class="overflow-x-auto">
+          <div class="max-h-[490px] overflow-y-auto">
+            <table class="v4-ocw-table">
+              <thead>
+                <tr>
+                  <th>Invoice Date</th>
+                  <th>Invoice</th>
+                  <th>Description</th>
+                  <th class="text-right">Gross</th>
+                  <th class="text-right">Discount</th>
+                  <th class="text-right">Net</th>
+                  <th>This Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of remittanceItems(); track $index) {
+                  <tr>
+                    <td>
+                      {{
+                        item.invoiceDate
+                          ? (item.invoiceDate | date: "MM-dd-yyyy")
+                          : ""
+                      }}
+                    </td>
+                    <td>{{ item.invoiceNumber || "" }}</td>
+                    <td>
+                      {{
+                        item.itemDescription ||
+                          item.itemName ||
+                          item.description ||
+                          ""
+                      }}
+                    </td>
+                    <td class="text-right">{{ money(item.grossAmount) }}</td>
+                    <td class="text-right">{{ money(item.discountAmount) }}</td>
+                    <td class="text-right">
+                      {{ money(item.netAmount ?? item.amount) }}
+                    </td>
+                    <td>{{ money(item.thisPayment) }}</td>
+                  </tr>
+                }
+              </tbody>
+              @if (total()) {
+                <tfoot>
+                  <tr class="border-t border-v4-border-color font-bold">
+                    <td colspan="6"></td>
+                    <td class="text-right">Total : {{ money(total()) }}</td>
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
+        </div>
+      } @else {
+        <div class="pd-empty">
+          <p class="text-center py-8 text-v4-secondary-text-color text-sm m-0">
+            No remittance data available.
+          </p>
+        </div>
+      }
+    </div>
+  }
+</div>

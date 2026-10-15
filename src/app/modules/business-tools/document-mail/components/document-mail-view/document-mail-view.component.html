@@ -1,0 +1,297 @@
+<section
+  class="main_common_module px-[10px] max-xl:flex-col max-xl:items-center"
+>
+  <div
+    class="main_left_wrapper max-xl:!w-[70%] max-xl:!max-w-full flex-shrink-0"
+  >
+    <div
+      class="bg-main-background-color rounded-[5px] w-full p-[1px] h-full"
+      [ngClass]="{ 'skelton h-[330px]': isLoading() }"
+    >
+      <div
+        class="m-2 p-2 bg-secondary-background-color rounded-tl-[5px] rounded-tr-[5px] border-b border-input-border-color flex justify-between items-center"
+      >
+        <div class="flex gap-3 items-center">
+          <app-ocw-back-button
+            [btnStyle]="{ bg: 'light' }"
+            [isRounded]="true"
+            (click)="goBack()"
+            type="takeEvent"
+          ></app-ocw-back-button>
+          <h3 class="text-main-text-color text-[15px] font-medium">
+            Document Mail Details
+          </h3>
+        </div>
+      </div>
+      <div class="w-full flex flex-col px-6 pt-6 pb-6">
+        @for (field of fields; track field.key; let isLast = $last) {
+          <div
+            class="flex items-start gap-12 py-4"
+            [class.border-b]="!isLast"
+            [class.border-input-border-color]="!isLast"
+          >
+            <div
+              class="text-secondary-text-color font-normal text-sm !w-48 flex-shrink-0"
+            >
+              {{ field.label }}
+            </div>
+            <div class="flex-1 min-w-0">
+              @if (field.key === "document_url" && viewData?.[field.key]) {
+                <a
+                  [href]="viewData[field.key]"
+                  target="_blank"
+                  class="inline-flex items-center gap-2 text-common-blue-color font-medium text-sm underline hover:text-blue-600"
+                >
+                  <fa-icon [icon]="faExternalLinkAlt" class="w-4 h-4"></fa-icon>
+                  View Document
+                </a>
+              } @else if (viewData && viewData[field.key] !== null) {
+                <p
+                  [matTooltip]="
+                    viewData?.[field.key]?.length > 50
+                      ? viewData?.[field.key]
+                      : ''
+                  "
+                  class="h-fit overflow-hidden text-wrap break-words text-main-text-color font-medium text-sm leading-relaxed"
+                >
+                  {{
+                    field.key === "created_at" || field.key === "updated_at"
+                      ? formatedDate(viewData?.[field.key])
+                      : viewData?.[field.key]
+                  }}
+                </p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="main_right_section max-xl:!w-[70%] max-xl:!max-w-full flex-shrink-0 min-w-[40%]"
+  >
+    <div
+      class="module_top_section"
+      [ngClass]="{ 'skelton h-[330px]': isActivityLoading() }"
+    >
+      <div class="module_body">
+        <mat-tab-group animationDuration="0ms">
+          <mat-tab label="Tracking Details">
+            @if (viewData?.tracking && !isLoading()) {
+              <div class="px-6 pt-6 pb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  @for (field of trackingFieldsLeft; track field.key) {
+                    <div class="space-y-4">
+                      <div
+                        class="flex items-start gap-6 py-3 border-b border-input-border-color"
+                      >
+                        <span
+                          class="text-secondary-text-color font-normal text-sm w-36 flex-shrink-0"
+                          >{{ field.label }}:</span
+                        >
+                        <span
+                          class="text-main-text-color font-medium text-sm"
+                          >{{ viewData.tracking[field.key] || "N/A" }}</span
+                        >
+                      </div>
+                    </div>
+                  }
+
+                  @for (field of trackingFieldsRight; track field.key) {
+                    <div class="space-y-4">
+                      <div
+                        class="flex items-start gap-6 py-3 border-b border-input-border-color"
+                      >
+                        <span
+                          class="text-secondary-text-color font-normal text-sm w-36 flex-shrink-0"
+                          >{{ field.label }}:</span
+                        >
+                        <span
+                          class="text-main-text-color font-medium text-sm"
+                          >{{ viewData.tracking[field.key] || "N/A" }}</span
+                        >
+                      </div>
+                    </div>
+                  }
+                </div>
+                <div class="mt-6">
+                  <div class="flex items-start gap-6 py-3">
+                    <span
+                      class="text-secondary-text-color font-normal text-sm w-36 flex-shrink-0"
+                      >Address:</span
+                    >
+                    <div
+                      class="text-main-text-color font-medium text-sm leading-relaxed"
+                    >
+                      <div>
+                        {{ viewData.tracking.payee_address_line_1 || "" }}
+                      </div>
+                      <div>
+                        {{ viewData.tracking.payee_address_line_2 || "" }}
+                      </div>
+                      <div>
+                        {{ viewData.tracking.payee_city || "" }},
+                        {{ viewData.tracking.payee_state || "" }}
+                        {{ viewData.tracking.payee_zip || "" }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                @if (viewData.tracking.tracking_url) {
+                  <div class="mt-4">
+                    <div
+                      class="flex items-start gap-6 py-3 border-b border-input-border-color"
+                    >
+                      <span
+                        class="text-secondary-text-color font-normal text-sm w-36 flex-shrink-0"
+                        >Tracking URL:</span
+                      >
+                      <a
+                        [href]="viewData.tracking.tracking_url"
+                        target="_blank"
+                        class="text-common-blue-color font-medium text-sm underline hover:text-blue-600"
+                      >
+                        View Tracking
+                      </a>
+                    </div>
+                  </div>
+                }
+                @if (viewData.tracking.postage_label_url) {
+                  <div class="mt-4">
+                    <div class="flex items-start gap-6 py-3">
+                      <span
+                        class="text-secondary-text-color font-normal text-sm w-36 flex-shrink-0"
+                        >Postage Label:</span
+                      >
+                      <a
+                        [href]="viewData.tracking.postage_label_url"
+                        target="_blank"
+                        class="text-common-blue-color font-medium text-sm underline hover:text-blue-600"
+                      >
+                        Download Label
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Tracking Details Found!!',
+                    isLoading: isLoading()
+                  }
+                "
+              ></ng-container>
+            }
+          </mat-tab>
+
+          <mat-tab label="Mail Activity Log">
+            @if (activityLogs?.length > 0 && !isActivityLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "Status", "By", "Device", "Notes"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+
+                <tbody class="!h-[204px]">
+                  @for (activity of activityLogs; track activity) {
+                    <tr>
+                      <td>{{ activity.formattedCreatedAt }}</td>
+                      <td>{{ activity.status }}</td>
+                      <td>{{ activity.userName }}</td>
+                      <td>{{ activity.ipAddress }}</td>
+                      <td class="break-all">{{ activity.note }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Data Found!!',
+                    isLoading: isActivityLoading()
+                  }
+                "
+              ></ng-container>
+            }
+          </mat-tab>
+
+          <mat-tab label="Comments">
+            @if (commentsList?.length > 0 && !isCommentLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (head of ["Date", "User", "Comment"]; track $index) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="!h-[150px]">
+                  @for (comment of commentsList; track comment) {
+                    <tr>
+                      <td>{{ comment.formated_date }}</td>
+                      <td>{{ comment.user_name }}</td>
+                      <td class="break-all">{{ comment.comments }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Comments Found!!',
+                    isLoading: isCommentLoading()
+                  }
+                "
+              ></ng-container>
+            }
+            <div class="flex justify-end my-2">
+              <app-common-button-v35
+                [type]="{ style: 'blue', name: 'money-action' }"
+                (clickEvent)="addcomments()"
+                text="Add Comments"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+</section>
+<ng-template #noDataTemplate let-message="message" let-isLoading="isLoading">
+  @if (isLoading) {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <fa-icon
+        [icon]="faSpinner"
+        animation="spin"
+        class="text-common-green-color"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <img
+        ngSrc="/assets/images/empty-box-v3.svg"
+        alt="No data"
+        width="120"
+        height="100"
+      />
+      <span class="font-roboto font-normal text-main-text-color text-sm">
+        {{ message }}
+      </span>
+    </div>
+  }
+</ng-template>

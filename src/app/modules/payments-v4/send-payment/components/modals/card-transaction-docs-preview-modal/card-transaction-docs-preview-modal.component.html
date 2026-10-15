@@ -1,0 +1,100 @@
+<div class="font-funnel rounded-2xl overflow-hidden">
+
+  <!-- ── Header ── -->
+  <div class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color">
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">Transaction Documents Preview</h1>
+      <h2 class="text-xs text-v4-subtle-text-color">Please review all documents before confirming</h2>
+    </div>
+    <div [mat-dialog-close]="false" class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center">
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- ── Body ── -->
+  <div class="bg-v4-tertiary-background-color px-4 pt-4 pb-2">
+
+    <!-- Loading skeleton -->
+    @if (isLoading) {
+      <div class="flex flex-col items-center justify-center py-8">
+        <div class="w-full max-w-[520px] space-y-5">
+          <div class="border border-v4-border-color rounded-xl p-5 space-y-3 bg-v4-secondary-background-color">
+            <div class="h-6 bg-v4-input-background-color rounded-md w-3/4 mx-auto animate-pulse"></div>
+            <div class="h-3 bg-v4-input-background-color rounded-md w-1/2 mx-auto animate-pulse"></div>
+            <div class="space-y-2 pt-3">
+              <div class="h-3 bg-v4-input-background-color rounded-md w-full animate-pulse"></div>
+              <div class="h-3 bg-v4-input-background-color rounded-md w-11/12 animate-pulse"></div>
+              <div class="h-3 bg-v4-input-background-color rounded-md w-4/5 animate-pulse"></div>
+            </div>
+          </div>
+          <div class="border border-v4-border-color rounded-xl p-5 space-y-3 bg-v4-secondary-background-color">
+            <div class="h-5 bg-v4-input-background-color rounded-md w-2/5 animate-pulse"></div>
+            <div class="h-px bg-v4-border-color"></div>
+            <div class="space-y-2">
+              <div class="h-3 bg-v4-input-background-color rounded-md w-3/4 animate-pulse"></div>
+              <div class="h-3 bg-v4-input-background-color rounded-md w-2/3 animate-pulse"></div>
+              <div class="h-3 bg-v4-input-background-color rounded-md w-3/5 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (!isLoading && hasError) {
+      <div class="flex items-center justify-center py-12">
+        <div class="text-center space-y-2">
+          <svg class="w-12 h-12 mx-auto text-v4-common-red-color/60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <p class="text-sm text-v4-common-red-color font-medium">Failed to load document preview.</p>
+          <p class="text-xs text-v4-subtle-text-color">Please try again later.</p>
+        </div>
+      </div>
+    }
+
+    <!-- Document preview iframe -->
+    @if (!isLoading && !hasError && documentSafeUrl) {
+      <iframe
+        [src]="documentSafeUrl"
+        class="w-full h-[65vh] min-h-[300px] rounded-xl border border-v4-border-color bg-white"
+        sandbox="allow-same-origin allow-scripts"
+      ></iframe>
+    }
+  </div>
+
+  <!-- ── Footer ── -->
+  @if (!isLoading && !hasError && documentSafeUrl) {
+    <div class="bg-v4-secondary-background-color border-t border-v4-border-color px-6 py-4 space-y-3">
+      <!-- Agreement checkbox -->
+      <label for="v4AgreeTerms" class="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          id="v4AgreeTerms"
+          class="mt-0.5 h-4 w-4 shrink-0 rounded border-v4-border-color accent-v4-primary-brand-color cursor-pointer"
+          [(ngModel)]="isAgreed" />
+        <span class="text-xs text-v4-main-text-color leading-relaxed">
+          I agree to the terms outlined in the displayed transaction and dispute documents. I confirm that I have reviewed all pages and understand my rights and obligations.
+        </span>
+      </label>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3">
+        <app-common-button-v4
+          mat-dialog-close=""
+          width="120px"
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Cancel"
+        />
+        <app-common-button-v4
+          [mat-dialog-close]="true"
+          [width]="data.authorizationFlow ? '' : '160px'"
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="confirmText"
+          [disabled]="!isAgreed"
+        />
+      </div>
+    </div>
+  }
+
+</div>

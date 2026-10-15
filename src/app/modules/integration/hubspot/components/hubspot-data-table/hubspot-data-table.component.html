@@ -1,0 +1,125 @@
+<div class="data-section">
+  <div class="flex justify-between items-center mb-4">
+    <h4 class="text-lg font-semibold flex items-center gap-2">
+      <fa-icon [icon]="faBuilding" class="text-common-blue-color"></fa-icon>
+      <span>Connected Companies</span>
+    </h4>
+    <app-common-button-v35
+      [text]="'Import Companies'"
+      [type]=""
+      (clickEvent)="onSyncData()"
+      [disabled]="loading.syncingData"
+      [loading]="loading.syncingData"
+      [backGroundInput]="'var(--ocw-btn-dark)'"
+      [width]="'fit-content'"
+      textColorInput="white"
+      textClasses="text-sm font-medium"
+      [minWidth]="'140px'"
+      [customHeight]="'40px'"
+    ></app-common-button-v35>
+  </div>
+
+  <!-- Data Loading -->
+  @if (loading.dataLoading) {
+    <div class="flex justify-center py-8">
+      <div class="data_spinner"></div>
+    </div>
+  }
+
+  <!-- Companies Table -->
+  @if (!loading.dataLoading && data.length > 0) {
+    <div class="overflow-x-auto">
+      <table class="table-auto w-full ocw-table">
+        <thead class="text-xs font-semibold uppercase ocw-table-light">
+          <tr>
+            <th class="p-2 whitespace-nowrap text-left !font-bold">COMPANY NAME</th>
+            <th class="p-2 whitespace-nowrap text-left !font-bold">DOMAIN</th>
+            <th class="p-2 whitespace-nowrap text-left !font-bold">INDUSTRY</th>
+            <th class="p-2 whitespace-nowrap text-left !font-bold">LOCATION</th>
+            <th class="p-2 whitespace-nowrap text-left !font-bold">STATUS</th>
+          </tr>
+        </thead>
+        <tbody class="text-sm">
+          @for (company of data; track company.id) {
+              <tr class="hover:bg-secondary-background-color">
+                <td class="p-2 font-medium">
+                  <div class="flex items-center gap-2">
+                    <span>{{ company.name }}</span>
+                  </div>
+                </td>
+                <td class="p-2">
+                  @if (company.domain || company.website) {
+                    <a [href]="company.website || ('https://' + company.domain)" 
+                      target="_blank" 
+                      class="text-common-blue-color hover:text-common-dark-blue-color flex items-center gap-1 no-underline hover:underline">
+                      {{ company.domain || company.website }}
+                      <fa-icon [icon]="faExternalLinkAlt" class="text-xs"></fa-icon>
+                    </a>
+                  } @else {
+                    <span class="text-secondary-text-color">-</span>
+                  }
+                </td>
+                <td class="p-2">{{ company.industry || '-' }}</td>
+                <td class="p-2">
+                  {{company.fullAddress}}
+                </td>
+                <td class="p-2">
+                  <span 
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'text-common-green-color bg-common-secondary-green-color': company.isActive, 
+                    'text-secondary-text-color bg-common-secondary-red-color': !company.isActive}">
+                    {{ company.isActive ? 'Active' : 'Inactive' }}
+                  </span> 
+                </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Pagination Controls -->
+  @if (!loading.dataLoading && data.length > 0 && pagination.lastPage > 1) {
+    <div class="pagination-controls flex justify-between items-center mt-4 p-2">
+      <div class="pagination-info text-sm text-main-text-color">
+        Showing {{ (pagination.currentPage - 1) * pagination.perPage + 1 }} -
+        {{ pagination.currentPage * pagination.perPage > pagination.total
+            ? pagination.total
+            : pagination.currentPage * pagination.perPage }}
+        of {{ pagination.total }} companies
+      </div>
+      <div class="pagination-buttons flex items-center gap-2">
+        <button
+          type="button"
+          class="ocw-btn ocw-btn-outline text-xs"
+          (click)="onPrevPage()"
+          [disabled]="pagination.currentPage <= 1"
+        >
+          Previous
+        </button>
+        <span class="text-sm px-2">
+          Page {{ pagination.currentPage }} of {{ pagination.lastPage }}
+        </span>
+        <button
+          type="button"
+          class="ocw-btn ocw-btn-outline text-xs"
+          (click)="onNextPage()"
+          [disabled]="pagination.currentPage >= pagination.lastPage"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- No Data Message -->
+  @if (!loading.dataLoading && data.length === 0) {
+    <div class="text-center py-8 text-secondary-text-color">
+      <div class="mb-4">
+        <fa-icon [icon]="faBuilding" size="2x" class="text-secondary-text-color"></fa-icon>
+      </div>
+      <p>No companies found. Click "Import Companies" to sync data from HubSpot.</p>
+    </div>
+  }
+</div>

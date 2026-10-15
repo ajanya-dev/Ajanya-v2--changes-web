@@ -1,0 +1,83 @@
+@if (isThereCards() || loading()) {
+  <div class="main-component-container p-5">
+    @if (selectedCard() || loading()) {
+      <div class="w-full flex justify-between">
+        <app-common-button-v35
+          class="send-money-button"
+          [type]="{ style: 'green', name: 'money-action' }"
+          text="Send Money"
+          (clickEvent)="sendMoney()"
+          [ngClass]="{ skelton: loading() }"
+        ></app-common-button-v35>
+        <app-demo-video [slug]="env.env_id === 'zilMoney' ? 'credit_card_zm' : 'credit_card_ocw'"></app-demo-video>
+      </div>
+      <div class="w-[300px] py-3">
+        <div
+          class="card-information-container relative overflow-hidden w-[260px] h-[150px] rounded-lg"
+          [style]="
+            'background: var(--common-secondary-' +
+            (selectedCard()?.bgColor ?? 'green') +
+            '-color);'
+          "
+          [ngClass]="{ skelton: loading() }"
+        >
+          @if (selectedCard()) {
+            <ng-container>
+              <div class="absolute right-5 top-4">
+                <p class="text-secondary-text-color text-xs">Credit Card</p>
+              </div>
+              <div
+                class="absolute bottom-4 left-5 text-main-text-color text-sm flex flex-col gap-2"
+                [ngClass]="{ skelton: loading() }"
+              >
+                <img
+                  class="w-10 opacity-80"
+                  src="/assets/images/cards/credit-card-ocw-v3.svg"
+                  alt="Card chip"
+                />
+                <p class="font-semibold">
+                  {{
+                    loading()
+                      ? "*****"
+                      : (selectedCard()?.nickName ?? "" | truncate: 20)
+                  }}
+                </p>
+                @if (!loading()) {
+                  <p class="secondary-text-color text-xs">
+                    **** **** **** {{ selectedCard()?.last4 }}
+                  </p>
+                }
+              </div>
+            </ng-container>
+          }
+        </div>
+      </div>
+    }
+    <div class="pt-3">
+      <app-v3-common-transaction-table
+        [commonTransactionTableType]="commonTransactionTableType"
+      ></app-v3-common-transaction-table>
+    </div>
+  </div>
+}
+
+@if (!isThereCards() && !loading()) {
+  <div class="h-full w-full flex flex-col justify-center items-center">
+    <app-demo-video
+      class="absolute top-36 right-10 mt-1.5"
+      [slug]="env.env_id === 'zilMoney' ? 'credit_card_zm' : 'credit_card_ocw'"
+    ></app-demo-video>
+    <img ngSrc="/assets/images/no_activity.svg" width="130" height="130" alt="Empty Box" />
+    <p class="text-secondary-text-color font-medium">
+      Sorry, there are no cards in your list..
+    </p>
+    <a class="text-common-blue-color font-normal">Add your first card now!</a>
+    <button
+      class="ocw-btn mt-8 font-medium w-[294px] h-[32px] flex justify-center items-center bg-common-blue-color text-main-background-color rounded"
+      (click)="addCard()"
+    >
+      <fa-icon [icon]="['fas', 'plus']"></fa-icon>
+      &nbsp;Add
+    </button>
+  </div>
+}

@@ -1,0 +1,133 @@
+<div class="px-[6px] pb-[6px]">
+  <div class="flex justify-between pb-6">
+    <span
+      class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+    >
+      <span class="pl-1 font-inter font-semibold text-base pb-0.5">
+        {{ editMode() ? 'Edit Multi-Level Approval Rule' : 'Add Multi-Level Approval Rule' }}
+      </span>
+    </span>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="['fas', 'xmark']"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-4" [formGroup]="ruleForm">
+    <div>
+      <app-common-input-field
+        placeholder="Rule Name"
+        formControlName="name"
+        [maxLength]="ruleNameMaxLength"
+      ></app-common-input-field>
+      <app-control-message-v35
+        [control]="ruleForm.controls.name"
+        [customMessages]="{ maxlength: 'Rule name cannot exceed ' + ruleNameMaxLength + ' characters.' }"
+      ></app-control-message-v35>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-main-text-color" for="submitterUserId">
+        Applies To <span class="text-common-red-color">*</span>
+      </label>
+      <app-v35-common-dropdown
+        formControlName="submitterUserId"
+        [config]="submitterDropdownConfig"
+        [listData]="submitterCandidates()"
+      ></app-v35-common-dropdown>
+      <app-control-message-v35 [control]="ruleForm.controls.submitterUserId"></app-control-message-v35>
+    </div>
+
+    <div class="flex items-center gap-2 pt-2">
+      <span class="font-semibold text-base text-main-text-color">Approval Levels</span>
+      <fa-icon
+        [icon]="['fas', 'circle-info']"
+        matTooltip="Configure multiple levels of approvers. Any one approver in a level can approve. A user selected in one level cannot appear in another level, and the submitter is excluded from approver options."
+        matTooltipPosition="right"
+        class="cursor-pointer text-secondary-text-color"
+      ></fa-icon>
+    </div>
+
+    <div formArrayName="levels" class="flex flex-col gap-3">
+      @for (level of levels.controls; track level; let i = $index) {
+        <div
+          [formGroupName]="i"
+          class="border border-input-border-color rounded p-3 flex flex-col gap-2"
+        >
+          <div class="flex justify-between items-center">
+            <span class="font-medium text-main-text-color">Level {{ i + 1 }}</span>
+            @if (levels.length > 1) {
+              <button
+                type="button"
+                class="text-common-red-color text-sm flex items-center gap-1"
+                (click)="removeLevel(i)"
+              >
+                <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+                Remove
+              </button>
+            }
+          </div>
+
+          <div>
+            <input
+              #levelInput
+              placeholder="Add approvers"
+              class="input_style !border !m-0 !h-9 rounded px-2 w-full"
+              [matChipInputFor]="chipGrid"
+              [matAutocomplete]="auto"
+            />
+            <mat-chip-grid #chipGrid aria-label="Approvers">
+              @for (approver of approversForLevel(i); track approver.userId) {
+                <mat-chip-row (removed)="removeApprover(i, approver.userId)">
+                  {{ approver.username }}
+                  <button matChipRemove [attr.aria-label]="'remove ' + approver.username">
+                    <fa-icon [icon]="['fas', 'xmark']"></fa-icon>
+                  </button>
+                </mat-chip-row>
+              }
+            </mat-chip-grid>
+            <mat-autocomplete #auto="matAutocomplete">
+              @for (approver of availableApproversFor(i) | searchFilter: levelInput.value; track approver.client_id) {
+                <mat-option
+                  (click)="selectApprover(i, approver.client_id); levelInput.value = ''"
+                >
+                  {{ approver.client_name }}
+                </mat-option>
+              }
+            </mat-autocomplete>
+            <app-control-message-v35
+              [control]="level.controls.approvers"
+              [customMessages]="{ required: 'Please select at least one approver for this level.' }"
+            ></app-control-message-v35>
+          </div>
+        </div>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="self-start text-sm font-medium flex items-center gap-1 text-common-blue-color"
+      (click)="addLevel()"
+    >
+      <fa-icon [icon]="['fas', 'plus']"></fa-icon>
+      Add Level
+    </button>
+  </div>
+
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="cancel()"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      [type]="{ style: 'modal', name: 'main' }"
+      [text]="editMode() ? 'Update Rule' : 'Save Rule'"
+      [loading]="saving()"
+      [disabled]="saving()"
+      (clickEvent)="submit()"
+    ></app-common-button-v35>
+  </div>
+</div>

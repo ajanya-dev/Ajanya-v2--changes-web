@@ -1,0 +1,159 @@
+<div class="w-full h-full">
+  <div
+    class="flex justify-between items-center gap-3 laptop:hidden w-full bg-secondary-background-color"
+  >
+    <app-cloud-account-dropdown-v35
+      class="!w-full"
+      [setSelectDropdownItem]="cloudListV35Service.selectedAccountSignal()"
+      (selectionEvent)="selectAccount($event)"
+    >
+    </app-cloud-account-dropdown-v35>
+  </div>
+  <div class="hidden laptop:flex flex-col h-full overflow-hidden">
+    @if (!resize) {
+      <app-list-header-v35
+        header="Cloud Bank"
+        [isSwitchOption]="false"
+        [isAddButton]="false"
+        (addButtonClickEvent)="openBusinessDetailModal()"
+        (searchEvent)="searchInput = $event"
+      ></app-list-header-v35>
+    }
+    @if (!cloudListV35Service.airWallexLoadingSignal()) {
+      <div class="bank-accounts overflow-auto">
+        <ng-container>
+          @for (
+            item of cloudListV35Service.airWallexAccountsSignal();
+            track item;
+            let i = $index
+          ) {
+            <div
+              role="presentation"
+              class="cursor-pointer border-b border-input-border-color flex justify-between px-3 py-2 items-center bg-tertiary-background-color"
+              (click)="openAccountList(i)"
+            >
+              <h1
+                [matTooltip]="
+                  item.businessName.length > 32 ? item.businessName : ''
+                "
+                class="font-inter font-medium text-sm text-main-text-color"
+              >
+                {{ item.businessName | truncate: 32 }}
+              </h1>
+              @if (!showBanks[i] && showBanks.length) {
+                <fa-icon
+                  class="text-sm"
+                  [icon]="['fas', 'caret-right']"
+                ></fa-icon>
+              }
+              @if (showBanks[i] || !showBanks.length) {
+                <fa-icon
+                  class="text-sm"
+                  [icon]="['fas', 'caret-down']"
+                ></fa-icon>
+              }
+            </div>
+            @if (showBanks[i] || !showBanks.length) {
+              <ng-container>
+                @for (
+                  accItem of item.accounts
+                    | searchFilter: searchInput : "accountName";
+                  let acDetailIndex = $index;
+                  track accItem.id
+                ) {
+                  <div
+                    role="presentation"
+                    class="cursor-pointer hover:shadow-common-button hover:bg-secondary-background-color"
+                    (click)="selectAccount(accItem)"
+                    [ngClass]="{
+                      'border border-common-blue-color shadow-common-button rounded-sm bg-secondary-background-color':
+                        cloudListV35Service.selectedAccountSignal()?.id ===
+                        accItem?.id,
+                      'border-b border-input-border-color ':
+                        cloudListV35Service.selectedAccountSignal()?.id !==
+                        accItem?.id
+                    }"
+                  >
+                    <div class="pl-4 pr-3 py-2 flex gap-3">
+                      @if (!resize) {
+                        <div class="flex items-center justify-center">
+                          <div
+                            class="flex justify-center items-center h-7 w-7 bg-common-secondary-green-color rounded-full"
+                            [ngClass]="{
+                              'bg-common-secondary-red-color':
+                                accItem.accountStatus !== 'ACTIVE'
+                            }"
+                          >
+                            <fa-icon
+                              class="text-common-green-color text-xs"
+                              [ngClass]="{
+                                'text-common-red-color':
+                                  accItem.accountStatus !== 'ACTIVE'
+                              }"
+                              [icon]="faBank"
+                            >
+                            </fa-icon>
+                          </div>
+                        </div>
+                      }
+                      <div class="w-full">
+                        @if (accItem?.accountNickName) {
+                          <h1
+                            [matTooltip]="
+                              accItem?.accountNickName?.length > 24
+                                ? accItem.accountNickName
+                                : ''
+                            "
+                            class="font-roboto text-xs font-medium text-main-text-color"
+                          >
+                            {{ accItem?.accountNickName | truncate: 24 }}
+                          </h1>
+                        } @else {
+                          <h1
+                            [matTooltip]="
+                              accItem?.accountName?.length > 24
+                                ? accItem.accountName
+                                : ''
+                            "
+                            class="font-roboto text-xs font-medium text-main-text-color"
+                          >
+                            {{ accItem?.accountName | truncate: 24 }}
+                          </h1>
+                        }
+                        <div class="flex justify-between">
+                          <h2
+                            class="font-roboto text-xs font-normal text-secondary-text-color"
+                          >
+                            ****{{
+                              accItem.accountNumber.substring(
+                                accItem.accountNumber.length - 4,
+                                accItem.accountNumber.length
+                              )
+                            }}
+                          </h2>
+                        </div>
+                      </div>
+                      @if (accItem.accountStatus !== "ACTIVE" && !resize) {
+                        <span
+                          class="text-xs font-medium flex items-center text-common-red-color"
+                          >{{ accItem.accountStatus | titlecase }}</span
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+              </ng-container>
+            }
+          }
+        </ng-container>
+      </div>
+    }
+    @if (cloudListV35Service.airWallexLoadingSignal()) {
+      <app-common-list-skelton
+        class="border-t border-input-border-color max-h-full"
+        [items]="14"
+      >
+      </app-common-list-skelton>
+    }
+  </div>
+</div>

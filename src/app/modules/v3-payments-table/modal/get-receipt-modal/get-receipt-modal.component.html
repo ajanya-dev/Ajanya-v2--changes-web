@@ -1,0 +1,704 @@
+<div class="flex flex-col overflow-hidden h-auto">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6 align-middle p-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5"
+          >Request {{ previewData.payeeName }} to sign receipt of
+          {{ previewData.amount | currency }}</span
+        >
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <!-- Content container with flex-grow to take available space -->
+  <div class="flex-grow flex flex-col overflow-hidden">
+    <!-- modal body - form section -->
+    <div [formGroup]="receiptForm" class="px-6 flex-shrink-0">
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-col mt-2">
+          <div class="flex gap-4 items-start flex-col">
+            <mat-checkbox
+              formControlName="smsEnabled"
+              class="text-sm text-main-text-color"
+              >SMS</mat-checkbox
+            >
+            <app-new-phone-input
+              class="w-full"
+              formControlName="phone"
+              placeholder="Payee Mobile Number"
+              (countryDropdown)="countryChanges($event)"
+            >
+            </app-new-phone-input>
+          </div>
+          <div class="flex justify-between">
+            @if (receiptForm.controls.smsEnabled.value) {
+              <app-control-message-v35
+                class="pl-16"
+                [control]="receiptForm.controls.phone"
+              />
+            } @else {
+              <div></div>
+            }
+            <p class="text-sm font-semibold font-inter mt-1">
+              Cost:
+              <span class="text-common-green-color">
+                ${{
+                  receiptForm.controls.phone.value && receiptType === "sms"
+                    ? "0.50"
+                    : "0.00"
+                }}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-3 items-start flex-col">
+          <mat-checkbox
+            formControlName="emailEnabled"
+            class="text-sm text-main-text-color"
+            >Email</mat-checkbox
+          >
+          <div class="w-full">
+            <app-common-input-field
+              class="w-full"
+              placeholder="Payee Email"
+              formControlName="email"
+            />
+            @if (receiptForm.controls.emailEnabled.value) {
+              <app-control-message-v35 [control]="receiptForm.controls.email" />
+            }
+          </div>
+        </div>
+      </div>
+      <div class="pt-4">
+        <mat-label value="email" class="text-sm text-main-text-color pl-2"
+          >Description</mat-label
+        >
+
+        <div class="mt-2 relative">
+          <div class="relative">
+            <textarea
+              class="placeholder:text-sm pl-[5px] border border-input-border-color rounded-md w-full text-main-text-color pr-[25px] py-2 resize-none"
+              [formControl]="receiptForm.controls.memo"
+              [placeholder]="
+                'Briefly describe what this payment was for (Purpose, Items, etc.)'
+              "
+              maxlength="500"
+              (input)="onInput($event)"
+              rows="2"
+            ></textarea>
+
+            <button
+              class="absolute right-[.2rem] top-[-15px] transform -translate-y-1/2 text-secondary-text-color hover:text-main-text-color transition-colors"
+              (click)="redraft()"
+              [disabled]="
+                !this.receiptForm.controls.memo.value || isRedrafting()
+              "
+              [matTooltip]="
+                this.receiptForm.controls.memo.value?.length < 5 &&
+                this.receiptForm.controls.memo.value?.length > 0
+                  ? 'Minimum 5 characters required to redraft'
+                  : 'Magic redraft'
+              "
+            >
+              @if (isRedrafting()) {
+                <div
+                  class="w-4 h-4 border-2 border-t-transparent border-main-text-color rounded-full animate-spin"
+                ></div>
+              } @else {
+                <fa-icon
+                  [icon]="faMagicWandSparkles"
+                  class="text-md text-common-blue-color"
+                ></fa-icon>
+              }
+            </button>
+          </div>
+          @if (receiptForm.controls.memo.value?.length === 500) {
+            <div class="text-xs text-common-red-color">
+              Maximum of 500 characters allowed
+            </div>
+          }
+          <app-control-message-v35 [control]="receiptForm.controls.memo" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview toggle section -->
+    <div
+      class="flex justify-between items-center align-middle px-6 py-2 mt-2 flex-shrink-0"
+    >
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="addAttachment()"
+          class="py-1.5 text-common-blue-color text-sm font-medium cursor-pointer hover:underline flex items-center gap-2"
+        >
+          <fa-icon [icon]="faPlus"></fa-icon>
+          Add Attachment
+        </button>
+
+        <button
+          type="button"
+          (click)="addLogo()"
+          class="py-1.5 text-common-blue-color text-sm font-medium cursor-pointer hover:underline flex items-center gap-2"
+        >
+          @if (selectedLogo) {
+            <fa-icon [icon]="faCheck"></fa-icon>
+            View Logo
+          } @else {
+            <fa-icon [icon]="faImage"></fa-icon>
+            Add Logo
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Attachments Table Section -->
+    @if (selectedAttachment()) {
+      <div class="px-6 py-4 border-t border-input-border-color flex-shrink-0">
+        <h4 class="text-sm font-semibold text-main-text-color mb-3">
+          Attachments
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse bg-main-background-color">
+            <thead class="bg-secondary-background-color">
+              <tr>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-main-text-color border-b border-input-border-color"
+                >
+                  File Name
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-main-text-color border-b border-input-border-color"
+                >
+                  Size
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-main-text-color border-b border-input-border-color"
+                >
+                  Type
+                </th>
+                <th
+                  class="px-4 py-2 text-center text-sm font-medium text-main-text-color border-b border-input-border-color"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="hover:bg-secondary-background-color">
+                <td
+                  class="px-4 py-3 text-sm text-main-text-color border-b border-input-border-color"
+                >
+                  {{ selectedAttachment().name }}
+                </td>
+                <td
+                  class="px-4 py-3 text-sm text-secondary-text-color border-b border-input-border-color"
+                >
+                  {{ selectedAttachment().size }}
+                </td>
+                <td
+                  class="px-4 py-3 text-sm text-secondary-text-color border-b border-input-border-color"
+                >
+                  {{ selectedAttachment().type || "Unknown" }}
+                </td>
+                <td
+                  class="px-4 py-3 text-center border-b border-input-border-color"
+                >
+                  <div class="flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      (click)="viewAttachment()"
+                      class="p-1 text-common-blue-color hover:text-blue-600 transition-colors"
+                      title="View attachment"
+                    >
+                      <fa-icon [icon]="faEye" class="text-sm"></fa-icon>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="removeAttachment()"
+                      class="p-1 text-main-text-color hover:text-secondary-text-color transition-colors"
+                      title="Remove attachment"
+                    >
+                      <fa-icon [icon]="faTrash" class="text-sm"></fa-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Modal Footer - Always visible -->
+  <div class="gap-3 p-6 border-t border-input-border-color w-full">
+    <button
+      type="button"
+      (click)="showReceiptPreview = !showReceiptPreview"
+      class="py-1.5 text-common-blue-color text-sm font-medium cursor-pointer hover:underline flex items-center gap-2"
+    >
+      <fa-icon [icon]="showReceiptPreview ? faEyeSlash : faEye"></fa-icon>
+      {{ showReceiptPreview ? "Hide Preview" : "Show Preview" }}
+    </button>
+
+    <div class="w-full flex gap-3 mt-4">
+      <div class="w-full">
+        <app-common-button-v35
+          mat-dialog-close
+          width="100%"
+          [type]="{ style: 'bordered', name: 'main' }"
+          text="Cancel"
+        >
+        </app-common-button-v35>
+      </div>
+
+      <div class="w-full">
+        <app-common-button-v35
+          width="100%"
+          [type]="{ style: 'modal', name: 'main' }"
+          text="Submit"
+          (clickEvent)="submit()"
+          [disabled]="isSubmit() || isAttchmentUploading()"
+          [loading]="isSubmit()"
+        >
+        </app-common-button-v35>
+      </div>
+    </div>
+
+    <!-- Receipt Preview Overlay -->
+    @if (showReceiptPreview) {
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        [@fadeIn]
+      >
+        <div
+          class="relative w-full max-w-xl max-h-[80vh] bg-main-background-color rounded-md shadow-2xl overflow-hidden flex flex-col preview-container"
+          [@slideIn]
+        >
+          <!-- Preview Header -->
+          <div
+            class="flex items-center justify-between p-4 border-b border-input-border-color bg-secondary-background-color"
+          >
+            <h3 class="text-lg font-semibold text-main-text-color">
+              Receipt Preview
+            </h3>
+            <button
+              type="button"
+              (click)="showReceiptPreview = false"
+              class="p-2 text-secondary-text-color hover:text-main-text-color rounded-lg hover:bg-main-background-color transition-colors"
+            >
+              <fa-icon [icon]="faXmark" size="lg"></fa-icon>
+            </button>
+          </div>
+
+          <!-- Preview Content -->
+          <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <div class="p-8 bg-main-background-color">
+              <!-- Professional Header Section -->
+              <div class="border-b-2 border-input-border-color pb-6 mb-6">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h1
+                      class="text-xl font-semibold text-main-text-color tracking-wide"
+                    >
+                      PAYMENT RECEIPT
+                    </h1>
+                    <p
+                      class="text-xs text-secondary-text-color mt-1 uppercase tracking-wider"
+                    >
+                      Acknowledgment of Payment
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <div class="w-32 mb-2 relative">
+                      @if (selectedLogo) {
+                        <div class="relative">
+                          <img
+                            [src]="selectedLogo.base64"
+                            alt="Company Logo"
+                            class="w-full h-auto"
+                            width="100"
+                            height="100"
+                          />
+                          <!-- Remove logo icon -->
+                          <button
+                            type="button"
+                            (click)="removeLogo()"
+                            class="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                            matTooltip="Remove logo"
+                          >
+                            <fa-icon
+                              [icon]="faCircleMinus"
+                              class="w-full h-full text-common-red-color"
+                            ></fa-icon>
+                          </button>
+                        </div>
+                      } @else {
+                        <img
+                          [ngSrc]="brandLogoUrl()"
+                          [alt]="isArcharina ? 'Archarina' : 'CheckWRITER'"
+                          class="w-full h-auto opacity-80"
+                          width="100"
+                          height="100"
+                        />
+                      }
+                    </div>
+                    <div class="text-xs text-secondary-text-color">
+                      <div class="font-semibold">
+                        Receipt No:
+                        <span class="text-main-text-color">1033</span>
+                      </div>
+                      <div class="font-semibold mt-1">
+                        Date:
+                        <span class="text-main-text-color">{{
+                          dateToday
+                        }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Summary Statement Section -->
+              <div
+                class="bg-secondary-background-color border border-input-border-color rounded-lg p-5 mb-6"
+              >
+                <h2
+                  class="text-sm font-semibold text-main-text-color uppercase tracking-wide mb-2"
+                >
+                  Payment Summary
+                </h2>
+                <p class="text-sm text-main-text-color leading-relaxed">
+                  On
+                  <span class="font-semibold">{{
+                    previewData.paymentDate || dateToday
+                  }}</span
+                  >,
+                  <span class="font-semibold">{{
+                    previewData.senderName
+                  }}</span>
+                  successfully transferred
+                  <span class="font-semibold">{{
+                    previewData.amount | currency
+                  }}</span>
+                  via
+                  <span class="font-semibold">{{ previewData.type }}</span> to
+                  <span class="font-semibold">{{
+                    injectData.previewData?.payeeName
+                  }}</span>
+                  @if (description) {
+                    for “<span class="font-semibold">{{ description }}</span
+                    >”
+                  }
+                  @if (previewData.reference) {
+                    , referencing
+                    <span class="font-semibold">{{
+                      previewData.reference
+                    }}</span>
+                  }
+                  . This payment was processed through the
+                  {{
+                    staticWhiteLabelConditions.productName ||
+                      "OnlineCheckWriter"
+                  }}
+                  platform and logged under Transaction ID
+                  <span class="font-mono font-semibold">{{
+                    transactionId
+                  }}</span
+                  >.
+                </p>
+              </div>
+
+              <!-- Transaction Summary Box -->
+              <div
+                class="bg-secondary-background-color border border-input-border-color rounded-lg p-6 mb-6"
+              >
+                <h2
+                  class="text-sm font-semibold text-main-text-color uppercase tracking-wide mb-1"
+                >
+                  Transaction Summary
+                </h2>
+
+                <div class="flex justify-between">
+                  <div>
+                    <p
+                      class="text-2xl font-semibold text-common-green-color mb-1"
+                    >
+                      {{ previewData.amount | currency }}
+                    </p>
+                    <p
+                      class="text-xs text-secondary-text-color uppercase tracking-wide mb-1"
+                    >
+                      Amount Paid
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="text-lg font-semibold text-main-text-color text-right"
+                    >
+                      {{ previewData.type }}
+                    </p>
+                    <p
+                      class="text-xs text-secondary-text-color uppercase tracking-wide mb-1"
+                    >
+                      Payment Method
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Parties Information -->
+              <div class="mb-6">
+                <h2
+                  class="text-sm font-semibold text-main-text-color uppercase tracking-wide mb-4 border-b border-input-border-color pb-2"
+                >
+                  Party Information
+                </h2>
+
+                <div class="grid grid-cols-2 gap-6">
+                  <!-- Payer Information -->
+                  <div
+                    class="bg-secondary-background-color rounded-lg p-4 border border-input-border-color"
+                  >
+                    <h3
+                      class="text-xs font-bold text-secondary-text-color uppercase tracking-wide mb-3"
+                    >
+                      Payer (Sender)
+                    </h3>
+                    <div class="space-y-2">
+                      <div>
+                        <input
+                          type="text"
+                          [(ngModel)]="payerNamePreview"
+                          class="w-full p-2 border border-input-border-color rounded-md"
+                          (ngModelChange)="onPayerNameChange($event)"
+                        />
+                      </div>
+                      <div>
+                        <p class="text-xs text-secondary-text-color">
+                          Status: Payment Initiated
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Payee Information -->
+                  <div
+                    class="bg-secondary-background-color rounded-lg p-4 border border-input-border-color"
+                  >
+                    <h3
+                      class="text-xs font-bold text-secondary-text-color uppercase tracking-wide mb-3"
+                    >
+                      Payee (Recipient)
+                    </h3>
+                    <div class="space-y-2">
+                      <div>
+                        <input
+                          type="text"
+                          [(ngModel)]="payeeNamePreview"
+                          class="w-full p-2 border border-input-border-color rounded-md"
+                          (ngModelChange)="onPayeeNameChange($event)"
+                        />
+                      </div>
+                      <div>
+                        <p class="text-xs text-secondary-text-color">
+                          Email: {{ injectData.payee?.email }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transaction Details -->
+              <div class="mb-6">
+                <h2
+                  class="text-sm font-semibold text-main-text-color uppercase tracking-wide mb-4 border-b border-input-border-color pb-2"
+                >
+                  Transaction Details
+                </h2>
+
+                <div class="space-y-3">
+                  <div class="flex justify-between">
+                    <p class="text-xs text-secondary-text-color w-40">
+                      Transaction ID:
+                    </p>
+                    <p
+                      class="text-sm font-mono font-semibold text-main-text-color"
+                    >
+                      {{ transactionId }}
+                    </p>
+                  </div>
+                  <div class="flex justify-between">
+                    <p class="text-xs text-secondary-text-color w-40">
+                      Processing Date:
+                    </p>
+                    <p class="text-sm font-semibold text-main-text-color">
+                      {{ previewData.paymentDate || dateToday }}
+                    </p>
+                  </div>
+                  <div class="flex flex-col">
+                    <p class="text-xs text-secondary-text-color mb-2">
+                      Description of Payment:
+                    </p>
+                    <div class="w-full">
+                      <textarea
+                        [(ngModel)]="description"
+                        (ngModelChange)="onDescriptionChange($event)"
+                        class="w-full p-2 border border-input-border-color rounded-md resize-none focus:outline-none"
+                        rows="4"
+                        placeholder="Enter detailed description of the payment"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legal Acknowledgment Section -->
+              <div
+                class="bg-secondary-background-color border border-input-border-color rounded-lg p-6 mb-6"
+              >
+                <h2
+                  class="text-sm font-semibold text-main-text-color uppercase tracking-wide mb-3"
+                >
+                  Acknowledgment & Agreement
+                </h2>
+
+                <!-- Signature Area -->
+                <div class="border border-input-border-color p-4 rounded-lg">
+                  <p
+                    class="text-xs text-secondary-text-color leading-relaxed mb-4"
+                  >
+                    By signing this receipt, the undersigned acknowledges and
+                    confirms receipt of the payment amount specified above. This
+                    receipt serves as a legal acknowledgment of the transaction
+                    and may be used as evidence of payment.
+                  </p>
+                  <div class="grid grid-cols-2 gap-6">
+                    <div>
+                      <p class="text-xs text-secondary-text-color mb-2">
+                        Payee E-Signature
+                      </p>
+                      <div
+                        class="h-12 border-b-2 border-input-border-color mb-2"
+                      ></div>
+                      <div>
+                        <p class="text-xs text-secondary-text-color mb-2">
+                          (if Applicable: The fee mentioned)
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <div>
+                        <p class="text-xs text-secondary-text-color mb-2">
+                          Signature Date Pending:
+                        </p>
+                        <div
+                          class="h-12 border-b-2 border-input-border-color mb-2"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer Section -->
+              <div class="border-t border-input-border-color pt-4">
+                <div class="w-full flex justify-center">
+                  <div class="w-32 mb-2">
+                    <img
+                      [ngSrc]="brandLogoUrl()"
+                      [alt]="isArcharina ? 'Archarina' : 'CheckWRITER'"
+                      class="w-full h-auto opacity-80"
+                      width="100"
+                      height="100"
+                    />
+                  </div>
+                </div>
+                <div class="text-center">
+                  <p class="text-xs text-secondary-text-color mb-1">
+                    This is a system-generated document
+                  </p>
+                  <p class="text-xs text-secondary-text-color">
+                    For questions or disputes, please contact support at
+                    {{ staticWhiteLabelConditions.customerSupportEmail }}
+                  </p>
+                </div>
+                @if (!isArcharina) {
+                  <div
+                    class="flex flex-wrap justify-center items-center gap-1 mt-4"
+                  >
+                    @for (
+                      certification of certifications;
+                      track certification.name
+                    ) {
+                      <img
+                        [ngSrc]="certification.image"
+                        [alt]="certification.name"
+                        class="rounded-full object-cover shadow"
+                        width="44"
+                        height="44"
+                      />
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Logo Cropper Modal Overlay -->
+    @if (showLogoCropper) {
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+        [@fadeIn]
+      >
+        <div
+          class="relative w-full max-w-xl max-h-[70vh] bg-main-background-color rounded-md shadow-2xl overflow-hidden flex flex-col"
+          [@slideIn]
+        >
+          <!-- Logo Cropper Header -->
+          <div
+            class="flex items-center justify-between p-4 border-b border-input-border-color bg-secondary-background-color"
+          >
+            <h3 class="text-lg font-semibold text-main-text-color">
+              Upload Company Logo
+            </h3>
+            <button
+              type="button"
+              (click)="onLogoCancel()"
+              class="p-2 text-secondary-text-color hover:text-main-text-color rounded-lg hover:bg-main-background-color transition-colors"
+            >
+              <fa-icon [icon]="faXmark" size="lg"></fa-icon>
+            </button>
+          </div>
+
+          <!-- Logo Cropper Content -->
+          <div class="flex-1 overflow-y-auto p-6">
+            <app-logo-cropper
+              title="Upload Company Logo"
+              subtitle="Upload a logo to display on your receipt"
+              [maxFileSize]="2 * 1024 * 1024"
+              [aspectRatio]="1"
+              (logoCropped)="onLogoCropped($event)"
+              (cancel)="onLogoCancel()"
+            >
+            </app-logo-cropper>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

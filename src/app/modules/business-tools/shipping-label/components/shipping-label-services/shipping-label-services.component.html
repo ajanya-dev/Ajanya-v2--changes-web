@@ -1,0 +1,141 @@
+<div class="main_body">
+  <div class="main_section">
+    <div class="package_type">
+      <div class="package_head">
+        <h3>Package Type</h3>
+      </div>
+      <div class="input_group input-box">
+        <div class="single_input">
+          <input
+            [attr.disabled]="true"
+            type="text"
+            class="input_style disable"
+            placeholder=" "
+            maxlength="15"
+            value="{{ this.packageType }}"
+          />
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="checkoutForm">
+      <div class="line"></div>
+
+      <div class="dimension">
+        <div class="heading">
+          <h3>Choose a carrier partner</h3>
+        </div>
+      </div>
+
+      <div class="services">
+        <div>
+          <ng-container *ngIf="spinnerloading">
+            <div class="data_spinner"></div>
+          </ng-container>
+          <div class="service" *ngIf="!spinnerloading">
+            <div class="parcel" [hidden]="!this.uspsDetails?.length">
+              <h3 class="carrier_head">USPS</h3>
+              <div class="radio_btn">
+                <mat-radio-group
+                  aria-labelledby="radio-label"
+                  class="radio-group"
+                  (change)="setParceltType($event)"
+                  formControlName="parcelType"
+                >
+                  <mat-radio-button
+                    class="radio-button"
+                    *ngFor="let item of uspsDetails; let i = index"
+                    [value]="item"
+                  >
+                    {{ item.service }} - ${{ item.rate.toFixed(2) }}
+                  </mat-radio-button>
+                </mat-radio-group>
+              </div>
+            </div>
+            <div class="parcel" [hidden]="!this.fedexDetails?.length">
+              <h3 class="carrier_head">FedEx</h3>
+              <div class="radio_btn" *ngIf="!spinnerloading">
+                <mat-radio-group
+                  aria-labelledby="radio-label"
+                  class="radio-group"
+                  (change)="setParceltType($event)"
+                  formControlName="parcelType"
+                >
+                  <mat-radio-button
+                    class="radio-button"
+                    *ngFor="let item of fedexDetails; let i = index"
+                    [value]="item"
+                  >
+                    {{ item.service }} - ${{ item.rate.toFixed(2) }}
+                  </mat-radio-button>
+                </mat-radio-group>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div [hidden]="!showNoResult">
+          <div *ngIf="!spinnerloading">
+            <div class="not_found_image">
+              No rates found. Please check your package dimensions!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input_group" *ngIf="!spinnerloading">
+        <div class="dropdown input-box">
+          <div class="flex">
+            <app-drop-down
+              class="drop-down"
+              placeholder="Select Print Size"
+              (selectionChange)="onSelectPrintSize($event)"
+              formControlName="printSize"
+              [data]="printSizes"
+              [selectedItem]="selectedSize"
+            ></app-drop-down>
+          </div>
+          <div>
+            <app-control-message
+              [control]="checkoutForm.controls.printSize"
+            ></app-control-message>
+          </div>
+        </div>
+      </div>
+
+      <div class="input_group input-box" *ngIf="!spinnerloading">
+        <div class="single_input">
+          <input
+            type="text"
+            class="input_style"
+            placeholder=" "
+            maxlength="50"
+            formControlName="comment"
+          />
+          <span class="floating_label_field">Comment</span>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="main_footer" *ngIf="!spinnerloading">
+    <div class="action_buttons">
+      <div class="container">
+        <button class="back" (click)="backstep()">Back</button>
+        <button
+          class="next"
+          (click)="nextStep()"
+          [disabled]="showNoResult || loading"
+          [ngClass]="{ btnDisabled: showNoResult || loading }"
+        >
+          Print
+          <ng-container *ngIf="loading" class="loading_spinner">
+            <span class="loadingSpinner"></span>
+          </ng-container>
+        </button>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,168 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div>
+      <span
+        class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+      >
+        <span class="pl-1 font-inter font-semibold text-base pb-0.5">{{
+          !editmode ? "Bank Account Mapping" : "Update Bank Account Mapping"
+        }}</span>
+      </span>
+    </div>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="faXmark"
+      ></fa-icon>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div class="flex flex-col gap-3" [formGroup]="mapForm">
+    <div class="bg-tertiary-background-color p-2 rounded pl-2">
+      <p class="font-inter font-normal text-main-text-color text-xs">
+        You are mapping the {{ appName }} bank account
+        <span class="font-bold">{{
+          appName === "QuickBooks"
+            ? qbData?.quickBookAccount
+            : appName === "NetSuite"
+            ? netSuiteData?.netsuiteAccount
+            : odooData?.name
+        }}</span>
+        from {{ appName }} company
+        <span class="font-bold">{{
+          appName === "QuickBooks" ? qbData?.QBCompanyName : appName === "NetSuite" ? "NetSuite" : "Odoo"
+        }}</span>
+        to OCW bank account.
+      </p>
+    </div>
+
+    <p class="text-main-text-color font-normal text-xs font-inter">
+      Select a bank account to map:
+    </p>
+    @if (appName === "QuickBooks") {
+      <div class="single_input flex flex-col">
+        <div class="flex">
+          <app-drop-down-bank
+            (selectionEvent)="bankDropDownChange($event)"
+            class="drop_style"
+          >
+          </app-drop-down-bank>
+          <div
+            role="presentation"
+            class="add_modal_btn !py-[6px]"
+            (click)="openBankAccModal()"
+          >
+            <fa-icon [icon]="faPlus"></fa-icon>
+          </div>
+        </div>
+        <app-control-message
+          [control]="mapForm.controls.bankAccount"
+          labelName="Please select bank account"
+        >
+        </app-control-message>
+      </div>
+      <div class="flex gap-3">
+        <div class="w-[50%]">
+          <ng-select
+            class="ng-dropdown-panel-v35 w-auto"
+            appendTo="body"
+            (scrollToEnd)="scrollClass('')"
+            (keyup)="scrollClass($event?.target?.value)"
+            bindLabel="name"
+            placeholder="Select Class"
+            formControlName="qboClass"
+            [loading]="isClassLoading()"
+            [notFoundText]="isClassLoading() ? 'Loading...' : 'No items found'"
+          >
+            @for (item of qbClass; track item) {
+              <ng-option [value]="item.id">
+                {{ item.name }}
+              </ng-option>
+            }
+          </ng-select>
+        </div>
+        @if (isLocation) {
+          <div class="w-[50%]">
+            <ng-select
+              class="ng-dropdown-panel-v35 w-auto"
+              placeholder="Select Location"
+              appendTo="body"
+              [(ngModel)]="selectedLocationId"
+              formControlName="qboLocation"
+              [loading]="isLocationLoading()"
+              [notFoundText]="
+                isLocationLoading() ? 'Loading...' : 'No items found'
+              "
+            >
+              @for (item of qbLocations; track item) {
+                <ng-option [value]="item.id">
+                  {{ item.name }}
+                </ng-option>
+              }
+            </ng-select>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="single_input flex flex-col">
+        <div class="flex">
+          <app-drop-down-bank
+            (selectionEvent)="bankDropDownChange($event)"
+            [ismapping]="ismapping"
+            [selectedBankId]="appName === 'NetSuite' ? netSuiteData?.ocwBankAccountId : odooData?.ocwBankAccountId"
+            class="drop_style"
+          >
+          </app-drop-down-bank>
+          <div
+            role="presentation"
+            class="add_modal_btn !py-[6px]"
+            (click)="openBankAccModal()"
+          >
+            <fa-icon [icon]="faPlus"></fa-icon>
+          </div>
+        </div>
+        <app-control-message
+          [control]="mapForm.controls.bankAccount"
+          labelName="Please select bank account"
+        >
+        </app-control-message>
+      </div>
+      @if(appName === 'NetSuite'){
+        <app-v35-common-dropdown
+        [(ngModel)]="selectedSubsidiary"
+        (ngModelChange)="onSelectSubsidiary($event)"
+        [ngModelOptions]="{ standalone: true }"
+        [required]="true"
+        [loading]="isSubsidiaryLoading()"
+        [config]="{
+          placeholder: isSubsidiaryLoading() ? 'Loading...' : 'Select Subsidiary',
+          displayField: 'name',
+          style: {
+        size: 0,
+        enableLabelIcon: false,
+      },
+      enableAddNew: false
+        }"
+        [listData]="subsidiaryList()"
+        appendTo="body"
+      />
+      }
+    }
+  </div>
+  <!-- modal body end -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      mat-dialog-close
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      [type]="{ style: 'modal', name: 'main' }"
+      [text]="editmode ? 'Update' : 'Map Now'"
+      (clickEvent)="submit()"
+      [loading]="loading"
+      [disabled]="loading"
+    ></app-common-button-v35>
+  </div>
+</div>

@@ -1,0 +1,155 @@
+@if (loading()) {
+  <div class="dm-addr-bar dm-skel-bar">
+    <span class="dm-skel dm-skel-logo"></span>
+    <span class="dm-skel dm-skel-line"></span>
+    <span class="dm-skel dm-skel-cost"></span>
+    <lucide-icon [img]="ChevronDownIcon" [size]="16" class="dm-addr-chev" />
+  </div>
+} @else {
+  <div
+    role="presentation"
+    class="dm-addr-bar"
+    [class.dm-addr-static]="readOnly()"
+    [class.dm-addr-blocked]="disabled()"
+    [class.open]="open()"
+    [attr.role]="readOnly() || disabled() ? null : 'button'"
+    [attr.aria-disabled]="disabled() ? 'true' : null"
+    [matTooltip]="disabled() ? disabledHint() : ''"
+    [matTooltipDisabled]="!disabled() || !disabledHint()"
+    matTooltipPosition="above"
+    (click)="onBarClick($event)"
+  >
+    <!-- Open and searchable: the input stands where the selection was, so the
+         bar is not reading back an answer while it is being searched over. -->
+    @if (searchMode()) {
+      <span class="dm-bar-search">
+        <lucide-icon [img]="SearchIcon" [size]="15" />
+        <input
+          #searchBox
+          type="text"
+          [placeholder]="searchPlaceholder()"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          (click)="$event.stopPropagation()"
+          (keydown)="$event.stopPropagation()"
+          (keydown.escape)="dismiss()"
+        />
+      </span>
+      <button
+        type="button"
+        class="dm-bar-clear"
+        [attr.aria-label]="searchTerm() ? 'Clear search' : 'Close'"
+        (click)="onDismissClick($event)"
+      >
+        <lucide-icon [img]="XIcon" [size]="15" />
+      </button>
+    } @else if (variant() === "carrier") {
+      <span class="dm-m-sel">
+        @if (logoUrl()) {
+          <img [src]="logoUrl()" alt="" class="dm-carrier-logo" />
+        }
+        <b>{{ title() }}</b>
+        @if (tag()) {
+          <span class="dm-tag cheapest">{{ tag() }}</span>
+        }
+        <span class="dm-m-cost">{{
+          cost() !== null ? "$" + (cost()! | number: "1.2-2") : ""
+        }}</span>
+      </span>
+    } @else {
+      <span class="dm-addr-sel">
+        @if (title()) {
+          <b>{{ title() }}</b>
+          <span class="dm-addr-inline">{{ inline() }}</span>
+        } @else {
+          <span class="dm-addr-ph">{{ placeholder() }}</span>
+        }
+      </span>
+      @if (badge()) {
+        <span class="dm-badge" [class.ok]="badgeOk()">{{ badge() }}</span>
+      }
+      @if (editable()) {
+        <button type="button" class="dm-addr-edit" (click)="onEdit($event)">
+          <lucide-icon [img]="PencilIcon" [size]="14" />
+        </button>
+      }
+    }
+    @if (!readOnly()) {
+      <lucide-icon [img]="ChevronDownIcon" [size]="16" class="dm-addr-chev" />
+    }
+  </div>
+
+  <!-- `disabled()` also closes an already-open popover: the bar stops responding
+       but the list itself lives outside it and would still take a click. -->
+  @if (!readOnly() && !disabled() && open()) {
+    <div
+      class="dm-addr-pop"
+      (click)="$event.stopPropagation()"
+      role="presentation"
+    >
+      @if (!searchable()) {
+        <div class="dm-pop-head">
+          <button
+            type="button"
+            class="dm-pop-close"
+            aria-label="Close"
+            (click)="dismiss()"
+          >
+            <lucide-icon [img]="XIcon" [size]="15" />
+          </button>
+        </div>
+      }
+
+      <div class="dm-pop-list">
+        @if (addNewLabel()) {
+          <button type="button" class="dm-addr-add" (click)="addNew.emit()">
+            <span class="dm-addr-add-ic">
+              <lucide-icon [img]="PlusIcon" [size]="15" />
+            </span>
+            <span class="dm-addr-add-main">
+              <span class="dm-addr-add-nm">{{ addNewLabel() }}</span>
+              <span class="dm-addr-add-sub">{{ addNewHint() }}</span>
+            </span>
+          </button>
+        }
+        @for (option of visibleOptions(); track option.id) {
+          <button
+            type="button"
+            class="dm-addr-opt"
+            [class.on]="option.id === selectedId()"
+            (click)="optionSelect.emit(option.id)"
+          >
+            <span class="dm-radio"></span>
+            <span class="dm-addr-opt-main">
+              <span class="dm-addr-opt-top">
+                @if (option.logoUrl) {
+                  <img [src]="option.logoUrl" alt="" class="dm-carrier-logo" />
+                }
+                <span class="dm-addr-opt-nm">{{ option.title }}</span>
+                @if (option.badge) {
+                  <span class="dm-badge" [class.ok]="option.badgeOk">{{
+                    option.badge
+                  }}</span>
+                }
+                @if (option.tag) {
+                  <span class="dm-tag cheapest">{{ option.tag }}</span>
+                }
+                @if (option.cost !== undefined) {
+                  <span class="dm-addr-opt-cost">{{
+                    "$" + (option.cost | number: "1.2-2")
+                  }}</span>
+                }
+              </span>
+              @if (option.subtitle !== undefined) {
+                <span class="dm-addr-opt-sub">{{ option.subtitle }}</span>
+              }
+            </span>
+          </button>
+        }
+        @if (noMatches()) {
+          <p class="dm-pop-empty">No matches for "{{ searchTerm() }}"</p>
+        }
+      </div>
+    </div>
+  }
+}

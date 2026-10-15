@@ -1,0 +1,291 @@
+<div class="card-details">
+  <div class="card-details__body">
+    <!------------------------- TOP SECTION START ------------------------------>
+
+    <div class="top-section">
+      <section class="card">
+        <div id="card_details">
+          <img
+            src="../../../../assets/images/cloud-bank/visa-card.png"
+            alt=""
+          />
+
+          <div class="card_div">
+            <img
+              id="visa_logo"
+              src="../../../../assets/images/cloud-bank/visa.svg"
+              alt=""
+            />
+            <p
+              id="reveal_btn"
+              (click)="getCardFullDetails()"
+              *ngIf="!isShowFullDetails || revealingDetails"
+            >
+              {{ revealingDetails ? "Please wait" : "Reveal Details" }}
+            </p>
+
+            <div class="info">
+              <div>
+                <ng-container>
+                  <span class="skelton" [hidden]="isShowFullDetails"
+                    >**** **** **** {{ cardDetails?.last4 || "xxxxx" }}</span
+                  >
+                  <span *ngIf="isShowFullDetails">{{ cardFullNumber }}</span>
+                </ng-container>
+              </div>
+
+              <div>
+                <div>
+                  <p>EXP.DATE</p>
+                  <span class="skelton"
+                    >{{ cardDetails?.expiryMonth }}/{{
+                      cardDetails?.expiryYear || "xxxxxxxxx"
+                    }}</span
+                  >
+                </div>
+
+                <div>
+                  <p>CVV</p>
+                  <span *ngIf="!isShowFullDetails">****</span>
+                  <span *ngIf="isShowFullDetails">{{
+                    cardFullDetails?.cvv
+                  }}</span>
+                </div>
+              </div>
+
+              <div>
+                <p class="skelton card_name">
+                  {{ cardDetails?.cardHolder.name || "xxxxxx" }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note" *ngIf="isRevealed">
+          <p>
+            <i [matTooltip]="'info'" class="fas fa-info-circle"></i>This Card
+            Number can be used anywhere just like a regular credit card. You can
+            easily add it to your Apple or Google wallet by scanning the card
+            with your camera, or manually input it into your wallet.
+          </p>
+        </div>
+      </section>
+
+      <section class="details">
+        <div>
+          <div class="row_details">
+            <div class="row">
+              <p>Card holder name</p>
+              <p class="skelton">
+                {{ cardDetails?.cardHolder.name || "xxxxxxxxxx" }}
+              </p>
+            </div>
+            <div class="row">
+              <p>Available Balance</p>
+              <p
+                class="skelton"
+                style="color: green; font-weight: 600; font-size: 18px"
+              >
+                {{ cardDetails?.availableBalance || "xxxxxxx" | currency }}
+              </p>
+            </div>
+          </div>
+
+          <div class="row_details">
+            <div class="row">
+              <p>Billing Address</p>
+              <p class="skelton">
+                {{ cardDetails?.cardHolder.billingAddress.line1 }},
+                {{ cardDetails?.cardHolder.billingAddress.city }},<br />
+                {{ cardDetails?.cardHolder.billingAddress.state }},
+                {{
+                  cardDetails?.cardHolder.billingAddress.postalCode ||
+                    "xxxxxxx xxxxxxxxx xxxxx"
+                }}
+              </p>
+            </div>
+            <div class="row">
+              <p>Card nick name</p>
+              <p class="skelton">
+                {{ cardDetails?.cardNickName || "xxxxxxx" }}
+              </p>
+            </div>
+          </div>
+
+          <div class="row_details">
+            <div class="row" *ngIf="cardTransactionDetails?.behalf_of != ''">
+              <p>On behalf of</p>
+              <p class="skelton">{{ cardTransactionDetails?.behalf_of }}</p>
+            </div>
+            <div class="row">
+              <p>Sender Name</p>
+              <p class="skelton">
+                {{
+                  cardTransactionDetails?.sender?.sender_account_name
+                    ? cardTransactionDetails?.sender?.sender_account_name
+                    : cardTransactionDetails?.sender?.sender_name
+                }}
+              </p>
+            </div>
+            <div class="row" *ngIf="cardTransactionDetails?.behalf_of == ''">
+              <p>Comment</p>
+              <p class="">{{ cardDetails?.description }}</p>
+            </div>
+          </div>
+          <div class="row_details">
+            <div class="row" *ngIf="cardTransactionDetails?.behalf_of !== ''">
+              <p>Comment</p>
+              <p class="">{{ cardDetails?.description }}</p>
+            </div>
+          </div>
+          <div class="row_details">
+            <div class="transaction_details">
+              <p class="refId_id">
+                Reference ID:
+                <span class="refid" style="font-size: 13px">{{
+                  cardTransactionDetails?.reference_id
+                }}</span
+                ><i
+                  style="font-weight: 600"
+                  [matTooltip]="'copy'"
+                  (click)="copy()"
+                  class="fa-thin fa-copy"
+                ></i
+                ><span *ngIf="isCopied">Copied</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </section>
+    </div>
+    <!------------------------- TOP SECTION END ------------------------------>
+
+    <!----------------------- BOTTOM SECTION START ------------------------------>
+    <div class="bottom-section">
+      <div class="transaction-table">
+        <h2>Transactions</h2>
+        <div class="ocw_table_wrapper">
+          <table
+            class="ocw-table ocw-table-striped"
+            *ngIf="cardTransactions?.length"
+          >
+            <thead>
+              <tr>
+                <td>Amount</td>
+                <td>Transaction Type</td>
+                <td>Transaction Date</td>
+                <td>Title</td>
+                <td>Description</td>
+                <td>Merchant Name</td>
+                <td>Status</td>
+              </tr>
+            </thead>
+
+            <tbody>
+              <ng-container *ngFor="let item of cardTransactions">
+                <tr>
+                  <td>{{ item.amount }}</td>
+                  <td>{{ item.txnType }}</td>
+                  <td>{{ item.txnDate }}</td>
+                  <td>{{ item.title }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ item.card.merchant.merchantName }}</td>
+                  <td>{{ item.status }}</td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+
+          <p
+            *ngIf="!cardTransactions?.length && !loading"
+            class="no-transactions text-center text-sm font-normal mt-12"
+          >
+            No Transactions to show
+          </p>
+
+          <ng-container *ngIf="loading && cardTransactions === undefined">
+            <table class="ocw-skeleton-table !w-full">
+              <tbody>
+                <tr *ngFor="let i of [1, 2, 3, 4, 5, 6, 7]">
+                  <td *ngFor="let i of [1, 2, 3, 4]"></td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-container>
+        </div>
+
+        <div
+          *ngIf="totalPage && cardTransactions?.length"
+          class="px-4 py-3 flex items-center justify-between sm:px-6 pagination-sec"
+        >
+          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-end">
+            <div>
+              <nav
+                class="relative z-0 inline-flex rounded-md shadow-sm"
+                aria-label="Pagination"
+              >
+                <a
+                  (click)="onPrevious()"
+                  class="relative page_indent inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium text-gray-500"
+                >
+                  <span class="sr-only">Previous</span>
+                  <svg
+                    class="h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </a>
+
+                <a
+                  aria-current="page"
+                  *ngFor="let item of pageArr; let i = index"
+                  (click)="gotoPage(item - 1)"
+                  class="page_indent z-10 relative inline-flex items-center px-3 py-1 text-sm font-medium border"
+                  [ngClass]="{
+                    ' border-w':
+                      (mode == 1 && i + 1 == initialPage) ||
+                      (mode != 1 && i + 1 == pseudoI),
+                    ' border-gray-300': i + 1 != initialPage
+                  }"
+                >
+                  {{ item }}
+                </a>
+
+                <a
+                  (click)="onNext()"
+                  class="page_indent relative inline-flex items-center px-2 py-1 rounded-r-md border text-sm font-medium text-gray-500"
+                >
+                  <span class="sr-only">Next</span>
+
+                  <svg
+                    class="h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!----------------------- BOTTOM SECTION END ------------------------------>
+  </div>
+</div>

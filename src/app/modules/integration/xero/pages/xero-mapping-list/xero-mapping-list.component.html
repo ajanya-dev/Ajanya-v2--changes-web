@@ -1,0 +1,119 @@
+<div class="ocw_one_side_body">
+  <div class="ocw_header">
+    <div class="title flex items-center gap-1">
+      <app-common-back-button-v35></app-common-back-button-v35>
+      <h3>Xero Bank Account Mapping</h3>
+    </div>
+    <div>
+      <button
+        (click)="ImportBank()"
+        class="ocw-data-btn ocw-btn ocw-btn-dark-green"
+        matTooltip="Import all bank accounts from Xero account"
+      >
+        <fa-icon [icon]="['fas', 'down-to-line']" class="mr-2"></fa-icon> Import
+        Bank Accounts
+      </button>
+    </div>
+  </div>
+  <hr class="header_border" />
+
+  <!-- main body -->
+  <div class="ocw_body">
+    <!-- table start -->
+
+    <ng-container>
+      <div class="data_spinner" [ngClass]="{ data_fetched: !dataLoaded }"></div>
+    </ng-container>
+
+    <ng-template #notFound>
+      <span class="not_found">Sorry! No result found :(</span>
+    </ng-template>
+
+    <div class="ocw_table_wrapper">
+      @if (!dataLoaded) {
+        <table class="ocw-table ocw-table-striped">
+          <thead>
+            <tr>
+              <td>SL No</td>
+              <td>Xero Company Name</td>
+              <td>Xero Bank Ac</td>
+              <td>OCW Bank Ac</td>
+              <td>OCW Bank Nick Name</td>
+              <td>Action</td>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bank of bankAccountList; track bank; let i = $index) {
+              <ng-container>
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ bank.company }}</td>
+                  <td>{{ bank.thirdPartyName }}</td>
+                  @if (bank.isMapped) {
+                    <ng-container>
+                      <td>{{ bank.thirdPartyName }}</td>
+                    </ng-container>
+                  } @else {
+                    <td>
+                      <div
+                        class="map_bank cursor-pointer"
+                        matTooltip="Map your bank account."
+                        (click)="openBankAccountMappingModal(bank.id, bank)"
+                        (keydown.enter)="
+                          openBankAccountMappingModal(bank.id, bank)
+                        "
+                        tabindex="0"
+                      >
+                        <p>Map Now</p>
+                      </div>
+                    </td>
+                  }
+                  <td>{{ bank.bankAccountNick }}</td>
+
+                  <td class="flex justify-evenly">
+                    <div
+                      class="edit_column"
+                      [ngClass]="{ 'disable-btn': !bank.isMapped }"
+                    >
+                      <a>
+                        <fa-icon
+                          [icon]="['far', 'pen-to-square']"
+                          class="edit_column_fa"
+                          aria-hidden="true"
+                          (click)="
+                            openBankAccountMappingModal(bank.id, bank, 'edit')
+                          "
+                        ></fa-icon>
+                      </a>
+                    </div>
+                    <div class="delete_column">
+                      <a>
+                        @if (loading !== bank.id) {
+                          <fa-icon
+                            [icon]="['fas', 'trash']"
+                            aria-hidden="true"
+                            (click)="onDeleteBankAccount(bank.id, i)"
+                            style="color: var(--text_danger)"
+                          ></fa-icon>
+                        }
+                      </a>
+                      @if (loading === bank.id) {
+                        <span class="loadingSpinner"></span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            }
+            @if (!bankAccountList.length) {
+              <tr class="no_data">
+                <td colspan="6">No bank accounts found.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+    <!-- table end -->
+  </div>
+</div>

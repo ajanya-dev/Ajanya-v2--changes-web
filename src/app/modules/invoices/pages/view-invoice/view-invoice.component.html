@@ -1,0 +1,658 @@
+<section
+  class="main_common_module max-xl:flex-col max-xl:items-center !px-[10px]"
+>
+  <!-- left section -->
+  <div class="main_left_wrapper max-xl:!w-[70%] max-xl:!max-w-[70%]">
+    <div
+      class="bg-main-background-color rounded-[5px] w-full p-[1px]"
+      [ngClass]="{ skelton: isLoading() }"
+    >
+      <div
+        class="m-2 p-2 bg-secondary-background-color rounded-tl-[5px] rounded-tr-[5px] border-b border-input-border-color flex justify-between items-center"
+      >
+        <div class="flex gap-3 items-center">
+          <app-ocw-back-button
+            [btnStyle]="{ bg: 'light' }"
+            [isRounded]="true"
+            (click)="goBack()"
+            type="takeEvent"
+          >
+          </app-ocw-back-button>
+          <h3 class="text-main-text-color font-inter text-[15px] font-medium">
+            Invoice Details
+          </h3>
+          @if (datas?.logoUrl) {
+            <img
+              [src]="datas.logoUrl"
+              alt="Logo"
+              class="w-8 h-8 object-contain rounded border border-input-border-color"
+            />
+          }
+        </div>
+        <div class="flex gap-2">
+          @if (datas?.isImported === 0) {
+            <div class="flex gap-2">
+              <app-common-button-v35
+                text="Edit"
+                [disabled]="unvoid"
+                [ngClass]="{
+                  'disable-btn': unvoid ? unvoid : disable
+                }"
+                [isAddIcon]="true"
+                [icon]="['fas', 'pen-to-square']"
+                [type]="{ style: 'green', name: 'money-action' }"
+                (clickEvent)="Edit()"
+                [loading]="isEditing"
+              ></app-common-button-v35>
+
+              @if (void) {
+                <app-common-button-v35
+                  text="Void"
+                  [ngClass]="{ 'disable-btn': disable }"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'ban']"
+                  [type]="{ style: 'green', name: 'money-action' }"
+                  backGroundInput="var(--common-yellow-color)"
+                  (clickEvent)="Void()"
+                  [loading]="isVoidLoading"
+                >
+                </app-common-button-v35>
+              }
+              @if (unvoid) {
+                <app-common-button-v35
+                  text="Unvoid"
+                  [ngClass]="{ 'disable-btn': disable }"
+                  [isAddIcon]="true"
+                  [icon]="['fas', 'ban']"
+                  [type]="{ style: 'green', name: 'money-action' }"
+                  backGroundInput="var(--common-yellow-color)"
+                  [loading]="isVoidLoading"
+                  (clickEvent)="unVoid()"
+                ></app-common-button-v35>
+              }
+            </div>
+          }
+          <app-common-button-v35
+            text="Delete"
+            [isAddIcon]="true"
+            [icon]="['fas', 'trash']"
+            [type]="{ style: 'green', name: 'money-action' }"
+            backGroundInput="var(--common-red-color)"
+            [loading]="isDeleteLoading"
+            (clickEvent)="Delete()"
+          ></app-common-button-v35>
+        </div>
+      </div>
+      <div class="px-2 pb-3 min-h-[278px]">
+        <table class="new-table">
+          <thead>
+            <tr>
+              @for (
+                head of [
+                  "#",
+                  "ITEM NAME",
+                  "DESCRIPTION",
+                  "UNIT PRICE",
+                  "QTY",
+                  "ITEM DISCOUNT",
+                  "SUB TOTAL"
+                ];
+                track $index
+              ) {
+                <th [ngClass]="{ '!basis-[10%]': head === '#' }">{{ head }}</th>
+              }
+            </tr>
+          </thead>
+          @if (datas) {
+            <tbody>
+              @for (item of datas.items; track item; let i = $index) {
+                <tr>
+                  <td class="!basis-[10%]">{{ i + 1 }}</td>
+                  <td class="break-all">{{ item?.itemName }}</td>
+                  <td class="break-all">{{ item?.note }}</td>
+                  <td>$ {{ item?.unitPrice }}</td>
+                  <td>{{ item?.units }}</td>
+                  <td>
+                    <span>$</span>
+                    {{ item?.discountAmount ? item?.discountAmount : "0.00" }}
+                    @if (item?.discountType === 2) {
+                      <span>({{ item.discountApplied }} % )</span>
+                    }
+                  </td>
+                  <td>$ {{ item?.itemTotal }}</td>
+                </tr>
+              }
+            </tbody>
+          }
+        </table>
+      </div>
+      <div class="px-2 py-3 flex flex-col gap-2">
+        <div class="flex items-center gap-8">
+          <span
+            class="font-inter text-secondary-text-color font-normal text-xs w-24"
+            >Memo</span
+          >
+          <span
+            [matTooltip]="memo?.length > 100 ? memo : ''"
+            class="font-inter text-main-text-color font-semibold text-xs"
+            >{{ memo | truncate: 100 }}</span
+          >
+        </div>
+        @if (privateNote) {
+          <div class="flex items-center gap-8">
+            <span
+              class="font-inter text-secondary-text-color font-normal text-xs w-24"
+              >Private Note</span
+            >
+            <span
+              [matTooltip]="privateNote?.length > 100 ? privateNote : ''"
+              class="font-inter text-main-text-color font-semibold text-xs"
+              >{{ privateNote | truncate: 100 }}</span
+            >
+          </div>
+        }
+        @if (datas?.importedFrom) {
+          <div
+            class="text-end font-inter font-medium text-main-text-color text-sm"
+          >
+            <fa-icon [icon]="faCircleInfo"></fa-icon> &nbsp;{{
+              datas.importedFrom
+            }}
+          </div>
+        }
+      </div>
+    </div>
+    <div
+      class="module_bottom_section !p-2"
+      [ngClass]="{ skelton: isLoading() }"
+    >
+      <div>
+        <mat-tab-group>
+          <!-- FIRST TAB -->
+          <mat-tab label="Payment Summary">
+            @if (ViewList?.invoicePayments.length > 0 && !isLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "Amount", "Payment Type", "Reference"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                @if (ViewList) {
+                  <tbody>
+                    @for (item of ViewList.invoicePayments; track $index) {
+                      <tr>
+                        <td>{{ item.paymentDate }}</td>
+                        <td>{{ item.amount }}</td>
+                        <td>{{ item.paymentType }}</td>
+                        <td>{{ item.reference }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                }
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Data Found!!',
+                    isLoading: isLoading()
+                  }
+                "
+              ></ng-container>
+            }
+
+            <div class="flex flex-col w-full mt-3 items-end gap-2">
+              <div class="flex items-center gap-8">
+                <span
+                  class="font-inter text-secondary-text-color font-normal text-xs w-24"
+                  >Total Paid</span
+                >
+                <span
+                  class="font-inter text-main-text-color font-semibold text-xs"
+                  >${{ tatalpaid }}</span
+                >
+              </div>
+              <div class="flex items-center gap-8">
+                <span
+                  class="font-inter text-secondary-text-color font-normal text-xs w-24"
+                  >Due Amount</span
+                >
+                <span
+                  class="font-inter text-main-text-color font-semibold text-xs"
+                  >${{ BalanceAmount }}</span
+                >
+              </div>
+            </div>
+          </mat-tab>
+          <!-- FIRST TAB -->
+
+          <!-- SECOND TAB -->
+
+          <mat-tab label="Audit Trail">
+            @if (auditTrailList?.length > 0 && !isAuditTrailLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "Status", "Device", "Note"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="h-[210px]">
+                  @for (item of auditTrailList; track item) {
+                    <tr>
+                      <td>{{ item.formattedCreatedAt }}</td>
+                      <td>{{ item.status }}</td>
+                      <td>{{ item.ipAddress }}</td>
+                      <td class="break-all">{{ item.note }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Data Found!!',
+                    isLoading: isAuditTrailLoading()
+                  }
+                "
+              ></ng-container>
+            }
+          </mat-tab>
+          <mat-tab label="Attachment">
+            @if (attachmentsList?.length > 0 && !isAttachmentLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (
+                      head of ["Date", "User", "File", "Action"];
+                      track $index
+                    ) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (attachment of attachmentsList; track $index) {
+                    <tr>
+                      <td>{{ attachment?.formated_date }}</td>
+                      <td>{{ attachment?.user_name }}</td>
+                      <td class="break-all">
+                        <button
+                          class="under"
+                          type="button"
+                          (click)="openAttachment(attachment)"
+                        >
+                          <fa-icon [icon]="faArrowUp"></fa-icon
+                          >{{ attachment?.file_name.split("/")[2] }}
+                        </button>
+                      </td>
+                      <td class="icon">
+                        <span title="Delete">
+                          <fa-icon
+                            class="cursor-pointer text-common-red-color"
+                            [icon]="faTrash"
+                            (click)="deleteAttachment(attachment?.encrypted_id)"
+                          ></fa-icon>
+                        </span>
+                        @if (attachment?.status?.status_text) {
+                          <a
+                            class="cursor-pointer pl-2 hover:underline hover:text-common-blue-color"
+                          >
+                            <fa-icon
+                              [icon]="faEnvelope"
+                              title="{{ attachment?.status?.status_text }}"
+                            ></fa-icon>
+                          </a>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Attachments Found!!',
+                    isLoading: isAttachmentLoading()
+                  }
+                "
+              ></ng-container>
+            }
+            <div class="flex justify-end mt-3">
+              <app-common-button-v35
+                [type]="{ style: 'blue', name: 'money-action' }"
+                (clickEvent)="addAttachments()"
+                text="Add Attachments"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+          <!-- SECOND TAB -->
+
+          <!-- THIRD TAB -->
+          <mat-tab label="Comments">
+            @if (commentsList?.length > 0 && !isCommentsLoading()) {
+              <table class="new-table">
+                <thead>
+                  <tr>
+                    @for (head of ["Date", "User", "Comment"]; track $index) {
+                      <th>{{ head }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (comment of commentsList; track $index) {
+                    <tr>
+                      <td>{{ comment.formated_date }}</td>
+                      <td>{{ comment.user_name }}</td>
+                      <td class="break-all">
+                        {{ comment.comments }}
+                        @if (comment?.status?.status_text) {
+                          <a
+                            class="cursor-pointer pl-2 hover:underline hover:text-common-blue-color"
+                          >
+                            <fa-icon
+                              [icon]="faEnvelope"
+                              title="{{ comment?.status?.status_text }}"
+                            ></fa-icon>
+                          </a>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <ng-container
+                *ngTemplateOutlet="
+                  noDataTemplate;
+                  context: {
+                    message: 'Sorry, No Comments Found!!',
+                    isLoading: isCommentsLoading()
+                  }
+                "
+              ></ng-container>
+            }
+
+            <div class="flex justify-end mt-3">
+              <app-common-button-v35
+                [type]="{ style: 'blue', name: 'money-action' }"
+                (clickEvent)="addComments()"
+                text="Add Comments"
+                width="150px"
+              />
+            </div>
+          </mat-tab>
+
+          <!-- THIRD TAB -->
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+
+  <!-- right section -->
+  <div
+    class="main_right_section flex flex-col gap-[14px] max-xl:!flex-row max-xl:!w-[70%] max-xl:!max-w-[70%]"
+  >
+    <!-- main header -->
+
+    <div
+      class="module_top_section !p-2"
+      [ngClass]="{ 'skelton h-[388px]': isLoading() }"
+    >
+      <div class="flex bg-secondary-background-color rounded-[5px]">
+        @for (btn of ["Summary", "Last 10 invoices"]; track $index) {
+          <div class="flex items-center w-full">
+            <div
+              role="presentation"
+              class="py-2 transition-all duration-200 w-full m-1 flex justify-center items-center cursor-pointer"
+              [ngClass]="{
+                'bg-main-background-color rounded shadow-common-button':
+                  activeTab === btn
+              }"
+              (click)="changeTab(btn)"
+            >
+              <span
+                class="font-inter text-main-text-color font-normal text-sm"
+                [ngClass]="{ '!text-medium': activeTab === btn }"
+              >
+                {{ btn }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="payee_summary_body">
+        @if (activeTab === "Summary") {
+          <table class="new-table">
+            <tbody class="!max-h-[352px]">
+              @for (row of summaryDetails; track row.label) {
+                @if (row.condition === true) {
+                  <tr>
+                    <td
+                      class="!py-2"
+                      [width]="row.label === 'Invoice #' ? '90' : ''"
+                    >
+                      {{ row.label }}
+                    </td>
+                    <td
+                      class="!py-2"
+                      [width]="row.label === 'Invoice #' ? '10' : ''"
+                    >
+                      {{ row.formatter ? row.formatter(row.value) : row.value }}
+                      @if (row.additionalContent) {
+                        <span>{{ row.extraContent }}</span>
+                      }
+                    </td>
+                  </tr>
+                } @else if (row.condition === undefined) {
+                  <tr>
+                    <td
+                      class="!py-2"
+                      [width]="row.label === 'Invoice #' ? '90' : ''"
+                    >
+                      {{ row.label }}
+                    </td>
+                    <td
+                      class="!py-2"
+                      [width]="row.label === 'Invoice #' ? '10' : ''"
+                      [matTooltip]="row.value?.length > 30 ? row.value : ''"
+                    >
+                      @if (row.label === "Grand Total") {
+                        <p class="font-bold">
+                          {{
+                            row.formatter ? row.formatter(row.value) : row.value
+                          }}
+                        </p>
+                      } @else if (row.label === "Discount") {
+                        {{ row.value | number: "1.2-2" }}
+                        @if (row.additionalContent) {
+                          <span>{{ row.extraContent }}</span>
+                        }
+                      } @else {
+                        {{
+                          row.formatter
+                            ? row.formatter(row.value)
+                            : (row.value | truncate: 30)
+                        }}
+                        @if (row.additionalContent) {
+                          <span>{{ row.extraContent }}</span>
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        } @else {
+          <table class="new-table mt-2">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+
+            <tbody class="!max-h-[276px] h-[276px]">
+              @for (item of ViewList.last10Invoice; track $index) {
+                <tr>
+                  <td>{{ item?.invoiceDate }}</td>
+                  <td>$ {{ item?.grandTotal }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+    @if (isMailed && !invoiceService.mailTrackLoadingSignal()) {
+      <div
+        class="bg-main-background-color rounded-[5px] p-2 max-xl:!w-full"
+        [ngClass]="{ 'skelton h-[272px]': isLoading() }"
+      >
+        <div class="bg-secondary-background-color rounded-[5px] px-2 py-4">
+          <h1 class="font-inter text-secondary-text-color font-medium text-xs">
+            Mail Details
+          </h1>
+        </div>
+        <div>
+          <div class="grid grid-cols-3 p-3">
+            <span
+              class="font-inter text-secondary-text-color font-normal text-xs"
+              >Mailed Using</span
+            >
+            <span
+              class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+              >{{ invoiceService.mailTrackSignal()?.mailedUsing }}</span
+            >
+          </div>
+          <div class="grid grid-cols-3 p-3">
+            <span
+              class="font-inter text-secondary-text-color font-normal text-xs"
+              >Tracking link</span
+            >
+            @if (invoiceService.mailTrackSignal()?.trackingUrl) {
+              <span
+                role="presentation"
+                class="col-span-2 font-inter text-common-blue-color font-semibold text-sm cursor-pointer"
+                (click)="track()"
+              >
+                Track
+              </span>
+            }
+            @if (
+              !invoiceService.mailTrackSignal()?.trackingUrl &&
+              !invoiceService.mailTrackLoadingSignal()
+            ) {
+              <span
+                class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+              >
+                Tracking not available
+              </span>
+            }
+          </div>
+          <div class="grid grid-cols-3 p-3">
+            <span
+              class="font-inter text-secondary-text-color font-normal text-xs"
+              >Carrier Type</span
+            >
+            <span
+              class="col-span-2 font-inter text-main-text-color font-semibold text-xs"
+              >{{ invoiceService.mailTrackSignal()?.carrier }}</span
+            >
+          </div>
+          @if (datas?.payee?.payeeAddress1) {
+            <div class="grid grid-cols-3 p-3">
+              <span
+                class="font-inter text-secondary-text-color font-normal text-xs"
+                >Payee Address</span
+              >
+              <div
+                class="col-span-2 font-inter text-main-text-color font-semibold text-xs flex flex-col"
+              >
+                <span
+                  >{{
+                    datas?.payee?.payeeAddress1
+                      ? datas?.payee?.payeeAddress1 + ","
+                      : ""
+                  }}
+                </span>
+                @if (datas?.payee?.payeeAddress2) {
+                  <br />
+                  <span
+                    >{{
+                      datas?.payee?.payeeAddress2
+                        ? datas?.payee?.payeeAddress2 + ","
+                        : ""
+                    }}
+                  </span>
+                  <br />
+                }
+                <span>
+                  {{
+                    datas?.payee?.payeeCity
+                      ? datas?.payee?.payeeCity + ", "
+                      : ""
+                  }}
+                </span>
+                <span>
+                  {{
+                    datas?.payee?.payeeState
+                      ? datas?.payee?.payeeState + ", "
+                      : ""
+                  }}
+                </span>
+                <span>
+                  {{
+                    datas?.payee?.payeeCountry ? datas?.payee?.payeeCountry : ""
+                  }}
+                  {{
+                    datas?.payee?.payeeZip ? datas?.payee?.payeeZip + ", " : ""
+                  }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>
+<ng-template #noDataTemplate let-message="message" let-isLoading="isLoading">
+  @if (isLoading) {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <fa-icon
+        [icon]="faSpinner"
+        animation="spin"
+        class="text-common-green-color"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-col justify-center items-center h-[193px]">
+      <img
+        ngSrc="/assets/images/no_activity.svg"
+        alt="No data"
+        width="120"
+        height="100"
+      />
+      <span class="font-roboto font-normal text-main-text-color text-sm">
+        {{ message }}
+      </span>
+    </div>
+  }
+</ng-template>

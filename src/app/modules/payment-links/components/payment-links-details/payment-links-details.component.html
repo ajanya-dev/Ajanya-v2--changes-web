@@ -1,0 +1,404 @@
+<div class="h-full w-full overflow-auto font-inter">
+  @if (selectedLink()) {
+    <div class="relative flex flex-col h-full w-full p-7">
+
+      <!-- Archived overlay: blurs the details and offers a Restore action -->
+      @if (selectedListTab() === 'archived') {
+        <div class="absolute inset-0 z-10 flex items-center justify-center rounded backdrop-blur-[3px]">
+          <div class="flex flex-col items-center gap-4 text-center bg-main-background-color border border-input-border-color rounded-xl shadow-common-box-shadow px-8 py-7 max-w-[320px]">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-common-secondary-red-color">
+              <fa-icon class="text-common-red-color text-lg" [icon]="faArchive" />
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="font-semibold text-main-text-color text-base">
+                This link is archived
+              </span>
+              <span class="text-secondary-text-color text-sm leading-relaxed">
+                This payment link is no longer active. Restore it to re-enable
+                payments and access all settings.
+              </span>
+            </div>
+            <app-common-button-v35
+              (click)="restorePaymentLink()"
+              text="Restore Link"
+              type="list"
+              backGroundInput="var(--common-green-color)"
+              width="160px"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Three Column Layout -->
+      <div class="flex gap-6 flex-col 2xl:flex-row pb-4">
+        <!-- Left Section - Payment Details -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 justify-between">
+            <span class="font-semibold text-main-text-color text-lg">
+              {{ selectedLink()?.name }}
+            </span>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full" [ngClass]="
+                selectedLink()?.isPaused === 1
+                  ? 'bg-common-red-color'
+                  : 'bg-common-green-color'
+              "></span>
+              <span class="text-sm font-medium" [ngClass]="
+                selectedLink()?.isPaused === 1
+                  ? 'text-secondary-text-color'
+                  : 'text-main-text-color'
+              ">
+                {{ selectedLink()?.isPaused === 1 ? 'Disabled' : 'Active' }}
+              </span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  class="sr-only peer"
+                  [checked]="selectedLink()?.isPaused !== 1"
+                  (change)="toggleActiveStatus($event)"
+                  [disabled]="isTogglingActive()"
+                />
+                <div
+                  class="w-9 h-5 bg-common-red-color peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-input-border-color after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-common-green-color"
+                ></div>
+              </label>
+            </div>
+          </div>
+          <div class="h-5"></div>
+
+          <!-- URL Box -->
+          <div
+            class="flex items-center justify-between gap-3 p-3 border border-common-blue-color rounded-lg bg-common-secondary-blue-color"
+          >
+            <div class="flex items-center gap-2 text-common-blue-color min-w-0">
+              <fa-icon class="text-sm flex-shrink-0" [icon]="faArrowUpRightFromSquare" />
+              <a
+                role="presentation"
+                class="hover:underline cursor-pointer truncate font-medium"
+                (click)="openLink(selectedLink()?.link)"
+              >
+                {{ selectedLink()?.link }}
+              </a>
+            </div>
+            <fa-icon
+              [matTooltip]="urlCopied() ? 'Copied' : 'Copy'"
+              class="cursor-pointer flex-shrink-0"
+              [ngClass]="urlCopied() ? 'text-common-green-color' : 'text-common-blue-color'"
+              (click)="copyLink(selectedLink()?.link)"
+              [icon]="urlCopied() ? faCircleCheck : faCopy"
+            />
+          </div>
+          <div class="h-5"></div>
+
+          <div class="p-3 bg-main-background-color rounded-lg">
+
+            <!-- Payment Details -->
+            <div class="font-inter text-sm text-main-text-color flex flex-col gap-2">
+              <div class="flex gap-2 justify-between">
+                <span class="text-secondary-text-color font-medium">Payment Received To:</span>
+                <span>{{
+                  selectedLink()?.bankAccount.bankAccountNickName ||
+                  selectedLink()?.bankAccount.bankAccountAccountName
+                }}</span>
+              </div>
+              <div class="flex gap-2 justify-between">
+                <span class="text-secondary-text-color font-medium">Company Name:</span>
+                <span>{{ selectedLink()?.companyName || "-" }}</span>
+              </div>
+              <div class="flex gap-2 justify-between">
+                <span class="text-secondary-text-color font-medium">Redirect URL:</span>
+                <span>{{ selectedLink()?.redirectUrl || "-" }}</span>
+              </div>
+            </div>
+            <div class="h-5"></div>
+
+            <!-- Payment Methods -->
+            <div
+              class="p-3 rounded-lg bg-secondary-background-color flex gap-2 justify-between items-center"
+            >
+              <div class="text-sm font-semibold text-secondary-text-color">
+                Payment Methods
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (item of availableMethods(); track item) {
+                  <div
+                    class="flex gap-2 items-center px-3 py-1.5 border border-input-border-color rounded bg-main-background-color"
+                  >
+                    <span>
+                      @if (item.icon) {
+                        <fa-icon
+                          [ngClass]="item.color ?? ''"
+                          class="h-[17px] w-[17px]"
+                          [icon]="item.icon"
+                        />
+                      } @else if (item.src) {
+                        <img
+                          height="16"
+                          width="20"
+                          class="w-5 h-4"
+                          [ngSrc]="item.src"
+                          alt="icon"
+                        />
+                      }
+                    </span>
+                    <span class="font-roboto text-xs font-medium text-main-text-color uppercase">
+                      {{ item.name }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="h-5"></div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2 justify-start">
+              <app-common-button-v35
+                (click)="openEPaymentSettings()"
+                text="e-Payment Settings"
+                type="list"
+                backGroundInput="var(--common-blue-color)"
+                width="140px"
+              />
+              <app-common-button-v35
+                (click)="duplicateLink()"
+                text="Duplicate"
+                backGroundInput="var(--common-secondary-blue-color)"
+                type="list"
+                width="100px"
+                textColorInput="var(--common-blue-color)"
+                [loading]="isDuplicating()"
+              />
+              <app-common-button-v35
+                (click)="updateLink()"
+                text="Edit Link"
+                type="list"
+                width="100px"
+                backGroundInput="var(--common-violet-color)"
+              />
+              <app-common-button-v35
+                (click)="openMessage()"
+                text="Message"
+                type="list"
+                width="100px"
+                backGroundInput="var(--common-green-color)"
+              />
+              @if (selectedListTab() !== 'archived' && !selectedLink()?.isArchived) {
+                <app-common-button-v35
+                  (click)="archiveLink()"
+                  text="Archive"
+                  type="list"
+                  width="100px"
+                  backGroundInput="var(--common-secondary-red-color)"
+                  textColorInput="var(--common-red-color)"
+                  [disabled]="isArchiving()"
+                  [loading]="isArchiving()"
+                />
+              }
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Middle Section - QR Code -->
+        <div
+          class="flex flex-col items-center justify-center p-6 min-w-[280px] bg-secondary-background-color rounded-lg"
+        >
+          <div class="bg-secondary-background-color p-3 rounded-lg">
+            <img
+              [src]="qrCodeUrl()"
+              alt="QR Code"
+              class="w-[145px] h-[145px]"
+              (error)="onQrCodeError($event)"
+            />
+          </div>
+          <div class="h-4"></div>
+          <p class="text-sm text-secondary-text-color text-center max-w-[220px]">
+            Share this link or QR with your customer to receive payment.
+          </p>
+          <div class="h-4"></div>
+          <div class="flex gap-3">
+            <button
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-common-blue-color border border-common-blue-color rounded-md hover:bg-blue-50 transition-colors"
+              (click)="shareLink()"
+            >
+              <fa-icon [icon]="faShare" />
+              Share
+            </button>
+            <button
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-common-blue-color border border-common-blue-color rounded-md hover:bg-blue-50 transition-colors"
+              (click)="downloadQrCode()"
+            >
+              <fa-icon [icon]="faDownload" />
+              Download
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Section - Link Preview -->
+        <div class="flex flex-col min-w-[320px]">
+          <div class="flex justify-center">
+            <app-payment-links-preview
+              baseSize="0.65rem"
+              [config]="previewInput()"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs Section — not shown for archived links -->
+      @if (selectedListTab() !== 'archived') {
+        <div>
+          <div
+            class="v35-tabs text-sm pt-1 border-b border-input-border-color !justify-start"
+          >
+            @for (item of tabs; track item) {
+              <div
+                role="presentation"
+                class="!w-fit"
+                (click)="changeTab(item)"
+                [ngClass]="{ selected: item.id === selectedTab }"
+              >
+                <h1>{{ item.name }}</h1>
+              </div>
+            }
+          </div>
+          <div class="py-4">
+            <app-payment-links-custom-links-table
+              [ngClass]="{ hidden: selectedTab !== 'custom-link' }"
+              [link]="selectedLink()"
+            />
+
+            <div [ngClass]="{ hidden: selectedTab !== 'dynamic-link' }">
+              <ul class="flex flex-col gap-4">
+                <li [ngClass]="{ skelton: dynamicIframeLinkLoading }">
+                  <p class="text-main-text-color font-medium text-sm">
+                    Dynamic Amount Link
+                  </p>
+                  <app-code-preview
+                    [code]="dynamicIframeLink?.dynamicAmountLink"
+                    [cosmeticButtons]="false"
+                  />
+                </li>
+                <li [ngClass]="{ skelton: dynamicIframeLinkLoading }">
+                  <p class="text-main-text-color font-medium text-sm">
+                    Iframe
+                    <label [title]="titles.iframe" class="cursor-pointer" for="ifram">(?)</label>
+                  </p>
+                  <app-code-preview
+                    [code]="dynamicIframeLink?.iframe"
+                    [cosmeticButtons]="false"
+                  />
+                </li>
+              </ul>
+            </div>
+
+            <div [ngClass]="{ hidden: selectedTab !== 'e-com-buttons' }">
+              <div class="flex flex-col gap-1">
+                <h3 class="text-main-text-color font-medium text-sm">
+                  Get Paid Buttons For Your Website
+                </h3>
+                <mat-radio-group
+                  [(ngModel)]="selectedButton"
+                  class="flex justify-start gap-6 flex-wrap"
+                >
+                  @for (item of eCButtonsV2; track item; let i = $index) {
+                    <div>
+                      <mat-radio-button [value]="item.imageName" (click)="selectButton(item)">
+                        <img
+                          height="20"
+                          width="100"
+                          [ngSrc]="item.buttonImage"
+                          alt="button image"
+                        />
+                      </mat-radio-button>
+                    </div>
+                  }
+                </mat-radio-group>
+              </div>
+              <div class="h-6"></div>
+              <div class="flex flex-col gap-1">
+                <label class="text-main-text-color font-medium text-sm" for="amount">
+                  Enter custom amount to your link
+                </label>
+                <form class="flex gap-2">
+                  <input
+                    #amountInput
+                    placeholder="Enter amount"
+                    type="number"
+                    class="input_style !w-56"
+                    maxlength="13"
+                  />
+                  <app-common-button-v35
+                    text="Add"
+                    btnType="submit"
+                    [type]="{ style: 'general', name: 'main' }"
+                    (clickEvent)="updateAmount(amountInput, amountInput.value)"
+                    width="70px"
+                    customHeight="100%"
+                    textColorInput="white"
+                    backGroundInput="var(--common-green-color)"
+                  />
+                  <app-common-button-v35
+                    text="Clear"
+                    [type]="{ style: 'general', name: 'main' }"
+                    (clickEvent)="updateAmount(amountInput)"
+                    width="70px"
+                    customHeight="100%"
+                    textColorInput="white"
+                    backGroundInput="var(--common-blue-color)"
+                  />
+                </form>
+              </div>
+              <div class="h-6"></div>
+              <div class="flex flex-col gap-4">
+                <div>
+                  <p class="text-main-text-color font-medium text-sm">
+                    HTML Button Code
+                    <label [title]="titles.button" class="cursor-pointer" for="code">(?)</label>
+                  </p>
+                  <app-code-preview
+                    [cosmeticButtons]="false"
+                    [code]="selectedButtonDetails?.htmlButtonCode"
+                  />
+                </div>
+                <div>
+                  <p class="text-main-text-color font-medium text-sm">
+                    HTML Widget Code
+                    <label [title]="titles.widget" class="cursor-pointer" for="widget">(?)</label>
+                  </p>
+                  <app-code-preview
+                    [cosmeticButtons]="false"
+                    [code]="selectedButtonDetails?.htmlWidgetCode"
+                  />
+                </div>
+                <div>
+                  <p class="text-main-text-color font-medium text-sm">
+                    Snippet Code
+                    <label [title]="titles.snippet" class="cursor-pointer" for="code">(?)</label>
+                  </p>
+                  <app-code-preview
+                    [cosmeticButtons]="false"
+                    [code]="selectedButtonDetails?.snippetCode"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+    </div>
+  } @else {
+    <div class="h-full w-full flex items-center justify-center">
+      @if (loading()) {
+        <fa-icon
+          class="animate-spin text-main-text-color"
+          size="lg"
+          [icon]="faSpinner"
+        />
+      } @else {
+        NO DATA!!
+      }
+    </div>
+  }
+</div>

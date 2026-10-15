@@ -1,0 +1,103 @@
+<div
+  class="angular-ocw-v35-ng-select-dropdown angular-ocw-v35-multi-select-dropdown"
+>
+  <ng-select
+    style="width: 200px"
+    [multiple]="true"
+    [closeOnSelect]="false"
+    [placeholder]="placeholder"
+    [appendTo]="appendTo"
+    (keyup)="search($event)"
+    (scrollToEnd)="onScrollToEnd()"
+    (change)="getChange($event)"
+    [(ngModel)]="isSelectedBankAccounts"
+    [compareWith]="compareById"
+    class="ng-dropdown-panel-v35 text-sm height-5"
+    (clear)="clear()"
+    [loading]="isLoading()"
+  >
+    @for (item of bankAccounts(); track item; let index = $index) {
+      <ng-option [value]="item" [disabled]="item.id === disableSelectionId()">
+        <ng-template
+          ng-option-tmp
+          let-item="item"
+          let-item$="item$"
+          let-index="index"
+        >
+          @if (item.id === "new") {
+            <div
+              role="presentation"
+              class="add-new-btn-ng-option p-2 flex justify-center items-center text-center text-sm bg-common-secondary-blue-color rounded-lg text-common-blue-color cursor-pointer relative"
+            >
+              <fa-icon class="mr-1" [icon]="['fas', 'plus']"></fa-icon>
+              <span class="add-new-text-ng-option">New</span>
+            </div>
+          } @else {
+            <input
+              id="item-{{ index }}"
+              type="checkbox"
+              [ngModel]="isItemSelected(item)"
+              [disabled]="item.id === disableSelectionId()"
+            />
+            <span class="pl-2">{{ item.nickName ?? item.bankName }}</span>
+          }
+        </ng-template>
+      </ng-option>
+    }
+    <ng-template ng-loadingspinner>
+      <div class="flex justify-center p-2">
+        <fa-icon [icon]="faSpinner" animation="spin" />
+      </div>
+    </ng-template>
+    <ng-template
+      ng-multi-label-tmp
+      let-items="items"
+      let-clear="clear"
+      let-isSliceNeed()="isSliceNeed()"
+      let-sliceNumber()="sliceNumber()"
+    >
+      @if (isSliceNeed()) {
+        @for (item of items | slice: 0 : sliceNumber(); track $index) {
+          <div class="ng-value">
+            @if (item !== "add-new") {
+              <span class="ng-value-label">
+                {{ item.nickName !== null ? item.nickName : item.bankName }}
+              </span>
+              <span
+                class="ng-value-icon right"
+                aria-hidden="true"
+                (click)="clearItem(item.id)"
+                >×</span
+              >
+            }
+          </div>
+        }
+        @if (items.length > sliceNumber()) {
+          <div class="ng-value">
+            <span
+              class="ng-value-label"
+              [matTooltip]="getMoreItemsTooltip(items.slice(sliceNumber()))"
+              >{{ items.length - sliceNumber() }} more...</span
+            >
+          </div>
+        }
+      } @else {
+        @for (item of items; track $index) {
+          <div class="ng-value">
+            @if (item !== "add-new") {
+              <span class="ng-value-label">
+                {{ item.nickName !== null ? item.nickName : item.bankName }}
+              </span>
+              <span
+                class="ng-value-icon right"
+                aria-hidden="true"
+                (click)="clearItem(item.id)"
+                >×</span
+              >
+            }
+          </div>
+        }
+      }
+    </ng-template>
+  </ng-select>
+</div>

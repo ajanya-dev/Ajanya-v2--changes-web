@@ -1,0 +1,304 @@
+<div class="menu_content" id="menu-text">
+  <div
+    *ngIf="mode === 'new' || mode === 'edit'"
+    class="my-2 font-medium tracking-wide"
+  >
+    {{ mode === "new" ? "Add New Text" : "Edit Text" }}
+  </div>
+
+  <ng-container *ngIf="mode === 'new' || mode === 'edit'; else routeBlock">
+    <textarea
+      placeholder="Enter your text here..."
+      [(ngModel)]="areaFeildText"
+      [attr.disabled]="allowTextEdit ? null : ''"
+      [maxlength]="maxLength"
+    >
+    </textarea>
+
+    <div class="flex justify-end mt-1" *ngIf="mode === 'new'">
+      <button (click)="addItext()" class="ocw-btn ocw-btn-light-dark">
+        Add Text To Check
+      </button>
+    </div>
+    <div class="flex justify-end mt-1" *ngIf="mode !== 'new'">
+      <button (click)="updateText()" class="ocw-btn ocw-btn-light-dark">
+        Update Text
+      </button>
+    </div>
+
+    <div class="flex gap-2 mt-16">
+      <div class="w-full">
+        <div class="text-sm text-primary font-medium">Font Family</div>
+
+        <select
+          class="input_style mt-2"
+          (change)="changeFontFamily($event.target.value)"
+          [(ngModel)]="selectedFontFamily"
+        >
+          <option *ngFor="let font of fonts" [value]="font">
+            {{ font }}
+          </option>
+        </select>
+      </div>
+
+      <div class="inc_dec_input">
+        <div class="text-sm text-primary font-medium">Font Size</div>
+        <div class="flex mt-2">
+          <span class="font_size_icon_left" (click)="changeFontSize(false)"
+            >-</span
+          >
+          <input
+            type="text"
+            class="input_style"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+            [(ngModel)]="selectedFontSize"
+            (ngModelChange)="fontSizeChange()"
+          />
+          <span class="font_size_icon_right" (click)="changeFontSize(true)"
+            >+</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-4 mt-4">
+      <div class="flex flex-col gap-2">
+        <div class="text-sm text-primary font-medium">Style</div>
+        <div class="flex justify-around items-center font_style_block">
+          <svg
+            [ngClass]="{ active_select: fontStyle.fontWeight === 'bold' }"
+            (click)="changeFontStyle('bold', 'fontWeight')"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="fas"
+            data-icon="bold"
+            class="svg-inline--fa fa-bold fa-w-12 active_select"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 384 512"
+          >
+            <path
+              fill="currentColor"
+              d="M333.49 238a122 122 0 0 0 27-65.21C367.87 96.49 308 32 233.42 32H34a16 16 0 0 0-16 16v48a16 16 0 0 0 16 16h31.87v288H34a16 16 0 0 0-16 16v48a16 16 0 0 0 16 16h209.32c70.8 0 134.14-51.75 141-122.4 4.74-48.45-16.39-92.06-50.83-119.6zM145.66 112h87.76a48 48 0 0 1 0 96h-87.76zm87.76 288h-87.76V288h87.76a56 56 0 0 1 0 112z"
+            ></path>
+          </svg>
+
+          <div class="divider-y"></div>
+          <svg
+            [ngClass]="{ active_select: fontStyle.italic === 'italic' }"
+            (click)="changeFontStyle('italic', 'fontStyle')"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="fas"
+            data-icon="italic"
+            class="svg-inline--fa fa-italic fa-w-10"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 320 512"
+          >
+            <path
+              fill="currentColor"
+              d="M320 48v32a16 16 0 0 1-16 16h-62.76l-80 320H208a16 16 0 0 1 16 16v32a16 16 0 0 1-16 16H16a16 16 0 0 1-16-16v-32a16 16 0 0 1 16-16h62.76l80-320H112a16 16 0 0 1-16-16V48a16 16 0 0 1 16-16h192a16 16 0 0 1 16 16z"
+            ></path>
+          </svg>
+
+          <div class="divider-y"></div>
+          <svg
+            [ngClass]="{ active_select: fontStyle.underline }"
+            (click)="changeFontStyle('underline', 'underline')"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="fas"
+            data-icon="underline"
+            class="svg-inline--fa fa-underline fa-w-14"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+          >
+            <path
+              fill="currentColor"
+              d="M32 64h32v160c0 88.22 71.78 160 160 160s160-71.78 160-160V64h32a16 16 0 0 0 16-16V16a16 16 0 0 0-16-16H272a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h32v160a80 80 0 0 1-160 0V64h32a16 16 0 0 0 16-16V16a16 16 0 0 0-16-16H32a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16zm400 384H16a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16z"
+            ></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="text-sm text-primary font-medium">Alignment</div>
+        <div class="flex justify-around items-center font_style_block">
+          <svg
+            [ngClass]="{ active_select: textAlign === 'left' }"
+            (click)="changeAlignment('left')"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="far"
+            data-icon="align-left"
+            class="svg-inline--fa fa-align-left fa-w-14"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+          >
+            <path
+              fill="currentColor"
+              d="M12.83 344h262.34A12.82 12.82 0 0 0 288 331.17v-22.34A12.82 12.82 0 0 0 275.17 296H12.83A12.82 12.82 0 0 0 0 308.83v22.34A12.82 12.82 0 0 0 12.83 344zm0-256h262.34A12.82 12.82 0 0 0 288 75.17V52.83A12.82 12.82 0 0 0 275.17 40H12.83A12.82 12.82 0 0 0 0 52.83v22.34A12.82 12.82 0 0 0 12.83 88zM432 168H16a16 16 0 0 0-16 16v16a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-16a16 16 0 0 0-16-16zm0 256H16a16 16 0 0 0-16 16v16a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-16a16 16 0 0 0-16-16z"
+            ></path>
+          </svg>
+          <div class="divider-y"></div>
+          <svg
+            [ngClass]="{ active_select: textAlign === 'center' }"
+            (click)="changeAlignment('center')"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="far"
+            data-icon="align-center"
+            class="svg-inline--fa fa-align-center fa-w-14"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+          >
+            <path
+              fill="currentColor"
+              d="M108.1 88h231.81A12.09 12.09 0 0 0 352 75.9V52.09A12.09 12.09 0 0 0 339.91 40H108.1A12.09 12.09 0 0 0 96 52.09V75.9A12.1 12.1 0 0 0 108.1 88zM432 424H16a16 16 0 0 0-16 16v16a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-16a16 16 0 0 0-16-16zm0-256H16a16 16 0 0 0-16 16v16a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-16a16 16 0 0 0-16-16zm-92.09 176A12.09 12.09 0 0 0 352 331.9v-23.81A12.09 12.09 0 0 0 339.91 296H108.1A12.09 12.09 0 0 0 96 308.09v23.81a12.1 12.1 0 0 0 12.1 12.1z"
+            ></path>
+          </svg>
+          <div class="divider-y"></div>
+          <svg
+            [ngClass]="{ active_select: textAlign === 'right' }"
+            (click)="changeAlignment('right')"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="far"
+            data-icon="align-right"
+            class="svg-inline--fa fa-align-right fa-w-14"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+          >
+            <path
+              fill="currentColor"
+              d="M16 216h416a16 16 0 0 0 16-16v-16a16 16 0 0 0-16-16H16a16 16 0 0 0-16 16v16a16 16 0 0 0 16 16zm416 208H16a16 16 0 0 0-16 16v16a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-16a16 16 0 0 0-16-16zm3.17-384H172.83A12.82 12.82 0 0 0 160 52.83v22.34A12.82 12.82 0 0 0 172.83 88h262.34A12.82 12.82 0 0 0 448 75.17V52.83A12.82 12.82 0 0 0 435.17 40zm0 256H172.83A12.82 12.82 0 0 0 160 308.83v22.34A12.82 12.82 0 0 0 172.83 344h262.34A12.82 12.82 0 0 0 448 331.17v-22.34A12.82 12.82 0 0 0 435.17 296z"
+            ></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="text-sm text-primary font-medium">Color</div>
+        <input
+          class="color_block"
+          [(colorPicker)]="colorPicker"
+          [style.background]="colorPicker"
+          [cpPosition]="'bottom-left'"
+          (colorPickerChange)="colorPickerChange()"
+          (keypress)="(false)"
+        />
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ROUTING EDIT START -->
+  <ng-template #routeBlock>
+    <form [formGroup]="routingForm" *ngIf="routingForm">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-2">
+          <label class="text-sm">Routing Number</label>
+          <input
+            readonly
+            type="text"
+            class="input_style cursor-pointer"
+            (click)="openInfoOnEdit()"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+            [value]="routingNum"
+            [attr.disabled]="
+              canvasService.bankVariables.bankAccountIsVerified ? '' : null
+            "
+          />
+
+          <app-control-message
+            [control]="routingForm.controls.routingNum"
+          ></app-control-message>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="text-sm">Account Number</label>
+          <input
+            readonly
+            type="text"
+            class="input_style cursor-pointer"
+            (click)="openInfoOnEdit()"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+            [value]="bankAccNum"
+            maxlength="24"
+            [attr.disabled]="
+              canvasService.bankVariables.bankAccountIsVerified ? '' : null
+            "
+          />
+
+          <app-control-message
+            [control]="routingForm.controls.bankAccountNumber"
+          ></app-control-message>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="text-sm">Next Check Number</label>
+          <input
+            type="text"
+            class="input_style"
+            maxlength="12"
+            (keypress)="utils.numberOnly($event, 'numeric')"
+            formControlName="checkSerialNumber"
+          />
+
+          <app-control-message
+            [control]="routingForm.controls.checkSerialNumber"
+          ></app-control-message>
+        </div>
+
+        <div class="flex justify-between routing_pos">
+          <div class="inc_dec_input">
+            <div class="text-sm text-primary font-medium">Left</div>
+            <div class="flex mt-2">
+              <span
+                class="font_size_icon_left"
+                (click)="routingPos('-', 'left')"
+                >-</span
+              >
+              <input
+                type="text"
+                class="input_style"
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                formControlName="left"
+              />
+              <span
+                class="font_size_icon_right"
+                (click)="routingPos('+', 'left')"
+                >+</span
+              >
+            </div>
+          </div>
+
+          <div class="inc_dec_input">
+            <div class="text-sm text-primary font-medium">Top</div>
+            <div class="flex mt-2">
+              <span class="font_size_icon_left" (click)="routingPos('-', 'top')"
+                >-</span
+              >
+              <input
+                type="text"
+                class="input_style"
+                (keypress)="utils.numberOnly($event, 'numeric')"
+                formControlName="top"
+              />
+              <span
+                class="font_size_icon_right"
+                (click)="routingPos('+', 'top')"
+                >+</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </ng-template>
+  <!-- ROUTING EDIT END -->
+</div>

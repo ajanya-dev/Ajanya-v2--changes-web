@@ -1,0 +1,139 @@
+<div class="px-[6px] pb-[6px]">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <span
+      class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+    >
+      <span class="pl-1 font-inter font-semibold text-base pb-0.5">
+        {{ editMode ? 'Edit Rule' : 'Add New Rule' }}
+      </span>
+    </span>
+    <div [mat-dialog-close]="false">
+      <fa-icon
+        class="text-secondary-text-color cursor-pointer"
+        [icon]="['fas', 'xmark']"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="flex flex-col gap-4" [formGroup]="ruleForm">
+    <div>
+      <app-common-input-field
+        placeholder="Enter Name for Policy"
+        formControlName="name"
+      ></app-common-input-field>
+      <app-control-message-v35
+        [control]="ruleForm.controls.name"
+      ></app-control-message-v35>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <span class="font-semibold text-base text-main-text-color">Rule</span>
+
+      <div
+        class="border border-input-border-color rounded p-3 flex flex-col gap-3"
+      >
+        <!-- If -->
+        <div class="flex flex-col gap-2">
+          <span class="font-medium text-main-text-color">If</span>
+          <div class="flex gap-3">
+            <div
+              class="w-1/4 h-9 border border-input-border-color flex justify-center items-center rounded text-main-text-color"
+            >
+              <span> Amount </span>
+            </div>
+            <div class="w-1/4 h-9 single_input">
+              <ng-select
+                class="text-center"
+                appendTo="body"
+                name="company"
+                formControlName="criteriaOperator"
+              >
+                <ng-option selected value=">"> > </ng-option>
+                <ng-option value="<"> < </ng-option>
+                <ng-option value="=="> = </ng-option>
+              </ng-select>
+            </div>
+            <div class="w-2/4 h-9 single_input">
+              <input
+                type="text"
+                class="input_style !h-9"
+                placeholder="Amount"
+                formControlName="criteriaValue"
+                (keypress)="utils.numberOnly($event, 'decimal')"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Then -->
+        <div class="flex flex-col gap-2">
+          <span class="font-medium text-main-text-color">Then</span>
+          <div class="flex gap-3">
+            <div
+              class="w-1/4 h-9 border border-input-border-color flex justify-center items-center rounded text-main-text-color"
+            >
+              <span> Approver </span>
+            </div>
+            <div class="w-1/4 h-9 single_input">
+              <ng-select
+                appendTo="body"
+                name="company"
+                formControlName="approvalType"
+              >
+                <ng-option selected value="or"> Any of </ng-option>
+                <ng-option value="and"> All of </ng-option>
+              </ng-select>
+            </div>
+            <div class="w-2/4">
+              <input
+                placeholder="Approvers"
+                class="input_style !border !m-0 !h-9 rounded px-2 w-full"
+                #input
+                [matChipInputFor]="chipGrid"
+                [matAutocomplete]="auto"
+              />
+              <mat-chip-grid #chipGrid aria-label="Approvers">
+                @for (approver of selectedApprovers; track approver.userId) {
+                  <mat-chip-row (removed)="removeApprover(approver.userId)">
+                    {{ approver.username }}
+                    <button
+                      matChipRemove
+                      [attr.aria-label]="'remove ' + approver.client_name"
+                    >
+                      <fa-icon [icon]="['fas', 'xmark']"></fa-icon>
+                    </button>
+                  </mat-chip-row>
+                }
+              </mat-chip-grid>
+              <mat-autocomplete #auto="matAutocomplete">
+                @for (
+                  approver of approvers | searchFilter: input.value;
+                  track approver.client_id
+                ) {
+                  <mat-option (click)="selectApprover(approver.client_id)">
+                    {{ approver.client_name }}
+                  </mat-option>
+                }
+              </mat-autocomplete>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+  <div class="flex justify-end gap-3 pt-8">
+    <app-common-button-v35
+      [type]="{ style: 'bordered', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="cancel()"
+    ></app-common-button-v35>
+    <app-common-button-v35
+      [type]="{ style: 'modal', name: 'main' }"
+      [text]="editMode ? 'Update Rule' : 'Save Rule'"
+      (clickEvent)="submit()"
+    ></app-common-button-v35>
+  </div>
+</div>

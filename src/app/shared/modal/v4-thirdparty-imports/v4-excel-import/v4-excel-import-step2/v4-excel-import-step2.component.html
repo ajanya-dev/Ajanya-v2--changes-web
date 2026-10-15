@@ -1,0 +1,232 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex items-center gap-3">
+      <lucide-icon
+        [img]="TableIcon"
+        [size]="20"
+        class="text-v4-primary-brand-bold-color"
+      ></lucide-icon>
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          @if (!showErrorPage) {
+            Import From Excel/Csv : Match Your Data
+          } @else {
+            Error Rows
+          }
+        </h1>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    @if (!showErrorPage) {
+      <!-- Template Name + mapping hint -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="text-sm font-medium text-v4-tertiary-text-color">
+          {{ templateName || "No template" }}
+        </div>
+        @if (showPreviewHint) {
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full border border-v4-insight-card-border-blue bg-v4-insight-card-background-blue px-3 py-1 text-xs font-medium text-v4-insight-card-label-text-blue"
+          >
+            <lucide-icon
+              [img]="InfoIcon"
+              [size]="14"
+              class="shrink-0 text-v4-insight-card-icon-blue"
+            />
+            Previewing the first 5 checks. Your column mappings will be applied
+            to all uploaded checks when you submit.
+          </span>
+        }
+      </div>
+
+      <!-- Mapping Table -->
+      <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+        <div class="max-h-[490px] overflow-y-auto">
+          <table class="v4-ocw-table w-max">
+            <thead>
+              <!-- Mapping Dropdowns Row -->
+              <tr>
+                <th class="text-center whitespace-nowrap">S.No</th>
+                @for (item of headerColumns; track $index; let i = $index) {
+                  <th class="min-w-[220px]">
+                    <div class="w-[220px]">
+                      <app-v4-common-dropdown
+                        [listData]="columnOptions[i]"
+                        [config]="{
+                          placeholder: '-- Match --',
+                          displayField: 'label',
+                          outputField: 'value'
+                        }"
+                        [clearable]="false"
+                        [searchable]="false"
+                        [typeAhead]="true"
+                        appendTo="body"
+                        [ngModel]="item.selectedIndex"
+                        (ngModelChange)="onMappingChange($event, item)"
+                      ></app-v4-common-dropdown>
+                    </div>
+                  </th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              <!-- File Header Row -->
+              @if (data?.fileHeader?.length) {
+                <tr>
+                  <td class="text-center">
+                    <span class="text-xs text-v4-tertiary-text-color">1</span>
+                  </td>
+                  @for (item of data?.fileHeader; track $index) {
+                    <td class="whitespace-nowrap">{{ item }}</td>
+                  }
+                </tr>
+              }
+
+              <!-- Sample Data Rows -->
+              @for (row of checkData; track $index; let i = $index) {
+                <tr>
+                  <td class="text-center">
+                    <span class="text-xs text-v4-tertiary-text-color">{{
+                      data?.fileHeader?.length ? i + 2 : i + 1
+                    }}</span>
+                  </td>
+                  <td class="whitespace-nowrap">{{ row.date }}</td>
+                  @if (source() !== "wallet") {
+                    <td class="whitespace-nowrap">{{ row.checkNumber }}</td>
+                  }
+                  <td class="whitespace-nowrap">{{ row.amount }}</td>
+                  <td class="whitespace-nowrap">{{ row.memo }}</td>
+                  <td class="whitespace-nowrap">{{ row.notes }}</td>
+                  <td class="whitespace-nowrap">{{ row.categoryName }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeAccount }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeAddressLine1 }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeAddressLine2 }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeCompany }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeEmail }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeInvoice }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeName }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeeNickName }}</td>
+                  <td class="whitespace-nowrap">{{ row.payeePhone }}</td>
+                  <td class="whitespace-nowrap">{{ row.city }}</td>
+                  <td class="whitespace-nowrap">{{ row.state }}</td>
+                  <td class="whitespace-nowrap">{{ row.country }}</td>
+                  <td class="whitespace-nowrap">{{ row.zip }}</td>
+                  @if (source() !== "wallet") {
+                    <td class="whitespace-nowrap">{{ row.paymentMethod }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else {
+      <!-- Error Table -->
+      <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+        <div class="max-h-[490px] overflow-y-auto">
+          <table class="v4-ocw-table w-max">
+            <thead>
+              <tr>
+                @for (header of tableHeaders; track $index) {
+                  <th class="min-w-[180px] whitespace-nowrap">{{ header }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of validationData; track $index) {
+                <tr>
+                  @for (field of tableFields; track $index) {
+                    <td
+                      class="whitespace-nowrap"
+                      [ngClass]="{
+                        'bg-v4-badge-error-bg-color text-v4-badge-error-text-color':
+                          item.validationError?.[field]
+                      }"
+                      [matTooltip]="item.validationError?.[field] || ''"
+                    >
+                      {{ item[field] }}
+                      @if (item.validationError?.[field]) {
+                        <lucide-icon
+                          [img]="CircleAlertIcon"
+                          [size]="14"
+                          class="text-v4-badge-error-text-color ml-1 inline-block align-middle"
+                        ></lucide-icon>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex gap-3 p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+    [ngClass]="{
+      'justify-between': !showErrorPage,
+      'justify-end': showErrorPage
+    }"
+  >
+    @if (!showErrorPage) {
+      <!-- Left: Save Template -->
+      <div class="flex items-center gap-3">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Save new template'"
+          (clickEvent)="toggleShowTemp()"
+        ></app-common-button-v4>
+        @if (showSaveTemplate) {
+          <input
+            type="text"
+            class="h-9 rounded-lg border border-v4-border-color bg-v4-secondary-background-color px-3 text-sm text-v4-main-text-color focus:border-v4-primary-brand-color focus:outline-none focus:ring-2 focus:ring-v4-brand-focus-color"
+            placeholder="Template Name"
+            [(ngModel)]="templateInputName"
+          />
+          <app-common-button-v4
+            [width]="'80px'"
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Save'"
+            [textColorInput]="'white'"
+            [loading]="savingTemplate"
+            [disabled]="savingTemplate"
+            (clickEvent)="saveTemplate()"
+          ></app-common-button-v4>
+        }
+      </div>
+      <!-- Right: Back + Submit -->
+      <div class="flex items-center gap-3">
+        <app-common-button-v4
+          [width]="'100px'"
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Back'"
+          (clickEvent)="stepBack.emit()"
+        ></app-common-button-v4>
+        <app-common-button-v4
+          [width]="'100px'"
+          [type]="{ style: 'primary', name: 'main' }"
+          [text]="'Submit'"
+          [textColorInput]="'white'"
+          [loading]="submitting"
+          [disabled]="submitting"
+          (clickEvent)="submit()"
+        ></app-common-button-v4>
+      </div>
+    } @else {
+      <app-common-button-v4
+        [width]="'100px'"
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Back'"
+        (clickEvent)="backFromError()"
+      ></app-common-button-v4>
+    }
+  </div>
+</div>

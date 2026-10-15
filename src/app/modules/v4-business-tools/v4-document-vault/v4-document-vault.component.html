@@ -1,0 +1,191 @@
+<!-- Removed min-h-screen: 100vh ignores the header, it forced a page scroll. -->
+<div
+  class="bg-v4-main-background-color w-full relative"
+>
+  <!-- Header Section -->
+  <app-v4-page-header
+    class="block mb-3"
+    title="Document Storage"
+    subtitle="Securely store and share your documents"
+    [showBackButton]="true"
+    [backButtonType]="'takeEvent'"
+    (backEvent)="goBack()"
+  />
+
+  <!-- Storage Bar + Action Buttons Card -->
+  <div
+    class="bg-v4-secondary-background-color rounded-xl border border-v4-border-color px-4 py-3 md:px-5 md:py-4 mb-3"
+  >
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5">
+      <!-- Left column: labels (top row) + progress bar (bottom row) -->
+      <div class="flex-1 min-w-0">
+        <!-- Labels row: Storage Used + pill on left, Available on right -->
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <span
+              class="text-sm font-peridot font-semibold text-v4-main-text-color whitespace-nowrap"
+            >
+              Storage Used
+            </span>
+            @if (!isLoading() && storageInfo(); as storage) {
+              <span
+                class="inline-flex items-center text-xs font-peridot font-semibold text-v4-main-text-color whitespace-nowrap bg-v4-main-background-color rounded-full px-4 py-1.5"
+              >
+                {{ storage.used_formatted }} / {{ storage.max_formatted }}
+              </span>
+            } @else {
+              <span
+                class="h-6 w-28 bg-v4-border-color rounded-full animate-pulse flex-shrink-0"
+              ></span>
+            }
+          </div>
+          @if (!isLoading() && storageInfo(); as storage) {
+            <span
+              class="text-xs font-peridot text-v4-tertiary-text-color whitespace-nowrap"
+            >
+              Available
+              <span class="font-bold text-v4-main-text-color ml-1">{{
+                storage.remaining_formatted
+              }}</span>
+            </span>
+          } @else {
+            <span
+              class="h-3 w-24 bg-v4-border-color rounded animate-pulse flex-shrink-0"
+            ></span>
+          }
+        </div>
+
+        <!-- Progress Bar (spans only the left column, ending where "Available" ends) -->
+        @if (!isLoading() && storageInfo(); as storage) {
+          <div
+            class="w-full h-2.5 bg-v4-border-color rounded-full overflow-hidden"
+          >
+            <div
+              class="h-full rounded-full transition-all duration-300"
+              [style.width.%]="storage.percentage"
+              [style.background]="
+                storage.percentage >= 100
+                  ? 'var(--v4-common-red-color)'
+                  : 'var(--v4-primary-brand-color)'
+              "
+            ></div>
+          </div>
+        } @else {
+          <div
+            class="w-full h-2.5 bg-v4-border-color rounded-full overflow-hidden"
+          >
+            <div
+              class="h-full w-1/4 bg-v4-border-color rounded-full animate-pulse"
+            ></div>
+          </div>
+        }
+      </div>
+
+      <!-- Right column: Action Buttons -->
+      <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
+        @if (!isMaxFolderLimit()) {
+          <app-common-button-v4
+            [type]="{ style: 'outline', name: 'main' }"
+            [text]="'New Folder'"
+            toolTip="Create a New Folder in the Current Location"
+            [lucideIcon]="'folder-plus'"
+            [lucideIconSize]="16"
+            customPadding="10px 20px"
+            (clickEvent)="onNewFolder()"
+          />
+        }
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Request Files'"
+          toolTip="Send a Link That Lets Someone Upload Files into This Folder"
+          [lucideIcon]="'link'"
+          [lucideIconSize]="16"
+          customPadding="10px 20px"
+          (clickEvent)="onShareCollect()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          [text]="'Share'"
+          toolTip="Share a Link to This Folder's Documents"
+          [lucideIcon]="'share-2'"
+          [lucideIconSize]="16"
+          customPadding="10px 20px"
+          (clickEvent)="onRequestFiles()"
+        />
+        @if (currentFolderId) {
+          <app-common-button-v4
+            [type]="{ style: 'primary', name: 'main' }"
+            [text]="'Upload File'"
+            toolTip="Upload One or More Documents to This Folder"
+            [lucideIcon]="'upload'"
+            [lucideIconSize]="16"
+            (clickEvent)="onUploadFile()"
+          />
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- My Storage Label — overlays the data-table's built-in toolbar row so it sits on the same line as the refresh/pagesize/filter/export icons -->
+  <div class="relative">
+    <div
+      class="absolute left-0 top-3 z-10 flex items-center gap-2 pointer-events-none"
+    >
+      <lucide-icon
+        [img]="HomeIcon"
+        [size]="16"
+        class="text-v4-main-text-color"
+      ></lucide-icon>
+      @if (breadcrumbs.length > 1) {
+        <button
+          type="button"
+          class="text-sm font-semibold font-peridot text-v4-primary-brand-bold-color cursor-pointer hover:underline pointer-events-auto bg-transparent border-none p-0"
+          (click)="navigateToBreadcrumb('')"
+        >
+          My Storage
+        </button>
+        @for (
+          crumb of breadcrumbs.slice(1);
+          track crumb.id;
+          let isLast = $last
+        ) {
+          <span class="text-v4-secondary-text-color text-xs">></span>
+          @if (isLast) {
+            <span
+              class="text-sm font-semibold font-peridot text-v4-main-text-color"
+              >{{ crumb.name }}</span
+            >
+          } @else {
+            <button
+              type="button"
+              class="text-sm font-semibold font-peridot text-v4-primary-brand-bold-color cursor-pointer hover:underline pointer-events-auto bg-transparent border-none p-0"
+              (click)="navigateToBreadcrumb(crumb.id)"
+            >
+              {{ crumb.name }}
+            </button>
+          }
+        }
+      } @else {
+        <span class="text-sm font-semibold font-peridot text-v4-main-text-color"
+          >My Storage</span
+        >
+      }
+    </div>
+  </div>
+
+  <!-- V4 Data Table Component -->
+  <app-v4-data-table
+    [showActionButtonContainer]="false"
+    [columnDefs]="columnDefs"
+    [tableId]="tableId"
+    [frameworkComponents]="frameworkComponents"
+    [defaultColumnFields]="defaultColumnFields"
+    [freeColumnResize]="false"
+    (headerButtonEvent)="headerButtonClick($event)"
+    (cellRendererIdEvent)="onActionClick($event)"
+    [useCustomEmptyState]="true"
+    [emptyStateConfig]="emptyStateConfig"
+    (emptyStateActionClick)="onEmptyStateAction()"
+  >
+  </app-v4-data-table>
+</div>

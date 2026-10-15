@@ -1,0 +1,398 @@
+<div class="flex flex-col font-inter">
+  <div
+    class="p-5 font-medium text-sm text-main-text-color border-b border-b-input-border-color"
+  >
+    Email Settings
+  </div>
+  <div class="p-5">
+    <div class="rounded-sm shadow-sm shadow-input-border-color p-4">
+      <div class="flex flex-col gap-2.5 divide-y divide-input-border-color">
+        <div class="flex flex-col gap-2.5 pb-1.5">
+          <span class="font-medium text-base text-main-text-color">
+            Customize Your Template
+          </span>
+          <div class="flex gap-3">
+            <button
+              (click)="openTemp('echeck')"
+              class="h-[38px] w-full rounded-md bg-common-dark-blue-color text-white font-semibold ocw-btn"
+            >
+              <span>e-Check</span>
+            </button>
+            <button
+              (click)="openTemp('physical_mail')"
+              class="h-[38px] w-full rounded-md bg-common-dark-blue-color text-white font-semibold ocw-btn"
+            >
+              <span>Physical Mail</span>
+            </button>
+            <button
+              (click)="openTemp('direct_deposit')"
+              class="h-[38px] w-full rounded-md bg-common-dark-blue-color text-white font-semibold ocw-btn"
+            >
+              <div class="flex flex-col">
+                <span class="leading-5">Direct Deposit</span>
+                <span class="text-xs leading-4">(No Action Required)</span>
+              </div>
+            </button>
+            <button
+              (click)="openTemp('direct_deposit_action_required')"
+              class="h-[38px] w-full rounded-md bg-common-dark-blue-color text-white font-semibold ocw-btn"
+            >
+              <div class="flex flex-col">
+                <span class="leading-5">Direct Deposit </span>
+                <span class="text-xs leading-4">(Action Required)</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2.5 py-2">
+          <span class="font-medium text-base text-main-text-color">
+            Use Instant or Queue Mails
+          </span>
+          <div>
+            <mat-radio-group
+              [value]="getString(templateData?.QueueEnable)"
+              (change)="changeOption($event, 1)"
+              class="flex frc gap-5"
+            >
+              <div>
+                <mat-radio-button value="0" class="sub"
+                  >Instant</mat-radio-button
+                >
+              </div>
+              <div>
+                <mat-radio-button value="1" class="sub">Queue</mat-radio-button>
+              </div>
+            </mat-radio-group>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2.5 py-2">
+          <span class="font-medium text-base text-main-text-color">
+            Send Email Using
+          </span>
+          <div>
+            <mat-radio-group
+              [value]="getString(templateData?.SMTPEnable)"
+              (change)="changeOption($event, 2)"
+              class="flex frc gap-5"
+            >
+              <mat-radio-button class="sub" value="0"
+                >{{ (appSettings.appConfig$ | async)?.websiteTitle }}
+                server
+              </mat-radio-button>
+
+              <mat-radio-button class="sub" value="1"
+                >My own SMTP Server
+              </mat-radio-button>
+            </mat-radio-group>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid justify-items-end pt-4">
+        <app-common-button-v35
+          [type]="{ style: 'general', name: 'main' }"
+          text="UPDATE"
+          backGroundInput="var(--common-green-color)"
+          textColorInput="white"
+          (clickEvent)="updateEmailSettings()"
+          [disabled]="isLoad"
+          [loading]="isLoad"
+          width="120px"
+        />
+      </div>
+
+      @if (templateData?.SMTPEnable === 1 || templateData?.SMTPEnable === "1") {
+        <div class="h-4"></div>
+        <div class="border border-input-border-color rounded-md p-2">
+          @if (templateData?.isSMTP) {
+            @if (templateData?.smtpSettings.length !== 0) {
+              <div class="w-full">
+                <mat-radio-group (change)="changeOption($event, 3)">
+                  <table
+                    class="table-auto w-full border border-common-secondary-blue-color"
+                  >
+                    <thead
+                      class="text-xs font-semibold uppercase text-gray-400 bg-secondary-background-color"
+                    >
+                      <tr>
+                        <th class="p-1">
+                          <div class="font-semibold text-left">Host</div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-left">Port</div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-left">
+                            From<br />
+                            Name
+                          </div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-center">
+                            From<br />
+                            Address
+                          </div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-left">Encryption</div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-left">Username</div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-left">Select</div>
+                        </th>
+                        <th class="p-1">
+                          <div class="font-semibold text-center">Action</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tr class="h-1"></tr>
+                    <tbody class="text-sm divide-y divide-input-border-color">
+                      @for (
+                        item of templateData?.smtpSettings;
+                        track item;
+                        let i = $index
+                      ) {
+                        <tr
+                          [ngClass]="{
+                            'bg-common-secondary-blue-color':
+                              item.isDefault === 1
+                          }"
+                          class="cursor-pointer height-50"
+                        >
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-left">{{ item.host }}</div>
+                          </td>
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-left">{{ item.port }}</div>
+                          </td>
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-left">{{ item.fromName }}</div>
+                          </td>
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-left">
+                              {{ item.fromAddress }}
+                            </div>
+                          </td>
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-center">
+                              {{ item.encryptionType }}
+                            </div>
+                          </td>
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-left">{{ item.username }}</div>
+                          </td>
+                          <td (click)="clickToRow(i)" class="p-2.5">
+                            <div class="text-center">
+                              <mat-radio-button
+                                [value]="item.id"
+                                [checked]="item.isDefault === 1"
+                              ></mat-radio-button>
+                            </div>
+                          </td>
+                          <td class="p-2.5 text-center">
+                            <div class="text-center flex gap-1">
+                              <fa-icon
+                                [icon]="['fas', 'pen-to-square']"
+                                (click)="openServerForm('E', i, item)"
+                              ></fa-icon>
+                              <fa-icon
+                                [icon]="['fas', 'trash']"
+                                (click)="deleteSMTPserver(i, item.id)"
+                              ></fa-icon>
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </mat-radio-group>
+              </div>
+            }
+
+            <div class="flex text-sm pt-4 pb-4 items-baseline gap-2">
+              <app-common-button-v35
+                (clickEvent)="openServerForm('A')"
+                [type]="{ style: 'modal', name: 'main' }"
+                text="Click here to add new smtp server"
+              />
+            </div>
+          }
+          @if (editOrCreateServer) {
+            <form class="grid grid-cols-2 gap-3" [formGroup]="smtpServerForm">
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="host"
+                />
+                <label for="host" class="floating_label_field"
+                  >Host<span class="required ml-px">*</span></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.host"
+                ></app-control-message-v35>
+              </div>
+
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="port"
+                />
+                <label for="port" class="floating_label_field"
+                  >Port<span class="required ml-px">*</span></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.port"
+                ></app-control-message-v35>
+              </div>
+              <div class="single_input no_modal_btn w-full">
+                <select
+                  value="ssl"
+                  class="form-select input_style"
+                  formControlName="encryptionType"
+                >
+                  <option value="ssl" selected>SSL</option>
+                  <option value="tls">TLS</option>
+                </select>
+                <label for="type" class="floating_label_field"
+                  >Encryption type</label
+                >
+              </div>
+
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="fromAddress"
+                />
+                <label for="address" class="floating_label_field"
+                  >From Email Address<span class="required ml-px"
+                    >*</span
+                  ></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.fromAddress"
+                ></app-control-message-v35>
+              </div>
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="fromName"
+                />
+                <label for="name" class="floating_label_field"
+                  >From Name<span class="required ml-px">*</span></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.fromName"
+                ></app-control-message-v35>
+              </div>
+
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="replyToAddress"
+                />
+                <label for="reply" class="floating_label_field"
+                  >Reply To<span class="required ml-px">*</span></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.replyToAddress"
+                ></app-control-message-v35>
+              </div>
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="text"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="username"
+                />
+                <label for="username" class="floating_label_field"
+                  >Username<span class="required ml-px">*</span></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.username"
+                ></app-control-message-v35>
+              </div>
+
+              <div class="single_input no_modal_btn w-full">
+                <input
+                  type="password"
+                  class="input_style"
+                  placeholder=" "
+                  required
+                  formControlName="password"
+                />
+                <label for="password" class="floating_label_field"
+                  >Password<span class="required ml-px">*</span></label
+                >
+                <app-control-message-v35
+                  [control]="smtpServerForm.controls.password"
+                ></app-control-message-v35>
+              </div>
+            </form>
+            <div class="pt-3 flex justify-end gap-2">
+              <app-common-button-v35
+                (clickEvent)="testSMTPsettings()"
+                [disabled]="btnDisable"
+                [loading]="btnDisable"
+                [type]="{ style: 'modal', name: 'main' }"
+                text="Test SMTP Settings"
+              >
+              </app-common-button-v35>
+              <app-common-button-v35
+                [type]="{ style: 'general', name: 'main' }"
+                [text]="mode === 'A' ? 'ADD' : 'UPDATE'"
+                backGroundInput="var(--common-green-color)"
+                textColorInput="white"
+                (clickEvent)="addNewSMTPserver()"
+                [disabled]="isAddLoad"
+                [loading]="isAddLoad"
+                width="120px"
+              >
+              </app-common-button-v35>
+            </div>
+          }
+          @if (!templateData?.isSMTP) {
+            <div class="flex justify-between gap-4 items-center">
+              <div>
+                <h4 class="text-common-red-color font-inter font-normal">
+                  Contact the customer support to enable your own SMTP server
+                </h4>
+                <p class="text-main-text-color text-xs font-inter font-normal">
+                  You can also send from your own email, please contact customer
+                  support to enable this feature
+                </p>
+              </div>
+              <div>
+                <app-common-button-v35
+                  class="flex-1"
+                  [type]="{ style: 'filled', name: 'main' }"
+                  text="Connect with Support"
+                  (clickEvent)="openSupportChat()"
+                ></app-common-button-v35>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

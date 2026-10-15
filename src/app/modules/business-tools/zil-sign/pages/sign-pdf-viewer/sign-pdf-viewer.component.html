@@ -1,0 +1,832 @@
+<div class="flex flex-col h-screen bg-main-background-color overflow-hidden">
+  <!-- Top Header Bar -->
+  <div
+    class="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-3 bg-main-background-color border-b border-input-border-color gap-3"
+  >
+    <!-- Left: Back and Breadcrumb -->
+    <div class="flex items-center gap-3 flex-1 min-w-0">
+      @if (!isSignerMode) {
+        <button
+          (click)="goBack()"
+          class="text-secondary-text-color hover:text-main-text-color transition-colors flex-shrink-0"
+        >
+          <fa-icon [icon]="faArrowLeft" class="text-sm"></fa-icon>
+        </button>
+      }
+      <div class="flex items-center gap-2 text-xs md:text-sm text-secondary-text-color min-w-0">
+        <span class="hidden sm:inline">Documents</span>
+        <fa-icon [icon]="faChevronRight" class="text-xs hidden sm:inline"></fa-icon>
+        <span class="text-main-text-color truncate">{{
+          documentName || "Loading..."
+        }}</span>
+      </div>
+    </div>
+
+    <!-- Center: Page Navigation -->
+    <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
+      <button
+        (click)="previousPage()"
+        [disabled]="currentPage === 1"
+        class="p-1 text-secondary-text-color hover:text-main-text-color disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <fa-icon [icon]="faChevronLeft" class="text-xs md:text-sm"></fa-icon>
+      </button>
+      <span class="text-xs md:text-sm text-main-text-color font-medium whitespace-nowrap"
+        >Page {{ currentPage }} of {{ totalPages }}</span
+      >
+      <button
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages"
+        class="p-1 text-secondary-text-color hover:text-main-text-color disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <fa-icon [icon]="faChevronRight" class="text-xs md:text-sm"></fa-icon>
+      </button>
+      <div class="h-6 w-px bg-input-border-color mx-1 md:mx-2"></div>
+      <button
+        (click)="zoomOut()"
+        class="p-1 text-secondary-text-color hover:text-main-text-color transition-colors"
+      >
+        <fa-icon [icon]="faMagnifyingGlassMinus" class="text-xs"></fa-icon>
+      </button>
+      <span class="text-xs text-secondary-text-color whitespace-nowrap">{{ zoomLevel }}%</span>
+      <button
+        (click)="zoomIn()"
+        class="p-1 text-secondary-text-color hover:text-main-text-color transition-colors"
+      >
+        <fa-icon [icon]="faMagnifyingGlassPlus" class="text-xs"></fa-icon>
+      </button>
+    </div>
+
+    <!-- Right: Action Buttons -->
+    <div class="flex items-center gap-2 flex-shrink-0">
+      @if (!isSignerMode) {
+        <app-common-button-v35
+          [type]="{ style: 'filled-green', name: 'action' }"
+          text="Send"
+          (clickEvent)="send()"
+          [loading]="loadingSubmit"
+        >
+        </app-common-button-v35>
+      } @else {
+        <!-- Signer Mode Buttons -->
+        <app-common-button-v35
+          [type]="{ style: 'filled-green', name: 'action' }"
+          text="{{ canSubmit() ? 'Submit' : 'Agree & Continue' }}"
+          (clickEvent)="canSubmit() ? submitAllFields() : openSignAgreementModal()"
+          [loading]="loadingSubmit"
+          [disabled]="pdfError"
+        >
+        </app-common-button-v35>
+      }
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Left Sidebar: PDF Pages Thumbnails - Only visible on laptop and above -->
+    @if (pdfPages.length > 0) {
+      <div
+        class="hidden 2xl:block w-[200px] bg-main-background-color border-r border-input-border-color overflow-y-auto flex-shrink-0"
+      >
+        <div class="p-3">
+          <p class="text-xs font-semibold text-main-text-color mb-2 uppercase">
+            Pages
+          </p>
+          <div class="flex flex-col gap-2">
+            @for (page of pdfPages; track page.pageNumber) {
+              <div
+                role="button"
+                tabindex="0"
+                (click)="goToPage(page.pageNumber)"
+                (keyup.enter)="goToPage(page.pageNumber)"
+                (keyup.space)="goToPage(page.pageNumber)"
+                [ngClass]="{
+                  'border-2 border-common-blue-color bg-common-secondary-blue-color':
+                    currentPage === page.pageNumber,
+                  'border border-input-border-color bg-main-background-color':
+                    currentPage !== page.pageNumber
+                }"
+                class="relative cursor-pointer rounded p-1 transition-all hover:bg-secondary-background-color hover:shadow-sm"
+              >
+                <div
+                  class="aspect-[3/4] bg-secondary-background-color rounded overflow-hidden flex items-center justify-center relative"
+                >
+                  @if (page.thumbnail) {
+                    <img
+                      [src]="page.thumbnail"
+                      [alt]="'Page ' + page.pageNumber"
+                      class="w-full h-full object-contain"
+                    />
+                  } @else {
+                    <span class="text-xs text-secondary-text-color">{{
+                      page.pageNumber
+                    }}</span>
+                  }
+                </div>
+                @if (currentPage === page.pageNumber) {
+                  <div
+                    class="absolute -top-1 -left-1 w-5 h-5 bg-common-blue-color rounded-full flex items-center justify-center shadow-md"
+                  >
+                    <span class="text-xs text-main-text-color font-semibold">{{
+                      page.pageNumber
+                    }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Center: PDF Viewer -->
+    <div
+      class="flex-1 flex flex-col overflow-hidden bg-secondary-background-color min-w-0"
+    >
+      <div
+        #pdfContainer
+        class="flex-1 relative overflow-auto transition-all bg-secondary-background-color p-2 md:p-3 lg:p-5 flex justify-center"
+        [ngClass]="{
+          'border-2 border-common-blue-color bg-common-blue-color bg-opacity-10':
+            isDragOver
+        }"
+      >
+        <!-- Loading State -->
+        @if (pdfLoading) {
+          <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+              <p class="text-secondary-text-color">Loading PDF...</p>
+            </div>
+          </div>
+        }
+
+        <!-- Error State -->
+        @if (pdfError && !pdfLoading) {
+          <div class="flex items-center justify-center h-full">
+            <div
+              class="text-center p-4 bg-common-secondary-red-color bg-opacity-10 border border-common-red-color rounded"
+            >
+              <p class="text-main-text-color">{{ pdfError }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- PDF Pages Container - Always rendered so ViewChild is available -->
+        <div
+          #pdfPagesContainer
+          class="relative min-h-full w-full"
+          [style.display]="pdfLoading || pdfError ? 'none' : 'block'"
+          [style.max-width.px]="
+            pdfPages.length > 0 ? getMaxPdfWidth() : 'auto'
+          "
+        ></div>
+
+        <!-- Drop Zone Overlay - receives drop events -->
+        <div
+          #pdfOverlay
+          class="absolute inset-0 z-[50]"
+          [ngClass]="{
+            'pointer-events-none': !isDragOver && draggingField === null,
+            'pointer-events-auto': isDragOver || draggingField !== null
+          }"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Recipients/Fields OR Field Settings - Hidden in signer mode -->
+    @if (!isSignerMode) {
+      <div
+        class="w-full sm:w-[250px] md:w-[280px] lg:w-[20%] bg-main-background-color border-l border-input-border-color flex-shrink-0 flex flex-col"
+      >
+
+        <!-- ── Field Settings Panel (shown when a recipient field is clicked) ── -->
+        @if (selectedField) {
+          <div class="flex flex-col h-full">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-input-border-color flex-shrink-0">
+              <h3 class="text-sm font-semibold text-main-text-color">{{ getSettingsPanelTitle() }}</h3>
+              @if (fieldSettingsSaved) {
+                <span class="text-xs text-common-green-color font-medium">Saved ✓</span>
+              }
+              <button
+                (click)="onFieldSettingsClose()"
+                class="text-secondary-text-color hover:text-main-text-color transition-colors p-1 rounded"
+              >
+                <fa-icon [icon]="faXmark" class="text-sm"></fa-icon>
+              </button>
+            </div>
+
+            <!-- Scrollable form body -->
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+
+              <!-- Recipient -->
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-secondary-text-color">Recipient</label>
+                <select
+                  [(ngModel)]="selectedField!.recipientId"
+                  (ngModelChange)="onFieldSettingChange()"
+                  class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                >
+                  @for (r of getAssignableRecipients(); track r.id) {
+                    <option [ngValue]="r.id">{{ r.email || r.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Checkboxes -->
+              <div class="flex flex-col gap-3">
+                  <div class="flex items-center gap-2 select-none"
+                    [class.opacity-40]="selectedField!.type === 'checkbox' && selectedField!.groupName && (selectedField!.minRequired || selectedField!.maxRequired)"
+                    [title]="selectedField!.type === 'checkbox' && selectedField!.groupName && (selectedField!.minRequired || selectedField!.maxRequired) ? 'Required is controlled by Min/Max for grouped checkboxes' : ''">
+                    <input type="checkbox" [(ngModel)]="selectedField!.required"
+                      (ngModelChange)="onFieldSettingChange()"
+                      [disabled]="selectedField!.type === 'checkbox' && selectedField!.groupName && (selectedField!.minRequired || selectedField!.maxRequired)"
+                      class="w-4 h-4 accent-common-green-color rounded cursor-pointer" />
+                    <span class="text-sm text-main-text-color">Required</span>
+                  </div>
+                <div class="flex items-center gap-2 select-none">
+                  <input type="checkbox" [(ngModel)]="selectedField!.fixedWidth"
+                    (ngModelChange)="onFieldSettingChange()"
+                    class="w-4 h-4 accent-common-green-color rounded cursor-pointer" />
+                  <span class="text-sm text-main-text-color">Fixed width</span>
+                </div>
+                <div class="flex items-center gap-2 select-none">
+                  <input type="checkbox" [(ngModel)]="selectedField!.fixedHeight"
+                    (ngModelChange)="onFieldSettingChange()"
+                    class="w-4 h-4 accent-common-green-color rounded cursor-pointer" />
+                  <span class="text-sm text-main-text-color">Fixed height</span>
+                </div>
+              </div>
+
+              <!-- Default value — not applicable for signature/initial/sign_date/checkbox/radio/attachment -->
+              @if (!['signature', 'initial', 'sign_date', 'checkbox', 'radio', 'attachment'].includes(selectedField!.type)) {
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-secondary-text-color">Default value</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="selectedField!.defaultValue"
+                    (ngModelChange)="onFieldSettingChange()"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                  />
+                </div>
+              }
+
+              <!-- Field name -->
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-secondary-text-color">Field name</label>
+                <input
+                  type="text"
+                  [(ngModel)]="selectedField!.fieldName"
+                  (ngModelChange)="onFieldSettingChange()"
+                  class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                />
+              </div>
+
+              <!-- Group name — radio fields only -->
+              @if (selectedField!.type === 'radio') {
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-secondary-text-color">Group name</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="selectedField!.groupName"
+                    (ngModelChange)="onFieldSettingChange()"
+                    placeholder="e.g. gender, yes_no"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                  />
+                  <span class="text-xs text-secondary-text-color">Radio fields sharing the same group name are mutually exclusive.</span>
+                </div>
+              }
+
+              <!-- Group settings — checkbox fields only -->
+              @if (selectedField!.type === 'checkbox') {
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-xs font-medium text-secondary-text-color">Group name</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="selectedField!.groupName"
+                      (ngModelChange)="onFieldSettingChange()"
+                      placeholder="e.g. payment_method"
+                      class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                    />
+                    <span class="text-xs text-secondary-text-color">Checkboxes sharing the same group name are validated together.</span>
+                  </div>
+                  @if (selectedField!.groupName && getCheckboxGroupSize() > 1) {
+                    <div class="flex gap-2">
+                      <div class="flex flex-col gap-1 flex-1">
+                        <label class="text-xs font-medium text-secondary-text-color">Min required</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="selectedField!.minRequired"
+                          (ngModelChange)="onFieldSettingChange()"
+                          min="0"
+                          [max]="getCheckboxGroupSize()"
+                          placeholder="0"
+                          class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                        />
+                      </div>
+                      <div class="flex flex-col gap-1 flex-1">
+                        <label class="text-xs font-medium text-secondary-text-color">Max allowed</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="selectedField!.maxRequired"
+                          (ngModelChange)="onFieldSettingChange()"
+                          min="0"
+                          [max]="getCheckboxGroupSize()"
+                          placeholder="∞"
+                          class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                        />
+                      </div>
+                    </div>
+                    @if (getCheckboxGroupValidationError()) {
+                      <span class="text-xs font-medium text-common-red-color">{{ getCheckboxGroupValidationError() }}</span>
+                    }
+                  } @else if (selectedField!.groupName) {
+                    <span class="text-xs text-secondary-text-color">Add more checkboxes to this group to enable min/max validation.</span>
+                  }
+                </div>
+              }
+
+              <!-- Max file size — attachment fields only -->
+              @if (selectedField!.type === 'attachment') {
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-secondary-text-color">Max file size (MB)</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="selectedField!.maxFileSizeMB"
+                    (ngModelChange)="onFieldSettingChange()"
+                    min="1"
+                    placeholder="No limit"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                  />
+                </div>
+              }
+
+              <!-- Character limit — text-type fields only -->
+              @if (isTextTypeField() && selectedField!.type !== 'email') {
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-secondary-text-color">Character limit</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="selectedField!.characterLimit"
+                    (ngModelChange)="onFieldSettingChange()"
+                    min="1"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                  />
+                </div>
+              }
+
+              <!-- Validation — text-type fields only, not email (already email-validated) -->
+              @if (isTextTypeField() && selectedField!.type !== 'email') {
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-secondary-text-color">Validation</label>
+                  <select
+                    [(ngModel)]="selectedField!.validation"
+                    (ngModelChange)="onFieldSettingChange()"
+                    class="w-full px-3 py-2 text-sm border border-input-border-color rounded bg-secondary-background-color text-main-text-color focus:outline-none focus:border-common-blue-color"
+                  >
+                    <option value="none">None</option>
+                    <option value="numeric">Numeric</option>
+                    <option value="alphabet">Alphabet</option>
+                  </select>
+                </div>
+              }
+
+            </div>
+
+            <!-- Footer: Delete + Save -->
+            <div class="flex items-center justify-between px-4 py-3 border-t border-input-border-color flex-shrink-0">
+              <app-common-button-v35
+                [type]="{ style: 'filled-red', name: 'action' }"
+                text="Delete"
+                (clickEvent)="removeField(selectedField!.id!)"
+              ></app-common-button-v35>
+            </div>
+
+          </div>
+        } @else {
+        <!-- ── Recipients and Fields Section (default view) ── -->
+        <div class="p-2 md:p-4 overflow-y-auto flex-1">
+          <!-- Recipients Section -->
+          <div class="mb-4 md:mb-6">
+            <div class="flex items-center justify-between mb-2 md:mb-3">
+              <p class="text-sm md:text-base font-semibold text-main-text-color">
+                Recipients
+              </p>
+            </div>
+          <div class="flex flex-col gap-2">
+            @for (recipient of recipients; track recipient.id) {
+              <div
+                class="flex items-center justify-between px-3 py-2 rounded-lg border-2 transition-all"
+                [ngClass]="{
+                  'cursor-pointer': !isSignerMode && canAssignFields(recipient),
+                  'cursor-not-allowed opacity-60': !isSignerMode && !canAssignFields(recipient),
+                  'border-common-secondary-blue-color bg-common-secondary-blue-color':
+                    recipient.role === 'owner' && selectedRecipientId !== recipient.id,
+                  'border-common-secondary-green-color bg-common-secondary-green-color':
+                    selectedRecipientId !== recipient.id && canAssignFields(recipient),
+                  'border-gray-300 bg-gray-50': !canAssignFields(recipient),
+                  'ring-2 ring-offset-2 shadow-lg': selectedRecipientId === recipient.id
+                }"
+                [attr.role]="!isSignerMode && canAssignFields(recipient) ? 'button' : null"
+                [attr.tabindex]="isSignerMode || !canAssignFields(recipient) ? -1 : 0"
+                [style.border-color]="selectedRecipientId === recipient.id ? getRecipientColor(recipient.id) : undefined"
+                [style.background-color]="selectedRecipientId === recipient.id ? getRecipientColorRgba(recipient.id, 0.15) : undefined"
+                (click)="!isSignerMode && canAssignFields(recipient) ? onRecipientSelect(recipient.id) : null"
+                (keyup.enter)="!isSignerMode && canAssignFields(recipient) ? onRecipientSelect(recipient.id) : null"
+                (keyup.space)="!isSignerMode && canAssignFields(recipient) ? onRecipientSelect(recipient.id) : null"
+              >
+                <div class="flex items-center gap-2 flex-1">
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white transition-all shadow-md"
+                    [style.background-color]="getRecipientColor(recipient.id)"
+                    [style.transform]="selectedRecipientId === recipient.id ? 'scale(1.1)' : 'scale(1)'"
+                  >
+                    {{ getRecipientIcon(recipient) }}
+                  </div>
+                  <div class="flex flex-col flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="text-sm font-medium text-main-text-color"
+                        [class.font-bold]="selectedRecipientId === recipient.id"
+                      >
+                        {{ getRecipientDisplayName(recipient) }}
+                      </span>
+                      @if (selectedRecipientId === recipient.id) {
+                        <span class="text-xs px-2 py-0.5 rounded-full text-white hidden xl:block"
+                          [style.background-color]="getRecipientColor(recipient.id)"
+                        >
+                          Active
+                        </span>
+                      }
+                      @if (recipient.role === 'receives_copy') {
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-500 text-white">
+                          Receives Copy
+                        </span>
+                      }
+                    </div>
+                    @if (recipient.email) {
+                      <span class="text-xs text-secondary-text-color">
+                        {{ recipient.email }}
+                      </span>
+                    }
+                    @if (!isSignerMode) {
+                      @if (canAssignFields(recipient)) {
+                        <span class="text-xs text-secondary-text-color">
+                          {{ getFieldsForRecipient(recipient.id).length }} field(s)
+                        </span>
+                      } @else {
+                        <span class="text-xs text-gray-500 italic">
+                          No fields needed
+                        </span>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Fields Section -->
+        <div>
+          <div class="flex items-center justify-between mb-2 md:mb-3">
+          <p class="text-sm font-semibold text-main-text-color">
+            Fields
+          </p>
+          <fa-icon
+            [icon]="faCircleQuestion"
+            class="text-common-blue-color text-base flex-shrink-0"
+            [matTooltip]="'Drag and drop field to the document. \nDouble-click to edit field properties.'"
+            [matTooltipClass]="'text-base font-medium'"
+            [matTooltipPosition]="'left'"
+            [matTooltipShowDelay]="300"
+          ></fa-icon>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+              <!-- Signature Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'signature')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faSignature"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Signature</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+              
+              <!-- Initials Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'initial')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faSignature"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Initials</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Full Name Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'name')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faUser"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Full Name</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Sign Date Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'sign_date')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCalendar"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Sign Date</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Company Name Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'company')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faBuilding"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Company</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Job Title Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'title')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faBriefcase"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Job Title</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Date Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'date')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCalendar"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Date</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Text Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'text')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faFont"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Text</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Email Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'email')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faEnvelope"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color"
+                    >Email</span
+                  >
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Checkbox Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'checkbox')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faSquareCheck"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color">Checkbox</span>
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Radio Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'radio')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faCircleDot"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color">Radio</span>
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+              <!-- Attachment Field -->
+              <div
+                draggable="true"
+                (dragstart)="onDragStart($event, 'attachment')"
+                (dragend)="onDragEnd($event)"
+                class="flex flex-row items-center justify-between p-2 border border-input-border-color bg-secondary-background-color rounded-lg cursor-move transition-all hover:bg-main-background-color gap-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center bg-common-green-color flex-shrink-0"
+                  >
+                    <fa-icon
+                      [icon]="faPaperclip"
+                      class="text-white text-xs"
+                    ></fa-icon>
+                  </div>
+                  <span class="text-sm font-medium text-main-text-color">Attachment</span>
+                </div>
+                <fa-icon
+                  [icon]="faPlus"
+                  class="text-secondary-text-color text-xs flex-shrink-0"
+                ></fa-icon>
+              </div>
+
+            </div>
+        </div>
+        </div>
+        } <!-- end @else (recipients/fields section) -->
+      </div>
+    }
+  </div>
+
+  <!-- Context Menu -->
+  @if (showContextMenu) {
+    <app-field-context-menu
+      [x]="contextMenuX"
+      [y]="contextMenuY"
+      [fieldId]="contextMenuFieldId"
+      (menuAction)="onContextMenuAction($event)"
+      (closeMenu)="onCloseContextMenu()"
+    ></app-field-context-menu>
+  }
+</div>

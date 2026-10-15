@@ -1,0 +1,340 @@
+<div [ngClass]="isModal ? '' : 'ocw_one_side_body'">
+  <div class="ocw_header">
+    <div class="title">
+      <h3>
+        {{
+          !emailVerified
+            ? "Verify Email Address"
+            : emailVerified && !phoneVerified
+              ? "Verify Phone Number"
+              : "Verification Completed"
+        }}
+      </h3>
+    </div>
+    <div [ngClass]="isModal ? 'flex gap-2 items-start justify-between' : ''">
+      <span *ngIf="showTimer"
+        ><span class="retry_msg">Retry after </span
+        ><span class="smsCountDownTime1"> {{ display }}</span></span
+      >
+      <div class="close_btn" [mat-dialog-close]="false" *ngIf="isModal">
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          data-prefix="fal"
+          data-icon="times"
+          class="svg-inline--fa fa-times fa-w-10"
+          role="img"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 320 512"
+        >
+          <path
+            fill="currentColor"
+            d="M193.94 256L296.5 153.44l21.15-21.15c3.12-3.12 3.12-8.19 0-11.31l-22.63-22.63c-3.12-3.12-8.19-3.12-11.31 0L160 222.06 36.29 98.34c-3.12-3.12-8.19-3.12-11.31 0L2.34 120.97c-3.12 3.12-3.12 8.19 0 11.31L126.06 256 2.34 379.71c-3.12 3.12-3.12 8.19 0 11.31l22.63 22.63c3.12 3.12 8.19 3.12 11.31 0L160 289.94 262.56 392.5l21.15 21.15c3.12 3.12 8.19 3.12 11.31 0l22.63-22.63c3.12-3.12 3.12-8.19 0-11.31L193.94 256z"
+          ></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <!-- main body -->
+    <div class="ocw_body" *ngIf="!emailVerified && !emailOTPSent">
+      <form [formGroup]="userForm">
+        <div class="verify-scetion">
+          <div class="img flex align-center justify-center">
+            <img
+              src="../../../../assets/icon/svg/verify-phone-mail.svg"
+              width="70%"
+              alt=""
+            />
+          </div>
+          <div class="form">
+            <div class="single_input">
+              <input
+                type="text"
+                class="input_style"
+                placeholder=" "
+                formControlName="emailAddress"
+              />
+              <label class="floating_label_field">Email Address</label>
+              <app-control-message
+                [control]="userForm.controls.emailAddress"
+              ></app-control-message>
+            </div>
+
+            <div></div>
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green submit2"
+              [disabled]="btnDisable1 || showTimer"
+              (click)="onRequestEmailVerificationOTP()"
+            >
+              <span *ngIf="btnDisable1" class="loadingSpinner"></span> Submit
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="ocw_body" *ngIf="!emailVerified && emailOTPSent">
+      <form [formGroup]="requestOtp">
+        <div class="verify-scetion">
+          <div class="img">
+            <img src="../../../../assets/icon/svg/verify-otp.svg" alt="" />
+          </div>
+          <div class="form2">
+            <div class="single_input mb-3 form-items-width">
+              <div class="add_modal_btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                  class="svg-inline--fa fa-plus fa-w-12"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                class="input_style"
+                placeholder="Enter OTP in the email"
+                formControlName="enterMailOtp"
+              />
+              <app-control-message
+                [control]="requestOtp.controls.enterMailOtp"
+              ></app-control-message>
+            </div>
+
+            <div class="btns form-items-width">
+              <button
+                [disabled]="btnDisable"
+                [ngClass]="{ disabled: btnDisable }"
+                class="ocw-btn-skyblue flex whitespace-nowrap mr-3"
+                (click)="resendOTPEmail()"
+              >
+                <svg
+                  *ngIf="!resendLoader"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 512 512"
+                >
+                  <path
+                    fill="#fff"
+                    d="M480 256c0 123.4-100.5 223.9-223.9 223.9c-48.84 0-95.17-15.58-134.2-44.86c-14.12-10.59-16.97-30.66-6.375-44.81c10.59-14.12 30.62-16.94 44.81-6.375c27.84 20.91 61 31.94 95.88 31.94C344.3 415.8 416 344.1 416 256s-71.69-159.8-159.8-159.8c-37.46 0-73.09 13.49-101.3 36.64l45.12 45.14c17.01 17.02 4.955 46.1-19.1 46.1H35.17C24.58 224.1 16 215.5 16 204.9V59.04c0-24.04 29.07-36.08 46.07-19.07l47.6 47.63C149.9 52.71 201.5 32.11 256.1 32.11C379.5 32.11 480 132.6 480 256z"
+                  />
+                </svg>
+
+                <span *ngIf="resendLoader" class="loadingSpinner"></span>Resend
+              </button>
+
+              <button
+                class="ocw-btn ocw-btn-dark-green"
+                (click)="submitEmailOtp()"
+                [disabled]="btnDisable2"
+              >
+                <svg
+                  *ngIf="!btnDisable2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                  width="22"
+                  height="22"
+                >
+                  <path
+                    fill="#fff"
+                    d="M511.6 36.86l-64 415.1c-1.5 9.734-7.375 18.22-15.97 23.05c-4.844 2.719-10.27 4.097-15.68 4.097c-4.188 0-8.319-.8154-12.29-2.472l-122.6-51.1l-50.86 76.29C226.3 508.5 219.8 512 212.8 512C201.3 512 192 502.7 192 491.2v-96.18c0-7.115 2.372-14.03 6.742-19.64L416 96l-293.7 264.3L19.69 317.5C8.438 312.8 .8125 302.2 .0625 289.1s5.469-23.72 16.06-29.77l448-255.1c10.69-6.109 23.88-5.547 34 1.406S513.5 24.72 511.6 36.86z"
+                  />
+                </svg>
+
+                <span *ngIf="btnDisable2" class="loadingSpinner"></span>Submit
+              </button>
+            </div>
+          </div>
+          <div>
+            <div class="line"></div>
+            <p class="foot-xt-disp">
+              {{ message }}
+            </p>
+            <p class="foot-xt-disp">
+              Remember to confirm that the email above is correct and to check
+              your junk or spam folder or filter if you do not receive this
+              email. Email sent from {{ staticWhiteLabelConditions.fromEmail }}
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div
+      class="ocw_body"
+      *ngIf="emailVerified && !phoneVerified && !phoneOTPSent"
+    >
+      <form [formGroup]="userForm">
+        <div class="verify-scetion">
+          <div class="img flex align-center justify-center">
+            <img
+              src="../../../../assets/icon/svg/verify-phone-mail.svg"
+              width="70%"
+              alt=""
+            />
+          </div>
+          <div class="form">
+            <div class="single_input">
+              <div class="" appOutsideClick (clickOutSide)="handleChange()">
+                <div class="phone_in_country">
+                  <div (click)="showLists()" #toggleButton1>
+                    <img [src]="selectedCountryFlag" #toggleButton2 alt="" />
+                    <label class="country_code">{{ country_code }}</label>
+                    <i *ngIf="!showList" class="fa-solid fa-caret-down"></i>
+                    <i *ngIf="showList" class="fa-solid fa-caret-up"></i>
+                  </div>
+                  <input
+                    type="tel"
+                    autocomplete="off"
+                    ng2TelInput
+                    class="input_style"
+                    formControlName="phoneNumber"
+                    id="phone"
+                    mask="(000) 000-0000"
+                    placeholder="(xxx) xxx-xxxx"
+                    id="phone"
+                    name="phone"
+                  />
+                </div>
+                <div class="list_container" *ngIf="listShow">
+                  <input
+                    type="search"
+                    class="input_style"
+                    name="search"
+                    id="search"
+                    placeholder="Search.."
+                    id="myInput"
+                    [(ngModel)]="query"
+                    [ngModelOptions]="{ standalone: true }"
+                    (keyup)="filterFunction($event)"
+                  />
+                  <div class="country_list">
+                    <div
+                      class="item"
+                      *ngFor="
+                        let country of countryList | searchFilter: query;
+                        let i = index
+                      "
+                      [ngClass]="{ 'cut-order': i == 1 }"
+                      (click)="getSelectedItem(country)"
+                    >
+                      <img [src]="country.flage_url" alt="" />
+                      <span>{{ country.name }} {{ country.dial_code }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <app-control-message
+                [control]="userForm.controls.phoneNumber"
+              ></app-control-message>
+            </div>
+            <button
+              type="button"
+              class="ocw-btn ocw-btn-dark-green submit2"
+              [disabled]="btnDisable1 || showTimer"
+              (click)="onRequestPhoneVerificationOTP()"
+            >
+              <span *ngIf="btnDisable1" class="loadingSpinner"></span> Submit
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div
+      class="ocw_body"
+      *ngIf="emailVerified && !phoneVerified && phoneOTPSent"
+    >
+      <form [formGroup]="requestOtp">
+        <div class="verify-scetion">
+          <div class="img">
+            <img src="../../../../assets/icon/svg/verify-otp.svg" alt="" />
+          </div>
+          <div class="form2">
+            <div class="single_input form-items-width mb-3">
+              <div class="add_modal_btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 320 512"
+                  class="svg-inline--fa fa-plus fa-w-12"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M272 0H48C21.5 0 0 21.5 0 48v416c0 26.5 21.5 48 48 48h224c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48zM160 480c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm112-108c0 6.6-5.4 12-12 12H60c-6.6 0-12-5.4-12-12V60c0-6.6 5.4-12 12-12h200c6.6 0 12 5.4 12 12v312z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                class="input_style"
+                placeholder="Enter OTP in the mobile"
+                formControlName="enterMobileOtp"
+                maxlength="6"
+              />
+              <app-control-message
+                [control]="requestOtp.controls.enterMobileOtp"
+              ></app-control-message>
+            </div>
+
+            <div class="btns form-items-width">
+              <button
+                [disabled]="btnDisable"
+                [ngClass]="{ disabled: btnDisable }"
+                class="ocw-btn-skyblue flex whitespace-nowrap mr-5"
+                (click)="resendOTPPhoneNumber()"
+              >
+                <svg
+                  *ngIf="!resendLoader"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 512 512"
+                >
+                  <path
+                    fill="#fff"
+                    d="M480 256c0 123.4-100.5 223.9-223.9 223.9c-48.84 0-95.17-15.58-134.2-44.86c-14.12-10.59-16.97-30.66-6.375-44.81c10.59-14.12 30.62-16.94 44.81-6.375c27.84 20.91 61 31.94 95.88 31.94C344.3 415.8 416 344.1 416 256s-71.69-159.8-159.8-159.8c-37.46 0-73.09 13.49-101.3 36.64l45.12 45.14c17.01 17.02 4.955 46.1-19.1 46.1H35.17C24.58 224.1 16 215.5 16 204.9V59.04c0-24.04 29.07-36.08 46.07-19.07l47.6 47.63C149.9 52.71 201.5 32.11 256.1 32.11C379.5 32.11 480 132.6 480 256z"
+                  />
+                </svg>
+
+                <span *ngIf="resendLoader" class="loadingSpinner"></span>Resend
+              </button>
+
+              <button
+                class="ocw-btn ocw-btn-dark-green"
+                (click)="submitMobileOtp()"
+                [disabled]="btnDisable2"
+              >
+                <svg
+                  *ngIf="!btnDisable2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                  width="22"
+                  height="22"
+                >
+                  <path
+                    fill="#fff"
+                    d="M511.6 36.86l-64 415.1c-1.5 9.734-7.375 18.22-15.97 23.05c-4.844 2.719-10.27 4.097-15.68 4.097c-4.188 0-8.319-.8154-12.29-2.472l-122.6-51.1l-50.86 76.29C226.3 508.5 219.8 512 212.8 512C201.3 512 192 502.7 192 491.2v-96.18c0-7.115 2.372-14.03 6.742-19.64L416 96l-293.7 264.3L19.69 317.5C8.438 312.8 .8125 302.2 .0625 289.1s5.469-23.72 16.06-29.77l448-255.1c10.69-6.109 23.88-5.547 34 1.406S513.5 24.72 511.6 36.86z"
+                  />
+                </svg>
+                <span *ngIf="btnDisable2" class="loadingSpinner"></span>Submit
+              </button>
+            </div>
+          </div>
+          <div *ngIf="message">
+            <div class="line"></div>
+            <p class="foot-xt-disp">
+              {{ message }}
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </ng-container>
+  <div *ngIf="loading" class="loading-container"></div>
+</div>

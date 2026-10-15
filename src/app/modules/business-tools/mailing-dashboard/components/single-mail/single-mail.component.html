@@ -1,0 +1,321 @@
+<div class="w-full h-full px-[10px]">
+  <div
+    class="bg-main-background-color mx-auto px-11 py-7 rounded max-w-[1280px] h-full"
+  >
+    <div class="flex items-center justify-between">
+      <h1 class="font-inter font-semibold text-main-text-color text-xl">
+        <app-common-back-button-v35 />
+        Single Mail
+      </h1>
+      <app-demo-video [slug]="environment.env_id === 'zilMoney' ? 'single_mail_zm' : 'single_mail_ocw'"></app-demo-video>
+    </div>
+    <div class="flex gap-4 pt-10 justify-center">
+      <form
+        [formGroup]="mailingForm"
+        class="px-8 py-9 border border-input-border-color rounded-md w-1/2 font-inter"
+      >
+        <h3 class="text-sm font-medium text-main-text-color mb-2">
+          {{
+            activeTab() === "single-mail"
+              ? "Select Bank & Payee"
+              : "Payment Information"
+          }}
+        </h3>
+        @if (activeTab() === "single-mail") {
+          <div class="flex gap-4 flex-col">
+            <div>
+              <app-bank-ac-dropdown-v3
+                formControlName="bankAc"
+                customHeight="3"
+                append="body"
+              />
+              <app-control-message-v35
+                [control]="mailingForm.controls.bankAc"
+              />
+            </div>
+            <div>
+              <app-payee-dropdown-v3
+                formControlName="payee"
+                customHeight="3"
+                appendTo="body"
+              />
+              <app-control-message-v35 [control]="mailingForm.controls.payee" />
+            </div>
+          </div>
+          <div class="flex gap-2 flex-col pt-7">
+            <div class="flex items-center gap-1">
+              <span class="text-sm font-medium text-main-text-color"
+                >Where to Mail Checks</span
+              >
+              <fa-icon
+                [icon]="faCircleInfo"
+                class="cursor-pointer text-common-blue-color text-xs"
+                matTooltip="Mail checks to your payee's known address or a custom address."
+              />
+            </div>
+            <div
+              class="border border-input-border-color rounded-md p-2 flex gap-3 flex-col"
+            >
+              <div class="flex gap-3">
+                @for (option of shippingAddressOptions; track option.id) {
+                  <div
+                    class="flex items-center"
+                    role="presentation"
+                    [class.justify-start]="option.showTooltip"
+                    (click)="onShippingAddressChange(option.id)"
+                  >
+                    <div class="custom-radio-wrapper">
+                      <input
+                        type="radio"
+                        name="payee-address"
+                        [id]="option.id"
+                        class="custom-radio-input cursor-pointer"
+                        [checked]="option.checked"
+                      />
+                    </div>
+                    <label
+                      [for]="option.id"
+                      class="ml-2 text-sm cursor-pointer"
+                      [class.whitespace-nowrap]="option.showTooltip"
+                      [class.!normal-case]="option.showTooltip"
+                    >
+                      {{ option.label }}
+                    </label>
+                    @if (option.showTooltip) {
+                      <fa-icon
+                        [icon]="faCircleQuestion"
+                        class="cursor-pointer text-secondary-text-color ml-1"
+                        [matTooltip]="option.tooltipText"
+                      ></fa-icon>
+                    }
+                  </div>
+                }
+              </div>
+              @if (shippingAddress() === "to-custom-address") {
+                <div class="custom-shipping-wrapper items-center">
+                  <div class="flex flex-col custom-shipping-option gap-4 p-3">
+                    <div class="flex gap-3 flex-col">
+                      <div class="flex flex-col single-option gap-1 w-full">
+                        <label for="mail-from" class="text-xs font-medium"
+                          >MAIL FROM</label
+                        >
+                        <div class="flex select-wrapper mt-1 flex-col">
+                          <app-check-from-address-dropdown
+                            class="w-full"
+                            [dropdownIconNeeded]="false"
+                            customHeight="0"
+                            append="body"
+                            formControlName="shippingAddressFrom"
+                          />
+                          <app-control-message-v35
+                            [control]="mailingForm.controls.shippingAddressFrom"
+                          />
+                        </div>
+                      </div>
+                      <div class="flex flex-col single-option gap-1 w-full">
+                        <label for="mail-to" class="text-xs font-medium"
+                          >MAIL TO</label
+                        >
+                        <div class="flex select-wrapper mt-1 flex-col">
+                          <app-check-to-address-dropdown
+                            class="w-full"
+                            [dropdownIconNeeded]="false"
+                            customHeight="0"
+                            append="body"
+                            formControlName="shippingAddressTo"
+                          />
+                          <app-control-message-v35
+                            [control]="mailingForm.controls.shippingAddressTo"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex flex-col single-option">
+                      <label for="shipping-type" class="text-xs font-medium"
+                        >SHIPPING TYPE</label
+                      >
+                      <div
+                        class="flex select-wrapper shipping-type flex-col mt-1"
+                      >
+                        <div>
+                          <app-v35-common-dropdown
+                            [config]="{
+                              placeholder: 'Select shipping type',
+                              displayField: 'name',
+                              style: {
+                                size: '0',
+                                enableLabelIcon: false
+                              }
+                            }"
+                            [listData]="customShippingTypeList()"
+                            [loading]="isShippingTypesLoading()"
+                            appendTo="body"
+                            formControlName="customShippingType"
+                          />
+                          <app-control-message-v35
+                            [control]="mailingForm.controls.customShippingType"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="flex flex-col single-option">
+                  <div class="flex select-wrapper shipping-type flex-col mt-1">
+                    <div>
+                      <app-v35-common-dropdown
+                        [config]="{
+                          placeholder: 'Select shipping type',
+                          displayField: 'name',
+                          style: {
+                            size: '0',
+                            enableLabelIcon: false
+                          }
+                        }"
+                        [listData]="shippingList()"
+                        [loading]="isShippingTypesLoading()"
+                        appendTo="body"
+                        formControlName="shippingType"
+                      />
+                      <app-control-message-v35
+                        [control]="mailingForm.controls.shippingType"
+                      />
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="flex gap-6 flex-col">
+            <div class="flex gap-3">
+              <div class="w-full">
+                <app-amount-input
+                  fieldLabel="Amount"
+                  formControlName="amount"
+                />
+                <app-control-message-v35
+                  [control]="mailingForm.controls.amount"
+                  [isMarginTopEnabled]="false"
+                />
+              </div>
+              <div class="w-full">
+                <app-common-input-field
+                  placeholder="Invoice Number"
+                  formControlName="invoiceNumber"
+                  [isFieldRequired]="false"
+                />
+                <app-control-message-v35
+                  [control]="mailingForm.controls.invoiceNumber"
+                />
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-full">
+                <app-common-input-field
+                  placeholder="Check Number"
+                  formControlName="checkNumber"
+                  maxlength="12"
+                  [isNumberOnly]="true"
+                  [numberType]="'numeric'"
+                />
+                <app-control-message-v35
+                  [control]="mailingForm.controls.checkNumber"
+                />
+              </div>
+              <div class="w-full">
+                <app-common-input-field
+                  placeholder="Date of Issue"
+                  formControlName="issueDate"
+                  type="date"
+                />
+                <app-control-message-v35
+                  [control]="mailingForm.controls.issueDate"
+                />
+              </div>
+            </div>
+            <div class="single_input">
+              <textarea
+                class="input_style !h-20"
+                formControlName="memo"
+                [maxLength]="150"
+                [rows]="3"
+                placeholder="Memo"
+              ></textarea>
+              <span class="floating_label_field">Memo</span>
+              <app-control-message-v35
+                [control]="mailingForm.controls.memo"
+                [isMarginTopEnabled]="false"
+              />
+            </div>
+          </div>
+          <div class="flex gap-3 justify-end pt-7">
+            <div
+              role="presentation"
+              class="h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md !text-common-blue-color border-none bg-common-secondary-blue-color"
+              (click)="openAddAttachment()"
+              [matBadge]="attachmentCount"
+              matBadgeSize="small"
+              [matBadgeHidden]="attachmentCount < 1 ? true : false"
+            >
+              <fa-icon [icon]="faPaperclip" />
+            </div>
+            @if (!IsCustom && customFieldFlag) {
+              <app-common-button-v35
+                (clickEvent)="toggleCustomFields(true)"
+                width="125px"
+                [icon]="['fas', 'plus']"
+                [isAddIcon]="true"
+                [type]="{ style: 'bordered', name: 'main' }"
+                text="Custom fields"
+              />
+            }
+          </div>
+          @if (IsCustom) {
+            <div class="mt-6 text-sm">
+              <app-common-button-v35
+                (clickEvent)="toggleCustomFields(false)"
+                width="125px"
+                [icon]="['fas', 'xmark']"
+                [isAddIcon]="true"
+                [type]="{ style: 'bordered', name: 'main' }"
+                text="Custom fields"
+              />
+
+              <div class="w-full grid grid-cols-2 gap-3 my-4">
+                @for (ele of custom_elements; track ele; let i = $index) {
+                  <div class="custom_elements">
+                    <app-common-input-field
+                      [placeholder]="ele.custom_element"
+                      [(ngModel)]="customElementGroup[i][ele.custom_element]"
+                      maxlength="150"
+                      [ngModelOptions]="{ standalone: true }"
+                      [isFieldRequired]="false"
+                    />
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+        <div class="flex gap-3 justify-end pt-7">
+          <app-common-button-v35
+            width="125px"
+            [type]="{ style: 'bordered', name: 'main' }"
+            text="Back"
+            (clickEvent)="onBack(activeTab())"
+          />
+          <app-common-button-v35
+            width="125px"
+            [type]="{ style: 'filled', name: 'main' }"
+            text="Next"
+            (clickEvent)="onNext(activeTab())"
+            [loading]="isCreateCheckLoading()"
+            [disabled]="isCreateCheckLoading()"
+          />
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,563 @@
+<div
+  class="h-full bg-secondary-background-color overflow-x-auto bulk-mail-container px-2.5"
+>
+  <!-- Dark Header -->
+  <div
+    class="bg-common-dark-blue-color text-white px-6 py-4 flex justify-between items-center rounded-t-lg"
+  >
+    <div class="flex items-center gap-3">
+      <app-common-back-button-v35
+        [backgroundColor]="'bg-secondary-background-color'"
+      />
+      <fa-icon [icon]="faEnvelope" class="text-2xl" />
+      <div>
+        <h1 class="font-inter font-semibold text-xl">Bulk Mailing System</h1>
+        <p class="font-inter text-sm opacity-90">
+          Create and manage bulk mailings with ease
+        </p>
+      </div>
+    </div>
+    <button
+      class="flex items-center gap-2 bg-secondary-background-color bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded transition text-main-text-color"
+      routerLink="/manage/business-tools/mail-dashboard/group-mailing"
+    >
+      <fa-icon [icon]="faClockRotateLeft" />
+      <span class="font-inter">History</span>
+    </button>
+  </div>
+
+  <div class="flex flex-col w-full bg-main-background-color px-6 py-4">
+    <div class="flex justify-end mt-1">
+      <app-demo-video [slug]="env.env_id==='zilMoney' ? 'ZmGroupMailing' : 'OcwGroupMailing'"></app-demo-video>
+    </div>
+    <div class="flex flex-col gap-3 my-2 p-2 md:p-3" [formGroup]="shippingForm">
+      <div class="grid grid-cols-1 gap-3">
+        <div class="flex flex-col gap-1">
+          <label
+            for="group-name"
+            class="text-sm font-normal text-main-text-color flex items-center gap-1"
+          >
+            Group Name
+            <fa-icon
+              [icon]="faCircleQuestion"
+              class="cursor-pointer text-secondary-text-color text-xs"
+              matTooltip="A group name to identify this mailing group later"
+            />
+          </label>
+          <app-common-input-field
+            placeholder="Enter group/batch name"
+            formControlName="groupName"
+          />
+          <app-control-message-v35
+            [control]="shippingForm.controls.groupName"
+          />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-inter">
+        <div class="flex flex-col single-option gap-1 w-full">
+          <label for="mail-to" class="text-sm font-normal text-main-text-color"
+            >Where do you want to send?</label
+          >
+          <div class="flex select-wrapper mt-1 flex-col">
+            <app-check-to-address-dropdown
+              class="w-full"
+              [dropdownIconNeeded]="false"
+              customHeight="0"
+              append="ng-select"
+              formControlName="shippingAddressTo"
+              [zIndex]="997"
+            />
+            <app-control-message-v35
+              [control]="shippingForm.controls.shippingAddressTo"
+            />
+          </div>
+        </div>
+        <div class="flex flex-col single-option gap-1 w-full">
+          <label
+            for="mail-from"
+            class="text-sm font-normal text-main-text-color"
+            >Sending From</label
+          >
+          <div class="flex select-wrapper mt-1 flex-col">
+            <app-check-from-address-dropdown
+              class="w-full"
+              [dropdownIconNeeded]="false"
+              customHeight="0"
+              append="ng-select"
+              formControlName="shippingAddressFrom"
+              [zIndex]="997"
+            />
+            <app-control-message-v35
+              [control]="shippingForm.controls.shippingAddressFrom"
+            />
+          </div>
+        </div>
+        <div class="flex flex-col single-option gap-1 w-full">
+          <label
+            for="shipping-type"
+            class="text-sm font-normal text-main-text-color"
+            >Shipping Type</label
+          >
+          <div class="flex select-wrapper shipping-type flex-col mt-1">
+            <div>
+              <app-v35-common-dropdown
+                [config]="{
+                  placeholder: 'Select shipping type',
+                  displayField: 'name',
+                  style: {
+                    size: '0',
+                    enableLabelIcon: false
+                  }
+                }"
+                [listData]="customShippingTypeList()"
+                [loading]="isShippingTypesLoading()"
+                appendTo="ng-select"
+                formControlName="shippingType"
+              />
+              <app-control-message-v35
+                [control]="shippingForm.controls.shippingType"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="common-form-container border border-common-secondary-blue-color my-2 rounded-md"
+    >
+      <div
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 p-3 !bg-main-background-color"
+      >
+        <div
+          class="flex flex-col md:flex-row bg-secondary-background-color rounded-md"
+        >
+          @for (source of sourceType; track source.value) {
+            <div
+              role="presentation"
+              class="text-sm font-normal text-main-text-color font-inter flex items-center gap-2 cursor-pointer p-2 m-1 rounded-md"
+              (click)="selectSource(source.value, source.isDisabled)"
+              [matTooltip]="source.isDisabled ? 'Coming Soon' : ''"
+              [ngClass]="{
+                '!bg-main-background-color': selectedSource() === source.value,
+                '!text-common-blue-color': selectedSource() === source.value,
+                '!opacity-50': source.isDisabled
+              }"
+            >
+              <fa-icon [icon]="source.icon" />
+              {{ source.name }}
+            </div>
+          }
+        </div>
+        <div
+          role="presentation"
+          class="text-sm font-normal text-common-blue-color font-inter cursor-pointer"
+          (click)="hideDefaultSettings.set(!hideDefaultSettings())"
+        >
+          {{
+            hideDefaultSettings()
+              ? "Show Default Settings"
+              : "Hide Default Settings"
+          }}
+        </div>
+      </div>
+      @if (!hideDefaultSettings()) {
+        <hr class="border-common-secondary-blue-color" />
+      }
+      <div
+        class="flex flex-wrap items-end gap-3 p-4 bg-main-background-color"
+        [formGroup]="basePaymentForm"
+        [ngClass]="{ '!hidden': hideDefaultSettings() }"
+      >
+        <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+          <label
+            for="wallet"
+            class="text-xs font-medium text-main-text-color flex items-center gap-1"
+          >
+            Bank Account
+            <fa-icon
+              [icon]="faCircleInfo"
+              [matTooltip]="'Select payment source'"
+              class="text-xs text-secondary-text-color"
+            />
+          </label>
+          <app-payment-source-dropdown-v3
+            [displayIcon]="false"
+            [paymentSourceType$]="basePaymentSourceType$"
+            formControlName="paymentSource"
+            pageType="bulkMail"
+          />
+        </div>
+        <div class="flex flex-col gap-1 flex-1 min-w-[100px]">
+          <label
+            for="account-code"
+            class="text-xs font-medium text-main-text-color flex items-center gap-1"
+          >
+            Date
+            <fa-icon
+              [icon]="faCircleInfo"
+              [matTooltip]="dateInfoText"
+              class="text-xs text-secondary-text-color"
+            />
+          </label>
+          <input
+          type="Date"
+          class="input_style"
+          placeholder="Enter Date"
+          formControlName="date"
+        />
+        </div>
+        <div class="flex flex-col gap-1 flex-1 min-w-[120px]">
+          <label
+            for="category"
+            class="text-xs font-medium text-main-text-color flex items-center gap-1"
+          >
+            Category
+            <fa-icon
+              [icon]="faCircleInfo"
+              [matTooltip]="'Payment category'"
+              class="text-xs text-secondary-text-color"
+            />
+          </label>
+          <app-category-dropdown-v3 formControlName="category" />
+        </div>
+        <div class="flex flex-col gap-1 flex-1 min-w-[100px]">
+          <label for="amount" class="text-xs font-medium text-main-text-color"
+            >Amount</label
+          >
+          <app-amount-input [maxLength]="13" formControlName="amount" />
+        </div>
+        <div class="flex flex-col gap-1 flex-1 min-w-[100px]">
+          <label
+            for="memo"
+            class="text-xs font-medium text-main-text-color flex items-center gap-1"
+          >
+            Memo
+            <fa-icon
+              [icon]="faCircleInfo"
+              [matTooltip]="
+                'Brief note about this payment. Example: Office rent or Supplies.'
+              "
+              class="text-xs text-secondary-text-color"
+            />
+          </label>
+          <input
+            type="text"
+            class="input_style"
+            placeholder="Memo"
+            maxlength="150"
+            formControlName="memo"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label
+            for="attachment"
+            class="text-xs font-medium text-main-text-color"
+            >Attachment</label
+          >
+          <button
+            [matBadge]="attachmentCount"
+            matBadgeSize="small"
+            [matBadgeHidden]="attachmentCount < 1 ? true : false"
+            matTooltip="Upload one file that will be automatically attached to every mailing in this group"
+            class="border border-input-border-color bg-main-background-color h-[38px] w-[50px] rounded flex items-center justify-center hover:shadow-md"
+            (click)="openAddAttachment()"
+          >
+            <fa-icon [icon]="faPaperclip" class="text-secondary-text-color" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="group-payment-container mr-1">
+      <div class="top-bar flex flex-col lg:flex-row justify-between gap-3 mb-1">
+        <div
+          class="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-4 payment-metadata text-main-text-color"
+        >
+          <div>
+            <span class="font-inter font-medium text-base text-main-text-color"
+              >Payment Details</span
+            >
+          </div>
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              class="cursor-pointer"
+              id="individual-envelope"
+              [(ngModel)]="isEnvelopeChecked"
+            />
+            <label
+              for="individual-envelope"
+              class="cursor-pointer font-inter font-normal text-main-text-color text-sm transfor !normal-case ml-2"
+              >Send Each Individually</label
+            >
+            <fa-icon
+              [icon]="faCircleQuestion"
+              class="cursor-pointer text-secondary-text-color ml-1"
+              matTooltip="For privacy, we seal each check in separate envelopes, then combine them into one envelope."
+            ></fa-icon>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <button
+            class="bg-common-green-color text-white h-[32px] px-4 text-sm rounded cursor-pointer flex items-center gap-2 hover:opacity-90"
+            (click)="pushFormToPaymentsArrayAndUpdateValues()"
+          >
+            <fa-icon [icon]="faPlus" />
+            Add
+          </button>
+        </div>
+      </div>
+      <div class="w-full overflow-x-auto">
+        <div class="form-table min-w-[900px]">
+          <div
+            class="grid grid-cols-[50px_1.2fr_1.2fr_100px_140px_1.2fr_120px_1fr_50px_40px] gap-2 py-3 border-y border-input-border-color text-sm font-medium text-main-text-color bg-secondary-background-color"
+          >
+            <div class="text-center">#</div>
+            <div>Select Bank Account</div>
+            <div>Select Payee</div>
+            <div>Inv</div>
+            <div>Date</div>
+            <div>Category</div>
+            <div>Amount</div>
+            <div>Memo</div>
+            <div class="text-center">
+              <fa-icon [icon]="faPaperclip" class="text-secondary-text-color" />
+            </div>
+            <div></div>
+          </div>
+          <div class="max-h-[400px] overflow-y-auto">
+            @for (
+              paymentForm of paymentsFormArray.controls;
+              track paymentForm.value;
+              let i = $index
+            ) {
+              <ng-container [formGroup]="paymentForm">
+                <div
+                  class="grid grid-cols-[50px_1.2fr_1.2fr_100px_140px_1.2fr_120px_1fr_50px_40px] gap-2 py-2 border-b border-input-border-color items-center bg-main-background-color"
+                >
+                  <div
+                    class="text-sm text-secondary-text-color text-center font-medium"
+                  >
+                    #{{ i + 1 }}
+                  </div>
+                  <div
+                    class="max-w-[274px]"
+                    [ngClass]="
+                      paymentForm.touched &&
+                      paymentForm.controls.paymentSource.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched &&
+                      paymentForm.controls.paymentSource.valid
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]
+                            ?.paymentSource
+                    "
+                  >
+                    <app-payment-source-dropdown-v3
+                      [displayIcon]="false"
+                      [paymentSourceType$]="
+                        paymentFormsArrayHelpers[i].paymentSourceTypeChanges$
+                      "
+                      (ready)="
+                        setDropDownAPIAndBindId(
+                          paymentFormsArrayHelpers[i].paymentSourceDropDown,
+                          $event
+                        )
+                      "
+                      formControlName="paymentSource"
+                      pageType="bulkMail"
+                    />
+                  </div>
+                  <div
+                    class="max-w-[276px]"
+                    [ngClass]="
+                      paymentForm.touched && paymentForm.controls.payee.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched && paymentForm.controls.payee.valid
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]
+                            ?.payee
+                    "
+                  >
+                    <app-payee-dropdown-v3
+                      [dropdownIconNeeded]="false"
+                      [labelIconNeeded]="false"
+                      (ready)="
+                        setDropDownAPIAndBindId(
+                          paymentFormsArrayHelpers[i].payeeDropDown,
+                          $event
+                        )
+                      "
+                      formControlName="payee"
+                    />
+                  </div>
+                  <div
+                    [ngClass]="
+                      paymentForm.touched &&
+                      paymentForm.controls.invoiceNumber.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]
+                            ?.invoiceNumber
+                    "
+                  >
+                    <input
+                      type="text"
+                      class="input_style text-sm"
+                      placeholder="Inv"
+                      maxlength="30"
+                      formControlName="invoiceNumber"
+                    />
+                  </div>
+                  <div
+                    [ngClass]="
+                      paymentForm.touched && paymentForm.controls.date.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]?.date
+                    "
+                  >
+                    <input
+                      type="Date"
+                      class="input_style text-sm"
+                      placeholder="Enter Date"
+                      maxlength="50"
+                      formControlName="date"
+                    />
+                  </div>
+                  <div
+                    class="max-w-[274px]"
+                    [ngClass]="
+                      paymentForm.touched &&
+                      paymentForm.controls.category.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]
+                            ?.category
+                    "
+                  >
+                    <app-category-dropdown-v3
+                      (ready)="
+                        setDropDownAPIAndBindId(
+                          paymentFormsArrayHelpers[i].categoryDropDown,
+                          $event
+                        )
+                      "
+                      formControlName="category"
+                    />
+                  </div>
+                  <div
+                    [ngClass]="
+                      paymentForm.touched && paymentForm.controls.amount.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched && paymentForm.controls.amount.valid
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]
+                            ?.amount
+                    "
+                  >
+                    <app-amount-input
+                      [maxLength]="13"
+                      formControlName="amount"
+                    />
+                  </div>
+                  <div
+                    [ngClass]="
+                      paymentForm.touched && paymentForm.controls.memo.invalid
+                        ? 'invalid-field'
+                        : ''
+                    "
+                    [matTooltip]="
+                      paymentForm.untouched
+                        ? undefined
+                        : paymentFormValidityStatus.validityStatusArray[i]?.memo
+                    "
+                  >
+                    <input
+                      type="text"
+                      class="input_style text-sm"
+                      placeholder="Memo"
+                      maxlength="150"
+                      formControlName="memo"
+                    />
+                  </div>
+                  <div class="flex justify-center items-center">
+                    <button
+                      [matBadge]="getAttachmentCount(i)"
+                      matBadgeSize="small"
+                      [matBadgeHidden]="getAttachmentCount(i) < 1"
+                      [matTooltip]="
+                        getAttachmentCount(i) > 0
+                          ? 'Individual: ' +
+                            getIndividualAttachmentCount(i) +
+                            (createdExistingAttachments?.length > 0
+                              ? ', Common: ' +
+                                (createdExistingAttachments.length -
+                                  (excludedCommonAttachments[i]?.length || 0)) +
+                                ((excludedCommonAttachments[i]?.length || 0) > 0
+                                  ? ' (excluded: ' +
+                                    (excludedCommonAttachments[i]?.length ||
+                                      0) +
+                                    ')'
+                                  : '')
+                              : '') +
+                            ' - Click to manage'
+                          : 'Add attachments for this payment'
+                      "
+                      class="text-secondary-text-color hover:text-common-blue-color transition"
+                      (click)="openAddAttachmentForRow(i)"
+                    >
+                      <fa-icon [icon]="faPaperclip" class="text-lg" />
+                    </button>
+                  </div>
+                  <div class="flex justify-center items-center">
+                    <button
+                      class="text-secondary-text-color hover:text-common-red-color transition"
+                      (click)="removeFormFromPaymentsArray(i)"
+                      [matTooltip]="'Remove row'"
+                    >
+                      <fa-icon [icon]="faTrash" class="text-base" />
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center my-6">
+        <app-common-button-v35
+          [type]="{ style: 'filled', name: 'main' }"
+          text="Preview & Continue"
+          width="100%"
+          (clickEvent)="processPayments()"
+          [loading]="isProcessPaymentsLoading()"
+          [disabled]="isProcessPaymentsLoading()"
+          class="w-full"
+        />
+      </div>
+    </div>
+  </div>
+</div>

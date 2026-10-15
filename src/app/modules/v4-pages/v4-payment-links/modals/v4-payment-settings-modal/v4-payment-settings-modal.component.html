@@ -1,0 +1,137 @@
+<div>
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-5 py-3 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        {{ title }}
+      </h1>
+    </div>
+    <div
+      mat-dialog-close
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center transition-colors"
+    >
+      <lucide-angular
+        name="x"
+        [size]="18"
+        class="text-v4-subtle-text-color"
+      />
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div
+      class="flex items-center justify-center py-12 bg-v4-tertiary-background-color"
+    >
+      <div
+        class="h-8 w-8 animate-spin rounded-full border-4 border-v4-border-color border-t-v4-primary-brand-color"
+      ></div>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <!-- modal body start -->
+      <div class="px-5 py-4 bg-v4-tertiary-background-color">
+        <!-- Live / Sandbox segmented toggle -->
+        <div
+          class="flex p-1 bg-v4-tertiary-background-color rounded-lg mb-4 gap-1"
+        >
+          <app-common-button-v4
+            [type]="
+              paymentType === 'live'
+                ? { style: 'primary', name: 'main' }
+                : { style: 'secondary', name: 'main' }
+            "
+            [text]="'Live'"
+            [customClasses]="'flex-1 py-1.5 text-sm rounded-md'"
+            [disableHoverEffect]="true"
+            (clickEvent)="paymentType = 'live'"
+          ></app-common-button-v4>
+          <app-common-button-v4
+            [type]="
+              paymentType === 'sandbox'
+                ? { style: 'primary', name: 'main' }
+                : { style: 'secondary', name: 'main' }
+            "
+            [text]="'Sandbox'"
+            [customClasses]="'flex-1 py-1.5 text-sm rounded-md'"
+            [disableHoverEffect]="true"
+            (clickEvent)="paymentType = 'sandbox'"
+          ></app-common-button-v4>
+        </div>
+
+        <!-- Payment Type Dropdown (create mode, no locked typeId) -->
+        @if (showPaymentTypeDropdown) {
+          <div class="mb-3">
+            <label
+              class="text-xs font-medium text-v4-main-text-color mb-1 block"
+            >
+              Payment Type <span class="text-v4-common-red-color">*</span>
+            </label>
+            <app-v4-common-dropdown
+              [config]="{ placeholder: 'Select Payment Type' }"
+              [listData]="paymentTypeNames"
+              [ngModel]="selectedPaymentTypeName"
+              (ngModelChange)="onPaymentTypeDropdownChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [clearable]="false"
+              [searchable]="false"
+            />
+          </div>
+        }
+
+        <!-- Nick Name -->
+        <div class="mb-3">
+          <app-common-input-v4
+            formControlName="nickName"
+            fieldLabel="Nick Name"
+            placeholder="Enter nick name"
+            [isFieldRequired]="true"
+          />
+          <app-control-message-v4
+            [control]="form.controls.nickName"
+            label="Nick Name"
+          />
+        </div>
+
+        <!-- Dynamic credential fields -->
+        <div formArrayName="credentials">
+          @for (field of credentialFields; track $index) {
+            <div class="mb-3">
+              <app-common-input-v4
+                [formControlName]="$index"
+                [fieldLabel]="field.name"
+                [placeholder]="'Enter ' + field.name"
+                [isFieldRequired]="true"
+              />
+              <app-control-message-v4
+                [control]="getCredentialControl($index)"
+                [label]="field.name"
+              />
+            </div>
+          }
+        </div>
+      </div>
+      <!-- modal body end -->
+
+      <div
+        class="flex justify-end gap-3 px-5 py-3 bg-v4-secondary-background-color border-t border-v4-border-color"
+      >
+        <app-common-button-v4
+          mat-dialog-close
+          width="120px"
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Cancel"
+        />
+        <app-common-button-v4
+          width="120px"
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Save"
+          btnType="submit"
+          [loading]="isSubmit()"
+          [disabled]="isSubmit()"
+        />
+      </div>
+    </form>
+  }
+</div>

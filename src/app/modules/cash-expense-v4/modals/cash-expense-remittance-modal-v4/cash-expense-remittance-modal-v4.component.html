@@ -1,0 +1,180 @@
+<div class="v4-modal-container">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-v4-border-color bg-v4-popup-header-footer-color">
+    <h2 class="m-0 text-lg font-bold text-v4-main-text-color font-funnel">Remittance</h2>
+    <button
+      class="flex items-center justify-center w-8 h-8 rounded-lg border border-v4-border-color bg-v4-popup-header-footer-color cursor-pointer hover:bg-v4-secondary-background-color"
+      (click)="close()"
+    >
+      <lucide-icon name="x" [size]="18" class="text-v4-secondary-text-color" />
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="p-6 overflow-x-auto bg-v4-popup-background-color">
+    <div class="border border-v4-border-color rounded-xl overflow-hidden overflow-y-auto max-h-[350px] min-w-[780px]">
+      <table class="v4-ocw-table w-full">
+        <thead class="sticky top-0 z-10">
+          <tr class="bg-v4-tertiary-background-color border-b border-v4-border-color">
+            <th class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide whitespace-nowrap">Invoice #</th>
+            <th class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide">Item</th>
+            <th class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide">Description</th>
+            <th class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-right">Quantity</th>
+            <th class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-right whitespace-nowrap">Unit Cost</th>
+            <th class="px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide text-right">Total</th>
+            <th class="w-10 text-center px-3 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-v4-border-color">
+          @for (row of rows(); track row.id) {
+            <tr class="hover:bg-v4-tertiary-background-color transition-colors">
+              <!-- Invoice # -->
+              <td class="px-3 py-2" style="min-width: 100px;">
+                <div class="v4-common-input-full-width">
+                  <app-common-input-v4
+                    [placeholder]="''"
+                    [isFieldRequired]="false"
+                    [fieldHeight]="'36px'"
+                    [ngModel]="row.invoiceNumber"
+                    (ngModelChange)="updateField(row.id, 'invoiceNumber', $event)"
+                  />
+                </div>
+              </td>
+              <!-- Item Dropdown (v4) -->
+              <td class="px-3 py-2" style="min-width: 150px;">
+                <app-v4-common-dropdown
+                  [config]="{ placeholder: 'Select Items' }"
+                  [listData]="remittanceItems()"
+                  [appendTo]="'body'"
+                  [clearable]="true"
+                  [searchable]="true"
+                  [ngModel]="row.itemName"
+                  (ngModelChange)="updateItemName(row.id, $event)"
+                  (scrollToEnd)="onScrollItems()"
+                  (searchEvent)="onSearchItems($event)"
+                />
+              </td>
+              <!-- Description -->
+              <td class="px-3 py-2" style="min-width: 120px;">
+                <div class="v4-common-input-full-width">
+                  <app-common-input-v4
+                    [placeholder]="''"
+                    [isFieldRequired]="false"
+                    [fieldHeight]="'36px'"
+                    [ngModel]="row.itemDescription"
+                    (ngModelChange)="updateField(row.id, 'itemDescription', $event)"
+                  />
+                </div>
+              </td>
+              <!-- Quantity -->
+              <td class="px-3 py-2" style="min-width: 90px;">
+                <div class="v4-common-input-full-width">
+                  <app-common-input-v4
+                    [placeholder]="'0.00'"
+                    [isFieldRequired]="false"
+                    [fieldHeight]="'36px'"
+                    [isNumberOnly]="true"
+                    [numberType]="'decimal'"
+                    [ngModel]="row.itemQuantity"
+                    (ngModelChange)="updateField(row.id, 'itemQuantity', $event)"
+                  />
+                </div>
+              </td>
+              <!-- Unit Cost -->
+              <td class="px-3 py-2" style="min-width: 90px;">
+                <div class="v4-common-input-full-width">
+                  <app-common-input-v4
+                    [placeholder]="'0.00'"
+                    [isFieldRequired]="false"
+                    [fieldHeight]="'36px'"
+                    [isNumberOnly]="true"
+                    [numberType]="'decimal'"
+                    [ngModel]="row.itemUnitCost"
+                    (ngModelChange)="updateField(row.id, 'itemUnitCost', $event)"
+                  />
+                </div>
+              </td>
+              <!-- Total (read-only) -->
+              <td class="px-3 py-2 text-right text-sm font-medium text-v4-main-text-color whitespace-nowrap">
+                ${{ row.totalSingleRow }}
+              </td>
+              <!-- Delete -->
+              <td class="px-3 py-2 text-center">
+                <button
+                  type="button"
+                  class="flex items-center justify-center w-7 h-7 rounded-md bg-transparent border-none cursor-pointer hover:bg-v4-tertiary-background-color transition-colors"
+                  [class.opacity-30]="rows().length === 1"
+                  [class.pointer-events-none]="rows().length === 1"
+                  (click)="removeRow(row.id)"
+                >
+                  <lucide-icon name="trash-2" [size]="16" class="text-v4-common-red-color" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Row Actions -->
+    <div class="flex items-center justify-between mt-4 flex-wrap gap-y-3">
+      <!-- Left: Add Row + Remove Row + Clear -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <app-common-button-v4
+          [type]="{ style: 'neon', name: 'main' }"
+          text="Add Row"
+          lucideIcon="plus"
+          [disabled]="rows().length >= 10"
+          (clickEvent)="addRow()"
+        />
+        <button
+          type="button"
+          class="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 min-h-[36px] text-sm font-semibold bg-v4-common-red-color text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+          [disabled]="rows().length <= 1"
+          (click)="removeLastRow()"
+        >
+          <lucide-icon [img]="MinusIcon" [size]="16" class="shrink-0 text-white" />
+          <span>Remove Row</span>
+        </button>
+        <app-common-button-v4
+          [type]="'borderless'"
+          text="Clear"
+          [textColorInput]="'var(--v4-primary-brand-bold-color)'"
+          (clickEvent)="clearRows()"
+        />
+      </div>
+
+      <!-- Right: Insert into cash expense + Total -->
+      <div class="flex items-center gap-4 flex-wrap">
+        <label class="flex items-center gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            [ngModel]="insertIntoCashExpenseFlag()"
+            (ngModelChange)="insertIntoCashExpenseFlag.set($event)"
+            class="v4-checkbox-md shrink-0"
+            [style.accent-color]="'var(--v4-primary-brand-bold-color)'"
+          />
+          <span class="text-sm font-medium text-v4-main-text-color">Insert into cash expense</span>
+        </label>
+        <div class="text-sm">
+          <span class="text-v4-secondary-text-color">Total:</span>
+          <span class="font-bold text-v4-main-text-color ml-1">$ {{ total() | number: '1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-v4-border-color bg-v4-popup-header-footer-color">
+    <app-common-button-v4
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      (clickEvent)="close()"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Save"
+      (clickEvent)="save()"
+    />
+  </div>
+</div>

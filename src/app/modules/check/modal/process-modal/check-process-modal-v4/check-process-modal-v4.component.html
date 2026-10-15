@@ -1,0 +1,148 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden max-h-[90vh]">
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Check Process
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Review and process selected checks
+      </h2>
+    </div>
+    <div
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      [mat-dialog-close]="false"
+    >
+      <lucide-icon name="x" [size]="18" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-auto p-6 bg-v4-tertiary-background-color">
+    @if (loading()) {
+      <div class="flex items-center justify-center py-12">
+        <lucide-icon
+          name="loader-circle"
+          [size]="32"
+          class="text-v4-primary-brand-bold-color animate-spin"
+        />
+      </div>
+    } @else if (getprocessdata.length) {
+      <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+        <table class="v4-ocw-table">
+          <thead>
+            <tr>
+              <th class="text-center">#</th>
+              <th>Payee</th>
+              <th>Method</th>
+              <th>Amount</th>
+              <th>Check #</th>
+              <th>Payee Email</th>
+              <th class="text-center"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of getprocessdata; track item.id; let i = $index) {
+              <tr>
+                <td class="text-center">
+                  <span class="text-xs text-v4-tertiary-text-color">{{
+                    i + 1
+                  }}</span>
+                </td>
+                <td>
+                  <span
+                    class="text-sm text-v4-main-text-color whitespace-nowrap"
+                    >{{ item.payee.payeeName }}</span
+                  >
+                </td>
+                <td>
+                  <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm text-v4-main-text-color">{{
+                        getMethodLabel(item.paymentMethod, item.chequeNo, item)
+                      }}</span>
+                      @if (showUpdateBtn && item.chequeNo === updateCheckNo) {
+                        <button
+                          type="button"
+                          class="text-xs font-medium text-v4-primary-brand-color bg-v4-badge-info-bg-color px-2 py-0.5 rounded cursor-pointer border-none hover:opacity-80"
+                          (click)="editPayee(item.payee?.payeeId)"
+                        >
+                          Update
+                        </button>
+                      }
+                    </div>
+                    @if (item.errorMsg) {
+                      <span class="text-xs text-v4-common-red-color">{{
+                        item.errorMsg
+                      }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-sm text-v4-main-text-color">{{
+                      item.chequeAmount
+                    }}</span>
+                    @if (item.errorMsg) {
+                      <lucide-icon
+                        name="alert-triangle"
+                        [size]="14"
+                        class="text-v4-common-yellow-color"
+                      />
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="text-sm text-v4-main-text-color">{{
+                    item.chequeNo
+                  }}</span>
+                </td>
+                <td>
+                  <span class="text-sm text-v4-secondary-text-color">{{
+                    item.payee.payeeEmail
+                  }}</span>
+                </td>
+                <td class="text-center">
+                  @if (item.errorMsg) {
+                    <button
+                      type="button"
+                      class="p-1.5 rounded hover:bg-v4-tertiary-background-color text-v4-common-red-color cursor-pointer border-none bg-transparent"
+                      (click)="removeRow(i)"
+                    >
+                      <lucide-icon name="trash-2" [size]="14" />
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="text-center py-8 text-v4-secondary-text-color text-sm">
+        No checks to process.
+      </p>
+    }
+  </div>
+
+  <!-- Footer -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      width="100px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+      [mat-dialog-close]="false"
+    />
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Process Checks"
+      [disabled]="loading() || !getprocessdata.length"
+      [loading]="loading()"
+      (clickEvent)="processNow()"
+    />
+  </div>
+</div>

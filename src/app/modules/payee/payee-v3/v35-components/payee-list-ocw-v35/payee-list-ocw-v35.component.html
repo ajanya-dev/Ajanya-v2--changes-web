@@ -1,0 +1,200 @@
+@if (isGridView) {
+  <div class="h-full w-full">
+    @if (payeesSignal().length) {
+      <div
+        class="flex justify-between items-center gap-3 laptop:hidden w-full bg-secondary-background-color"
+      >
+        <div
+          class="w-16 h-12 rounded bg-main-background-color flex justify-center items-center"
+        >
+          <app-list-view-toggle
+            (viewToggleEvent)="viewToggle($event)"
+          ></app-list-view-toggle>
+        </div>
+        <div class="flex-1 bg-main-background-color">
+          <app-v35-common-dropdown
+            [config]="{
+              placeholder: 'Select Payee',
+              displayField: 'name',
+              style: {
+                size: 3,
+                enableLabelIcon: true,
+                labelIconData: {
+                  icon_fa: ['fas', 'address-book'],
+                  color: 'common-blue-color'
+                }
+              },
+              enableAddNew: true
+            }"
+            [listData]="
+              filterCategory !== '0'
+                ? filteredPayeesSignal()
+                : searchTerm === ''
+                  ? payeesSignal()
+                  : searchedPayeeSignal()
+            "
+            [(ngModel)]="selectedValue"
+            (buttonClick)="openAddPayee()"
+            (scrollToEnd)="onScrollToEnd()"
+          >
+          </app-v35-common-dropdown>
+        </div>
+      </div>
+    }
+    <div class="hidden laptop:flex flex-col h-full">
+      @if (!resize) {
+        <app-list-header-v35
+          (gridClickEvent)="viewToggle($event)"
+          (addButtonClickEvent)="openAddPayee()"
+          (searchEvent)="fetchSearchData($event)"
+          (tabClickEvent)="categoryFilter($event)"
+          [header]="env.env_id === 'compass' ? 'Vendors' : 'Payees'"
+          [isTabChangeOption]="env.env_id === 'compass' ? false : true"
+          [tabsArray]="tabsArray"
+          [selectedTab]="filterCategory"
+          addButtonTextColor="white"
+          [searchInput]="searchTerm"
+        ></app-list-header-v35>
+      }
+      <div
+        class="payee-list flex-1 flex flex-col overflow-auto"
+        appScrollToEnd
+        (scrollToEnd)="onScrollToEnd()"
+      >
+        <div class="babu w-full">
+          @if (
+            (filterCategory !== "0"
+              ? filteredPayeesSignal().length < 1
+              : searchTerm !== ""
+                ? searchedPayeeSignal().length < 1
+                : payeesSignal().length < 1) && !loadingSignal()
+          ) {
+            <div class="h-96 flex justify-center items-center">
+              <div>Sorry! no results found</div>
+            </div>
+          }
+        </div>
+        <div>
+          @for (
+            item of filterCategory !== "0"
+              ? filteredPayeesSignal()
+              : searchTerm === ""
+                ? payeesSignal()
+                : searchedPayeeSignal();
+            track trackByIndex($index)
+          ) {
+            <div
+              class="border-t border-input-border-color cursor-pointer hover:shadow-lg hover:bg-secondary-background-color"
+              [ngClass]="{
+                'border !border-common-blue-color shadow-common-button rounded-sm bg-secondary-background-color':
+                  selectedPayeeSignal()?.encryptedId === item.encryptedId,
+                'min-h-[47px]': resize
+              }"
+            >
+              <div
+                class="grid grid-cols-16 p-2 gap-2"
+                role="presentation"
+                (click)="selectPayee(item)"
+              >
+                @if (!resize) {
+                  <div class="col-span-3 flex items-center justify-center">
+                    <div
+                      class="flex justify-center items-center h-7 w-7 bg-common-dark-blue-color rounded-full text-white text-xs"
+                    >
+                      {{
+                        (item?.name?.trim()?.length
+                          ? item?.name?.trim()?.slice(0, 1)
+                          : "#"
+                        ) | uppercase
+                      }}
+                    </div>
+                  </div>
+                }
+                <div class="col-span-11">
+                  <div
+                    class="font-roboto text-xs font-medium text-main-text-color truncate"
+                    [ngClass]="{
+                      'italic text-secondary-text-color':
+                        item.name?.trim().length === 0
+                    }"
+                  >
+                    {{
+                      item.name?.trim()
+                        ? item.name
+                        : "No " + ("Payee" | whiteLabel: "payeeName") + " name"
+                    }}
+                  </div>
+                  <div
+                    class="font-roboto text-xs font-normal text-secondary-text-color"
+                  >
+                    {{
+                      item?.payeeTypeId
+                        ? payeeType[+item?.payeeTypeId].name
+                        : ""
+                    }}
+                  </div>
+                </div>
+                <div class="col-span-2 flex justify-center items-center">
+                  @if (!resize) {
+                    <button
+                      class="flex justify-center items-center w-full"
+                      matTooltip="Actions"
+                      [matMenuTriggerFor]="menu"
+                      aria-label="Example icon-button with a menu"
+                    >
+                      <i
+                        class="fa-solid fa-ellipsis-vertical text-[15px] text-secondary-text-color"
+                      ></i>
+                    </button>
+                  }
+                  <mat-menu #menu="matMenu">
+                    @if(env.env_id === 'compass'){
+                      <button
+                        (click)="updatePayee(item?.encryptedId)"
+                        mat-menu-item
+                        [disabled]="updateSinglePayee()"
+                      >
+                        <div class="w-full settings" matTooltip="Update this payee from Netsuite">
+                          <fa-icon [icon]="faArrowRotate" [animation]="updateSinglePayee() ? 'spin' : undefined" class="pr-3" />
+                          <span>Update</span>
+                        </div>
+                      </button>
+                    }
+                    <button
+                      (click)="openEditPayee(item?.encryptedId)"
+                      mat-menu-item
+                    >
+                      <div class="w-full settings">
+                        <fa-icon [icon]="faEdit" class="pr-3" />
+                        <span>Edit</span>
+                      </div>
+                    </button>
+                    <button
+                      (click)="deletePayee(item?.encryptedId)"
+                      mat-menu-item
+                    >
+                      <div class="w-full settings">
+                        <fa-icon [icon]="faTrash" class="pr-3" />
+                        <span>Delete</span>
+                      </div>
+                    </button>
+                  </mat-menu>
+                </div>
+              </div>
+            </div>
+          }
+          @if (loadingSignal()) {
+            <div>
+              <app-common-list-skelton [items]="14"></app-common-list-skelton>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+@if (!isGridView) {
+  <div class="flex flex-col pb-4 h-full w-full overflow-x-auto">
+    <app-payee-table-ocw-v35></app-payee-table-ocw-v35>
+  </div>
+}

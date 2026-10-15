@@ -1,0 +1,139 @@
+<div
+  class="attachments-activity-list-v4 flex flex-col rounded-xl border border-v4-border-color bg-v4-main-background-color overflow-hidden"
+  [style.max-height]="maxHeight()"
+>
+  <div
+    class="flex shrink-0 items-center justify-between px-6 py-4 border-b border-v4-border-color bg-v4-secondary-background-color"
+  >
+    <h3 class="text-xl font-semibold text-v4-main-text-color font-funnel m-0">
+      Attachments
+    </h3>
+    <app-common-button-v4
+      [type]="{ style: 'primary', name: 'v2-1', size: 'sm' }"
+      [lucideIconSize]="14"
+      text="Add Attachment"
+      lucideIcon="plus"
+      (clickEvent)="addAttachment.emit()"
+    />
+  </div>
+  <div
+    class="min-h-0 flex-1 overflow-y-auto p-6 bg-v4-tertiary-background-color"
+  >
+    @if (attachments()?.length) {
+      <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+        <div class="max-h-[280px] overflow-y-auto">
+          <table class="v4-ocw-table w-full text-sm">
+            <thead>
+              <tr
+                class="bg-v4-tertiary-background-color border-b border-v4-border-color sticky top-0 z-10"
+              >
+                <th
+                  class="text-center px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide"
+                >
+                  #
+                </th>
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide"
+                >
+                  Date
+                </th>
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide"
+                >
+                  User
+                </th>
+                <th
+                  class="px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide"
+                >
+                  File
+                </th>
+                <th
+                  class="text-center px-4 py-2.5 text-xs font-bold text-v4-subtle-text-color uppercase tracking-wide whitespace-nowrap"
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-v4-border-color">
+              @for (
+                entry of attachments();
+                track entry.date + entry.initiatedBy + entry.note
+              ) {
+                <tr
+                  class="hover:bg-v4-secondary-background-color transition-colors"
+                >
+                  <td class="text-center px-4 py-2.5">
+                    <span class="text-xs text-v4-tertiary-text-color">{{
+                      $index + 1
+                    }}</span>
+                  </td>
+                  <td
+                    class="px-4 py-2.5 text-sm text-v4-main-text-color whitespace-nowrap"
+                  >
+                    {{ entry.date }}
+                  </td>
+                  <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                    {{ entry.initiatedBy }}
+                  </td>
+                  <td class="px-4 py-2.5 text-sm text-v4-main-text-color">
+                    @if (entry.publicUrl) {
+                      <a
+                        [href]="entry.publicUrl"
+                        [title]="entry.note"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-v4-primary-brand-bold-color hover:underline truncate block max-w-[220px]"
+                      >
+                        {{ entry.note }}
+                      </a>
+                    } @else if (entry.encryptedId) {
+                      <button
+                        matTooltip="{{ entry.note }}"
+                        type="button"
+                        class="text-left text-v4-primary-brand-bold-color hover:underline truncate block max-w-[220px] cursor-pointer bg-transparent border-none p-0"
+                        [title]="entry.note"
+                        (click)="openAttachment.emit(entry)"
+                      >
+                        {{ entry.note }}
+                      </button>
+                    } @else {
+                      <span
+                        matTooltip="{{ entry.note }}"
+                        [title]="entry.note"
+                        class="truncate block max-w-[220px]"
+                        >{{ entry.note }}</span
+                      >
+                    }
+                  </td>
+                  <td class="text-center px-4 py-2.5">
+                    <app-common-button-v4
+                      [type]="'borderless'"
+                      [lucideIcon]="rowDeleteLucideIcon(entry)"
+                      [lucideIconSize]="16"
+                      [toolTip]="'Delete attachment'"
+                      [customHeight]="'28px'"
+                      [width]="'32px'"
+                      [minWidth]="'32px'"
+                      [text]="''"
+                      [textColorInput]="'var(--v4-common-red-color)'"
+                      [loading]="deletingId() === entry.encryptedId"
+                      [disabled]="deletingId() === entry.encryptedId"
+                      [customClasses]="
+                        'flex items-center justify-center p-0 border border-v4-border-color rounded-md bg-white hover:bg-v4-tertiary-background-color transition-colors'
+                      "
+                      (clickEvent)="deleteAttachment.emit(entry)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else {
+      <p class="text-center py-8 text-v4-secondary-text-color text-sm m-0">
+        Sorry, No attachment Found!!
+      </p>
+    }
+  </div>
+</div>

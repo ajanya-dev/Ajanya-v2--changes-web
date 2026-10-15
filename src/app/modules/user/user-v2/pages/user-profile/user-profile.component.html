@@ -1,0 +1,84 @@
+<div class="mx-3 rounded-md h-full flex justify-center">
+  <div class="flex flex-col md:flex-row gap-3 h-full w-[1200px] max-2xl:w-full">
+    <!-- left section  -->
+    <div
+      class="!bg-main-background-color mb-5 rounded min-w-64 max-2xl:min-w-[190px]"
+    >
+      <div class="p-2">
+        <div class="flex flex-col gap-2">
+          @for (tab of tabs; track tab.id) {
+            @if (tab.id !== "our-compliance" || !isArcharina) {
+              <div class="flex flex-col gap-2">
+                <button
+                  class="flex items-center hover:bg-secondary-background-color py-1 px-2 rounded-lg font-medium font-inter text-xs text-secondary-text-color"
+                  [ngClass]="{
+                    'bg-secondary-background-color !text-main-text-color !font-semibold':
+                      selectedTab.id === tab.id
+                  }"
+                  (click)="tabChange(tab.id)"
+                >
+                  <span
+                    class="flex items-center justify-center w-8 h-8 rounded-full"
+                  >
+                    <fa-icon [icon]="tab.icon"></fa-icon>
+                  </span>
+                  <h4>{{ tab.title }}</h4>
+                </button>
+                @if (tab.subtab) {
+                  <button
+                    class="ml-10 pl-3 text-xs text-secondary-text-color text-left py-2 px-2 rounded-lg font-medium font-inter hover:bg-secondary-background-color"
+                    [ngClass]="{
+                      'bg-secondary-background-color !text-main-text-color !font-semibold':
+                        currentSubTab === tab.subtab
+                    }"
+                    (click)="tabChange(tab.id)"
+                  >
+                    {{ tab.subtab | titlecase }}
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+    <!-- right section  -->
+    <div
+      class="mb-5 !bg-main-background-color w-full h-fit rounded"
+      [ngClass]="{ 'h-full': selectedTab.id === 'myPlan' }"
+    >
+      <div [ngClass]="{ 'h-full': selectedTab.id === 'myPlan' }">
+        @switch (selectedTab.id) {
+          @case ("personal") {
+            <app-personal-info />
+          }
+          @case ("myBusinesses") {
+            <app-my-businesses-list-v35
+              [userName]="userName"
+              [isManualEntry]="isManualEntry()"
+            />
+          }
+          @case ("uploadDoc") {
+            <app-upload-docs />
+          }
+          @case ("security") {
+            <app-security />
+          }
+          @case ("our-compliance") {
+            @if (currentSubTab === "certification") {
+              <app-our-compliances />
+            }
+          }
+          @default {
+            <div class="h-full flex justify-center items-center flex-col gap-2">
+              <div class="loader !z-10"></div>
+              <span class="text-main-text-color text-xs font-inter font-normal"
+                >Please wait...</span
+              >
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

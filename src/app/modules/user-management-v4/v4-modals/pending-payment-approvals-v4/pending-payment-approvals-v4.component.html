@@ -1,0 +1,168 @@
+<div class="flex flex-col max-h-[85vh] font-peridot">
+  <!-- modal header -->
+  <div
+    class="shrink-0 flex justify-between px-6 py-4 bg-v4-popup-header-footer-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Payments Pending For Approval
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Approve or reject the payments awaiting your action
+      </h2>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="relative flex-1 overflow-y-auto p-6 bg-v4-tertiary-background-color">
+    @if (listLoading) {
+      <div
+        class="absolute inset-0 z-10 flex justify-center items-center bg-v4-tertiary-background-color/70"
+      >
+        <lucide-icon
+          name="loader-circle"
+          [size]="28"
+          class="animate-spin text-v4-primary-brand-color"
+        />
+      </div>
+    }
+
+    <!-- bulk actions -->
+    <div class="flex gap-3 mb-3">
+      <app-common-button-v4
+        [type]="{ style: 'filled-green', name: 'action' }"
+        text="Approve"
+        [lucideIcon]="'check'"
+        [lucideIconSize]="14"
+        [disabled]="!selectedIds.length || allApproveLoading || allRejectLoading"
+        [loading]="allApproveLoading"
+        (clickEvent)="approveCheck(selectedIds, true)"
+      />
+      <app-common-button-v4
+        [type]="{ style: 'filled-red', name: 'action' }"
+        text="Reject"
+        [lucideIcon]="'x'"
+        [lucideIconSize]="14"
+        [disabled]="!selectedIds.length || allApproveLoading || allRejectLoading"
+        [loading]="allRejectLoading"
+        (clickEvent)="rejectCheck(selectedIds, true)"
+      />
+    </div>
+
+    <div class="overflow-x-auto border border-v4-border-color rounded-xl">
+      <div class="max-h-[55vh] overflow-y-auto">
+        <table class="v4-ocw-table">
+          <thead>
+            <tr>
+              <th class="text-center flex justify-center">
+                <input
+                  class="v4-checkbox-sm"
+                  type="checkbox"
+                  (change)="selectAll()"
+                  [checked]="allSelected"
+                />
+              </th>
+              <th>SI.No.</th>
+              <th>Payee</th>
+              <th>Amount</th>
+              <th>Created By</th>
+              <th>Created At</th>
+              <th class="text-center">View</th>
+              <th class="text-center">Action</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of requestData.zilPayments; track item.id; let i = $index) {
+              <tr>
+                <td class="text-center">
+                  <input
+                    class="v4-checkbox-sm"
+                    type="checkbox"
+                    (change)="selectRequest(item.id)"
+                    [checked]="selectedIds.includes(item.id)"
+                    [disabled]="rejectedIds.includes(item.id) || !item.canApprove"
+                  />
+                </td>
+                <td>{{ i + 1 }}</td>
+                <td>{{ item.payee }}</td>
+                <td>{{ item.amount }}</td>
+                <td>{{ item.createdBy }}</td>
+                <td>{{ item.createdAt }}</td>
+                <td class="text-center">
+                  <button
+                    type="button"
+                    class="p-1.5 rounded text-v4-tertiary-text-color hover:text-v4-primary-brand-bold-color transition-colors"
+                    (click)="viewPayment(item)"
+                  >
+                    <lucide-icon [img]="EyeIcon" [size]="14" />
+                  </button>
+                </td>
+                <td class="text-center">
+                  <app-common-button-v4
+                    [type]="{ style: 'filled-green', name: 'action' }"
+                    text="Approve"
+                    [toolTip]="
+                      item.canApprove ? '' : 'Approval pending from other approvers'
+                    "
+                    [disabled]="rejectedIds.includes(item.id) || !item.canApprove || allRejectLoading || allApproveLoading"
+                    [loading]="approveLoading[item.id]"
+                    (clickEvent)="approveCheck([item.id])"
+                  />
+                </td>
+                <td class="text-center">
+                  <app-common-button-v4
+                    [type]="{ style: 'filled-red', name: 'action' }"
+                    text="Reject"
+                    [toolTip]="
+                      item.canApprove ? '' : 'Approval pending from other approvers'
+                    "
+                    [disabled]="rejectedIds.includes(item.id) || !item.canApprove || allRejectLoading || allApproveLoading"
+                    [loading]="rejectLoading[item.id]"
+                    (clickEvent)="rejectCheck([item.id])"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (!requestData.zilPayments.length) {
+          <div
+            class="w-full py-10 flex justify-center items-center text-center text-v4-tertiary-text-color"
+          >
+            No pending Request
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  <!-- modal body end -->
+
+  <!-- modal footer -->
+  <div
+    class="shrink-0 flex justify-between items-center px-6 py-4 bg-v4-popup-header-footer-color border-t border-v4-border-color"
+  >
+    <div class="flex items-center">
+      @if ((requestData.pagination?.lastPage ?? 0) > 1) {
+        <app-numbered-table-pagination
+          [page]="requestData.pagination?.currentPage ?? 1"
+          [totalPages]="requestData.pagination?.lastPage ?? 0"
+          (pageChange)="onZilPageChange($event)"
+        ></app-numbered-table-pagination>
+      }
+    </div>
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Done"
+      (clickEvent)="close()"
+    />
+  </div>
+</div>

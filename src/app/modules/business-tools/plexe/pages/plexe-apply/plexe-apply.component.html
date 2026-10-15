@@ -1,0 +1,172 @@
+<div class="ocw-form-header">
+  <div class="main-container">
+    <div class="main-body">
+      <div class="header-section">
+        <div>
+          <img
+            src="./../../../../../assets/images/plexe/bank.svg"
+            alt="Bank image"
+          />
+        </div>
+        <div>
+          <span>Select a business to apply for line of credit</span>
+        </div>
+        <div>
+          <div class="input_group">
+            <div class="single_input">
+              <app-drop-down-verified-business
+                (selectionEvent)="selectBusiness($event)"
+                class="drop_style"
+              ></app-drop-down-verified-business>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div class="center-section">
+        <div class="flex items-center">
+          <span>Choose an instantly verified bank account or </span>
+          <div (click)="addBank()">
+            <button class="ocw-btn ocw-btn-dark-blue">Add New Bank</button>
+          </div>
+        </div>
+        <div class="bank-list" [ngClass]="{ skelton: isLoading }">
+          <ng-container *ngIf="bankList?.length; else noData">
+            <div
+              class="bank-container"
+              *ngFor="let item of bankList; let i = index"
+              id="parentElement_{{ i }}"
+              [ngClass]="{
+                skelton: isLoading,
+                'selected-bank': item.eligibility === 1
+              }"
+            >
+              <div class="bank-details">
+                <div>
+                  <span>{{ item?.accountName | truncate: 20 }}</span>
+                </div>
+                <div>
+                  <span>{{ item?.accountNumber }}</span>
+                </div>
+              </div>
+              <div>
+                <ng-container
+                  *ngIf="
+                    item.mav === 1 &&
+                      (item.vb === null ||
+                        item.vb === 1 ||
+                        item.vb === 7 ||
+                        item.vb === 9) &&
+                      item.eligibility === 1;
+                    else verified
+                  "
+                >
+                  <img
+                    src="./../../../../../assets/images/plexe/verified-bank.svg"
+                    title="verified-bank"
+                  />
+                </ng-container>
+                <ng-template #verified>
+                  <div class="verify-btn">
+                    <ng-container
+                      *ngIf="
+                        item.mav === 1 &&
+                          (item.vb === null ||
+                            item.vb === 1 ||
+                            item.vb === 7 ||
+                            item.vb === 9) &&
+                          item.eligibility === 0;
+                        else noData
+                      "
+                    >
+                      <button
+                        type="submit"
+                        class="ocw-btn ocw-btn-dark-blue"
+                        (click)="reconnectToBank(item?.provider_id, i, true)"
+                        [disabled]="disableVerify"
+                      >
+                        <ng-container>
+                          <span>ReConnect</span>
+                        </ng-container>
+                        <p
+                          *ngIf="disableVerify && spinning === i"
+                          class="loadingSpinner"
+                        ></p>
+                      </button>
+                    </ng-container>
+                    <ng-template #noData>
+                      <ng-container
+                        *ngIf="
+                          item.mav === 1 &&
+                            (item.vb === null ||
+                              item.vb === 1 ||
+                              item.vb === 7 ||
+                              item.vb === 9) &&
+                            item.eligibility === 11;
+                          else newConnect
+                        "
+                      >
+                        <div class="tooltip">
+                          <fa-icon
+                            class="text-common-red-color"
+                            [icon]="['fas', 'circle-question']"
+                            matTooltip="Not enough bank transactions. Please add an account with transaction."
+                          ></fa-icon>
+                        </div>
+                      </ng-container>
+                      <ng-template #newConnect>
+                        <button
+                          type="submit"
+                          class="ocw-btn ocw-btn-dark-blue"
+                          (click)="verifyBank(item, i, true)"
+                          [disabled]="disableVerify"
+                        >
+                          <ng-container>
+                            <span>Verify</span>
+                          </ng-container>
+                          <p
+                            *ngIf="disableVerify && spinning === i"
+                            class="loadingSpinner"
+                          ></p>
+                        </button>
+                      </ng-template>
+                    </ng-template>
+                  </div>
+                </ng-template>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noData>
+            <div class="flex justify-center no-data">
+              <img
+                src="./../../../../../assets/images/plexe/nodata.svg"
+                alt="no item found"
+              />
+            </div>
+            <p class="text-sm">No Data found!</p>
+          </ng-template>
+        </div>
+      </div>
+      <div class="bottom-section">
+        <div>
+          <button
+            [routerLink]="['/manage/working-capital/intro']"
+            class="ocw-btn ocw-btn-modal-bordered"
+          >
+            Back
+          </button>
+        </div>
+        <div>
+          <button
+            type="submit"
+            [disabled]="btnDisable"
+            class="ocw-btn ocw-btn-modal-blue"
+            (click)="sumbit()"
+          >
+            Apply Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

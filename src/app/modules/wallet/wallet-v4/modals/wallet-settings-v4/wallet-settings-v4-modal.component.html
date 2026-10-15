@@ -1,0 +1,141 @@
+<div class="">
+  <!-- modal header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        Settings
+      </h1>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon [img]="XIcon" class="text-v4-subtle-text-color" />
+    </div>
+  </div>
+
+  <!-- modal body start -->
+  <div class="p-6 bg-v4-tertiary-background-color">
+    <form [formGroup]="walletSettingForm" class="flex flex-col gap-6">
+      <!-- Toggle 1: Bypass Wallet for ACH Payout -->
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-sm font-medium text-v4-main-text-color">
+            Bypass Wallet for ACH Payout
+          </span>
+          <lucide-icon
+            [img]="HelpCircleIcon"
+            [size]="14"
+            class="text-v4-tertiary-text-color flex-shrink-0"
+            [matTooltip]="bypassTooltip"
+            matTooltipClass="whitespace-pre-line"
+          />
+        </div>
+        <button
+          type="button"
+          class="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+          [class.bg-v4-primary-brand-color]="
+            walletSettingForm.value.isWalletBypassingEnabled
+          "
+          [class.bg-v4-input-border-color]="
+            !walletSettingForm.value.isWalletBypassingEnabled
+          "
+          (click)="
+            walletSettingForm.controls.isWalletBypassingEnabled.setValue(
+              !walletSettingForm.value.isWalletBypassingEnabled
+            )
+          "
+        >
+          <div
+            class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+            [class.translate-x-5]="
+              walletSettingForm.value.isWalletBypassingEnabled
+            "
+          ></div>
+        </button>
+      </div>
+
+      <!-- Toggle 2: Auto-Transfer Received Funds -->
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-sm font-medium text-v4-main-text-color">
+            Auto-Transfer Received Funds to Your Bank
+          </span>
+          <lucide-icon
+            [img]="HelpCircleIcon"
+            [size]="14"
+            class="text-v4-tertiary-text-color flex-shrink-0"
+            [matTooltip]="autoTransferTooltip"
+            matTooltipClass="whitespace-pre-line"
+          />
+        </div>
+        <button
+          type="button"
+          class="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+          [class.bg-v4-primary-brand-color]="
+            walletSettingForm.value.isAutoWithdrawalEnabled
+          "
+          [class.bg-v4-input-border-color]="
+            !walletSettingForm.value.isAutoWithdrawalEnabled
+          "
+          (click)="
+            walletSettingForm.controls.isAutoWithdrawalEnabled.setValue(
+              !walletSettingForm.value.isAutoWithdrawalEnabled
+            )
+          "
+        >
+          <div
+            class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+            [class.translate-x-5]="
+              walletSettingForm.value.isAutoWithdrawalEnabled
+            "
+          ></div>
+        </button>
+      </div>
+
+      <!-- Conditional: Auto Withdrawal Bank Account -->
+      @if (walletSettingForm.value.isAutoWithdrawalEnabled) {
+        <div class="flex flex-col gap-1.5">
+          <label
+            for="bank_drop_down_auto-withdrawal"
+            class="text-sm font-medium text-v4-main-text-color"
+          >
+            Auto Withdrawal Bank Account
+          </label>
+          <app-bank-ac-dropdown-v4
+            class="w-full"
+            #bankDropdown
+            id="auto-withdrawal"
+            [formControl]="selectedBankAccount"
+            [enableAddNew]="false"
+            [append]="'body'"
+            [zIndex]="1001"
+            (ready)="showBank($event)"
+            [labelIconNeeded]="true"
+            [showVerificationBadge]="true"
+          />
+          @if (selectedBankAccount.touched && selectedBankAccount.invalid) {
+            <span class="text-xs text-v4-common-red-color mt-1">
+              Please select a bank account
+            </span>
+          }
+        </div>
+      }
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex items-center justify-center p-6 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      text="Save"
+      [loading]="loading()"
+      (clickEvent)="submit()"
+    />
+  </div>
+</div>

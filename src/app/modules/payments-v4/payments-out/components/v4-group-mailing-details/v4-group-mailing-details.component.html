@@ -1,0 +1,391 @@
+<div
+  class="w-full flex pb-3 justify-center bg-v4-main-background-color rounded-t-md font-peridot overflow-x-auto"
+>
+  <div class="w-10/12 xl:w-8/12 text-v4-main-text-color mt-2">
+    <!-- Main Content Wrapper -->
+    <div
+      class="wrapper p-3 rounded-xl border border-v4-border-color mt-5 bg-v4-secondary-background-color"
+    >
+      <!-- Page Header -->
+      <div
+        class="pt-5 pb-5 rounded-lg pl-5"
+        [ngClass]="{ 'skelton h-[120px]': loading }"
+      >
+        @if (!loading) {
+          <app-v4-page-header
+            [title]="
+              'Group Mailing Details - ' +
+              (groupMailingData?.group_name || groupMailingId)
+            "
+            subtitle="View and manage your group mailing information"
+            [showBackButton]="true"
+            [backButtonType]="'takeEvent'"
+            (backEvent)="goBack()"
+          />
+        }
+      </div>
+
+      <div class="relative flex gap-3 justify-center">
+        <!-- Main Content Area -->
+        <div class="rounded-lg p-3 w-full mb-5">
+          <!-- Summary Info Card -->
+          <div
+            class="bg-v4-tertiary-background-color rounded-lg p-5 shadow-sm mb-5 border border-v4-border-color"
+            [ngClass]="{ 'skelton h-[200px]': loading }"
+          >
+            @if (!loading && groupMailingData) {
+              <!-- Main Details Grid -->
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div
+                  class="bg-v4-secondary-background-color p-3 rounded shadow-sm"
+                >
+                  <div
+                    class="block text-xs font-medium text-v4-secondary-text-color uppercase tracking-wide"
+                  >
+                    Total Group Items
+                  </div>
+                  <span class="text-lg font-semibold text-v4-main-text-color">{{
+                    groupMailingData.count_group_items
+                  }}</span>
+                </div>
+                <div
+                  class="bg-v4-secondary-background-color p-3 rounded shadow-sm"
+                >
+                  <div
+                    class="block text-xs font-medium text-v4-secondary-text-color uppercase tracking-wide"
+                  >
+                    Total Attachments
+                  </div>
+                  <span class="text-lg font-semibold text-v4-main-text-color">{{
+                    groupMailingData.count_attachment
+                  }}</span>
+                </div>
+                <div
+                  class="bg-v4-secondary-background-color p-3 rounded shadow-sm"
+                >
+                  <div
+                    class="block text-xs font-medium text-v4-secondary-text-color uppercase tracking-wide"
+                  >
+                    Envelope Type
+                  </div>
+                  <span class="text-lg font-semibold text-v4-main-text-color">{{
+                    groupMailingData.is_individual_envelope === 1
+                      ? "Individual"
+                      : "Bulk"
+                  }}</span>
+                </div>
+                <div
+                  class="bg-v4-secondary-background-color p-3 rounded shadow-sm"
+                >
+                  <div
+                    class="block text-xs font-medium text-v4-secondary-text-color uppercase tracking-wide"
+                  >
+                    Shipping Type
+                  </div>
+                  <span class="text-lg font-semibold text-v4-main-text-color">{{
+                    groupMailingData.shipment_name || "N/A"
+                  }}</span>
+                </div>
+              </div>
+
+              <!-- Address Information -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
+                <div>
+                  <div class="block font-medium text-v4-main-text-color mb-2">
+                    From Address:
+                  </div>
+                  <div
+                    class="bg-v4-secondary-background-color p-3 rounded shadow-sm"
+                  >
+                    <div
+                      class="text-v4-main-text-color"
+                      [innerHTML]="
+                        formatAddress(groupMailingData.sender_info?.sender)
+                      "
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="block font-medium text-v4-main-text-color mb-2">
+                    To Address:
+                  </div>
+                  <div
+                    class="bg-v4-secondary-background-color p-3 rounded shadow-sm"
+                  >
+                    <div
+                      class="text-v4-main-text-color"
+                      [innerHTML]="
+                        formatAddress(groupMailingData.sender_info?.receiver)
+                      "
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Error State -->
+          @if (!loading && !groupMailingData) {
+            <div
+              class="bg-v4-main-background-color rounded-lg p-5 shadow-md mb-5"
+            >
+              <div class="flex items-center justify-center py-8">
+                <lucide-icon
+                  name="triangle-alert"
+                  [size]="20"
+                  class="text-v4-common-red-color mr-3"
+                ></lucide-icon>
+                <span class="text-v4-main-text-color"
+                  >Failed to load group mailing details</span
+                >
+              </div>
+            </div>
+          }
+
+          <!-- Data Table -->
+          <div
+            class="bg-v4-tertiary-background-color rounded-lg p-3 shadow-md border border-v4-border-color"
+            [ngClass]="{ 'skelton h-[400px]': loading }"
+          >
+            @if (!loading) {
+              <app-v4-data-table
+                [columnDefs]="columnDefs"
+                [tableId]="tableId"
+                [frameworkComponents]="frameworkComponents"
+                [freeColumnResize]="false"
+                [isRowSelectable]="isRowSelectable"
+                [defaultColumnFields]="defaultColumnFields"
+                [deselectedColumns]="deselectedColumns"
+                [dynamicHeaderText]="'Group Mailing Items'"
+                [additionalPayload]="getAdditionalPayload()"
+                [useCustomEmptyState]="true"
+                [emptyStateConfig]="{
+                  icon: 'mail-open',
+                  title: 'No items in this group mailing',
+                  description:
+                    'Checks and documents added to this group mailing will be listed here',
+                  buttonText: ''
+                }"
+              ></app-v4-data-table>
+            }
+          </div>
+
+          <!-- Bottom Section with Activity Log and Attachments -->
+          <div class="mt-5 space-y-4">
+            <!-- Activity Log Table -->
+            <div
+              class="w-full bg-v4-tertiary-background-color rounded-lg shadow-md border border-v4-border-color"
+              [ngClass]="{ 'skelton h-[300px]': loadingActivityLogs }"
+            >
+              @if (!loadingActivityLogs) {
+                <div class="p-4 border-b border-v4-border-color">
+                  <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <lucide-icon
+                      name="history"
+                      [size]="18"
+                      class="text-v4-common-blue-color"
+                    ></lucide-icon>
+                    Activity Log
+                  </h3>
+                </div>
+                <div class="p-4">
+                  @if (activityLogs.length === 0) {
+                    <div class="text-center py-8 text-v4-secondary-text-color">
+                      <lucide-icon
+                        name="history"
+                        [size]="40"
+                        class="mb-3"
+                      ></lucide-icon>
+                      <p>No activity log available</p>
+                    </div>
+                  }
+                  @if (activityLogs.length > 0) {
+                    <div class="max-h-[300px] overflow-y-auto overflow-x-auto">
+                      <table
+                        class="w-full border-collapse bg-v4-main-background-color"
+                      >
+                        <thead>
+                          <tr>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              Date
+                            </th>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              Description
+                            </th>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              IP
+                            </th>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              Notes
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (log of activityLogs; track log.created_at) {
+                            <tr
+                              class="transition-colors duration-200 hover:bg-v4-tertiary-background-color bg-v4-secondary-background-color"
+                            >
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                {{ log.created_at }}
+                              </td>
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                {{ log.description }}
+                              </td>
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                {{ log.ip }}
+                              </td>
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                {{ log.note }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Attachments Table -->
+            <div
+              class="w-full bg-v4-tertiary-background-color rounded-lg shadow-md border border-v4-border-color"
+              [ngClass]="{ 'skelton h-[300px]': loading }"
+            >
+              @if (!loading) {
+                <div class="p-4 border-b border-v4-border-color">
+                  <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <lucide-icon
+                      name="paperclip"
+                      [size]="18"
+                      class="text-v4-common-green-color"
+                    ></lucide-icon>
+                    Attachments
+                    <span
+                      class="text-sm font-normal text-v4-secondary-text-color"
+                      >({{ groupMailingData?.count_attachment || 0 }})</span
+                    >
+                  </h3>
+                </div>
+                <div class="p-4">
+                  @if (loadingAttachments) {
+                    <div class="flex items-center justify-center py-8">
+                      <div class="loader"></div>
+                      <span class="ml-3 text-v4-secondary-text-color"
+                        >Loading attachments...</span
+                      >
+                    </div>
+                  }
+                  @if (
+                    !loadingAttachments &&
+                    (uniqueAttachments.length === 0 ||
+                      !groupMailingData?.count_attachment)
+                  ) {
+                    <div class="text-center py-8 text-v4-secondary-text-color">
+                      <lucide-icon
+                        name="paperclip"
+                        [size]="40"
+                        class="mb-3"
+                      ></lucide-icon>
+                      <p>No attachments available</p>
+                    </div>
+                  }
+                  @if (
+                    !loadingAttachments &&
+                    uniqueAttachments.length > 0 &&
+                    groupMailingData?.count_attachment > 0
+                  ) {
+                    <div class="max-h-[300px] overflow-y-auto overflow-x-auto">
+                      <table
+                        class="w-full border-collapse bg-v4-main-background-color"
+                      >
+                        <thead>
+                          <tr>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              #
+                            </th>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              File Name
+                            </th>
+                            <th
+                              class="p-3 text-left border-b border-v4-border-color bg-v4-secondary-background-color font-medium text-xs text-v4-secondary-text-color"
+                            >
+                              Pages
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (
+                            attachment of uniqueAttachments;
+                            track attachment.id
+                          ) {
+                            <tr
+                              class="transition-colors duration-200 hover:bg-v4-tertiary-background-color"
+                            >
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                {{ $index + 1 }}
+                              </td>
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                <div class="flex items-center gap-2">
+                                  <a
+                                    role="presentation"
+                                    (click)="viewAttachment(attachment)"
+                                    tabindex="0"
+                                    class="cursor-pointer text-v4-common-blue-color hover:underline"
+                                    [matTooltip]="attachment.file_name"
+                                  >
+                                    {{ attachment.file_name }}
+                                  </a>
+                                  <lucide-icon
+                                    name="external-link"
+                                    [size]="14"
+                                    class="cursor-pointer text-v4-common-blue-color hover:opacity-80"
+                                    (click)="viewAttachment(attachment)"
+                                    [matTooltip]="'Open ' + attachment.file_name"
+                                  ></lucide-icon>
+                                </div>
+                              </td>
+                              <td
+                                class="p-3 text-left border-b border-v4-border-color text-sm font-normal text-v4-main-text-color"
+                              >
+                                {{ attachment.page_count }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

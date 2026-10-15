@@ -1,0 +1,389 @@
+<div class="px-[6px] pb-[6px] test">
+  <!-- modal header -->
+  <div class="flex justify-between pb-6">
+    <div class="align-middle">
+      @if (selectedOption !== "email") {
+        <p
+          class="pl-1 font-inter font-semibold text-main-text-color text-base pb-0.5"
+        >
+          Account Info
+        </p>
+      } @else {
+        <span
+          class="mt-18 w-full text-base text-main-text-color align-middle flex items-center"
+        >
+          <fa-icon
+            class="!text-[20px] cursor-pointer"
+            [icon]="['fas', 'arrow-left']"
+            (click)="onBackClick()"
+          ></fa-icon>
+          <span
+            class="pl-1 font-inter font-semibold text-base !text-secondary-text-color pb-0.5"
+          >
+            Account Info<span class="!text-main-text-color">/send</span>
+          </span>
+        </span>
+      }
+    </div>
+    <div class="flex gap-4">
+      @if (selectedOption !== "email") {
+        <div
+          class="flex gap-1 items-center"
+          appWhiteLabel
+          shownIf="isShowVerificationLetter"
+        >
+          @if (!isDownload) {
+            <fa-icon
+              class="text-common-blue-color text-xs"
+              [icon]="['fas', 'download']"
+            ></fa-icon>
+          } @else {
+            <span
+              class="loadingSpinner after:border-x-transparent after:border-y-common-blue-color"
+            ></span>
+          }
+          <span
+            role="presentation"
+            (click)="downloadLetter()"
+            class="gap-1 v35-labels items-center flex text-end"
+            >Verification letter</span
+          >
+        </div>
+      }
+      <div [mat-dialog-close]="false">
+        <fa-icon
+          class="text-secondary-text-color cursor-pointer"
+          [icon]="['fas', 'xmark']"
+        ></fa-icon>
+      </div>
+    </div>
+  </div>
+  <!-- modal body start -->
+  <div>
+    @if (selectedOption !== "email") {
+      <!-- basic details -->
+      <div class="v35-button-switch pb-5">
+        @for (item of switchArray; track item.id) {
+          <div
+            role="presentation"
+            [ngClass]="{ selected: item.id === selectedItem }"
+            (click)="onClick(item.id)"
+          >
+            <h1>
+              {{ item.name }}
+            </h1>
+          </div>
+        }
+      </div>
+
+      <div class="flex gap-2 items-center">
+        <span
+          class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          >Account Name</span
+        >:
+        <span
+          class="font-semibold text-xs text-main-text-color min-w-[20px]"
+          [matTooltip]="
+            setAccountDetails.accountName.length > 24
+              ? setAccountDetails.accountName
+              : ''
+          "
+          >{{ setAccountDetails.accountName | truncate: 24 }}</span
+        >
+      </div>
+      @if(selectedItem === 'ach'){
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+            >Routing Number</span
+          >:
+          <span class="font-semibold text-xs text-main-text-color min-w-[20px]">{{
+            setAccountDetails.routingNumber | truncate: 24
+          }}</span>
+        </div>
+      }
+      @if (selectedItem === "wire" || selectedItem === "international"){
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+           >{{accountDetails?.wire_routing_number ? 'Wire ' : '' }}Routing Number</span
+          >:
+          <span
+            class="font-semibold text-xs text-main-text-color min-w-[20px]"
+           >{{ accountDetails?.wire_routing_number ??  setAccountDetails.routingNumber }}</span
+          >
+        </div>
+      }
+     
+      <div class="flex gap-2 items-center">
+        <span
+          class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          >Account Number </span
+        >:
+        @if (!showAccountNumber) {
+          <span
+            class="font-semibold text-xs text-main-text-color min-w-[20px] w-1/3"
+            >{{
+              "XXXXXX" + (setAccountDetails.accountNumber | slice: -4)
+            }}</span
+          >
+          <fa-icon
+            class="cursor-pointer"
+            [icon]="['fas', 'eye']"
+            (click)="showAccountNumber = !showAccountNumber"
+          >
+          </fa-icon>
+        } @else {
+          <span
+            class="font-semibold text-xs text-main-text-color min-w-[20px] w-1/3"
+            >{{ setAccountDetails.accountNumber }}</span
+          >
+          <fa-icon
+            class="cursor-pointer"
+            [icon]="['fas', 'eye-slash']"
+            (click)="showAccountNumber = !showAccountNumber"
+          >
+          </fa-icon>
+        }
+      </div>
+      <div class="flex gap-2 items-center">
+        <span
+          class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          >Account Type </span
+        >:
+        <span class="font-semibold text-xs text-main-text-color min-w-[20px]">{{
+          setAccountDetails.accountType | titlecase
+        }}</span>
+      </div>
+
+      @if (selectedItem === "wire" || selectedItem === "international") {
+
+        @if (selectedItem === "international") {
+          <div class="flex gap-2 items-center">
+            <span
+              class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+              >Swift Code </span
+            >:
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ setAccountDetails.swiftCode }}</span
+            >
+          </div>
+        }
+
+        <!-- Bank Institution Details -->
+        <div class="flex gap-2 items-center mt-2">
+          <span
+            class="font-medium text-xs w-5/12 text-black min-w-[40px] fornt-semibold"
+            >Bank Institution Details</span
+          >
+        </div>
+        <hr class="text-input-border-color" />
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+            >Bank Name</span
+          >:
+          <span
+            class="font-semibold text-xs text-main-text-color min-w-[20px]"
+            [matTooltip]="
+              accountDetails?.bank_details?.name.length > 24
+                ? accountDetails?.bank_details?.name
+                : ''
+            "
+            >{{ accountDetails?.bank_details?.name | truncate: 24 }}</span
+          >
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+            >Bank Address</span
+          >:
+          @if (accountDetails?.bank_details?.address) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.bank_details?.address }}</span
+            >
+          }
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          ></span
+          >:
+
+          @if (accountDetails?.bank_details?.city) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.bank_details?.city }}</span
+            >
+          }
+          @if (accountDetails?.bank_details?.state) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.bank_details?.state }}</span
+            >
+          }
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          ></span
+          >:
+
+          @if (accountDetails?.bank_details?.zip) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.bank_details?.zip }}</span
+            >
+          }
+          @if (accountDetails?.bank_details?.country) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ "" + accountDetails?.bank_details?.country }}</span
+            >
+          }
+        </div>
+
+        <!-- Beneficiary Acccount Details -->
+        <div class="flex gap-2 items-center mt-2">
+          <span
+            class="font-medium text-xs w-5/12 text-black min-w-[40px] fornt-semibold"
+            >Beneficiary Account Details</span
+          >
+        </div>
+        <hr class="text-input-border-color" />
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+            >Account Holder Name</span
+          >:
+          <span
+            class="font-semibold text-xs text-main-text-color min-w-[20px]"
+            [matTooltip]="
+              accountDetails?.account_holder?.holder_name.length > 24
+                ? accountDetails?.account_holder?.holder_name
+                : ''
+            "
+            >{{
+              accountDetails?.account_holder?.holder_name | truncate: 24
+            }}</span
+          >
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+            >Account Holder Address</span
+          >:
+          @if (accountDetails?.account_holder?.address) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.account_holder?.address }}</span
+            >
+          }
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          ></span
+          >:
+
+          @if (accountDetails?.account_holder?.city) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.account_holder?.city }}</span
+            >
+          }
+          @if (accountDetails?.account_holder?.state) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.account_holder?.state }}</span
+            >
+          }
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <span
+            class="font-medium text-xs w-5/12 text-secondary-text-color min-w-[40px]"
+          ></span
+          >:
+          @if (accountDetails?.account_holder?.zip) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ accountDetails?.account_holder?.zip }}</span
+            >
+          }
+          @if (accountDetails?.account_holder?.country) {
+            <span
+              class="font-semibold text-xs text-main-text-color min-w-[20px]"
+              >{{ "" + accountDetails?.account_holder?.country }}</span
+            >
+          }
+        </div>
+      }
+    } @else {
+      <div class="px-[6px] pb-[6px] test">
+        <div [formGroup]="emailForm">
+          <app-common-input-field
+            placeholder="Enter email id"
+            formControlName="email"
+          ></app-common-input-field>
+          <app-control-message-v35
+            [control]="emailForm.controls.email"
+          ></app-control-message-v35>
+        </div>
+      </div>
+    }
+
+    <div
+      class="buttons flex gap-2 pt-5"
+      [ngClass]="{ 'justify-center': selectedOption !== 'email' }"
+    >
+      <app-common-button-v35
+        [ngClass]="{
+          'left-[330px] transition-all duration-800': selectedOption === 'email'
+        }"
+        class="relative left-0"
+        [loading]="loading && selectedOption === 'email'"
+        [isAddIcon]="!loading || (loading && selectedOption !== 'email')"
+        [icon]="['fas', 'paper-plane-top']"
+        [type]="{ style: 'modal', name: 'main' }"
+        width="emailSendText === 'Send' ? '80px' : '125px'"
+        [text]="emailSendText"
+        (clickEvent)="emailNow(emailSendText === 'Send' ? false : true)"
+      >
+      </app-common-button-v35>
+
+      @if (selectedOption !== "email") {
+        <app-common-button-v35
+          [loading]="loading && selectedOption === 'email me'"
+          [isAddIcon]="!loading || (loading && selectedOption !== 'email me')"
+          [icon]="['fas', 'envelope']"
+          [type]="{ style: 'modal', name: 'main' }"
+          width="115px"
+          text="Email Me"
+          (clickEvent)="emailMe()"
+        >
+        </app-common-button-v35>
+
+        <app-common-button-v35
+          [loading]="loading && selectedOption === 'download'"
+          [isAddIcon]="!loading || (loading && selectedOption !== 'download')"
+          [icon]="['fas', 'download']"
+          [type]="{ style: 'modal', name: 'main' }"
+          width="95px"
+          text="Download"
+          (clickEvent)="downloadNow()"
+        >
+        </app-common-button-v35>
+      }
+    </div>
+  </div>
+</div>

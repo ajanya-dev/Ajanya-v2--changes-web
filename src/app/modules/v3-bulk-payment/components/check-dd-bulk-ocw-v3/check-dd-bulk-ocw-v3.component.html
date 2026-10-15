@@ -1,0 +1,161 @@
+<form
+  [formGroup]="dynamicForm"
+  class="main-container p-3"
+  *ngIf="
+    getFormControl()['controls'].length !== 0 &&
+    v3BulkPaymentService.isCheckDDProcessing
+  "
+>
+  <div class="payment-type-tab">
+    <h2>Check DD</h2>
+  </div>
+  <div
+    class="bulk-payment-container check-email-form"
+    [ngClass]="{
+      'pointer-events-none':
+        v3BulkPaymentService.getIsBulkPaymentProcessing() | async
+    }"
+    formArrayName="checkDDFormArray"
+  >
+    <table class="check-email-table">
+      <thead>
+        <tr>
+          <th class="w-12">
+            <h2></h2>
+          </th>
+          <th>
+            <h2>Payee</h2>
+          </th>
+          <th>
+            <h2>Amount</h2>
+          </th>
+          <th>
+            <h2>Email</h2>
+          </th>
+          <th>
+            <div class="flex gap-2">
+              <input (change)="checkAllSms($event)" type="checkbox" />
+              <h2>SMS</h2>
+            </div>
+          </th>
+          <th>
+            <h2>Enable Wallet Bypassing</h2>
+          </th>
+          <th>
+            <h2>Payee Bank A/C</h2>
+          </th>
+          <th>
+            <h2>Cost</h2>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container
+          class="bulk-payment-item"
+          *ngFor="let data of getFormControl()['controls']; let i = index"
+          [formGroupName]="i"
+        >
+          <tr>
+            <td>
+              <i
+                class="bank-icon fa-sharp fa-solid fa-building-columns"
+                [matTooltip]="data?.value?.source?.bankName"
+              ></i>
+            </td>
+            <td>
+              <div class="disabled-field">
+                <p
+                  class="p-1.5 truncate"
+                  [matTooltip]="data?.value?.payee?.name"
+                >
+                  {{ data?.value?.payee?.name | truncate }}
+                </p>
+              </div>
+            </td>
+            <td>
+              <div class="disabled-field">
+                <p class="p-[5px] text-[15px]">{{ data?.value?.amount }}</p>
+              </div>
+            </td>
+            <td>
+                <input
+                class="email-input border border-input-border-color rounded p-[6px] w-full"
+                [ngClass]="{
+                  invalid:
+                  data?.value?.email === '' ||
+                  data?.controls.email.invalid
+                }"
+                formControlName="email"
+                title="Email"
+                type="text"
+              />
+            </td>
+            <td class="w-64">
+              <div class="item-container flex">
+                <div
+                  class="py-0 px-2.5 border border-input-border-color border-r-0 flex items-center justify-center"
+                >
+                  <input formControlName="sms" type="checkbox" />
+                </div>
+                <app-new-phone-input
+                  class="min-h-9 font-roboto text-sm font-medium"
+                  inputBorderRadius="0px"
+                  type="text"
+                  [ngClass]="{
+                    'border border-common-red-color':
+                      data?.controls.phone.touched &&
+                      data?.controls.phone.invalid
+                  }"
+                  formControlName="phone"
+                  mask="(000) 000-0000"
+                ></app-new-phone-input>
+              </div>
+            </td>
+            <td>
+              <div>
+                <input
+                  class="p-[5px] ml-5"
+                  type="checkbox"
+                  [checked]="true"
+                  formControlName="walletBypassing"
+                />
+              </div>
+            </td>
+            <td>
+              <div class="dropdown-container flex">
+                <ng-select
+                  [class]="data?.value?.payeeAcc === null ? 'invalid' : 'valid'"
+                  [items]="data?.value?.payeeBanks"
+                  bindLabel="bankName"
+                  bindValue="id"
+                  formControlName="payeeAcc"
+                  placeholder="Select Bank Account"
+                >
+                  <ng-template ng-label-tmp let-item="item">
+                    <span [matTooltip]="item?.bankName">{{
+                      item?.bankName | truncate
+                    }}</span>
+                  </ng-template>
+                </ng-select>
+                <i
+                  class="add-new-icon fa-solid fa-plus"
+                  (click)="addPayeeBankAc(data?.value?.payee?.id, i, data)"
+                ></i>
+              </div>
+            </td>
+            <td>
+              <div
+                class="border-none rounded-sm font-roboto font-medium bg-tertiary-background-color p-2 flex justify-center items-center"
+              >
+                <h2>{{ data?.value?.cost | currency }}</h2>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+    <div class="w-full text-end pr-4 pt-2 font-medium font-inter">
+      Total Cost: {{ totalCost | currency }}
+    </div>
+  </div>
+</form>

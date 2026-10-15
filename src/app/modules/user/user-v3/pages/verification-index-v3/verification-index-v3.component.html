@@ -1,0 +1,206 @@
+<div
+  class="main_container px-[10px] pb-3 bg-secondary-background-color gap-3 text-main-text-color"
+>
+  <div class="flex flex-1 justify-center bg-main-background-color rounded">
+    <div
+      class="p-4 md:p-8 w-full flex flex-col mr-3 text-sm max-w-2xl relative"
+    >
+      <div class="flex md:absolute md:-left-8 left-0">
+        <div *ngIf="!loading" class="grid justify-items-end">
+          <app-common-back-button-v35
+            class="text-[20px] pt-1"
+            type="takeEvent"
+            (backEvent)="prevStep()"
+          ></app-common-back-button-v35>
+        </div>
+      </div>
+      <div class="progress_heading mb-6">
+        <h1 class="mb-3 text-2xl" [ngClass]="{ skelton: loading }">
+          {{
+            currentIndex > 2 ? "Business Verification" : "Personal Verification"
+          }}
+        </h1>
+        <p
+          class="text-sm"
+          [ngClass]="{ skelton: loading }"
+          *ngIf="currentIndex !== 2"
+        >
+          Ensure that the information you provide is accurate
+        </p>
+        <div class="text-sm flex items-center gap-2" *ngIf="currentIndex === 2">
+          <span>Your ID Verification Succesfully completed</span>
+        </div>
+      </div>
+      <div [ngClass]="{ skelton: loading }" class="w-full gap-3 mb-[1.5rem]">
+        <app-stepper-v35
+          [numberOfStepperTabs]="3"
+          [currentStepperTabIndex]="
+            (currentIndex === 5 ? 3 : null) ??
+            (hasBusiness ? currentIndex - 3 : currentIndex)
+          "
+          [stepperHeaders]="verificationSteps()"
+          stepperWidth="flex-1"
+        ></app-stepper-v35>
+      </div>
+      <div [ngClass]="{ skelton: loading }" class="main_body w-full">
+        <app-verify-user-id-ocw-v3
+          *ngIf="currentIndex <= 2"
+          (loadingEvent)="onChildLoading($event)"
+          (stepChangeEvent)="personalVerificationStepChange($event)"
+          [prevStepObservable]="prevStepSubject.asObservable()"
+          [currentIndex]="currentIndex"
+          (nextEvent)="nextStep($event)"
+        >
+        </app-verify-user-id-ocw-v3>
+        <span class="skelton" *ngIf="loading">****</span>
+        <app-business-verification-v3
+          *ngIf="currentIndex > 2"
+          (loadingEvent)="onChildLoading($event)"
+          (stepChangeEvent)="businessVerficationStepChange($event)"
+          (nextEvent)="nextStep($event)"
+          [prevStepObservable]="prevStepSubject.asObservable()"
+          [currentIndex]="currentIndex"
+        ></app-business-verification-v3>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-main-background-color rounded p-5 w-3/12 hidden lg:block">
+    <ng-container *ngIf="currentIndex === 0">
+      <h1
+        [ngClass]="{ skelton: loading }"
+        class="mb-[1rem] text-xl font-semibold font-overwrite"
+      >
+        Why Personal Verification?
+      </h1>
+      <p [ngClass]="{ skelton: loading }" class="text-sm">
+        Collecting personal details and verification procedures are part of our
+        security precautions. Providing your personal details helps us prevent
+        fraudulent activities, identity theft, and unauthorized account access.
+        We guarantee that the data we gather is used exclusively to protect your
+        account and transactions. You can bank with confidence, knowing that
+        your information is safe and secure.
+      </p>
+      <div [ngClass]="{ skelton: loading }" class="image-section mt-[3rem]">
+        <img
+          src="../../../../../assets/images/getting_started/getting-started-v3/why-personal-verfication.svg"
+          alt=""
+        />
+      </div>
+    </ng-container>
+    <ng-container *ngIf="currentIndex === 1">
+      <h1 class="mb-[1rem] text-xl font-semibold">
+        Did You Know?
+        <span
+          ><fa-icon
+            [icon]="['fas', 'lightbulb-on']"
+            class="text-common-yellow-color"
+          ></fa-icon
+        ></span>
+      </h1>
+      <p class="text-sm">
+        In the US, various laws and regulations govern the data security and
+        privacy of users, including the
+        <strong>CCPA, HIPAA, GLBA, COPPA, and FCRA</strong>.
+      </p>
+      <p class="text-sm">
+        The US government also has agencies such as the Federal Trade Commission
+        <strong>(FTC)</strong> and the
+        <strong>National Institute of Standards and Technology (NIST)</strong>
+        that provide guidelines and support to businesses for ensuring data
+        security.
+      </p>
+      <div class="image-section mt-[3rem]">
+        <img
+          src="../../../../../assets/images/getting_started/getting-started-v3/image-scan-with-lens.svg"
+          alt=""
+        />
+      </div>
+    </ng-container>
+    <ng-container *ngIf="currentIndex === 2">
+      <h1 class="mb-[1rem] text-xl font-semibold">
+        Laws for Data Privacy and Protection in USA
+        <fa-icon
+          [icon]="['fas', 'lightbulb-on']"
+          class="text-common-yellow-color"
+        ></fa-icon>
+      </h1>
+      <p class="text-sm">
+        <strong>The California Consumer Privacy Act (CCPA)</strong> - provides
+        California residents with the right to know what personal information is
+        being collected about them, the right to request deletion of their
+        information, and right to opt-out of the sale of their personal
+        information
+      </p>
+      <p class="text-sm">
+        <strong>The Gramm-Leach-Billey Act (GLBA)</strong> - requires financial
+        institutions to protect the privacy of customers' personal information
+      </p>
+      <p class="text-sm">
+        <strong>The Fair Credit Reporting Act (FCRA)</strong> - regulates the
+        collection, dissemination, and use of consumer credit information.
+      </p>
+    </ng-container>
+    <ng-container *ngIf="currentIndex === 3">
+      <h1 class="mb-[1rem] text-xl font-semibold">
+        Did You know?
+        <fa-icon
+          [icon]="['fas', 'lightbulb-on']"
+          class="text-common-yellow-color"
+        ></fa-icon>
+      </h1>
+      <p class="text-sm">
+        <strong
+          >Small businesses, with fewer than 500 employees make up over 99% of
+          all businesses in the US,
+        </strong>
+        contributing significantly to job creation and economic growth through
+        their and innovation. The government provides support to these
+        businesses through loans and grants to help them succeed.
+      </p>
+      <div class="image-section mt-[3rem]">
+        <img
+          src="../../../../../assets/images/getting_started/getting-started-v3/business-verfication-with-business-bag.svg"
+          alt=""
+        />
+      </div>
+    </ng-container>
+    <ng-container *ngIf="currentIndex === 4 && currentBusinessStep === 'doc'">
+      <h1 class="mb-[1rem] text-xl font-semibold">
+        Did You know?
+        <fa-icon
+          [icon]="['fas', 'lightbulb-on']"
+          class="text-common-yellow-color"
+        ></fa-icon>
+      </h1>
+      <p class="text-sm">
+        The USA has a thriving business environment with over
+        <strong>30 million registered businesses</strong> across various
+        industries, offering diverse opportunities and government support for
+        success and economic growth.
+      </p>
+      <div class="image-section mt-[3rem]">
+        <img
+          src="../../../../../assets/images/getting_started/getting-started-v3/throwing-files.svg"
+          alt=""
+        />
+      </div>
+    </ng-container>
+    <ng-container
+      *ngIf="currentIndex === 4 && currentBusinessStep === 'businessOwnerList'"
+    >
+      <h1 class="mb-[1rem] text-xl font-semibold">
+        Did You know?
+        <fa-icon
+          [icon]="['fas', 'lightbulb-on']"
+          class="text-common-yellow-color"
+        ></fa-icon>
+      </h1>
+      <p class="text-sm">
+        <strong>The Uniform Partnership Act (UPA) </strong>is a model law that
+        governs business partnership in the United States, providing guidlines
+        for the formation, operation of partnerships.
+      </p>
+    </ng-container>
+  </div>
+</div>

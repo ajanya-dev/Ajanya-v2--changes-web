@@ -1,0 +1,1299 @@
+<div class="user-permission">
+  <!---------------  HEADER START --------------->
+  <section class="user-permission__header">
+    <div class="left">
+      <div class="main_header">
+        <app-ocw-back-button backUrl="manage/manage-users/index">
+        </app-ocw-back-button>
+        <h1 class="desk">User Permissions for</h1>
+        <p class="desk">
+          @if (permissionType?.client_name) {
+            {{ permissionType.client_name }}
+          } @else {
+            {{ permissionType?.name }}
+          }
+        </p>
+        <h1 class="mobile">
+          User Permissions for
+          @if (permissionType?.client_name) {
+            {{ permissionType.client_name }}
+          } @else {
+            {{ permissionType?.name }}
+          }
+        </h1>
+      </div>
+      <p class="mt-2 text-sm font-normal">
+        Select permissions that you grant for your user
+      </p>
+    </div>
+    <div class="right button-container">
+      <app-common-button-v35
+        [type]="{ style: 'violet', name: 'money-action' }"
+        text="Clone Permission"
+        (clickEvent)="openClonePermissionsModal()"
+      />
+      <div class="select_all">
+        <label class="ocw-checkbox">
+          <input
+            type="checkbox"
+            [(ngModel)]="allowViewOnlyPermission"
+            (click)="onClickViewOnlyPermissions($event.target.checked)"
+          />
+          <span class="font-medium">Allow View Only Permissions</span>
+        </label>
+      </div>
+      <div class="select_all">
+        <label class="ocw-checkbox">
+          <input
+            type="checkbox"
+            [(ngModel)]="allowAllPermissions"
+            (click)="onClickAllowAllPermissions($event.target.checked)"
+          />
+          <span class="font-medium">Allow All Permission</span>
+        </label>
+      </div>
+    </div>
+  </section>
+  <!---------------  HEADER END --------------->
+
+  <!---------------  BODY START --------------->
+  <section class="user-permission__body">
+    <div class="containter">
+      <div class="left_section">
+        @if (!loading?.fetching) {
+          <ng-container>
+            @for (item of userPermissionList; track item; let i = $index) {
+              <ng-container>
+                <div
+                  role="presentation"
+                  class="single"
+                  [ngClass]="{ active: activeIndex === i }"
+                  (click)="tabChange(item, i)"
+                >
+                  <p>{{ item.displayName }}</p>
+                </div>
+              </ng-container>
+            }
+          </ng-container>
+        }
+      </div>
+
+      <div class="right_section">
+        @if (!loading?.fetching) {
+          @if (selectedTab.displayName === "Whitelist IP") {
+            <div>
+              <app-user-whitelist-ip
+                [clientId]="client_id"
+                [actAsChild]="true"
+              />
+            </div>
+          }
+          <ng-container>
+            <!-- Select All Start -->
+            @if (!isSelectAll && selectedTab.displayName !== "Whitelist IP") {
+              <div class="select_all">
+                <label class="ocw-checkbox">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="allSelectedIndex[activeIndex]"
+                    (click)="selectAll($event.target.checked)"
+                  />
+                  <span>Select All</span>
+                </label>
+              </div>
+            }
+            @if (isSelectAll) {
+              <div class="select_all integration-page flex gap-6">
+                @if (isThirdPartyApss === "all") {
+                  <div class="flex gap-6">
+                    <div
+                      role="presentation"
+                      class="qb-image"
+                      (click)="showQbOnlineData(userPermissionList)"
+                    >
+                      <img
+                        ngSrc="assets/images/integration/qb-logo-stacked.svg"
+                        width="111"
+                        height="100"
+                        alt="qb-img"
+                      />
+                      <p>QuickBooks Online</p>
+                    </div>
+                    <div
+                      role="presentation"
+                      class="qb-image"
+                      (click)="showQbDesktopData(userPermissionList)"
+                    >
+                      <img
+                        ngSrc="../../../../assets/images/integration/qb-logo-stacked.svg"
+                        width="111"
+                        height="100"
+                        alt="qb-img"
+                      />
+                      <p>QuickBooks Desktop</p>
+                    </div>
+                    <div
+                      role="presentation"
+                      class="qb-image"
+                      (click)="showNetSuite(userPermissionList)"
+                    >
+                      <img
+                        class="!h-14"
+                        ngSrc="assets/images/integration/netsuite-color-logo.png"
+                        width="111"
+                        height="50"
+                        alt="qb-img"
+                      />
+                      <p class="pt-1 !mt-0 !-mb-5">NetSuite</p>
+                    </div>
+                  </div>
+                }
+                @if (isThirdPartyApss === "online") {
+                  <div>
+                    <div class="flex top-row">
+                      <div
+                        class="back-arrow"
+                        role="presentation"
+                        (click)="goToQbMainPage()"
+                      >
+                        <fa-icon
+                          matTooltip="Back to QB home"
+                          class="pt-2.5"
+                          [icon]="faArrowLeft"
+                        ></fa-icon>
+                      </div>
+                      <div class="qb-online-side flex">
+                        <img
+                          ngSrc="assets/images/integration/qb-logo-stacked.svg"
+                          width="111"
+                          height="100"
+                          alt="qb-img"
+                        />
+                        <p class="cash-head-label">QuickBooks Online</p>
+                      </div>
+                    </div>
+                    @if (isThirdPartyApss === "online") {
+                      <div class="my-5">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="allSelectedIndex[activeIndex]"
+                            (click)="selectAll($event.target.checked, 'online')"
+                          />
+                          <span>Select All</span>
+                        </label>
+                      </div>
+                    }
+
+                    <div class="qb_checkbox-list">
+                      @for (item of qbOnline; track item) {
+                        <ng-container>
+                          <label class="ocw-checkbox">
+                            <input
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[item.name]"
+                              (change)="onClickCheckBox('online')"
+                            />
+                            <span>{{ item.display_name | titlecase }}</span>
+                          </label>
+                        </ng-container>
+                      }
+                    </div>
+                    <!-- quickbook online companies enable start -->
+                    @if (
+                      quickbookOnlineEnable &&
+                      userPermissions["quickbooks-online-export"]
+                    ) {
+                      <div class="mt-5">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="
+                              userPermissions[quickbookOnlineEnable.name]
+                            "
+                            (change)="onClickCheckBox('online')"
+                          />
+                          <span>{{
+                            quickbookOnlineEnable.display_name | titlecase
+                          }}</span>
+                        </label>
+                      </div>
+                    }
+                    <!-- quickbook online companies enable end -->
+
+                    @if (
+                      userPermissions["enable-qb-online-companies"] &&
+                      userPermissions["quickbooks-online-export"]
+                    ) {
+                      <div class="qbonline_list_container">
+                        @for (
+                          company of companyList;
+                          track company;
+                          let i = $index
+                        ) {
+                          <div>
+                            <div
+                              class="header"
+                              role="presentation"
+                              (click)="
+                                expandQbCompanyist(
+                                  'online',
+                                  i,
+                                  company,
+                                  selectedCategory[i]
+                                )
+                              "
+                            >
+                              <div class="left">
+                                <div class="logo">
+                                  <fa-icon [icon]="faBriefcase"></fa-icon>
+                                </div>
+                                <div class="flex company-name">
+                                  <div>
+                                    <p>{{ company.companyName }}</p>
+                                  </div>
+                                  <div>
+                                    <fa-icon [icon]="faAngleDown"></fa-icon>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            @if (moreInofrmationOnlineIndex === i) {
+                              <div>
+                                <div class="category-company pl-6 pt-4">
+                                  <label class="ocw-checkbox">
+                                    <input
+                                      type="checkbox"
+                                      [(ngModel)]="isSelectCategory[i]"
+                                      (click)="
+                                        selectAllCategory(
+                                          company.categories,
+                                          $event.target.checked,
+                                          i
+                                        )
+                                      "
+                                    />
+                                    <span>Select All</span>
+                                  </label>
+                                </div>
+                                <div
+                                  class="ocw_modal_body"
+                                  id="qb-company-category"
+                                >
+                                  <ng-select
+                                    class="permission-ngslect"
+                                    styel="width:200px"
+                                    [dropdownPosition]="'top'"
+                                    [multiple]="true"
+                                    [(ngModel)]="selectedCategory[i]"
+                                    [closeOnSelect]="false"
+                                    placeholder="Select the Categories"
+                                    [appendTo]="appendTo"
+                                    bindLabel="name"
+                                    bindValue="id"
+                                    (change)="
+                                      CategorySelect(
+                                        $event,
+                                        i,
+                                        company.categories
+                                      )
+                                    "
+                                  >
+                                    @for (
+                                      option of company.categories;
+                                      track option
+                                    ) {
+                                      <ng-option [value]="option.id">
+                                        {{ option.name }}
+                                      </ng-option>
+                                    }
+                                  </ng-select>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (isThirdPartyApss === "desktop") {
+                  <div>
+                    <div class="flex top-row">
+                      <div
+                        class="back-arrow"
+                        role="presentation"
+                        (click)="goToQbMainPage()"
+                      >
+                        <fa-icon
+                          matTooltip="Back to QB home"
+                          class="pt-2.5"
+                          [icon]="faArrowLeft"
+                        ></fa-icon>
+                      </div>
+                      <div class="qb-online-side flex">
+                        <img
+                          ngSrc="assets/images/integration/qb-logo-stacked.svg"
+                          width="111"
+                          height="100"
+                          alt="qb-img"
+                        />
+                        <p class="cash-head-label">QuickBooks Desktop</p>
+                      </div>
+                    </div>
+                    @if (isThirdPartyApss === "desktop") {
+                      <div class="my-5">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="allSelectedIndex[activeIndex]"
+                            (click)="
+                              selectAll($event.target.checked, 'desktop')
+                            "
+                          />
+                          <span>Select All</span>
+                        </label>
+                      </div>
+                    }
+                    <div class="qb_checkbox-list">
+                      @for (item of qbDesktop; track item) {
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="userPermissions[item.name]"
+                            (change)="onClickCheckBox('desktop')"
+                          />
+                          <span>{{ item.display_name | titlecase }}</span>
+                        </label>
+                      }
+                    </div>
+                    <!-- quickbook desktop companies enable start -->
+                    @if (
+                      quickbookDesktopEnable &&
+                      userPermissions["quickbooks-desktop-export"]
+                    ) {
+                      <div class="mt-5">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="
+                              userPermissions[quickbookDesktopEnable.name]
+                            "
+                            (change)="onClickCheckBox('desktop')"
+                          />
+                          <span>{{
+                            quickbookDesktopEnable.display_name | titlecase
+                          }}</span>
+                        </label>
+                      </div>
+                    }
+                    <!-- quickbook desktop companies enable end -->
+                    @if (
+                      userPermissions["enable-qb-desktop-companies"] &&
+                      userPermissions["quickbooks-desktop-export"]
+                    ) {
+                      <div class="qbonline_list_container">
+                        @for (
+                          company of desktopCompanyList;
+                          track company;
+                          let i = $index
+                        ) {
+                          <div>
+                            <div
+                              role="presentation"
+                              class="header"
+                              (click)="
+                                expandQbCompanyist(
+                                  'desktop',
+                                  i,
+                                  company,
+                                  selectedExpenses[i]
+                                )
+                              "
+                            >
+                              <div class="left">
+                                <div class="logo">
+                                  <fa-icon [icon]="faBriefcase"></fa-icon>
+                                </div>
+                                <div class="flex company-name">
+                                  <div>
+                                    <p>{{ company.companyName }}</p>
+                                  </div>
+                                  <div>
+                                    <fa-icon [icon]="faAngleDown"></fa-icon>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            @if (moreInofrmationDesktopIndex === i) {
+                              <div>
+                                <div class="category-company pl-6 pt-4">
+                                  <label class="ocw-checkbox">
+                                    <input
+                                      type="checkbox"
+                                      [(ngModel)]="isSelectExpenses[i]"
+                                      (click)="
+                                        selectAllExpenses(
+                                          company.expenses,
+                                          $event.target.checked,
+                                          i
+                                        )
+                                      "
+                                    />
+                                    <span>Select All</span>
+                                  </label>
+                                </div>
+                                <div
+                                  class="ocw_modal_body"
+                                  id="qb-company-category"
+                                >
+                                  <ng-select
+                                    class="permission-ngslect"
+                                    styel="width:200px"
+                                    [dropdownPosition]="'top'"
+                                    [multiple]="true"
+                                    [(ngModel)]="selectedExpenses[i]"
+                                    [closeOnSelect]="false"
+                                    placeholder="Select the Expense"
+                                    [appendTo]="appendTo"
+                                    bindLabel="name"
+                                    bindValue="id"
+                                    (change)="
+                                      expenseSelect($event, i, company.expenses)
+                                    "
+                                  >
+                                    @for (
+                                      option of company.expenses;
+                                      track option
+                                    ) {
+                                      <ng-option [value]="option.encrypted_id">
+                                        {{ option.name }}</ng-option
+                                      >
+                                    }
+                                  </ng-select>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+                @if (isThirdPartyApss === "netsuite") {
+                  <div>
+                    <div class="flex top-row">
+                      <div
+                        class="back-arrow"
+                        role="presentation"
+                        (click)="goToQbMainPage()"
+                      >
+                        <fa-icon
+                          matTooltip="Back to QB home"
+                          class="pt-2.5"
+                          [icon]="faArrowLeft"
+                        ></fa-icon>
+                      </div>
+                      <div class="qb-online-side flex">
+                        <img
+                          ngSrc="assets/images/integration/netsuite-color-logo.png"
+                          width="111"
+                          height="100"
+                          alt="qb-img"
+                        />
+                        <p class="cash-head-label">NetSuite</p>
+                      </div>
+                    </div>
+                    @if (isThirdPartyApss === "netsuite") {
+                      <div class="my-5">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="allSelectedIndex[activeIndex]"
+                            (click)="
+                              selectAll($event.target.checked, 'netsuite')
+                            "
+                          />
+                          <span>Select All</span>
+                        </label>
+                      </div>
+                    }
+
+                    <div class="qb_checkbox-list">
+                      @for (item of netSuitePermission; track item) {
+                        <ng-container>
+                          <label class="ocw-checkbox">
+                            <input
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[item.name]"
+                              (change)="onClickCheckBox('desktop')"
+                            />
+                            <span>{{ item.display_name | titlecase }}</span>
+                          </label>
+                        </ng-container>
+                      }
+                    </div>
+                    <!-- quickbook desktop companies enable start -->
+                    @if (
+                      quickbookDesktopEnable &&
+                      userPermissions["quickbooks-desktop-export"]
+                    ) {
+                      <div class="mt-5">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="
+                              userPermissions[quickbookDesktopEnable.name]
+                            "
+                            (change)="onClickCheckBox('desktop')"
+                          />
+                          <span>{{
+                            quickbookDesktopEnable.display_name | titlecase
+                          }}</span>
+                        </label>
+                      </div>
+                    }
+                    <!-- quickbook desktop companies enable end -->
+
+                    @if (
+                      userPermissions["enable-qb-desktop-companies"] &&
+                      userPermissions["quickbooks-desktop-export"]
+                    ) {
+                      <div class="qbonline_list_container">
+                        @for (
+                          company of desktopCompanyList;
+                          track company;
+                          let i = $index
+                        ) {
+                          <div>
+                            <div
+                              role="presentation"
+                              class="header"
+                              (click)="
+                                expandQbCompanyist(
+                                  'desktop',
+                                  i,
+                                  company,
+                                  selectedExpenses[i]
+                                )
+                              "
+                            >
+                              <div class="left">
+                                <div class="logo">
+                                  <fa-icon [icon]="faBriefcase"></fa-icon>
+                                </div>
+                                <div class="flex company-name">
+                                  <div>
+                                    <p>{{ company.companyName }}</p>
+                                  </div>
+                                  <div>
+                                    <fa-icon [icon]="faAngleDown"></fa-icon>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            @if (moreInofrmationDesktopIndex === i) {
+                              <div>
+                                <div class="category-company pl-6 pt-4">
+                                  <label class="ocw-checkbox">
+                                    <input
+                                      type="checkbox"
+                                      [(ngModel)]="isSelectExpenses[i]"
+                                      (click)="
+                                        selectAllExpenses(
+                                          company.expenses,
+                                          $event.target.checked,
+                                          i
+                                        )
+                                      "
+                                    />
+                                    <span>Select All</span>
+                                  </label>
+                                </div>
+                                <div
+                                  class="ocw_modal_body"
+                                  id="qb-company-category"
+                                >
+                                  <ng-select
+                                    class="permission-ngslect"
+                                    styel="width:200px"
+                                    [dropdownPosition]="'top'"
+                                    [multiple]="true"
+                                    [(ngModel)]="selectedExpenses[i]"
+                                    [closeOnSelect]="false"
+                                    placeholder="Select the Expense"
+                                    [appendTo]="appendTo"
+                                    bindLabel="name"
+                                    bindValue="id"
+                                    (change)="
+                                      expenseSelect($event, i, company.expenses)
+                                    "
+                                  >
+                                    @for (
+                                      option of company.expenses;
+                                      track option
+                                    ) {
+                                      <ng-option [value]="option.encrypted_id">
+                                        {{ option.name }}</ng-option
+                                      >
+                                    }
+                                  </ng-select>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+            <!-- Select All End -->
+
+            <!----------------------------------------  PERMISSIONS START   ------------------------------------------>
+
+            <!-- Normal Start -->
+            <div class="normal-check-section check_box_container">
+              <div class="normal-permission-section">
+                @if (activeListPermission?.normal?.length) {
+                  <div class="permissions">
+                    @for (item of activeListPermission?.normal; track item) {
+                      @if (item.display_name !== "Direct Deposit") {
+                        <div class="single-permission">
+                          <label class="ocw-checkbox">
+                            <input
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[item.name]"
+                              (change)="onClickCheckBox()"
+                              [disabled]="
+                                blankCheckActivated &&
+                                item.name === 'check-create'
+                              "
+                            />
+                            <span>{{ item.display_name | titlecase }}</span>
+                          </label>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+            <!-- Normal End -->
+
+            <!-- Direct depost section start -->
+            <div class="check_box_container">
+              @for (item of activeListPermission?.normal; track item) {
+                @if (item.display_name === "Direct Deposit") {
+                  <label class="ocw-checkbox">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="userPermissions[item.name]"
+                      (change)="onClickCheckBox()"
+                    />
+                    <span>{{ item.display_name | titlecase }} </span>
+                  </label>
+                }
+              }
+            </div>
+            <!-- Direct depost section end -->
+
+            <!-- Special (ap) Start -->
+            <div class="special-check-section check_box_container">
+              @for (item of activeListPermission?.ap; track item) {
+                <div class="special-permission-check-items">
+                  <label class="ocw-checkbox">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="userPermissions[item.name]"
+                      (click)="
+                        onClickSpecialPermission(item, $event.target.checked)
+                      "
+                      (change)="onClickCheckBox()"
+                    />
+                    <span
+                      [matTooltip]="item.description"
+                      matTooltipPosition="left"
+                      >{{ item.display_name | titlecase }}
+                    </span>
+                  </label>
+                </div>
+              }
+            </div>
+            <!-- Special (ap) End -->
+
+            <!-- Special (sp) Start -->
+            <div class="special-check-section check_box_container">
+              @for (item of activeListPermission?.sp; track item) {
+                <div class="special-permission-check-items">
+                  <label class="ocw-checkbox">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="userPermissions[item.name]"
+                      (click)="
+                        onClickSpecialPermission(item, $event.target.checked)
+                      "
+                      (change)="onClickCheckBox()"
+                    />
+                    <span
+                      [matTooltip]="item.description"
+                      matTooltipPosition="right"
+                      >{{ item.display_name | titlecase }}
+                    </span>
+                  </label>
+                  @if (
+                    item.name === "is-approval-required-for-printing" &&
+                    printApprovalActivated
+                  ) {
+                    <div class="check-limit">
+                      <div
+                        class="single_input my-2"
+                        matTooltip="Processing checks requires approval from the administrator if the user creates a check greater than this specified amount."
+                      >
+                        <input
+                          class="input_style"
+                          mask="separator.2"
+                          thousandSeparator=","
+                          maxlength="9"
+                          [formControl]="checkTransactionLimit"
+                          (blur)="onBlur($event)"
+                          (keypress)="utils.numberOnly($event, 'numeric')"
+                          placeholder=" "
+                          type="text"
+                        />
+                        <span class="floating_label_field"
+                          >Check Amount Limit</span
+                        >
+                      </div>
+                    </div>
+                  }
+                  <div>
+                    @if (
+                      enableCheckEmail &&
+                      item.name === "is-approval-required-for-printing"
+                    ) {
+                      <label class="ocw-checkbox sub_check">
+                        <input
+                          type="checkbox"
+                          [(ngModel)]="
+                            userPermissions['enable-check-email-notification']
+                          "
+                        />
+                        <span
+                          class="span"
+                          matTooltip="Receive an email notification when your user create checks."
+                          matTooltipPosition="right"
+                          >Enable Email Notification</span
+                        >
+                      </label>
+                    }
+                  </div>
+                </div>
+                @if (
+                  item.name === "payee-accounts" && showPayeeTable[item.name]
+                ) {
+                  <app-user-permission-payee
+                    [permissionName]="'payee-accounts'"
+                    (rowClicked)="onRowClicked($event)"
+                  />
+                }
+                @if (
+                  item.name === "wallet-accounts" &&
+                  showBankDropDowns[item.name]
+                ) {
+                  <app-user-permission-wallet
+                    [permissionName]="'wallet-accounts'"
+                    (rowClicked)="onRowClicked($event)"
+                  />
+                }
+                @if (
+                  isBankAccount(item.name) &&
+                  showBankDropDowns[item.name] &&
+                  item.name !== "payee-accounts" &&
+                  item.name !== "wallet-accounts"
+                ) {
+                  @if (item.name === "cashexpense-bank-accounts") {
+                    <div class="bank_permission_wrapper">
+                      <div class="tab">
+                        @for (item of bankTabLabels; track item) {
+                          <p
+                            role="presentation"
+                            (click)="selectBankType(item.value)"
+                            [ngClass]="{ active: bankType === item.value }"
+                          >
+                            {{ item.name }}
+                          </p>
+                        }
+                      </div>
+                      <!--  Bank Account List Start  -->
+                      @if (bankType === "bank") {
+                        <app-user-permission-bank-account
+                          [permissionName]="'cashexpense-bank-accounts'"
+                          (rowClicked)="onRowClicked($event)"
+                        />
+                      }
+                      <!--  Bank Account List End  -->
+                      <!--  Cash Account List Start  -->
+                      @if (bankType === "cash") {
+                        <div class="cash_list_container">
+                          <div class="cash-expense_account">
+                            <p class="cash-head-label">Cash Expense Account</p>
+                            <p class="total-cash-length">
+                              Total Accounts: {{ cashAccountList.length }}
+                            </p>
+                          </div>
+                          <div class="permissions">
+                            @for (cash of cashAccountList; track cash) {
+                              <label class="ocw-checkbox">
+                                <input
+                                  type="checkbox"
+                                  [(ngModel)]="
+                                    selectedBanks[item.name][cash.id]
+                                  "
+                                  (change)="onClickCheckBox(item.name)"
+                                />
+                                <span [title]="cash.name">{{ cash.name }}</span>
+                              </label>
+                            }
+                          </div>
+                        </div>
+                      }
+                      <!--  Cash Account List End  -->
+                    </div>
+                  } @else {
+                    <app-user-permission-bank-account
+                      [permissionName]="item.name"
+                      (rowClicked)="onRowClicked($event)"
+                    />
+                  }
+                }
+              }
+            </div>
+            <!-- Special (sp) End -->
+
+            <!----------------------------------------  PERMISSIONS END   ------------------------------------------>
+
+            <!----------------------------------------  SUB SECTION START   ------------------------------------------>
+            @if (activeListSubSection) {
+              @for (item of activeListSubSection; track item) {
+                <div class="special-permission-check-items">
+                  <div class="sub_section_heading">
+                    <p>{{ item.displayName }}</p>
+                  </div>
+                  <!-- Normal Start -->
+                  <div class="permissions check_box_container">
+                    @for (normal of item.permissions?.normal; track normal) {
+                      <div class="single-permission">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="userPermissions[normal.name]"
+                            (change)="onClickCheckBox()"
+                          />
+                          <span>{{ normal.display_name | titlecase }}</span>
+                        </label>
+                      </div>
+                    }
+                  </div>
+                  <!-- Normal End -->
+                  <!-- Special (ap) Start -->
+                  <div class="special-check-section check_box_container">
+                    @for (ap of item.permissions?.ap; track ap) {
+                      <div class="special-permission-check-items">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="userPermissions[ap.name]"
+                            (change)="onClickCheckBox()"
+                          />
+                          <span
+                            [matTooltip]="ap.description"
+                            matTooltipPosition="left"
+                            >{{ ap.display_name | titlecase }}
+                          </span>
+                        </label>
+                      </div>
+                    }
+                  </div>
+                  <!-- Special (ap) End -->
+                  <!-- Special (sp) Start -->
+                  <div class="special-check-section check_box_container">
+                    @for (sp of item.permissions?.sp; track sp) {
+                      <div class="special-permission-check-items">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="userPermissions[sp.name]"
+                            (change)="onClickCheckBox()"
+                            (click)="
+                              onClickSpecialPermission(
+                                sp,
+                                $event.target.checked
+                              )
+                            "
+                          />
+                          <span
+                            [matTooltip]="sp.description"
+                            matTooltipPosition="left"
+                          >
+                            {{ sp.display_name | titlecase }}
+                          </span>
+                        </label>
+                        <div>
+                          @if (
+                            enableBillEmail &&
+                            sp.name ===
+                              "is-approval-required-for-printing-bills"
+                          ) {
+                            <label class="ocw-checkbox sub_check">
+                              <input
+                                type="checkbox"
+                                [(ngModel)]="
+                                  userPermissions[
+                                    'enable-bill-email-notification'
+                                  ]
+                                "
+                              />
+                              <span
+                                class="span"
+                                matTooltip="Receive an email notification when your user create bills."
+                                matTooltipPosition="right"
+                                >Enable Email Notification</span
+                              >
+                            </label>
+                          }
+                        </div>
+                        @if (
+                          isBankAccount(sp.name) && showBankDropDowns[sp.name]
+                        ) {
+                          <app-user-permission-bank-account
+                            [permissionName]="sp.name"
+                            (rowClicked)="onRowClicked($event)"
+                          />
+                        }
+                      </div>
+                    }
+                  </div>
+                  <!-- Special (sp) End -->
+                </div>
+              }
+            }
+
+            <!-- Bank Account Permission Start -->
+            @if (activeId === "bankaccount") {
+              <div class="bank_permission_wrapper">
+                <div class="px-9">
+                  <app-user-permission-bank-account
+                    [permissionName]="'bankaccount'"
+                    (rowClicked)="onRowClicked($event)"
+                  />
+                </div>
+                <!-- <div class="tab">
+              @for (item of bankTabLabels; track item) {
+              <p role="presentation" (click)="selectBankType(item.value)"
+                [ngClass]="{ active: bankType === item.value }">
+                {{ item.name }}
+              </p>
+              }
+            </div> -->
+                <!--  Bank Account List Start  -->
+                <!-- @if (bankType === 'bank') {
+              <div class="px-9">
+                <app-user-permission-bank-account [permissionName]="'bankaccount'" (rowClicked)="onRowClicked($event)" />
+              </div>
+            } -->
+                <!--  Bank Account List End  -->
+                <!--  Cash Account List Start  -->
+                <!-- @if (bankType === 'cash') { -->
+                <!-- <div class="cash_list_container">
+              <div class="cash-expense_account">
+                <p class="cash-head-label">Cash Expense Account</p>
+                <p class="total-cash-length">
+                  Total Accounts: {{ cashAccountList.length }}
+                </p>
+              </div>
+              <div class="permissions">
+                @for (cash of cashAccountList; track cash) {
+                <label class="ocw-checkbox">
+                  <input type="checkbox" [(ngModel)]="userBankAccounts[cash.id]" (change)="onClickCheckBox()" />
+                  <span [title]="cash.name">{{ cash.name }}</span>
+                </label>
+                }
+              </div>
+            </div>
+            } -->
+                <!--  Cash Account List End  -->
+              </div>
+              <div
+                class="px-4 py-3 flex items-center justify-between sm:px-6 pagination-sec"
+              >
+                <div
+                  class="hidden !-mb-4 sm:flex-1 sm:flex sm:items-center sm:justify-end"
+                >
+                  @if (bankType === "cash" && totalCashAccounts > 49) {
+                    <div class="flex gap-1">
+                      <div class="flex gap-1 rounded" aria-label="Pagination">
+                        <button
+                          [disabled]="loadBankList"
+                          (click)="onPrevious()"
+                          class="w-9 h-9 flex items-center justify-center text-main-text-color rounded border border-input-border-color cursor-pointer"
+                        >
+                          <fa-icon [icon]="faAngleLeft"> </fa-icon>
+                        </button>
+                        @for (item of pageArr; track item; let i = $index) {
+                          <button
+                            aria-current="page"
+                            [disabled]="loadBankList"
+                            (click)="gotoPage(+item)"
+                            class="w-9 h-9 flex items-center justify-center text-main-text-color rounded border border-input-border-color cursor-pointer"
+                            [ngClass]="{
+                              '!bg-common-blue-color !border !border-common-blue-color shadow-common-button !text-white':
+                                selectedPage === item
+                            }"
+                          >
+                            {{ item }}
+                          </button>
+                        }
+                        <button
+                          [disabled]="loadBankList"
+                          (click)="onNext()"
+                          class="w-9 h-9 flex items-center justify-center text-main-text-color rounded border border-input-border-color cursor-pointer"
+                        >
+                          <fa-icon [icon]="faAngleRight"> </fa-icon>
+                        </button>
+                      </div>
+                      <div class="flex gap-1 items-center">
+                        <input
+                          class="text-center w-9 h-9 border border-input-border-color font-inter font-semibold text-base rounded"
+                          title="Go To Specific Page"
+                          [(ngModel)]="specificPageInput"
+                          type="number"
+                          (keyup.enter)="gotoPage(specificPageInput)"
+                          (keypress)="utils.numberOnly($event, 'numeric')"
+                        />
+                        <button
+                          class="text-common-blue-color font-inter font-semibold text-sm"
+                          (click)="gotoPage(specificPageInput)"
+                        >
+                          Go To Page
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+            <!-- Bank Account Permission End -->
+
+            @if (isCloudBankSelected) {
+              <div class="normal-check-section check_box_container mb-5">
+                <div class="normal-permission-section">
+                  @if (cloudPaymentRequests?.permissions?.normal?.length) {
+                    <div class="permissions">
+                      @for (
+                        item of cloudPaymentRequests?.permissions?.normal;
+                        track item
+                      ) {
+                        <div class="single-permission">
+                          <label class="ocw-checkbox">
+                            <input
+                              type="checkbox"
+                              [(ngModel)]="userPermissions[item?.name]"
+                              (change)="onClickCheckBox()"
+                            />
+                            <span>{{ item?.display_name | titlecase }}</span>
+                          </label>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="cloud_transaction_limit">
+                <label class="ocw-checkbox">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="isTransitionLimitSet"
+                    (change)="checkTranslimit()"
+                  />
+                  <span
+                    >Set Transaction Limit (for CHECK, ACH, WIRE and GIFT CARD)
+                  </span>
+                </label>
+                <div class="pl-5">
+                  <div
+                    class="single_input my-2"
+                    [ngClass]="isTransitionLimitSet ? '' : 'disabled'"
+                  >
+                    <input
+                      class="input_style"
+                      mask="separator.2"
+                      thousandSeparator=","
+                      maxlength="14"
+                      [formControl]="cloudTransactionLimit"
+                      (keypress)="utils.numberOnly($event, 'decimal')"
+                      placeholder=" "
+                      type="text"
+                    />
+                    <span class="floating_label_field"
+                      >Transaction Limit<span class="required">*</span></span
+                    >
+                    @if (isTransitionLimitSet) {
+                      <app-control-message
+                        [control]="cloudTransactionLimit"
+                      ></app-control-message>
+                    }
+                  </div>
+                </div>
+              </div>
+              <!-- cloud bank account list start -->
+              @if (cloudBankAccountsEnable) {
+                <div class="cloud_transaction_limit">
+                  <label class="ocw-checkbox">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="
+                        userPermissions[cloudBankAccountsEnable.name]
+                      "
+                      (change)="onClickCheckCloudBankAccounts()"
+                    />
+                    <span>{{
+                      cloudBankAccountsEnable.display_name | titlecase
+                    }}</span>
+                  </label>
+                </div>
+              }
+              @if (userPermissions["cloudbank-bank-accounts"]) {
+                <div
+                  class="cloud-bank-account-permissions special-permission-check-items"
+                >
+                  <div class="sub_section_heading flex justify-between">
+                    <p>{{ cloudBankAccountLists?.displayName }}</p>
+                    <p>
+                      Total Accounts:
+                      {{ cloudBankAccountLists?.accounts?.length }}
+                    </p>
+                  </div>
+                  <!-- Accounts Start -->
+                  <div class="cloudbank-accounts-select">
+                    <label class="ocw-checkbox">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="selectAllCloudBankAccounts"
+                        (change)="onClickCheckCloudBankAccounts()"
+                      />
+                      <span>Select All</span>
+                    </label>
+                  </div>
+                  <div class="permissions cloud_bank_list_container">
+                    @for (
+                      account of cloudBankAccountLists?.accounts;
+                      track account
+                    ) {
+                      <div class="single-permission">
+                        <label class="ocw-checkbox">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="checkedCloudBankIds[account.id]"
+                            (change)="isSeletedAllCloudBankAccounts()"
+                          />
+                          <span>{{ account.name }}</span>
+                        </label>
+                      </div>
+                    }
+                  </div>
+                  <!-- Accounts End -->
+                </div>
+              }
+              <!-- cloud bank account list end -->
+            }
+
+            @if (
+              isSelectPayee &&
+              payeeTypeRestrictions &&
+              (userPermissions["payee-create"] ||
+                userPermissions["payee-update"])
+            ) {
+              <div class="pl-[50px]">
+                <label class="ocw-checkbox">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="userPermissions[payeeTypeRestrictions.name]"
+                    (change)="onClickPayeeRestriction($event.target.checked)"
+                  />
+                  <span>{{
+                    payeeTypeRestrictions.display_name | titlecase
+                  }}</span>
+                </label>
+              </div>
+              <div class="pl-20 flex gap-4 pt-5">
+                @for (item of payeeTypes; track item) {
+                  <div class="single-permission">
+                    <label class="ocw-checkbox">
+                      <input
+                        [disabled]="!userPermissions['payee-type-restriction']"
+                        type="checkbox"
+                        [(ngModel)]="userPermissions[item.name]"
+                      />
+                      <span>{{ item.display_name | titlecase }}</span>
+                    </label>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (activeId === "creditcard") {
+              <p class="cards_label">Cards</p>
+              <div class="permissions check_box_container">
+                @for (card of cardsList; track card) {
+                  <div class="single-permission">
+                    <label class="ocw-checkbox">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="userCards[card.id]"
+                        (change)="onClickCheckBox()"
+                      />
+                      <span>{{ card.name }}</span>
+                    </label>
+                  </div>
+                }
+              </div>
+            }
+
+            <!----------------------------------------  SUB SECTION END   ------------------------------------------>
+          </ng-container>
+        }
+
+        <div
+          class="data_spinner"
+          [ngClass]="{ data_fetched: !loading?.fetching }"
+        ></div>
+      </div>
+    </div>
+  </section>
+  <!---------------  BODY END --------------->
+
+  <!---------------  FOOTER START --------------->
+  <section class="user-permission__footer flex justify-between">
+    <div></div>
+    <div>
+      <app-common-button-v35
+        [type]="{ style: 'general', name: 'main' }"
+        text="Save Permissions"
+        backGroundInput="var(--common-green-color)"
+        textColorInput="white"
+        [disabled]="loading?.submiting"
+        [loading]="loading?.submiting"
+        (clickEvent)="onSubmit()"
+        width="190px"
+      />
+    </div>
+  </section>
+  <!---------------  FOOTER END --------------->
+</div>
+
+@if (loadBankList) {
+  <div class="data_spinner"></div>
+}

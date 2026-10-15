@@ -1,0 +1,171 @@
+<div class="overflow-hidden w-full font-roboto">
+  <div class="flex bg-common-blue-color p-4 items-center w-full">
+    <div class="w-6 h-6">
+      <fa-icon [icon]="faLink" class="pe-2 text-white w-10"></fa-icon>
+    </div>
+    <div class="flex-1 font-semibold text-white ml-2">
+      Map {{ isWalletType ? "Wallet" : isCardType ? "Card" : "Bank Account" }} to Business
+    </div>
+    <div class="w-6 h-6 cursor-pointer" [mat-dialog-close]="false">
+      <fa-icon [icon]="faXmark" class="pe-2 text-white w-10"></fa-icon>
+    </div>
+  </div>
+
+  <!-- Selected Source Information -->
+   @if(!isCardType){
+     <div class="mt-2 p-4 bg-secondary-background-color">
+       <div class="text-xs text-main-text-color font-inter mb-2">
+         {{ isWalletType ? "Selected Wallet" : "Selected Bank Account" }}:
+       </div>
+       <div class="flex items-center font-inter">
+         <div class="w-6 h-6 text-common-blue-color">
+           <fa-icon [icon]="sourceIcon" class="text-xl"></fa-icon>
+         </div>
+         <div class="ml-3">
+           <div class="font-medium text-sm text-main-text-color">
+             {{ sourceName }}
+           </div>
+           <div class="text-xs text-secondary-text-color">{{ sourceDetails }}</div>
+         </div>
+       </div>
+     </div>
+   }
+
+  <!-- Business Selection Information -->
+  <div class="p-4">
+    <div class="text-[12px] mb-2 font-inter text-main-text-color">
+      Select a business to connect with your
+      {{ isWalletType ? "wallet" : isCardType ? "card" : "bank account" }}:
+    </div>
+
+    <!-- Loading Skeleton -->
+    @if (loading) {
+      <div class="space-y-3">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="rounded-lg p-3 skelton">
+            <div class="flex items-center">
+              <div class="w-6 h-6 bg-[#e5e7eb] rounded-full mr-3"></div>
+              <div class="flex-1">
+                <div class="h-4 bg-[#e5e7eb] rounded w-3/4 mb-2"></div>
+                <div class="h-3 bg-[#f3f4f6] rounded w-1/4"></div>
+              </div>
+              <div class="w-16 h-5 bg-[#e5e7eb] rounded ml-2"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Business Listing -->
+      @if (businessDetails?.length) {
+        <div
+          [style.max-height]="businessDetails.length > 3 ? '250px' : null"
+          [style.overflow-y]="businessDetails.length > 3 ? 'auto' : null"
+          class="scroll-smooth max-h-[380px] overflow-auto"
+        >
+          @for (item of businessDetails; track item) {
+            <div
+              class="flex border border-input-border-color hover:bg-secondary-background-color p-3 rounded-lg mt-2 shadow-sm items-center"
+              [ngClass]="{
+                'border-input-border-color': item.id !== selectedBusinessId,
+                'border-[0.5px] border-common-blue-color bg-secondary-background-color':
+                  item.id === selectedBusinessId,
+              }"
+            >
+              <div
+                class="w-8 h-8 flex items-center justify-center text-secondary-text-color"
+              >
+                <fa-icon [icon]="faBriefcase" class="text-xl"></fa-icon>
+              </div>
+              <div
+                class="single cursor-pointer flex-1"
+                id="singleItem"
+                (click)="selectBusiness(item)"
+                role="presentation"
+                [ngClass]="{
+                  'cursor-not-allowed': !isBusinessSelectable(item) && !sourceWalletFunding
+                }"
+                [matTooltip]="
+                  !isBusinessSelectable(item) && !sourceWalletFunding
+                    ? 'Only businesses with Approved status can be mapped.'
+                    : ''
+                "
+              >
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center">
+                    <p class="font-medium text-sm text-main-text-color">
+                      {{ item.businessName }}
+                    </p>
+                  </div>
+                  <div class="flex items-center text-xs">
+                    <span class="text-secondary-text-color"
+                      >{{ item.businessCity }}, {{ item.businessState }}</span
+                    >
+                    <span class="mx-2 text-secondary-text-color">|</span>
+                    <span class="text-secondary-text-color">{{
+                      item.entityType
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Status Badge -->
+              <div
+                class="flex items-center px-2 py-1 rounded-full text-xs ml-2"
+                [ngStyle]="{
+                  'background-color': getStatusInfo(item.status).color + '15',
+                  color: getStatusInfo(item.status).color
+                }"
+              >
+                <fa-icon
+                  [icon]="getStatusInfo(item.status).icon"
+                  class="mr-1 text-xs"
+                  [ngStyle]="{ color: getStatusInfo(item.status).color }"
+                ></fa-icon>
+                {{ getStatusInfo(item.status).status }}
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div
+          class="p-6 text-center border border-input-border-color rounded-lg bg-secondary-background-color"
+        >
+          <fa-icon
+            [icon]="faBuildings"
+            class="text-3xl text-secondary-text-color mb-3"
+          ></fa-icon>
+          <p class="text-sm mb-2 text-main-text-color">
+            You don't have any businesses yet.
+          </p>
+          <p class="text-xs text-secondary-text-color mb-4">
+            Please add a business to your account first.
+          </p>
+        </div>
+      }
+      <div class="text-center text-sm text-secondary-text-color mt-2"> 
+        <app-common-button-v35
+        class="flex-1"
+        text="Add new business"
+        [type]="{ style: 'bordered', name: 'main' }"
+        width="100%"
+        (clickEvent)="addNewBusiness()"
+        backGroundInput="var(--common-secondary-blue-color)"
+        [loading]="loading"
+      ></app-common-button-v35>
+      </div>
+    }
+  </div>
+
+  <div class="p-4">
+    <app-common-button-v35
+      class="flex-1"
+      text="Map"
+      [type]="{ style: 'filled', name: 'main' }"
+      width="100%"
+      textColorInput="white"
+      (clickEvent)="mapBusiness()"
+      [disabled]="loading || isLoading"
+      [loading]="isLoading"
+    ></app-common-button-v35>
+  </div>
+</div>

@@ -1,0 +1,195 @@
+<div class="ocw_one_side_body">
+  <div class="ocw_header">
+    <div class="title flex items-center gap-1">
+      <app-common-back-button-v35></app-common-back-button-v35>
+      <h3>Ticket : {{ data.name }}</h3>
+    </div>
+  </div>
+  <hr class="header_border" />
+  <!-- main body -->
+  <div class="ocw_body">
+    <!-- top-subject and buttons -->
+
+    <div class="top-button pl-4">
+      <p>Subject : {{ data.subject }}</p>
+
+      <div class="flex">
+        @if (!isactive) {
+          <button class="ocw-btn ocw-btn-dark-blue ml-2" (click)="reSolved()">
+            Mark as resolved
+          </button>
+        }
+        @if (isactive) {
+          <button class="ocw-btn ocw-btn-trash ml-2" (click)="reOpen()">
+            Re-open
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Admin-Reply-message -->
+    <form [formGroup]="userForm" class="pr-3">
+      <div class="chats" #content>
+        <!-- user-message -->
+        @for (item of listData; track item) {
+          <div #messages class="box pr-3">
+            <div
+              [ngClass]="{
+                customer: item.senderType === 1,
+                onclinechekwiter: item.senderType === 2
+              }"
+              class="skelton send-message w-full"
+            >
+              @if (item.file !== "") {
+                <div class="chat-text w-full">
+                  <div class="w-full flex justify-between items-end box-1">
+                    <p class="username font-semibold">{{ item.userName }}</p>
+                    <p class="text-msg">{{ item.createdAt }}</p>
+                  </div>
+                  <p class="message">{{ item.message }}</p>
+                  <p class="message">{{ item?.attachments.id }}</p>
+                  <p class="message">{{ item?.attachments.imgUrl }}</p>
+
+                  @if (item?.attachments.length > 0) {
+                    <div class="attachment-parent">
+                      @for (items of item.attachments; track items) {
+                        <div
+                          class="attachment ml-2 my-2"
+                          (click)="getUrl(items.type, items.id)"
+                          (keydown.enter)="getUrl(items.type, items.id)"
+                          tabindex="0"
+                        >
+                          @if (items.type === "png") {
+                            <p>
+                              <img
+                                src="../../../../assets/icon/png.svg"
+                                alt="png"
+                              />
+                            </p>
+                          }
+                          @if (items.type === "pdf") {
+                            <p>
+                              <img
+                                src="../../../../assets/icon/pdf.svg"
+                                alt="pdf"
+                              />
+                            </p>
+                          }
+                          @if (items.type === "jpg") {
+                            <p>
+                              <img
+                                src="../../../../assets/icon/jpg.svg"
+                                alt="jpg"
+                              />
+                            </p>
+                          }
+                          <p>{{ items.type }}</p>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              <div class="attachments">
+                <div class="image"></div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="chat-input">
+        @if (!isactive) {
+          <div>
+            <textarea
+              type="text"
+              class="input_style msg-input"
+              formControlName="message"
+              placeholder="type here..."
+              #titleInput
+              (keyup)="msg($event)"
+            >
+            </textarea>
+            <app-control-message
+              [control]="userForm.controls.message"
+              labelName="This field is required"
+            >
+            </app-control-message>
+
+            <div class="flex justify-between w-full button-section">
+              <div class="items-center justify-center attach_send">
+                @if (!loading) {
+                  <div
+                    [ngClass]="{ disabled: attachArray.length === 3 }"
+                    (click)="clickAttach(attachArray.length)"
+                    (keydown.enter)="clickAttach(attachArray.length)"
+                    tabindex="0"
+                  >
+                    <label
+                      for="file-input"
+                      class="flex items-center attachment-label"
+                    >
+                      <fa-icon [icon]="['fat', 'paperclip']"></fa-icon>
+                      <span class="text-sm"> Attachment </span>
+                    </label>
+                    <input
+                      [disabled]="attachArray.length === 3"
+                      type="file"
+                      id="file-input"
+                      class="custom-file-input"
+                      #Image
+                      name="busi-for-doc"
+                      accept=".pdf,.jpg,.png"
+                      (change)="onSelectFile($event)"
+                    />
+                  </div>
+                } @else {
+                  <div class="loading_msg">
+                    <span class="loadingSpinner"></span>
+                    <span class="content">Uploading..</span>
+                  </div>
+                }
+
+                <div class="attach_remove flex my_label" [ngClass]="">
+                  @for (item of attachArray; track item; let i = $index) {
+                    <div class="pl-3 attachment-section">
+                      <div class="flex">
+                        <p class="pl-2 pr-2 tick">
+                          <fa-icon [icon]="['fas', 'check']"></fa-icon>
+                        </p>
+                        <label class="attach_label_names" for="{{ item.id }}"
+                          >{{ item.imageName }}
+                        </label>
+                        <p
+                          class="pl-2 remove"
+                          (click)="onRemove(item.id, i)"
+                          (keydown.enter)="onRemove(item.id, i)"
+                          tabindex="0"
+                        >
+                          <fa-icon [icon]="['fas', 'trash-can']"></fa-icon>
+                        </p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  class="ocw-btn ocw-btn-dark-green"
+                  name="send"
+                  (click)="enter($event)"
+                  id="send"
+                  [disabled]="!btnDesable"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </form>
+  </div>
+</div>

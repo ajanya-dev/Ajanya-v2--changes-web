@@ -1,0 +1,115 @@
+<section class="space-y-4">
+  <div
+    class="p-4 lg:p-6 border border-v4-border-color bg-v4-secondary-background-color rounded-xl"
+  >
+    <!-- Header row -->
+    <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+      <h3
+        class="text-base lg:text-lg font-semibold text-v4-main-text-color m-0"
+      >
+        Rules
+      </h3>
+      <div class="flex items-center gap-3">
+        <app-common-button-v4
+          [type]="{ style: 'outline', name: 'main' }"
+          text="Reapply All Rules"
+          [lucideIcon]="'refresh-cw'"
+          [lucideIconSize]="14"
+          [loading]="isReapplying()"
+          [disabled]="isReapplying()"
+          (clickEvent)="onReapplyAll()"
+        />
+        <app-common-button-v4
+          [type]="{ style: 'primary', name: 'main' }"
+          text="Create Rule"
+          [lucideIcon]="'plus'"
+          [lucideIconSize]="14"
+          (clickEvent)="onCreateRule()"
+        />
+      </div>
+    </div>
+
+    <!-- States -->
+    @if (rulesService.isLoading()) {
+      <div
+        class="flex items-center justify-center gap-2 py-8 text-v4-secondary-text-color"
+      >
+        <lucide-icon name="loader-circle" [size]="18" class="animate-spin" />
+        Loading rules…
+      </div>
+    } @else if (processingCards().length === 0) {
+      <app-v4-data-table-empty-state
+        [icon]="'file-text'"
+        [title]="'No processing rules yet'"
+        [description]="'Rules automatically categorize transactions as they come in — create your first one to get started'"
+        [buttonText]="'Create Rule'"
+        [buttonIcon]="'plus'"
+        [compact]="true"
+        (actionClick)="onCreateRule()"
+      />
+    } @else {
+      <!-- Single-column card grid -->
+      <div class="grid grid-cols-1 gap-4">
+        @for (card of processingCards(); track card.id) {
+          <div
+            class="p-5 border border-v4-border-color bg-v4-main-background-color rounded-xl transition-colors hover:border-v4-tertiary-text-color/50"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2 flex-wrap">
+                  <h4
+                    class="text-base font-semibold text-v4-main-text-color m-0"
+                  >
+                    {{ card.name }}
+                  </h4>
+                  <span
+                    class="px-2 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="
+                      card.isActive
+                        ? 'bg-v4-badge-success-bg-color text-v4-badge-success-text-color'
+                        : 'bg-v4-secondary-background-color text-v4-secondary-text-color'
+                    "
+                  >
+                    {{ card.isActive ? "Active" : "Inactive" }}
+                  </span>
+                </div>
+
+                <div
+                  class="text-sm text-v4-secondary-text-color mb-3 flex flex-wrap items-center gap-1"
+                >
+                  <span [innerHTML]="card.conditionHtml"></span>
+                  <lucide-icon
+                    name="arrow-right"
+                    [size]="14"
+                    class="text-v4-tertiary-text-color"
+                  />
+                  <span [innerHTML]="card.actionHtml"></span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button
+                  type="button"
+                  class="p-2 rounded-lg hover:bg-v4-secondary-background-color transition-colors text-v4-tertiary-text-color"
+                  (click)="onDelete(card.id)"
+                  [disabled]="deletingRuleId() === card.id"
+                  aria-label="Delete rule"
+                >
+                  <lucide-icon
+                    [name]="
+                      deletingRuleId() === card.id ? 'loader-circle' : 'trash-2'
+                    "
+                    [size]="16"
+                    [ngClass]="
+                      deletingRuleId() === card.id ? 'animate-spin' : ''
+                    "
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,132 @@
+<div class="flex flex-col font-funnel rounded-2xl overflow-hidden">
+  <!-- Header -->
+  <div
+    class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+  >
+    <div class="flex flex-col">
+      <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+        {{ !editMode ? "Add Item" : "Edit Item" }}
+      </h1>
+      <h2 class="text-xs text-v4-subtle-text-color">
+        Create a new product/service item
+      </h2>
+    </div>
+    <div
+      [mat-dialog-close]="false"
+      class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+    >
+      <lucide-icon
+        [img]="XIcon"
+        class="text-v4-subtle-text-color"
+        [size]="18"
+      />
+    </div>
+  </div>
+
+  <!-- Body -->
+  <form
+    [formGroup]="itemForm"
+    class="p-6 bg-v4-tertiary-background-color space-y-4"
+  >
+    <!-- Product Name -->
+    <app-common-input-v4
+      formControlName="product_name"
+      fieldLabel="Product Name"
+      placeholder="Enter product name"
+      [isFieldRequired]="true"
+      [maxLength]="30"
+      [control]="itemForm.controls.product_name"
+    />
+
+    <!-- Unit Price -->
+    <app-common-amount-input-v4
+      formControlName="unit_price"
+      fieldLabel="Unit Price ($)"
+      [maxLength]="13"
+      [border]="true"
+    />
+    <app-control-message-v4 [control]="itemForm.controls.unit_price" />
+
+    <!-- Description -->
+    <app-common-input-v4
+      formControlName="description"
+      fieldLabel="Description"
+      placeholder="Enter description"
+      [isFieldRequired]="false"
+      [maxLength]="50"
+    />
+
+    <!-- Private Note -->
+    <app-common-input-v4
+      formControlName="private_note"
+      fieldLabel="Private Note"
+      placeholder="Enter private note"
+      [isFieldRequired]="false"
+      [maxLength]="100"
+    />
+
+    <!-- Track Product -->
+    <div class="flex items-center gap-2">
+      <input
+        type="checkbox"
+        formControlName="track"
+        id="product_track_v4"
+        (click)="checked($event)"
+        class="w-4 h-4 rounded accent-v4-primary-brand-bold-color cursor-pointer"
+      />
+      <label
+        for="product_track_v4"
+        class="text-sm text-v4-main-text-color cursor-pointer select-none"
+      >
+        Track Product
+      </label>
+    </div>
+
+    <!-- Stock Quantity (conditional) -->
+    @if (Instock) {
+      <app-common-input-v4
+        formControlName="instock"
+        fieldLabel="Stock Quantity"
+        placeholder="0"
+        [isFieldRequired]="true"
+        [isNumberOnly]="true"
+        [numberType]="'numeric'"
+        [maxLength]="8"
+        [control]="itemForm.controls.instock"
+      />
+    }
+
+    @if (err_msg) {
+      <p class="text-sm text-v4-common-red-color">{{ err_msg }}</p>
+    }
+  </form>
+
+  <!-- Footer -->
+  <div
+    class="flex justify-end gap-3 px-6 py-4 bg-v4-secondary-background-color border-t border-v4-border-color"
+  >
+    <app-common-button-v4
+      [mat-dialog-close]="false"
+      width="120px"
+      [type]="{ style: 'outline', name: 'main' }"
+      text="Cancel"
+    />
+    @if (!editMode) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Add Item"
+        [loading]="submitting()"
+        (clickEvent)="submit()"
+      />
+    } @else {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'primary', name: 'main' }"
+        text="Update"
+        [loading]="submitting()"
+        (clickEvent)="update()"
+      />
+    }
+  </div>
+</div>

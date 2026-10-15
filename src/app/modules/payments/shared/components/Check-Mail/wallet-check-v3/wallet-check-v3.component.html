@@ -1,0 +1,462 @@
+<div class="main-container" [formGroup]="paymentForm">
+  <div class="flex flex-col items-center">
+    <div class="w-full flex justify-center">
+      <app-amount-input
+        [isDisabled]="
+          paymentForm.controls.amount.disabled || amountInputDisabled
+        "
+        [ngClass]="
+          paymentForm.controls.amount.disabled || amountInputDisabled
+            ? 'disable_field_amt cursor-no-drop bg-check-input-disabled-color'
+            : ''
+        "
+        formControlName="amount"
+        [maxLength]="15"
+        customClass="amount-input-v3"
+      ></app-amount-input>
+    </div>
+    <app-control-message-v35
+      [control]="paymentForm.controls.amount"
+      label="Amount is required"
+    ></app-control-message-v35>
+  </div>
+  <div class="w-full flex flex-col justify-center items-center mt-8">
+    @if (payeeDataService.payeeDataSignal()) {
+      <div class="w-full flex justify-end items-end mb-1 text-main-text-color">
+        <button
+          matTooltip="View Payee Summary"
+          (click)="payeeDataService.openTransactionHistoryModal()"
+        >
+          <fa-icon [icon]="faHistory"></fa-icon>
+        </button>
+      </div>
+    }
+    <div class="w-full flex justify-center items-center">
+      <div class="custom-input-v3-wrapper flex grow shadow max-w-[340px]">
+        <div class="w-full flex justify-center items-center">
+          <app-wallet-dropdown-v3
+            class="w-full"
+            formControlName="wallet"
+            (ready)="
+              populateOnEdit(
+                $event,
+                paymentConfig?.paymentFormValue?.wallet?.id
+              )
+            "
+            append="ng-select"
+            customHeight="3"
+          ></app-wallet-dropdown-v3>
+        </div>
+      </div>
+      <div class="arrow-wrapper flex justify-center items-center">
+        <div class="arrow flex justify-center items-center">
+          <fa-icon [icon]="['fas', 'arrow-right-long']"></fa-icon>
+        </div>
+      </div>
+      <div class="custom-input-v3-wrapper flex grow shadow max-w-[340px]">
+        <app-payee-dropdown-v3
+          [blockFrozenPayee]="true"
+          class="w-full"
+          customHeight="3"
+          [enableAddNew]="true"
+          formControlName="payee"
+          (ready)="
+            populateOnEdit(
+              $event,
+              paymentConfig?.paymentFormValue?.payee?.encryptedId
+            )
+          "
+          (ngModelChange)="selectPayee($event, true)"
+          (clearEvent)="clearPayee()"
+          (newPayeeAdded)="newPayeeAdd($event)"
+        ></app-payee-dropdown-v3>
+      </div>
+    </div>
+  </div>
+  <div class="flex">
+    <app-control-message-v35
+      [control]="paymentForm.controls.wallet"
+      class="w-full"
+    ></app-control-message-v35>
+    <app-control-message-v35
+      [control]="paymentForm.controls.payee"
+      class="w-full pl-7"
+    ></app-control-message-v35>
+  </div>
+  <div class="grid grid-cols-2 gap-6 mt-5">
+    <div class="single_input">
+      <input
+        id="payeeEmail"
+        type="text"
+        class="input_style"
+        placeholder=" "
+        formControlName="payeeEmail"
+      />
+      <label for="payeeEmail" class="floating_label_field"
+        >Payee Email<span class="error_msg">*</span></label
+      >
+      <app-control-message-v35
+        [control]="paymentForm.controls.payeeEmail"
+      ></app-control-message-v35>
+    </div>
+
+    <!-- Industry Type -->
+    <!-- <div class="single_input">
+      <app-industry-types-dropdown
+        class="w-full"
+        (selectionChange)="selectionChange($event)"
+        [selectedItem]="paymentForm.controls.industryType.value"
+        [payeeId]="paymentForm.controls.payee.value?.id"
+      />
+      <app-control-message-v35 [control]="paymentForm.controls.industryType">
+      </app-control-message-v35>
+    </div> -->
+
+    <div class="single_input">
+      <input
+        id="invoiceNo"
+        type="text"
+        class="input_style"
+        placeholder=" "
+        formControlName="invoiceNumber"
+      />
+      <label for="invoiceNo" class="floating_label_field">Invoice Number</label>
+      <fa-icon
+        [icon]="faCircleQuestion"
+        [matTooltip]="
+          '• Enter number from your bill/invoice. \n• Leave blank if you don\'t have one. \n• Helps track your payment later.'
+        "
+        [matTooltipPosition]="'right'"
+        [matTooltipShowDelay]="300"
+        class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+      ></fa-icon>
+    </div>
+    <div class="single_input">
+      <input
+        id="payeeId"
+        type="text"
+        class="input_style"
+        placeholder=" "
+        formControlName="payeeIdNumber"
+        maxlength="30"
+      />
+      <label for="payeeId" class="floating_label_field"
+        >Payee ID/Account Number</label
+      >
+      <app-control-message-v35
+        [control]="paymentForm.controls.payeeIdNumber"
+      />
+    </div>
+
+    <div class="single_input">
+      <div class="flex w-full">
+        <app-category-dropdown-v3
+          class="w-full"
+          formControlName="category"
+          (ready)="
+          setDropDownAPIAndBindId(
+            $event,
+            this.categoryId()
+          )
+        "
+        ></app-category-dropdown-v3>
+      </div>
+      <app-control-message-v35 [control]="paymentForm.controls.category">
+      </app-control-message-v35>
+    </div>
+
+    @if (paymentForm.controls.isCustomAddress.value) {
+      <div class="single_input w-full">
+        <div class="flex select-wrapper relative">
+          <mat-select
+            id="mail-to"
+            class="mat_select_style !rounded-md flex-1 truncate"
+            [(ngModel)]="currentMailFrom"
+            (ngModelChange)="onMailFromChange($event, 'mail-from')"
+            [ngModelOptions]="{ standalone: true }"
+          >
+            @for (type of shippingAddressFrom; track $index) {
+              <mat-option [value]="type.id" id="From">{{
+                type.name
+              }}</mat-option>
+            }
+          </mat-select>
+          @if (!currentMailFrom) {
+            <div class="absolute left-[14px] top-[7px]">
+              <label
+                for="mail-to"
+                class="floating_label_field !top-[7px] !text-[15px]"
+                >Mail From<span class="error_msg">*</span></label
+              >
+            </div>
+          }
+
+          <!-- Close button that appears when an option is selected -->
+          @if (currentMailFrom) {
+            <button
+              type="button"
+              class="absolute right-[4.8rem] top-[54%] transform -translate-y-1/2 z-10 w-6 h-6 flex items-center justify-center"
+              (click)="clearMailSelection('mail-from')"
+              matTooltip="Clear selection"
+            >
+              <fa-icon
+                [icon]="faTimes"
+                class="text-secondary-text-color text-xs"
+              ></fa-icon>
+            </button>
+          }
+
+          <button
+            type="button "
+            class="ocw-btn-skyblue ocw-btn ml-2"
+            value="mail-from"
+            (click)="openAddMailAddressModal($event)"
+          >
+            <i
+              [ngClass]="isMailFromEditable ? 'fa fa-pencil' : 'fa fa-plus'"
+            ></i>
+          </button>
+        </div>
+        <app-control-message-v35
+          [control]="currentMailFromControl"
+          label="Mail From is required when custom address is enabled"
+        ></app-control-message-v35>
+      </div>
+    }
+
+    @if (paymentForm.controls.isCustomAddress.value) {
+      <div class="single_input w-full">
+        <div class="flex select-wrapper relative">
+          <mat-select
+            id="mail-to"
+            class="mat_select_style !rounded-md flex-1 truncate"
+            [(ngModel)]="currentMailTo"
+            (ngModelChange)="onMailToChange($event, 'mail-to')"
+            [ngModelOptions]="{ standalone: true }"
+          >
+            @for (type of shippingAddressTo; track $index) {
+              <mat-option [value]="type.id" id="To">{{ type.name }}</mat-option>
+            }
+          </mat-select>
+          @if (!currentMailTo) {
+            <div class="absolute left-[14px] top-[7px]">
+              <label
+                for="mail-to"
+                class="floating_label_field !top-[7px] !text-[15px]"
+                >Mail To<span class="error_msg">*</span></label
+              >
+            </div>
+          }
+
+          <!-- Close button that appears when an option is selected -->
+          @if (currentMailTo) {
+            <button
+              type="button"
+              class="absolute right-[4.8rem] top-[54%] transform -translate-y-1/2 z-10 w-6 h-6 flex items-center justify-center"
+              (click)="clearMailSelection('mail-to')"
+              matTooltip="Clear selection"
+            >
+              <fa-icon
+                [icon]="['fas', 'times']"
+                class="text-secondary-text-color text-xs"
+              ></fa-icon>
+            </button>
+          }
+
+          <button
+            type="button "
+            class="ocw-btn-skyblue ocw-btn ml-2"
+            value="mail-to"
+            (click)="openAddMailAddressModal($event)"
+          >
+            <i [ngClass]="isMailToEditable ? 'fa fa-pencil' : 'fa fa-plus'"></i>
+          </button>
+        </div>
+        <app-control-message-v35
+          [control]="currentMailToControl"
+          label="Mail To is required when custom address is enabled"
+        ></app-control-message-v35>
+      </div>
+    }
+
+    <div class="single_input w-full">
+      <mat-select
+        class="mat_select_style !rounded-md"
+        formControlName="shippingType"
+      >
+        @for (item of updatedShippingTypeList(); track item) {
+          <mat-option [value]="item.carrier_code" class="ml-0">
+            <div class="!w-full flex justify-between items-center gap-3">
+              <div class="!w-20 rounded-full">
+                <img
+                  [src]="
+                    item.carrier === 'FEDEX'
+                      ? '../../../../../../../assets/images/fedex.svg'
+                      : '../../../../../../../assets/images/usps-logo.png'
+                  "
+                  class="w-12 h-10"
+                  alt=""
+                />
+              </div>
+              <div class="!w-full">
+                <span class="text-center !text-main-text-color !text-sm">{{
+                  item.name
+                }}</span>
+              </div>
+              <div
+                class="!w-20 font-semibold text-center !text-common-green-color !text-sm"
+              >
+                ${{ item.cost }}
+              </div>
+            </div>
+          </mat-option>
+        }
+      </mat-select>
+      <span
+        class="floating_label_field"
+        [ngClass]="{
+          '!top-[7px] !text-[15px]': !paymentForm.controls.shippingType.value
+        }"
+        >Shipping Type <span class="required">*</span></span
+      >
+      <app-control-message-v35 [control]="paymentForm.controls.shippingType">
+      </app-control-message-v35>
+    </div>
+    <div class="single_input col-span-2 mb-2">
+      <input
+        id="memo"
+        type="text"
+        class="input_style memo-input-with-icon"
+        placeholder=" "
+        formControlName="memo"
+        maxlength="100"
+      />
+      <label for="memo" class="floating_label_field">Memo</label>
+      <fa-icon
+        [icon]="faCircleQuestion"
+        [matTooltip]="
+          '• Brief note about this payment.\n• Example: \'Office rent\' or \'Supplies\'.'
+        "
+        [matTooltipPosition]="'right'"
+        [matTooltipShowDelay]="300"
+        class="absolute right-2 top-2 text-secondary-text-color text-sm cursor-default"
+      ></fa-icon>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mt-3 justify-start items-center">
+    <button
+      class="add-attachment h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md"
+      [matBadge]="attachmentCount"
+      matBadgeSize="small"
+      [matBadgeHidden]="attachmentCount < 1 ? true : false"
+      matTooltip="Add attachments to the payment"
+      (click)="openAddAttachment()"
+    >
+      <fa-icon [icon]="['fas', 'paperclip']" />
+    </button>
+
+    <button
+      class="add-comment h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md"
+      [matBadge]="commentsCount"
+      matBadgeSize="small"
+      [matBadgeHidden]="commentsCount < 1 ? true : false"
+      matTooltip="Add comments to the payment"
+      (click)="openAddComment()"
+    >
+      <fa-icon [icon]="['fas', 'comment-plus']" />
+    </button>
+
+    <button
+      class="add-remittance h-10 w-10 border rounded-full flex items-center justify-center hover:shadow-md"
+      [matBadge]="hasRemittance ? '✔' : ''"
+      matBadgeSize="small"
+      matTooltip="Add remittance to the payment"
+      (click)="openAddRemitance()"
+    >
+      <fa-icon [icon]="['fas', 'square-list']" />
+    </button>
+
+    <div class="single_input">
+      <label class="flex gap-1 cursor-pointer items-center">
+        <input
+          type="checkbox"
+          class="cursor-pointer"
+          formControlName="isCustomAddress"
+        />
+        <p class="!text-main-text-color font-inter">Ship To Custom Address</p>
+        <fa-icon
+          [icon]="faCircleQuestion"
+          matTooltip="Send to separate addresses or mail multiple checks to one address in a single envelope."
+          matTooltipPosition="below"
+          class="text-secondary-text-color text-xs"
+        />
+      </label>
+    </div>
+
+    @if(attachmentCount > 0){
+      <div class="single_input ml-2">
+        <label class="flex gap-1 cursor-pointer items-center">
+          <input
+            type="checkbox"
+            class="cursor-pointer"
+            [disabled]="isAttachmentFeeLoading"
+            formControlName="sentWithAttachment"
+          />
+          <p class="!text-main-text-color font-inter">Add Attachment{{attachmentCount > 1 ? 's' : ''}} With Check</p>
+          <fa-icon
+            [icon]="faCircleQuestion"
+            [matTooltip]= "attachmentTooltip()"
+            matTooltipPosition="below"
+            class="text-secondary-text-color text-xs"
+          />
+        </label>
+      </div>
+    }
+  </div>
+
+  <div class="pt-6 flex gap-2 justify-between">
+    @if (paymentConfig.mode === "EDIT") {
+      <app-common-button-v35
+        class="flex-1"
+        [type]="{ style: 'bordered', name: 'main' }"
+        text="Update"
+        width="100%"
+        (clickEvent)="submitPayment('update')"
+        [loading]="loading && paymentProcessingContext === 'update'"
+        [disabled]="loading"
+      ></app-common-button-v35>
+    } @else if (
+      paymentConfig.mode === "CREATE" || paymentConfig.mode === "CLONE"
+    ) {
+      <app-common-button-v35
+        class="flex-1"
+        [type]="{ style: 'bordered', name: 'main' }"
+        text="Save"
+        width="100%"
+        (clickEvent)="submitPayment('save')"
+        [loading]="loading && paymentProcessingContext === 'save'"
+        [disabled]="loading"
+      ></app-common-button-v35>
+    }
+    <app-common-button-v35
+      class="flex-1"
+      [type]="{ style: 'filled', name: 'main' }"
+      text="Mail Now"
+      width="100%"
+      (clickEvent)="
+        submitPayment(
+          paymentConfig?.mode === 'CREATE' || paymentConfig?.mode === 'CLONE'
+            ? 'pay'
+            : 'updateAndPay'
+        )
+      "
+      [loading]="
+        loading &&
+        (paymentProcessingContext === 'pay' ||
+          paymentProcessingContext === 'updateAndPay')
+      "
+      [disabled]="loading"
+    ></app-common-button-v35>
+  </div>
+</div>

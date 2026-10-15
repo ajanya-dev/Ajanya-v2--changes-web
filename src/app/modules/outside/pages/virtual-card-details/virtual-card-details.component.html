@@ -1,0 +1,174 @@
+<div class="card-details">
+  <div class="card-details__body">
+    <!------------------------- TOP SECTION START ------------------------------>
+
+    <div class="top-section">
+      <section class="card">
+        <div id="card_details">
+          <img
+            src="../../../../assets/images/logos/credit-card-filled.svg"
+            alt=""
+          />
+
+          <div class="card_div">
+            <img
+              id="visa_logo"
+              src="../../../../assets/images/cloud-bank/Mastercard-logo.svg"
+              alt=""
+            />
+            <p
+              id="reveal_btn"
+              (click)="getCardFullDetails()"
+              *ngIf="!isShowFullDetails || revealingDetails"
+            >
+              {{ revealingDetails ? "Please wait..." : "Reveal Details" }}
+            </p>
+
+            <div class="info">
+              <div>
+                <ng-container>
+                  <span class="skelton" [hidden]="isShowFullDetails"
+                    >**** **** ****
+                    {{ cardDetails?.card?.last4 || "xxxxx" }}</span
+                  >
+                  <span *ngIf="isShowFullDetails">{{
+                    formatNumber(cardDetails?.card?.card_number)
+                  }}</span>
+                </ng-container>
+              </div>
+
+              <div>
+                <div>
+                  <p>EXP.DATE</p>
+                  <span class="skelton">{{
+                    cardDetails?.card?.expiry || ""
+                  }}</span>
+                </div>
+
+                <div>
+                  <p>CVC</p>
+                  <span *ngIf="!isShowFullDetails">****</span>
+                  <span *ngIf="isShowFullDetails">{{
+                    cardDetails?.card?.cvc
+                  }}</span>
+                </div>
+              </div>
+              <div>
+                <p
+                  class="skelton card_name"
+                  [matTooltip]="cardDetails?.card?.cardHolder?.name"
+                >
+                  {{ cardDetails?.card?.cardHolder?.name || "xxxxxx" }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="details">
+        <div>
+          <div class="row_details">
+            <div class="row">
+              <p>Card holder name</p>
+              <p class="skelton">
+                {{ cardDetails?.card?.cardHolder?.name || "xxxxxxxxxx" }}
+              </p>
+            </div>
+            <div class="row">
+              <p>Available Balance</p>
+              <p
+                class="skelton"
+                style="color: green; font-weight: 600; font-size: 18px"
+              >
+                {{ cardDetails?.card?.available_balance | currency }}
+              </p>
+            </div>
+          </div>
+
+          <div class="row_details">
+            <div class="row">
+              <p>Sender Name</p>
+              <p class="skelton">{{ cardDetails?.details?.sender_name }}</p>
+            </div>
+          </div>
+
+          <div class="row_details"></div>
+
+          <div class="row_details">
+            <div class="transaction_details">
+              <p class="refId_id">
+                Reference ID:
+                <span class="refid" style="font-size: 13px">{{ uuId }}</span
+                ><i
+                  style="font-weight: 600"
+                  [matTooltip]="'copy'"
+                  (click)="copy()"
+                  class="fa-thin fa-copy"
+                ></i
+                ><span *ngIf="isCopied">Copied</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </section>
+    </div>
+    <!------------------------- TOP SECTION END ------------------------------>
+
+    <!----------------------- BOTTOM SECTION START ------------------------------>
+    <div class="bottom-section">
+      <div class="transaction-table">
+        <h2>Transactions</h2>
+        <div class="ocw_table_wrapper">
+          <table
+            class="ocw-table ocw-table-striped skelton"
+            [ngClass]="{ skelton: loading }"
+            *ngIf="cardTransactions?.length"
+          >
+            <thead>
+              <tr>
+                <td>Amount</td>
+                <td>Transaction Date</td>
+                <td>Description</td>
+                <td>Status</td>
+              </tr>
+            </thead>
+
+            <tbody>
+              <ng-container *ngFor="let item of cardTransactions">
+                <tr>
+                  <td>{{ item?.billing_amount }}</td>
+                  <td>{{ item?.txn_date }}</td>
+                  <td>{{ item?.description }}</td>
+                  <td>{{ item?.status }}</td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+
+          <p
+            *ngIf="!cardTransactions?.length && !loading"
+            class="no-transactions text-center text-sm font-normal mt-12"
+          >
+            No Transactions to show
+          </p>
+        </div>
+
+        <div
+          *ngIf="totalPage && cardTransactions?.length"
+          class="px-4 py-3 flex items-center justify-between sm:px-6 pagination-sec"
+        >
+          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-end">
+            <div class="controls">
+              <i class="fa-solid fa-chevron-left" (click)="previous()"></i>
+              <p>{{ page }}</p>
+              <i class="fa-solid fa-chevron-right" (click)="next()"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!----------------------- BOTTOM SECTION END ------------------------------>
+  </div>
+</div>

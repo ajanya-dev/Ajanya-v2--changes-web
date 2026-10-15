@@ -1,0 +1,239 @@
+<div class="" [class.component-mode]="isComponent()">
+  <!-- modal header -->
+  @if (!isComponent()) {
+    <div
+      class="flex justify-between px-6 py-4 bg-v4-secondary-background-color border-b border-v4-border-color"
+    >
+      <div class="flex flex-col">
+        <h1 class="text-xl font-semibold text-v4-main-text-color font-funnel">
+          Add New Bank Account
+        </h1>
+        <span class="text-xs text-v4-subtle-text-color font-peridot">
+          Enter account information accurately
+        </span>
+      </div>
+      <div
+        role="presentation"
+        (click)="dialogRef?.close(false)"
+        class="w-9 h-9 rounded-lg hover:bg-v4-tertiary-background-color cursor-pointer flex justify-center items-center"
+      >
+        <lucide-icon
+          [img]="XIcon"
+          class="text-v4-subtle-text-color"
+        ></lucide-icon>
+      </div>
+    </div>
+  }
+
+  <!-- modal body start -->
+  <div
+    class="p-6 overflow-y-auto max-h-[70vh]"
+    [class.background-color]="
+      isComponent() ? '' : 'bg-v4-tertiary-background-color'
+    "
+  >
+    @if (!isComponent()) {
+      <div
+        class="flex items-start gap-2 p-3 bg-v4-secondary-background-color rounded-lg mb-5"
+      >
+        <lucide-icon
+          [img]="InfoIcon"
+          [size]="18"
+          class="text-v4-primary-brand-bold-color mt-0.5 flex-shrink-0"
+        ></lucide-icon>
+        <span class="text-sm text-v4-subtle-text-color">
+          Please ensure all account information is entered accurately.
+        </span>
+      </div>
+    } @else {
+      <h5
+        class="text-xs font-semibold text-v4-secondary-text-color uppercase tracking-wide pb-3"
+      >
+        New Bank Account Details
+      </h5>
+    }
+
+    <form [formGroup]="bankForm" (ngSubmit)="submit()">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <app-common-input-v4
+          [fieldLabel]="'Routing Number'"
+          [placeholder]="'Routing Number'"
+          [control]="bankForm.controls.bankRoutingNumber"
+          formControlName="bankRoutingNumber"
+          [isNumberOnly]="true"
+          [maxLength]="9"
+          (inputEvent)="lookupRoutingNumber($event)"
+        />
+
+        <app-common-input-v4
+          [fieldLabel]="'Account Number'"
+          [placeholder]="'Account Number'"
+          [control]="bankForm.controls.bankAccountNumber"
+          formControlName="bankAccountNumber"
+          [isNumberOnly]="true"
+          [maxLength]="20"
+          [customMask]="'0000000000000000000000'"
+          [patterns]="customPattern"
+          [hiddenInput]="true"
+          [preventCopy]="true"
+          (inputEvent)="onInputEvent()"
+          (inputFocusEvent)="onAccountFocus()"
+          (inputFocusOutEvent)="onAccountBlur()"
+        />
+
+        <app-common-input-v4
+          [fieldLabel]="'Confirm Account Number'"
+          [placeholder]="'Confirm Account Number'"
+          [control]="bankForm.controls.confirmAccountNumber"
+          formControlName="confirmAccountNumber"
+          [isNumberOnly]="true"
+          [maxLength]="20"
+          [preventPaste]="true"
+        />
+
+        <app-common-input-v4
+          [fieldLabel]="'Name on Account'"
+          [placeholder]="'Name on Account'"
+          [control]="bankForm.controls.bankAccountName"
+          formControlName="bankAccountName"
+          [maxLength]="60"
+          [showInfoIcon]="true"
+          [tooltip]="
+            'Exactly as in your bank statement. If not matching, the wire may be returned.'
+          "
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+
+        <app-common-input-v4
+          [fieldLabel]="'Nick Name'"
+          [placeholder]="'Nick Name'"
+          [control]="bankForm.controls.bankAccountNickName"
+          formControlName="bankAccountNickName"
+          [maxLength]="60"
+          [isNeedPreventKey]="true"
+          [preventCharacters]="['`']"
+        />
+
+        <app-address-autocomplete-v4
+          [label]="'Address Line 1'"
+          [placeholder]="'Address Line 1'"
+          [control]="bankForm.controls.bankAccountAddressLine1"
+          [allowedCountries]="['us', 'ca']"
+          [isFieldRequired]="true"
+          (addressSelected)="onHolderAddressSelected($event)"
+        />
+
+        @if (isShowAddressSections()) {
+          <app-common-input-v4
+            [fieldLabel]="'Address Line 2'"
+            [placeholder]="'Address Line 2 (optional)'"
+            [control]="bankForm.controls.bankAccountAddressLine2"
+            formControlName="bankAccountAddressLine2"
+            [isFieldRequired]="false"
+            [maxLength]="100"
+          />
+
+          <app-common-input-v4
+            [fieldLabel]="'City'"
+            [placeholder]="'City'"
+            [control]="bankForm.controls.bankAccountCity"
+            formControlName="bankAccountCity"
+            [maxLength]="100"
+          />
+
+          <app-common-input-v4
+            [fieldLabel]="'State'"
+            [placeholder]="'State'"
+            [control]="bankForm.controls.bankAccountState"
+            formControlName="bankAccountState"
+            [maxLength]="100"
+          />
+
+          <app-common-input-v4
+            [fieldLabel]="'Zip'"
+            [placeholder]="'Zip'"
+            [control]="bankForm.controls.bankAccountZip"
+            formControlName="bankAccountZip"
+            [maxLength]="10"
+          />
+        }
+      </div>
+
+      @if (bankForm.controls.bankRoutingNumber.value) {
+        <h3 class="text-base font-semibold text-v4-main-text-color mt-6 mb-4">
+          Bank Details
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <app-common-input-v4
+            [fieldLabel]="'Bank Name'"
+            [placeholder]="'Bank Name'"
+            [control]="bankForm.controls.bankName"
+            formControlName="bankName"
+            [maxLength]="50"
+            [isNeedPreventKey]="true"
+            [preventCharacters]="['`']"
+          />
+
+          <app-address-autocomplete-v4
+            [label]="'Street Address'"
+            [placeholder]="'Street Address'"
+            [control]="bankForm.controls.bankAddress1"
+            [allowedCountries]="['us', 'ca']"
+            [addressInstance]="0"
+            [isFieldRequired]="true"
+            (addressSelected)="onBankAddressSelected($event)"
+          />
+
+          <app-common-input-v4
+            [fieldLabel]="'City'"
+            [placeholder]="'City'"
+            [control]="bankForm.controls.bankCity"
+            formControlName="bankCity"
+            [maxLength]="50"
+          />
+
+          <app-common-input-v4
+            [fieldLabel]="'State'"
+            [placeholder]="'State'"
+            [control]="bankForm.controls.bankState"
+            formControlName="bankState"
+            [maxLength]="100"
+          />
+
+          <app-common-input-v4
+            [fieldLabel]="'Zip'"
+            [placeholder]="'Zip'"
+            [control]="bankForm.controls.bankZip"
+            formControlName="bankZip"
+            [maxLength]="10"
+          />
+        </div>
+      }
+    </form>
+  </div>
+  <!-- modal body end -->
+
+  <div
+    class="flex justify-end gap-3 px-6 py-4"
+    [ngClass]="!isComponent() ? 'bg-v4-secondary-background-color border-t border-v4-border-color' : ''"
+  >
+    @if (!isComponent()) {
+      <app-common-button-v4
+        width="120px"
+        [type]="{ style: 'outline', name: 'main' }"
+        [text]="'Cancel'"
+        (clickEvent)="dialogRef?.close(false)"
+      />
+    }
+    <app-common-button-v4
+      width="120px"
+      [type]="{ style: 'primary', name: 'main' }"
+      [text]="'Add'"
+      [loading]="loading()"
+      [btnType]="'button'"
+      [isAddIcon]="true"
+      (clickEvent)="submit()"
+    />
+  </div>
+</div>
