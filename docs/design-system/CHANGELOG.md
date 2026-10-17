@@ -6,6 +6,43 @@ Related: `docs/design-system/v4-ui-reference.md` (colour, button and component-s
 
 ---
 
+## 17/10/2026
+
+Branch: `design/zilmoney-rebrand` (main copy, port 4200). Dev-only wiring in the app; production behaviour unchanged.
+
+### Help Center (Help / Tutorial): redesign prototype, full site
+
+The question-mark menu's Help / Tutorial item opens the Zoho Desk help centre at support.onlinecheckwriter.com, which still wore the old mint-green Zoho theme. New generated prototype: home, all 32 topics and 325 articles, built by `docs/design-system/help-center/build.mjs` from `data.mjs` into `src/assets/help-center/` (served at `http://localhost:4200/assets/help-center/`) and `docs/design-system/help-center/site/`.
+
+- **Header kept as the live portal has it**: CheckWriter (powered by Zil Money) logo, "OnlineCheckWriter" wordmark, right-aligned Home · My Area · Knowledge Base · Community · Sign In, accessibility button. Under 900px it collapses to logo, accessibility button and a working menu toggle.
+- **Primary colour** is the Zil Money logo teal `#00A5B2`, per the user. It only reaches 2.99:1 on white, so text, buttons, links and active states use `#00747E` (5.53:1), hover `#006670`; tints `#E6F6F7` / `#CCEDF0`. Everything else is the v4 token set (Inter, `#f2f7fb` page, white cards, `#e5e7eb` borders, 12 to 16px radii).
+- **Home**: two-column hero, left-aligned headline, search and common-question chips beside a deep-teal "Most opened this week" panel (`#0b3c44`, logo-teal glow) that lists five real articles; quick links are one strip with dividers rather than four cards; no all-caps eyebrow. Search is a working client-side index of every article title (client-side index of every article title, inline results, "/" focuses it) and popular-search chips that open real articles, four quick-link tiles, six featured topics with five article links and View all, chip list of all 32 topics with counts, contact band (live chat, email, phone), footer.
+- **Topic pages** (32): breadcrumb, sticky topic rail with counts, in-topic filter, section tabs and grouped lists where the live portal has sections (Check, Cloud Bank, Getting Started, Business Tools, Third Party Application, Developer, Payroll By Credit Card, Check Mailing, Third Party Integration), staff-only and YouTube empty states for For OCW Employees and Help videos.
+- **Article pages** (325): topic and section badges, title, body, "Was this helpful?" (records the vote on the page), previous/next within the topic, right rail with On this page, More in {topic}, Copy link and Ask support. Only "How to enable webhook in sandbox?" has a written body; the rest carry a generic body with a "Sample body" chip.
+- **Contact band** is a white card: intro with an "Open now" line on the left, four equal options (Submit a ticket, Live chat, Email, Call) in a 2x2 grid of icon-plus-text rows. The **Most opened** panel sits on the brand primary teal `#00747E` with a light logo-teal glow (white 5.5:1, muted text `#E6F6F7` 4.97:1) instead of the earlier dark teal.
+- **Portal pages in the same template**: My Area (stats, ticket list with status chips, filter), Submit a ticket (form plus "might answer it faster" articles), Community (categories rail, discussion list with Answered badges) and Sign in. Header links, footer, the staff-only empty state, the article "Ask support" action and the contact band now stay inside the theme; tickets and threads are sample data.
+- **Every link resolves**: link check over 358 pages, 8,953 internal links, 0 broken. External targets are the portal's My Area, Community and Sign In pages, the YouTube channel, live chat, terms, privacy and API docs.
+- **App wiring (dev only)**: `onHelpTutorial()` in `header-v4.component.ts` and `v4-help-button.component.ts` opens `/assets/help-center/index.html` when `isDevMode()` is true, so ? → Help / Tutorial on the dashboard shows the prototype. Production keeps the Zoho portal URL.
+- Design note: `docs/superpowers/specs/2026-10-17-help-center-redesign-design.md`. Topic names, slugs and article titles are from the live portal; the 16 Third Party Application integrations and three Business Tools sections have a single "Sample title" article each because the portal exposes no titles there.
+
+## 16/10/2026
+
+Branch: `design/zilmoney-rebrand` (main copy, port 4200), synced to 4201 and 4202.
+
+### Payee details, Bank accounts card: one list, filtered by type
+
+The card used to split accounts behind two tabs (Bank accounts / International accounts), and View all opened whichever table matched the tab. The user asked for every account in one place, with a filter.
+
+- **Card.** The tabs are gone. Under the title sit three pills in the shared pill style: All (n), Domestic (n), International (n); All is the default. The preview shows the first three rows of the filtered list, defaults first, then bank name A to Z. Rows keep the landmark / globe tile (tooltip names the type), bank name, type and masked number ("Personal Checking · ••••4789", "INR · India · ••••3123"), the Default badge and the kebab (Edit, Delete, Make default). Counts stay off the pills while either list is still loading, so a half-loaded "Domestic (0)" never shows. "View all (n)" counts the filtered list and opens the modal on the same filter.
+- **+ New** on the card opens a two-item menu, Domestic bank account / International account, since the filter no longer decides the type.
+- **View all modal** (new `payee-accounts-modal-v4`): title "Bank accounts", the same three pills, and one `v4-ocw-table` with Actions (kebab first, per the table contract), Type chip (Domestic neutral, International info), Bank (holder underneath, capped at 280px and truncated with the full text as title), Account, Routing / SWIFT, Country, Default. Loading shows the section skeleton; an empty filter shows the calm empty card. Width calc(100vw - 64px) capped at 1100px.
+- **Shared logic.** `payee-accounts.util.ts` merges, sorts, filters and counts the two lists and resolves country names (spec: 14 cases, green through the esbuild + Node runner). `PayeeAccountActionsV4Service` holds add / edit / delete / make-default for both kinds, so the card and the modal share one implementation; the six per-type handlers left the details component.
+- The old table modal keeps only the two transaction types; the ag-grid bank tables under `dt-tables/` are no longer referenced from v4 and were left in place.
+- Verification: clicked through on staging (4200): pills filter the card, View all opens on the chosen filter, the New menu, the card row menus and the modal row menus open, no console errors. (The modal menu first rendered empty: a lazy `matMenuContent` template needs `MatMenuModule`, not just the trigger, menu and item directives.) Rebuilt clean on 4200, 4201 and 4202 after the sync. ESLint on the touched files shows only the pre-existing cycle / import-order findings and one pre-existing spacing error in the details component.
+  - Files: `payee-details-v4.component.ts`, `.html`, `.scss`, `payee-accounts.util.ts`, `payee-accounts.util.spec.ts`, `v4-services/payee-account-actions-v4.service.ts`, `modals/payee-accounts-modal-v4/` (ts, html, scss), `modals/payee-table-modal-v4/payee-table-modal-v4.component.ts`
+
+---
+
 ## 15/10/2026
 
 Branch: `design/zilmoney-rebrand` (main copy, port 4200), synced to 4201 and 4202.

@@ -344,7 +344,7 @@
       }
     </div>
 
-    <!-- Bank accounts -->
+    <!-- Bank accounts: domestic + international in one list, filtered by pill -->
     <div class="pd-card">
       <div class="pd-card-head gap-1.5">
         <button
@@ -354,9 +354,46 @@
         >
           <span class="pd-card-title">Bank accounts</span>
         </button>
-        <button type="button" class="pd-new-btn" (click)="onAddBankAccount()">
-          <lucide-icon name="plus" [size]="12"></lucide-icon>New
-        </button>
+        <div class="relative">
+          <button
+            type="button"
+            class="pd-new-btn"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="newAccountMenuOpen()"
+            (click)="toggleNewAccountMenu($event)"
+          >
+            <lucide-icon name="plus" [size]="12"></lucide-icon>New
+          </button>
+          @if (newAccountMenuOpen()) {
+            <div
+              class="bank-menu-backdrop"
+              tabindex="-1"
+              role="presentation"
+              (click)="closeNewAccountMenu()"
+              (keydown.escape)="closeNewAccountMenu()"
+            ></div>
+            <div class="bank-action-menu whitespace-nowrap" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                class="bank-menu-item"
+                (click)="onAddBankAccount('domestic')"
+              >
+                <lucide-icon name="landmark" [size]="14"></lucide-icon>
+                Domestic bank account
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class="bank-menu-item"
+                (click)="onAddBankAccount('international')"
+              >
+                <lucide-icon name="globe" [size]="14"></lucide-icon>
+                International account
+              </button>
+            </div>
+          }
+        </div>
         <button
           type="button"
           class="pd-icon-btn text-v4-tertiary-text-color"
@@ -371,272 +408,130 @@
       </div>
 
       @if (!isCardCollapsed("bank")) {
-        <div class="-mx-3 -mt-2 flex flex-1 flex-col">
-          <div class="pd-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              class="pd-tab"
-              [class.active]="activeBankTab() === 'domestic'"
-              (click)="setBankTab('domestic')"
-            >
-              Bank accounts
-            </button>
-            <button
-              type="button"
-              role="tab"
-              class="pd-tab"
-              [class.active]="activeBankTab() === 'international'"
-              (click)="setBankTab('international')"
-            >
-              International accounts
-            </button>
+        <div class="flex flex-1 flex-col">
+          <div class="pd-filter-row" role="tablist" aria-label="Account type">
+            <app-common-tab-v4
+              [tabs]="accountFilterTabs()"
+              [activeTab]="accountFilter()"
+              (tabChange)="setAccountFilter($event)"
+              variant="pill"
+              [noWrap]="true"
+            />
           </div>
 
-          <div class="flex flex-1 flex-col px-3 pb-1 pt-1.5">
-            @if (activeBankTab() === "domestic") {
-              @if (detailsService.bankLoading()) {
-                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
-              } @else if (detailsService.bankAccounts().length > 0) {
-                @for (account of previewBankAccounts(); track account.id) {
-                  <div class="bank-row">
-                    <span class="bank-avatar">
-                      <lucide-icon name="landmark" [size]="14"></lucide-icon>
-                    </span>
-                    <div class="flex min-w-0 flex-1 flex-col leading-[1.3]">
-                      <span
-                        class="truncate text-[12px] font-semibold text-v4-main-text-color"
-                        >{{ account.bank_name }}</span
-                      >
-                      <span
-                        class="truncate text-[12px] tabular-nums text-v4-tertiary-text-color"
-                        [title]="'Routing number: ' + (account.routing_number || '—')"
-                        >{{ formatAccountType(account.account_type) }} ·
-                        {{ maskNumber(account.account_number) }}</span
-                      >
-                    </div>
-                    @if (account.is_default_for_direct_deposit) {
-                      <span
-                        class="pd-default-badge"
-                        matTooltip="This will be used as default Bank Account for Direct Deposit/ACH to this Payee"
-                        >Default</span
-                      >
-                    }
-                    <div class="relative">
-                      <button
-                        type="button"
-                        class="pd-icon-btn text-v4-tertiary-text-color"
-                        aria-label="Account actions"
-                        (click)="toggleAccountMenu(account.id, $event)"
-                      >
-                        <lucide-icon
-                          name="ellipsis-vertical"
-                          [size]="15"
-                        ></lucide-icon>
-                      </button>
-                      @if (openMenuAccountId() === account.id) {
-                        <div
-                          class="bank-menu-backdrop"
-                          tabindex="-1"
-                          role="presentation"
-                          (click)="closeAccountMenu()"
-                          (keydown.escape)="closeAccountMenu()"
-                        ></div>
-                        <div
-                          class="bank-action-menu"
-                          role="menu"
-                          [ngClass]="{ 'menu-up': isLastBankAccount(account.id) }"
-                        >
-                          <button
-                            type="button"
-                            role="menuitem"
-                            class="bank-menu-item"
-                            (click)="onEditDomesticAccount(account)"
-                          >
-                            <lucide-icon name="edit" [size]="14"></lucide-icon>
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            class="bank-menu-item"
-                            (click)="onDeleteAccount(account)"
-                          >
-                            <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-                            Delete
-                          </button>
-                          @if (!account.is_default_for_direct_deposit) {
-                            <button
-                              type="button"
-                              role="menuitem"
-                              class="bank-menu-item"
-                              (click)="onToggleDefault(account)"
-                            >
-                              <lucide-icon name="star" [size]="14"></lucide-icon>
-                              Make default for DD
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-                }
-                @if (hasMoreBankAccounts()) {
-                  <button
-                    type="button"
-                    class="pd-link mx-auto mt-2"
-                    (click)="onViewAllBankAccounts()"
+          <div class="flex flex-1 flex-col pb-1">
+            @if (accountsLoading()) {
+              <ng-container [ngTemplateOutlet]="sectionSkeleton" />
+            } @else if (previewAccounts().length > 0) {
+              @for (row of previewAccounts(); track accountMenuKey(row)) {
+                <div class="bank-row">
+                  <span
+                    class="bank-avatar"
+                    [matTooltip]="row.kind === 'international' ? 'International account' : 'Domestic bank account'"
                   >
-                    View all ({{ detailsService.bankAccounts().length }})
-                  </button>
-                }
-              } @else {
-                <ng-container
-                  [ngTemplateOutlet]="emptyState"
-                  [ngTemplateOutletContext]="{
-                    icon: 'landmark',
-                    title: 'No bank accounts found',
-                    help:
-                      'Accounts you add for this ' +
-                      payeeTypeLabel().toLowerCase() +
-                      ' will show up here.'
-                  }"
-                />
-              }
-            }
-
-            @if (activeBankTab() === "international") {
-              @if (detailsService.intlBankLoading()) {
-                <ng-container [ngTemplateOutlet]="sectionSkeleton" />
-              } @else if (detailsService.internationalAccounts().length > 0) {
-                @for (account of previewIntlAccounts(); track account.id) {
-                  <div class="bank-row">
-                    <span class="bank-avatar">
-                      <lucide-icon name="globe" [size]="14"></lucide-icon>
-                    </span>
-                    <div class="flex min-w-0 flex-1 flex-col leading-[1.3]">
-                      <span
-                        class="truncate text-[12px] font-semibold text-v4-main-text-color"
-                        >{{
-                          account.bank_name ||
-                            account.account_name ||
-                            account.payee_name
-                        }}</span
+                    <lucide-icon
+                      [name]="row.kind === 'international' ? 'globe' : 'landmark'"
+                      [size]="14"
+                    ></lucide-icon>
+                  </span>
+                  <div class="flex min-w-0 flex-1 flex-col leading-[1.3]">
+                    <span
+                      class="truncate text-[12px] font-semibold text-v4-main-text-color"
+                      >{{ row.bankName || "—" }}</span
+                    >
+                    <span
+                      class="truncate text-[12px] tabular-nums text-v4-tertiary-text-color"
+                      [title]="accountRowTitle(row)"
+                      >{{ accountRowSubtitle(row) }}</span
+                    >
+                  </div>
+                  @if (row.isDefault) {
+                    <span
+                      class="pd-default-badge"
+                      [matTooltip]="accountDefaultTooltip(row)"
+                      >Default</span
+                    >
+                  }
+                  <div class="relative">
+                    <button
+                      type="button"
+                      class="pd-icon-btn text-v4-tertiary-text-color"
+                      aria-label="Account actions"
+                      (click)="toggleAccountMenu(accountMenuKey(row), $event)"
+                    >
+                      <lucide-icon
+                        name="ellipsis-vertical"
+                        [size]="15"
+                      ></lucide-icon>
+                    </button>
+                    @if (openMenuAccountId() === accountMenuKey(row)) {
+                      <div
+                        class="bank-menu-backdrop"
+                        tabindex="-1"
+                        role="presentation"
+                        (click)="closeAccountMenu()"
+                        (keydown.escape)="closeAccountMenu()"
+                      ></div>
+                      <div
+                        class="bank-action-menu"
+                        role="menu"
+                        [ngClass]="{ 'menu-up': isLastPreviewAccount(row) }"
                       >
-                      <span
-                        class="truncate text-[12px] tabular-nums text-v4-tertiary-text-color"
-                        >{{ account.currency }}
-                        @if (account.bank_account_details?.beneficiary_country) {
-                          ·
-                          {{
-                            getCountryName(
-                              account.bank_account_details.beneficiary_country
-                            )
-                          }}
+                        <button
+                          type="button"
+                          role="menuitem"
+                          class="bank-menu-item"
+                          (click)="onAccountEdit(row)"
+                        >
+                          <lucide-icon name="edit" [size]="14"></lucide-icon>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          class="bank-menu-item"
+                          (click)="onAccountDelete(row)"
+                        >
+                          <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                          Delete
+                        </button>
+                        @if (!row.isDefault) {
+                          <button
+                            type="button"
+                            role="menuitem"
+                            class="bank-menu-item"
+                            (click)="onAccountMakeDefault(row)"
+                          >
+                            <lucide-icon name="star" [size]="14"></lucide-icon>
+                            {{ row.kind === "international" ? "Make default" : "Make default for DD" }}
+                          </button>
                         }
-                        · {{ maskNumber(account.account_number) }}</span
-                      >
-                    </div>
-                    @if (
-                      account.is_default_for_business ||
-                      account.is_default_for_personal
-                    ) {
-                      <span
-                        class="pd-default-badge"
-                        [matTooltip]="
-                          'This will be used as default ' +
-                          (account.is_default_for_personal
-                            ? 'personal'
-                            : 'business') +
-                          ' bank account for international payments to this Payee'
-                        "
-                        >Default</span
-                      >
+                      </div>
                     }
-                    <div class="relative">
-                      <button
-                        type="button"
-                        class="pd-icon-btn text-v4-tertiary-text-color"
-                        aria-label="Account actions"
-                        (click)="toggleAccountMenu(account.id, $event)"
-                      >
-                        <lucide-icon
-                          name="ellipsis-vertical"
-                          [size]="15"
-                        ></lucide-icon>
-                      </button>
-                      @if (openMenuAccountId() === account.id) {
-                        <div
-                          class="bank-menu-backdrop"
-                          tabindex="-1"
-                          role="presentation"
-                          (click)="closeAccountMenu()"
-                          (keydown.escape)="closeAccountMenu()"
-                        ></div>
-                        <div
-                          class="bank-action-menu"
-                          role="menu"
-                          [ngClass]="{ 'menu-up': isLastIntlAccount(account.id) }"
-                        >
-                          <button
-                            type="button"
-                            role="menuitem"
-                            class="bank-menu-item"
-                            (click)="onEditInternationalAccount(account)"
-                          >
-                            <lucide-icon name="edit" [size]="14"></lucide-icon>
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            class="bank-menu-item"
-                            (click)="onDeleteInternationalAccount(account)"
-                          >
-                            <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-                            Delete
-                          </button>
-                          @if (
-                            !account.is_default_for_business &&
-                            !account.is_default_for_personal
-                          ) {
-                            <button
-                              type="button"
-                              role="menuitem"
-                              class="bank-menu-item"
-                              (click)="onToggleInternationalDefault(account)"
-                            >
-                              <lucide-icon name="star" [size]="14"></lucide-icon>
-                              Make default
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
                   </div>
-                }
-                @if (hasMoreIntlAccounts()) {
-                  <button
-                    type="button"
-                    class="pd-link mx-auto mt-2"
-                    (click)="onViewAllBankAccounts()"
-                  >
-                    View all ({{ detailsService.internationalAccounts().length }})
-                  </button>
-                }
-              } @else {
-                <ng-container
-                  [ngTemplateOutlet]="emptyState"
-                  [ngTemplateOutletContext]="{
-                    icon: 'globe',
-                    title: 'No international accounts found',
-                    help:
-                      'Accounts you add for this ' +
-                      payeeTypeLabel().toLowerCase() +
-                      ' will show up here.'
-                  }"
-                />
+                </div>
               }
+              @if (hasMoreAccounts()) {
+                <button
+                  type="button"
+                  class="pd-link mx-auto mt-2"
+                  (click)="onViewAllBankAccounts()"
+                >
+                  View all ({{ filteredAccounts().length }})
+                </button>
+              }
+            } @else {
+              <ng-container
+                [ngTemplateOutlet]="emptyState"
+                [ngTemplateOutletContext]="{
+                  icon: accountEmptyState().icon,
+                  title: accountEmptyState().title,
+                  help:
+                    'Accounts you add for this ' +
+                    payeeTypeLabel().toLowerCase() +
+                    ' will show up here.'
+                }"
+              />
             }
           </div>
         </div>
