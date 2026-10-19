@@ -1,0 +1,229 @@
+<div class="angular-ocw-v4-ng-select-dropdown relative font-funnel">
+  <ng-select
+    [ngClass]="
+      isInvalid() ? 'border border-v4-common-red-color rounded-[12px]' : ''
+    "
+    bindLabel="name"
+    [appendTo]="appendTo()"
+    id="payee_drop_down_{{ id() }}"
+    [searchable]="searchable()"
+    [clearable]="clearable()"
+    [class]="'height-' + customHeight()"
+    class="ng-dropdown-panel-v4 text-sm"
+    [formControl]="selectedPayee"
+    (scrollToEnd)="onScrollToEnd()"
+    (focus)="search($event)"
+    (keyup)="search($event)"
+    (change)="getChange($event)"
+    (open)="dropdownOpen.emit()"
+    (close)="dropdownClose.emit()"
+    (clear)="clear()"
+    (blur)="onTouched()"
+    [notFoundText]="
+      !paymentsService.hasPermission.payee
+        ? 'Permission Denied'
+        : (selectIsPayeesLoading$ | async)
+          ? 'Loading...'
+          : 'No ' + whiteLabelName() + ' found'
+    "
+    [placeholder]="placeholderText()"
+    [loading]="isLoadingWithId"
+  >
+    <ng-template ng-header-tmp>
+      @if (enableAddNew() && paymentsService.hasPermission.payee) {
+        <button
+          type="button"
+          (click)="$event.stopPropagation(); addNewPayee()"
+          class="w-full px-3 py-2 mb-1 flex items-center gap-3 rounded-lg border-2 border-dashed border-v4-secondary-brand-color bg-v4-secondary-background-color text-left cursor-pointer hover:bg-v4-badge-success-bg-color transition-colors"
+        >
+          <div
+            class="flex h-8 w-8 items-center justify-center rounded bg-v4-badge-success-bg-color text-v4-common-green-color shrink-0"
+          >
+            <lucide-icon [img]="PlusIcon" [size]="18"></lucide-icon>
+          </div>
+          <div class="min-w-0">
+            <div
+              class="font-peridot font-medium text-sm text-v4-badge-success-text-color truncate"
+            >
+              Add New {{ whiteLabelName() }}
+            </div>
+          </div>
+        </button>
+      }
+    </ng-template>
+    @if ((selectIsPayeesFilterOn$ | async) !== true) {
+      @for (item of filteredPayee$ | async; track item.id) {
+        <ng-option [value]="item">
+          <div class="v4-option-row min-w-full flex items-center py-2">
+            @if (dropdownIconNeeded()) {
+              <div
+                class="mr-3 flex h-9 w-9 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-primary-brand-color shrink-0"
+              >
+                <lucide-icon [img]="UserIcon" [size]="18"></lucide-icon>
+              </div>
+            }
+            <div class="flex flex-col min-w-0">
+              <div
+                class="flex-1 truncate min-w-0 text-sm font-medium text-v4-main-text-color"
+                [title]="
+                item?.name?.trim()?.length === 0
+                  ? ''
+                  : item.name + (item.nickName ? ' (' + item.nickName + ')' : '')
+                "
+                [ngClass]="{
+                  'italic !text-v4-subtle-text-color':
+                    item?.name?.trim()?.length === 0
+                }"
+              >
+                @if (item?.name?.trim()?.length === 0) {
+                  No {{ whiteLabelName() }} name
+                } @else {
+                  {{ item.name
+                  }}{{ item.nickName ? " (" + item.nickName + ")" : "" }}
+                }
+              </div>
+              @if (
+                customHeight() !== "1" 
+              ) {
+                <div class="flex gap-[2px] items-baseline">
+                  @if (
+                    item.payeeTypeId &&
+                    payeeType[item.payeeTypeId]?.name
+                  ) {
+                    <div class="text-xs text-v4-secondary-text-color truncate">
+                      {{ payeeType[item.payeeTypeId].name }}
+                    </div>
+                  }
+                  @if(item.email){
+                    <div class="text-xs text-v4-secondary-text-color truncate">
+                     - {{ item.email }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </ng-option>
+      }
+      <ng-template ng-label-tmp let-item="item">
+        <div class="min-w-0 flex items-center gap-2">
+          @if (labelIconNeeded()) {
+            <div
+              class="flex h-7 w-7 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-primary-brand-color shrink-0"
+              [ngClass]="{'!h-9 !w-9': customHeight() === '5'}"
+            >
+              <lucide-icon [img]="UserIcon" [size]="14"></lucide-icon>
+            </div>
+          }
+          <div class="min-w-0 flex-1" [ngClass]="inlineLabel() ? 'flex items-baseline gap-2' : 'flex flex-col'">
+            <div
+              [matTooltip]="item?.name?.trim()?.length === 0 ? '' : item.name"
+              matTooltipPosition="above"
+              matTooltipClass="v4-option-tooltip"
+              class="font-peridot text-v4-main-text-color truncate"
+              [ngClass]="{
+                'italic !text-v4-subtle-text-color':
+                  item?.name?.trim()?.length === 0,
+                'font-bold leading-tight text-[13px]': inlineLabel(),
+                'font-medium text-sm': !inlineLabel()
+              }"
+            >
+              @if (item?.name?.trim()?.length === 0) {
+                No payee name
+              } @else {
+                {{ item.name }}
+              }
+            </div>
+            @if (
+              customHeight() !== "1" 
+            ) {
+              <div class="flex gap-[2px] items-baseline">
+                @if (
+                  item.payeeTypeId &&
+                  payeeType[item.payeeTypeId]?.name
+                ) {
+                  <div class="text-xs text-v4-secondary-text-color truncate">
+                    {{ payeeType[item.payeeTypeId].name }}
+                  </div>
+                }
+                @if(item.email){
+                  <div class="text-xs text-v4-secondary-text-color truncate">
+                   - {{ item.email }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </ng-template>
+    } @else {
+      @for (item of payeesFiltered$ | async; track item.id) {
+        <ng-option [value]="item">
+          <div class="v4-option-row min-w-full flex items-center py-2">
+            @if (dropdownIconNeeded()) {
+              <div
+                class="mr-3 flex h-9 w-9 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-primary-brand-color shrink-0"
+              >
+                <lucide-icon [img]="UserIcon" [size]="18"></lucide-icon>
+              </div>
+            }
+            <div class="flex flex-col min-w-0">
+              <div
+                class="flex-1 truncate min-w-0 text-sm font-medium text-v4-main-text-color"
+                [title]="
+                item.name + (item.nickName ? ' (' + item.nickName + ')' : '')
+                "
+              >
+                {{ item.name
+                }}{{ item.nickName ? " (" + item.nickName + ")" : "" }}
+              </div>
+              @if (
+                customHeight() !== "1" &&
+                item.email 
+              ) {
+                <div class="text-xs text-v4-secondary-text-color truncate">
+                  {{ item.email }}
+                </div>
+              }
+            </div>
+          </div>
+        </ng-option>
+      }
+      <ng-template ng-label-tmp let-item="item">
+        <div class="min-w-0 flex items-center gap-2">
+          @if (labelIconNeeded()) {
+            <div
+              class="flex h-7 w-7 items-center justify-center rounded-lg bg-v4-badge-info-bg-color text-v4-primary-brand-color shrink-0"
+              [ngClass]="{'!h-9 !w-9': customHeight() === '5'}"
+            >
+              <lucide-icon [img]="UserIcon" [size]="14"></lucide-icon>
+            </div>
+          }
+          <div class="flex flex-col min-w-0">
+            <div
+              [matTooltip]="item.name"
+              matTooltipPosition="above"
+              matTooltipClass="v4-option-tooltip"
+              class="font-peridot font-medium text-sm text-v4-main-text-color truncate"
+            >
+              {{ item.name }}
+            </div>
+            @if (
+              customHeight() !== "1" &&
+              item.email 
+            ) {
+              <div class="text-xs text-v4-secondary-text-color truncate">
+                {{ item.email }}
+              </div>
+            }
+          </div>
+        </div>
+      </ng-template>
+    }
+    <ng-template ng-footer-tmp>
+      @if ((selectIsPayeesLoading$ | async) || isLoadingWithId) {
+        <div class="v4-loading-bar"></div>
+      }
+    </ng-template>
+  </ng-select>
+</div>

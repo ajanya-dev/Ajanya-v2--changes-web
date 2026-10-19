@@ -14,27 +14,33 @@
 
   <!-- Form Card -->
   <div class="rounded-xl p-5 bg-v4-secondary-background-color border border-v4-border-color">
-    <!-- Row 1: Bank Account + Deposit From -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <app-bank-ac-dropdown-v4
-        [(ngModel)]="bankAccount"
-        permissionContext="fromDepositSlip"
-        placeholder="Select a Bank Account to Deposit"
-        [showVerificationBadge]="true"
-      />
-      @if (isLoading()) {
-        <div class="skelton h-10 rounded-lg"></div>
-      } @else {
-        <app-payee-dropdown-v4
-          placeholder="Deposit From"
-          [(ngModel)]="payee"
-          (ready)="autoPopulateDropdown($event, deposlipData()?.payeeId ?? '')"
+    <!-- Row 1: Deposit to · Deposit from · Date · Ref ID · Memo (3 then 2 at lg, 2×3 at md) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1.15fr)_180px_140px_minmax(0,1fr)] gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-v4-secondary-text-color">
+          Deposit to <span class="text-v4-common-red-color" aria-hidden="true">*</span>
+        </label>
+        <app-bank-ac-dropdown-v4
+          [(ngModel)]="bankAccount"
+          permissionContext="fromDepositSlip"
+          placeholder="Select a Bank Account to Deposit"
+          [showVerificationBadge]="true"
+          [compactRows]="true"
         />
-      }
-    </div>
-
-    <!-- Row 2: Date, Ref ID, Memo -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-v4-secondary-text-color">Deposit from</label>
+        @if (isLoading()) {
+          <div class="skelton h-11 rounded-xl"></div>
+        } @else {
+          <app-payee-dropdown-v4
+            placeholder="Deposit From"
+            [inlineLabel]="true"
+            [(ngModel)]="payee"
+            (ready)="autoPopulateDropdown($event, deposlipData()?.payeeId ?? '')"
+          />
+        }
+      </div>
       <app-v4-date-picker
         fieldLabel="Date"
         [isFieldRequired]="true"
@@ -50,19 +56,35 @@
         [isNumberOnly]="true"
         numberType="numeric"
       />
-      <app-common-input-v4
-        fieldLabel="Memo"
-        [isFieldRequired]="false"
-        placeholder="Memo"
-        [(ngModel)]="memo"
-        [maxLength]="150"
-      />
+      <div class="relative flex flex-col gap-1.5 min-w-0">
+        <label for="deposit-memo" class="text-sm font-medium text-v4-secondary-text-color">Memo</label>
+        <!-- Starts as a 44px single line like its neighbours and grows to three lines
+             when the memo overflows, so the whole memo stays readable at a glance. -->
+        <textarea
+          #memoBox
+          id="deposit-memo"
+          class="v4-memo"
+          rows="1"
+          placeholder="Memo"
+          maxlength="150"
+          [(ngModel)]="memo"
+          (input)="resizeMemo()"
+          aria-describedby="deposit-memo-count"
+        ></textarea>
+        <!-- The count sits under the field without taking a row, so the card keeps its height. -->
+        @if (memo?.length) {
+          <span id="deposit-memo-count" class="absolute right-0 top-full mt-0.5 text-[11px] leading-4 text-v4-subtle-text-color tabular-nums">
+            {{ memo.length }} / 150
+          </span>
+        }
+      </div>
     </div>
 
-    <!-- Row 3: Attachment, Comment, Blank checkbox -->
-    <div class="flex items-center gap-3 mt-4">
+    <!-- Row 2: the extras (attachment, comment, blank slip) -->
+    <div class="flex flex-wrap items-center gap-3 mt-4">
       <button
-        class="flex items-center justify-center w-9 h-9 rounded-md transition-colors relative border border-brand-border-color bg-v4-secondary-background-color text-v4-secondary-text-color"
+        class="flex items-center justify-center w-11 h-11 rounded-lg transition-colors relative border border-brand-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:bg-v4-tertiary-background-color"
+        aria-label="Attachments"
         matTooltip="Add attachments to the deposit slip"
         (click)="openAddAttachment()"
       >
@@ -75,7 +97,8 @@
       </button>
 
       <button
-        class="flex items-center justify-center w-9 h-9 rounded-md transition-colors relative border border-brand-border-color bg-v4-secondary-background-color text-v4-secondary-text-color"
+        class="flex items-center justify-center w-11 h-11 rounded-lg transition-colors relative border border-brand-border-color bg-v4-secondary-background-color text-v4-secondary-text-color hover:bg-v4-tertiary-background-color"
+        aria-label="Comments"
         matTooltip="Add comments. For internal purposes, will not print on deposit slips."
         (click)="openAddComment()"
       >
@@ -87,7 +110,7 @@
         }
       </button>
 
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 h-11 md:ml-1">
         <mat-checkbox
           class="v4-checkbox"
           [checked]="blank === 0"
@@ -111,14 +134,14 @@
       <h3 class="text-sm font-bold tracking-wide mb-3 font-funnel text-v4-main-text-color">CASH</h3>
       <div class="rounded-xl p-4 pb-3 bg-v4-secondary-background-color border border-v4-border-color">
       <div class="overflow-x-auto">
-        <table class="v4-form-table v4-form-table-fixed">
+        <table class="v4-form-table v4-form-table-fixed v4-form-table-cash">
           <thead>
             <tr>
               <th class="w-[18%] font-semibold">AMOUNT</th>
-              <th class="w-[20%] font-semibold">CASHIER/CLERK</th>
+              <th class="w-[28%] font-semibold">CASHIER/CLERK</th>
               <th class="font-semibold">NOTE</th>
-              <th class="w-[14%] font-semibold">TYPE</th>
-              <th class="w-[60px] font-semibold">ACTION</th>
+              <th class="w-[18%] font-semibold">TYPE</th>
+              <th class="w-[56px] font-semibold text-center">ACTION</th>
             </tr>
           </thead>
           <tbody [formGroup]="cashForm">
@@ -155,7 +178,7 @@
                         [isFieldRequired]="false"
                         [maxLength]="70"
                         formControlName="misc"
-                        fieldHeight="32px"
+                        fieldHeight="34px"
                       />
                     </td>
                     <td>
@@ -182,20 +205,16 @@
           </tbody>
         </table>
       </div>
-
-      </div>
-
-      <div class="flex justify-end gap-2 mt-3">
-        <button
-          class="add-row-btn"
-          [class.disabled]="!disablePushBtn"
-          [disabled]="!disablePushBtn"
-          (click)="pushCashRow()"
-        >+</button>
-        <button
-          class="remove-row-btn"
-          (click)="popCashRow()"
-        >-</button>
+      <!-- Rows are added from inside the card; each row removes itself with its trash icon. -->
+      <button
+        type="button"
+        class="add-row-link mt-2"
+        [disabled]="!disablePushBtn"
+        (click)="pushCashRow()"
+      >
+        <lucide-icon name="plus" [size]="14"></lucide-icon>
+        Add cash row
+      </button>
       </div>
     </div>
   }
@@ -206,16 +225,16 @@
       <h3 class="text-sm font-bold tracking-wide mb-3 font-funnel text-v4-main-text-color">CHECK</h3>
       <div class="rounded-xl p-4 pb-3 bg-v4-secondary-background-color border border-v4-border-color">
       <div class="overflow-x-auto">
-        <table class="v4-form-table v4-form-table-fixed">
+        <table class="v4-form-table v4-form-table-fixed v4-form-table-check">
           <thead>
             <tr>
               <th class="w-[12%] font-semibold">AMOUNT</th>
-              <th class="w-[18%] font-semibold">FROM</th>
+              <th class="w-[20%] font-semibold">FROM</th>
               <th class="w-[10%] font-semibold">CHECK#</th>
-              <th class="w-[16%] font-semibold">CASHIER/CLERK</th>
+              <th class="w-[17%] font-semibold">CASHIER/CLERK</th>
               <th class="font-semibold">NOTE</th>
-              <th class="w-[14%] font-semibold">TYPE</th>
-              <th class="w-[60px] font-semibold">ACTION</th>
+              <th class="w-[15%] font-semibold">TYPE</th>
+              <th class="w-[56px] font-semibold text-center">ACTION</th>
             </tr>
           </thead>
           <tbody [formGroup]="checkForm">
@@ -250,7 +269,7 @@
                         numberType="decimal"
                         [maxLength]="10"
                         formControlName="checkTo"
-                        fieldHeight="32px"
+                        fieldHeight="34px"
                       />
                     </td>
                     <td>
@@ -270,7 +289,7 @@
                         [isFieldRequired]="false"
                         [maxLength]="70"
                         formControlName="misc"
-                        fieldHeight="32px"
+                        fieldHeight="34px"
                       />
                     </td>
                     <td>
@@ -298,20 +317,16 @@
           </tbody>
         </table>
       </div>
-
-      </div>
-
-      <div class="flex justify-end gap-2 mt-3">
-        <button
-          class="add-row-btn"
-          [class.disabled]="!disablePushBtn"
-          [disabled]="!disablePushBtn"
-          (click)="pushCheckRow()"
-        >+</button>
-        <button
-          class="remove-row-btn"
-          (click)="popCheckRow()"
-        >-</button>
+      <!-- Rows are added from inside the card; each row removes itself with its trash icon. -->
+      <button
+        type="button"
+        class="add-row-link mt-2"
+        [disabled]="!disablePushBtn"
+        (click)="pushCheckRow()"
+      >
+        <lucide-icon name="plus" [size]="14"></lucide-icon>
+        Add check row
+      </button>
       </div>
     </div>
   }

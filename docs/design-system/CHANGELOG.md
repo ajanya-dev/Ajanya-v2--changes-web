@@ -6,6 +6,51 @@ Related: `docs/design-system/v4-ui-reference.md` (colour, button and component-s
 
 ---
 
+## 19/10/2026
+
+Branch: `design/zilmoney-rebrand` (main copy, port 4200), synced to 4201 and 4202. From Sabeer's Loom "How to Clone Deposit Slip Form" (19/10/2026).
+
+### Deposit slip, Clone: everything carries over except the check number
+
+The Loom cloned a slip on the live app and found the bank account missing, the Ref ID copied from the source slip, and the bank account picker too busy. Rules now: a clone is the same slip with a fresh Ref ID, today's date and empty check numbers, because the same check is never deposited twice; amounts, payer, cashier, note and type stay.
+
+- **Ref ID is the next number.** The clone page used to fetch the next Ref ID and then overwrite it with the source slip's; which one showed depended on which request finished last. The next-id request now runs only for create and clone, and the clone never copies the source Ref ID. Edit keeps the slip's own Ref ID and no longer fetches a new one (it could overwrite it on a slow network).
+- **Check numbers are not cloned.** Every check row keeps amount, From, Cashier/Clerk, Note and Type; Check# is empty and the row's link to the original check record is dropped. Cash rows clone whole.
+- **Bank account always carries over.** The shared bank dropdown waited for exactly two store emissions and gave up if both were still loading, so a preset value could be lost when the clone opened straight from the list. It now waits until the store has finished loading (10 s timeout, then loads the one account by id) and matches ids as strings.
+- **Clone is a visible panel button.** In the Deposit Slip Details panel Clone sits beside Verify and Edit for unverified slips (it was inside the ⋮ menu); Print, Void and Delete stay in the menu. Verified and voided slips already showed it.
+- **Bank account picker shows nickname and last four only.** New `compactRows` input on `app-bank-ac-dropdown-v4`: each row is the nickname in bold with "•••• 8547" beside it, no bank-name line; the selected label uses the same mask. Only the deposit slip form sets it; every other picker is unchanged.
+- **Verified is a tick in the shared bank dropdown.** The "Verified" word chip (rows and the selected label, when `showVerificationBadge` is on) is now an 18px green tick with "Verified" as tooltip and accessible name, per the rule recorded on 05/10/2026. The "ACH" chip stays; Pending, Not Verified and Confirm MD keep their words. Affects the deposit slip form, Send Payment's bank picker, the blank check, bank verification, wallet settings and transfer funds modals.
+- Verification: clicked through on staging (4200): cloned Ref 40 (cash only) and Ref 112 (cash and check): bank account and payee prefilled, Ref ID 113, check number empty, rows otherwise identical; the picker rows and the selected label show the compact mask; rebuilt clean; ESLint clean on the touched lines (pre-existing dot-notation findings remain in the detail panel).
+  - Files: `src/app/modules/deposit-slip/deposit-slip-v4/v4-pages/create-deposit-slip-v4/create-deposit-slip-v4.component.ts`, `.html`, `v4-components/deposit-slip-detail-panel-v4/deposit-slip-detail-panel-v4.component.ts`, `src/app/shared/components/v4/dropdowns/bank-ac-dropdown-v4/bank-ac-dropdown-v4.component.ts`, `.html`
+
+### Deposit slip form: alignment and widths
+
+Review of the clone form: controls in the cash and check rows sat at three heights (34, 40, 32px), the Note field took whatever was left of a 1,600px card, and the two pickers had no labels while the fields below did.
+
+- **One 40px tier per row.** Amount (and its breakdown button), Note, Check# and every dropdown render at 40px; cells are vertically centred.
+- **Widths.** First capped the page at 1,240px; the user found the blank column it left worse than wide fields, so the cards span the page again and width is controlled per field: Row 2 is Date 220px, Ref ID 180px, Memo up to 640px instead of three equal thirds; Deposit to and Deposit from share the card; the row tables fill their card with column shares (cash 18 / 28 / note / 18 / action, check 12 / 20 / 10 / 17 / note / 15 / action) so the note is not the only field that grows.
+- **Labels on the pickers**: "Deposit to *" and "Deposit from" above the bank account and payee pickers, in the shared label style.
+- **Top card as one line of key fields.** Deposit to · Deposit from · Date (180px) · Ref ID (140px) · Memo sit five across at xl (three then two at lg, two per row at md, stacked on a phone); the second line holds only the extras: the attachment and comment buttons (44px) and the Blank Deposit Slip checkbox. Proposed by the user, who then asked for Memo in the headline row as well.
+- **Pickers read as one line, like Send Payment.** With `compactRows` the shared bank picker’s selected label is the bold 13px nickname with “•••• 8547” beside it; the payee picker gained an `inlineLabel` input that puts the bold name and “Customer - email” on one line. Both match the Send Payment source pickers (28px tile, bold name, detail beside it). Only the deposit slip form sets them.
+- **Memo grows with its text.** In the headline row a 150-character memo was cut off in a single 44px line. Memo is now a textarea styled as the shared field: one 44px line like its neighbours, growing to three lines (84px) as the text overflows, then scrolling; a “48 / 150” count floats under the field while there is text. The other four fields stay on their line.
+- **Add row inside the card.** The green "+" and red "−" squares under each card are gone. Each card ends with a tertiary "+ Add cash row" / "+ Add check row" text button (32px, brand text, brand-tint hover, focus ring); every row already removes itself with its trash icon, so the pop-last-row button was redundant. The 26-row cap still disables the button. Chosen by the user from three options (in-card add, keep the squares, one merged Items card).
+  - Files: `create-deposit-slip-v4.component.html`, `.scss`
+
+### Deposit slip details panel: every action visible, friction on Void and Delete
+
+The user asked why the view panel showed only two actions when the row menu has six. The panel header followed the "O3" pattern (two visible buttons, the rest in ⋮). Now every everyday action is a button and only the destructive two sit behind the menu.
+
+- **Unverified slip**: Verify (primary) · Edit · Clone · Print · ⋮. **Verified**: Clone · Print · ⋮ (a verified slip cannot be edited or voided). **Voided**: Clone · ⋮ (cannot be printed). Same rules as the row menu.
+- **Void and Delete** live in the ⋮ menu under a "DANGER ZONE" heading in the danger colour, and each confirms with the slip named: "Void deposit slip #40 for $29.00? A voided slip can no longer be verified, edited or printed." and "Delete deposit slip #40 for $29.00? This cannot be undone." The bulk confirms say how many slips. Before, both asked a bare "Are you sure you want to delete this?".
+- The actions service takes an optional `subject` for the confirm copy; the panel and the list pass "deposit slip #<ref> for $<amount>".
+- Verification: on staging (4200) the panel for Ref 40 shows Verify · Edit · Clone · Print · ⋮; the menu shows the Danger zone with Void and Delete; Void opened the named confirm and was cancelled.
+  - Files: `deposit-slip-detail-panel-v4.component.ts`, `services/deposit-slip-actions.service.ts`, `deposit-slip-list-v4.component.ts`
+
+### Docs
+
+- `v4-ui-reference.md`: dropdown rules in 3.2 gained the compact-row and tick rules; new section 4.8 for the clone behaviour. The `.html` and `.docx` were not regenerated.
+- Design System artifact (Zil Money v4): Dropdown card and the Changes section updated.
+
 ## 17/10/2026
 
 Branch: `design/zilmoney-rebrand` (main copy, port 4200). Dev-only wiring in the app; production behaviour unchanged.

@@ -232,6 +232,7 @@ Rules for consistency:
 - Native `<select>` is allowed only for simple mapping tables; style it `h-[44px] rounded-lg border border-v4-input-border-color bg-v4-secondary-background-color text-sm` and never with `bg-white` or hard-coded focus colours.
 - Overflow (⋮) menus: mat-menu with class `v4-action-menu` (secondary background, 1px `--v4-border-color`, 12px radius, shadow). Custom CDK or absolute panels use the same look: `bg-v4-popup-background-color rounded-xl border border-v4-border-color shadow-lg py-1`.
 - Send-payment source pickers use `app-sp-dropdown-shell` (49px trigger, 12px radius, `--v4-border-color`, open = brand border plus 3px ring, inline panel with 15px radius).
+- Shared bank account picker (`app-bank-ac-dropdown-v4`): with `showVerificationBadge` a verified account shows an 18px green tick (tooltip and accessible name "Verified"), never the word; the "ACH" chip stays; Pending, Not Verified and Confirm MD keep their words. `compactRows` renders each row as the nickname in bold with "•••• 8547" beside it and no bank-name line, and masks the selected label the same way. Use it where the account is the only thing to choose (the deposit slip form); leave it off where the bank name helps tell accounts apart.
 
 ### 3.3 Empty, loading, success and error states
 
@@ -377,6 +378,17 @@ This section covers the 13 and 14 October passes. The earlier passes (2 to 10 Oc
 - **Add Payee modal, control heights**: every control in the modal now renders at the 40px compact height of the shared text input (phone, date picker, address line, state, country, ng-select triggers, category dropdown). The modal previously pinned those at 34px while text inputs rendered at 40px, so Email and Phone sat side by side at different heights. The phone wrapper radius is 8px in this modal to match the text fields. The Phone label reads "Phone (optional)" in the same style as Email.
 - **Add Payee modal, Send a secure link**: the "email, mobile, or both" hint is a brand-tinted note (8% primary tint, 3px primary left border, info icon, main text colour) 12px from the header and the Email field. "Back to manual entry" is an outline pill (32px, input border, bold label, brand-tint hover, focus ring); the gap below it is 12px.
   - Files: `src/app/modules/payee/payee-v4/modals/add-payee-modal-v4/add-payee-modal-v4.component.html`, `.ts`, `.scss`
+
+### 4.8 Deposit slip: Clone (19 October 2026)
+
+From Sabeer's Loom review. A clone is the same slip with a fresh Ref ID, today's date and empty check numbers.
+
+- Ref ID is the next number from the server, never the source slip's. Edit keeps the slip's own Ref ID and no longer fetches a new one.
+- Check rows keep amount, From, Cashier/Clerk, Note and Type; Check# is empty and the link to the original check record is dropped. Cash rows clone whole.
+- The bank account always carries over: the shared picker now waits for the store to finish loading before resolving a preset value (10 s timeout, then loads the one account by id).
+- Clone is a visible button in the Deposit Slip Details panel beside Verify and Edit; Print, Void and Delete stay in the ⋮ menu.
+- The deposit slip's bank account picker uses the compact rows and the verified tick described in 3.2.
+  - Files: `create-deposit-slip-v4.component.ts`, `.html`, `deposit-slip-detail-panel-v4.component.ts`, `bank-ac-dropdown-v4.component.ts`, `.html`
 
 ### 4.7 Send Payment: a refused Confirm lands on the field
 
